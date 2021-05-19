@@ -117,6 +117,9 @@ public class EmailNotificationSender
 		MailMessage mailMessage = new MailMessage(
 			from, subject, notificationMessage, true);
 
+		mailMessage.setTo(
+			getInternetAddresses(
+				notificationRecipients.get(NotificationReceptionType.TO)))
 		mailMessage.setCC(
 			getInternetAddresses(
 				notificationRecipients.get(NotificationReceptionType.CC)));
