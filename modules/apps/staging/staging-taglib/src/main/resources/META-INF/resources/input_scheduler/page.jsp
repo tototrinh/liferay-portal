@@ -18,7 +18,21 @@
 
 <ul class="hide options portlet-list select-options" id="<portlet:namespace />selectSchedule">
 	<li>
-		<liferay-ui:error exception="<%= com.liferay.portal.kernel.scheduler.SchedulerException.class %>" message="a-wrong-end-date-was-specified-the-scheduled-process-will-never-run" />
+		<liferay-ui:error exception="<%= SchedulerException.class %>">
+
+			<%
+			SchedulerException schedulerException = (SchedulerException)errorException;
+			%>
+
+			<c:choose>
+				<c:when test="<%= schedulerException.getType() == SchedulerException.TYPE_INVALID_START_DATE %>">
+					<liferay-ui:message key="a-wrong-start-date-was-specified-the-scheduled-process-cannot-start-in-the-past" />
+				</c:when>
+				<c:otherwise>
+					<liferay-ui:message key="a-wrong-end-date-was-specified-the-scheduled-process-will-never-run" />
+				</c:otherwise>
+			</c:choose>
+		</liferay-ui:error>
 
 		<aui:input name="jobName" type="hidden" />
 
@@ -38,8 +52,6 @@
 		int startMinute = ParamUtil.get(request, "schedulerStartDateMinute", cal.get(Calendar.MINUTE));
 		int startMonth = ParamUtil.get(request, "schedulerStartDateMonth", cal.get(Calendar.MONTH));
 		int startYear = ParamUtil.get(request, "schedulerStartDateYear", cal.get(Calendar.YEAR));
-
-		String cssClass = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-repeat:cssClass"));
 
 		Recurrence recurrence = null;
 
@@ -64,7 +76,6 @@
 
 		int[] monthIds = CalendarUtil.getMonthIds();
 		String[] months = CalendarUtil.getMonths(locale);
-		String timeZoneID = timeZone.getID();
 		%>
 
 		<table class="staging-publish-schedule">
@@ -74,13 +85,14 @@
 						<liferay-ui:message key="start-date" />:
 					</th>
 					<td class="staging-scheduler-content">
-						<div class="flex-container">
+						<div class="d-flex flex-wrap">
 							<liferay-ui:input-date
 								cssClass="form-group form-group-inline"
 								dayParam="schedulerStartDateDay"
 								dayValue="<%= startDay %>"
 								disabled="<%= false %>"
 								firstDayOfWeek="<%= cal.getFirstDayOfWeek() - 1 %>"
+								firstEnabledDate="<%= new Date() %>"
 								monthParam="schedulerStartDateMonth"
 								monthValue="<%= startMonth %>"
 								name="schedulerStartDate"
@@ -115,7 +127,7 @@
 						<liferay-ui:message key="time-zone" />:
 					</th>
 					<td class="staging-scheduler-content">
-						<aui:input cssClass="calendar-portlet-time-zone-field" label="" name="timeZoneId" type="timeZone" value="<%= timeZoneID %>" />
+						<aui:input cssClass="calendar-portlet-time-zone-field" label="" name="timeZoneId" type="timeZone" value="<%= timeZone.getID() %>" />
 					</td>
 				</tr>
 			</tbody>
@@ -129,7 +141,7 @@
 						<aui:input checked="<%= true %>" id="schedulerNoEndDate" inlineField="<%= true %>" label="no-end-date" name="endDateType" type="radio" value="0" />
 						<aui:input first="<%= true %>" id="schedulerEndBy" inlineField="<%= true %>" label="end-by" name="endDateType" type="radio" value="1" />
 
-						<div class="flex-container hide" id="<portlet:namespace />schedulerEndDateType">
+						<div class="d-flex flex-wrap hide" id="<portlet:namespace />schedulerEndDateType">
 							<liferay-ui:input-date
 								cssClass="form-group form-group-inline"
 								dayParam="schedulerEndDateDay"
@@ -229,27 +241,29 @@
 						String[] days = CalendarUtil.getDays(locale);
 						%>
 
-						<div class="row weekdays">
+						<clay:row
+							cssClass="clearfix pt-3 weekdays"
+						>
 
 							<%
-							int firstDayOfWeek = cal.getFirstDayOfWeek();
-
 							Weekday[] weekdaysArray = Weekday.values();
 
-							Collections.rotate(Arrays.asList(weekdaysArray), -firstDayOfWeek);
+							Collections.rotate(Arrays.asList(weekdaysArray), -cal.getFirstDayOfWeek());
 
 							for (Weekday weekday : weekdaysArray) {
 							%>
 
-								<div class="col-md-3">
+								<clay:col
+									md="3"
+								>
 									<aui:input inlineLabel="right" label="<%= days[weekday.getCalendarWeekday() - 1] %>" name='<%= "weeklyDayPos" + weekday.getCalendarWeekday() %>' type="checkbox" value="<%= _getWeeklyDayPos(request, weekday.getCalendarWeekday(), recurrence) %>" />
-								</div>
+								</clay:col>
 
 							<%
 							}
 							%>
 
-						</div>
+						</clay:row>
 					</td>
 				</tr>
 			</tbody>
@@ -438,7 +452,7 @@
 		</table>
 
 		<script>
-			(function() {
+			(function () {
 				var tables = document.querySelectorAll(
 					'#<portlet:namespace />recurrenceTypeDailyTable, #<portlet:namespace />recurrenceTypeMonthlyTable, #<portlet:namespace />recurrenceTypeNeverTable, #<portlet:namespace />recurrenceTypeWeeklyTable, #<portlet:namespace />recurrenceTypeYearlyTable'
 				);
@@ -447,13 +461,13 @@
 				);
 
 				if (recurrenceTypeSelect) {
-					recurrenceTypeSelect.addEventListener('change', function(event) {
+					recurrenceTypeSelect.addEventListener('change', (event) => {
 						var selectedTableId =
 							'<portlet:namespace />' +
 							recurrenceTypeSelect[recurrenceTypeSelect.selectedIndex].id +
 							'Table';
 
-						Array.prototype.forEach.call(tables, function(table) {
+						Array.prototype.forEach.call(tables, (table) => {
 							if (table.id !== selectedTableId) {
 								table.classList.add('hide');
 							}
@@ -496,18 +510,18 @@
 		'<portlet:namespace />schedulerEndDateType'
 	);
 	Liferay.Util.toggleRadio('<portlet:namespace />schedulerNoEndDate', '', [
-		'<portlet:namespace />schedulerEndDateType'
+		'<portlet:namespace />schedulerEndDateType',
 	]);
 
 	Liferay.Util.toggleRadio(
 		'<portlet:namespace />monthlyTypeDayOfMonth',
 		[
 			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeDay',
-			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeMonth'
+			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeMonth',
 		],
 		[
 			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeDay',
-			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeMonth'
+			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeMonth',
 		]
 	);
 
@@ -515,11 +529,11 @@
 		'<portlet:namespace />monthlyTypeDayOfWeek',
 		[
 			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeDay',
-			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeMonth'
+			'<portlet:namespace />schedulerMonthlyDayOfWeekTypeMonth',
 		],
 		[
 			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeDay',
-			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeMonth'
+			'<portlet:namespace />schedulerMonthlyDayOfMonthTypeMonth',
 		]
 	);
 
@@ -528,12 +542,12 @@
 		[
 			'<portlet:namespace />schedulerYearlyDayOfMonthTypeDay',
 			'<portlet:namespace />schedulerYearlyDayOfMonthTypeMonth',
-			'<portlet:namespace />schedulerYearlyDayOfMonthTypeYear'
+			'<portlet:namespace />schedulerYearlyDayOfMonthTypeYear',
 		],
 		[
 			'<portlet:namespace />schedulerYearlyDayOfWeekTypeDay',
 			'<portlet:namespace />schedulerYearlyDayOfWeekTypeMonth',
-			'<portlet:namespace />schedulerYearlyDayOfWeekTypeYear'
+			'<portlet:namespace />schedulerYearlyDayOfWeekTypeYear',
 		]
 	);
 
@@ -542,12 +556,12 @@
 		[
 			'<portlet:namespace />schedulerYearlyDayOfWeekTypeDay',
 			'<portlet:namespace />schedulerYearlyDayOfWeekTypeMonth',
-			'<portlet:namespace />schedulerYearlyDayOfWeekTypeYear'
+			'<portlet:namespace />schedulerYearlyDayOfWeekTypeYear',
 		],
 		[
 			'<portlet:namespace />schedulerYearlyDayOfMonthTypeDay',
 			'<portlet:namespace />schedulerYearlyDayOfMonthTypeMonth',
-			'<portlet:namespace />schedulerYearlyDayOfMonthTypeYear'
+			'<portlet:namespace />schedulerYearlyDayOfMonthTypeYear',
 		]
 	);
 </aui:script>

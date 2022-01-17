@@ -82,15 +82,15 @@ public class BatchEngineExportTaskExecutorImpl
 				BatchEngineTaskExecuteStatus.COMPLETED, batchEngineExportTask,
 				null);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			_log.error(
 				"Unable to update batch engine export task " +
 					batchEngineExportTask,
-				t);
+				throwable);
 
 			_updateBatchEngineExportTask(
 				BatchEngineTaskExecuteStatus.FAILED, batchEngineExportTask,
-				t.getMessage());
+				throwable.getMessage());
 		}
 	}
 
@@ -125,6 +125,7 @@ public class BatchEngineExportTaskExecutorImpl
 		try (BatchEngineTaskItemDelegateExecutor
 				batchEngineTaskItemDelegateExecutor =
 					_batchEngineTaskItemDelegateExecutorFactory.create(
+						batchEngineExportTask.getTaskItemDelegateName(),
 						batchEngineExportTask.getClassName(),
 						_companyLocalService.getCompany(
 							batchEngineExportTask.getCompanyId()),
@@ -143,30 +144,38 @@ public class BatchEngineExportTaskExecutorImpl
 						batchEngineExportTask.getClassName()),
 					zipOutputStream)) {
 
-			Page<?> page = null;
-			int pageIndex = 1;
+			Page<?> page = batchEngineTaskItemDelegateExecutor.getItems(
+				1, _batchSize);
 
-			do {
+			batchEngineExportTask.setTotalItemsCount(
+				Math.toIntExact(page.getTotalCount()));
+
+			Collection<?> items = page.getItems();
+
+			while (!items.isEmpty()) {
+				batchEngineExportTaskItemWriter.write(items);
+
+				batchEngineExportTask.setProcessedItemsCount(
+					batchEngineExportTask.getProcessedItemsCount() +
+						items.size());
+
+				batchEngineExportTask =
+					_batchEngineExportTaskLocalService.
+						updateBatchEngineExportTask(batchEngineExportTask);
+
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
 
-				page = batchEngineTaskItemDelegateExecutor.getItems(
-					pageIndex++, _batchSize);
-
-				Collection<?> items = page.getItems();
-
-				if (items.isEmpty()) {
+				if (!page.hasNext()) {
 					break;
 				}
 
-				batchEngineExportTaskItemWriter.write(items);
+				page = batchEngineTaskItemDelegateExecutor.getItems(
+					(int)page.getPage() + 1, _batchSize);
 
-				_batchEngineExportTaskLocalService.updateBatchEngineExportTask(
-					batchEngineExportTask);
+				items = page.getItems();
 			}
-			while ((page.getPage() * page.getPageSize()) <
-						page.getTotalCount());
 		}
 
 		byte[] content = unsyncByteArrayOutputStream.toByteArray();

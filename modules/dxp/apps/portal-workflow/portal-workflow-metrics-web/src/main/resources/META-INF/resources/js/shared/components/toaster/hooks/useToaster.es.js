@@ -21,8 +21,8 @@ const useToaster = () => {
 			addToast({
 				autoClose,
 				message: message || Liferay.Language.get('error'),
-				title: title || Liferay.Language.get('error'),
-				type: 'danger'
+				title: title || `${Liferay.Language.get('error')}:`,
+				type: 'danger',
 			});
 		},
 		info: (message, title, autoClose = 5000) => {
@@ -30,15 +30,15 @@ const useToaster = () => {
 				autoClose,
 				message,
 				title,
-				type: 'info'
+				type: 'info',
 			});
 		},
 		success: (message, title, autoClose = 5000) => {
 			addToast({
 				autoClose,
 				message: message || Liferay.Language.get('success'),
-				title: title || Liferay.Language.get('success'),
-				type: 'success'
+				title: title || `${Liferay.Language.get('success')}:`,
+				type: 'success',
 			});
 		},
 		warning: (message, title, autoClose = 5000) => {
@@ -46,15 +46,15 @@ const useToaster = () => {
 				autoClose,
 				message,
 				title,
-				type: 'warning'
+				type: 'warning',
 			});
-		}
+		},
 	};
 
 	return {
 		...context,
 		...toaster,
-		addToast
+		addToast,
 	};
 };
 

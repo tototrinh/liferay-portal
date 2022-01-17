@@ -16,14 +16,15 @@ package com.liferay.layout.admin.web.internal.portlet;
 
 import com.liferay.application.list.GroupProvider;
 import com.liferay.asset.kernel.exception.AssetCategoryException;
-import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidationException;
+import com.liferay.friendly.url.exception.DuplicateFriendlyURLEntryException;
+import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
-import com.liferay.layout.admin.web.internal.configuration.LayoutConverterConfiguration;
-import com.liferay.layout.admin.web.internal.configuration.LayoutEditorTypeConfiguration;
 import com.liferay.layout.admin.web.internal.constants.LayoutAdminWebKeys;
 import com.liferay.layout.admin.web.internal.display.context.LayoutsAdminDisplayContext;
-import com.liferay.layout.admin.web.internal.display.context.LayoutsAdminReactDisplayContext;
+import com.liferay.layout.admin.web.internal.display.context.MillerColumnsDisplayContext;
+import com.liferay.layout.admin.web.internal.display.context.SelectLayoutCollectionDisplayContext;
+import com.liferay.layout.admin.web.internal.servlet.taglib.util.LayoutActionDropdownItemsProvider;
 import com.liferay.layout.page.template.exception.DuplicateLayoutPageTemplateCollectionException;
 import com.liferay.layout.page.template.exception.LayoutPageTemplateCollectionNameException;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
@@ -31,7 +32,6 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServ
 import com.liferay.layout.util.LayoutCopyHelper;
 import com.liferay.layout.util.template.LayoutConverterRegistry;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.GroupInheritContentException;
 import com.liferay.portal.kernel.exception.ImageTypeException;
@@ -49,6 +49,7 @@ import com.liferay.portal.kernel.exception.SitemapIncludeException;
 import com.liferay.portal.kernel.exception.SitemapPagePriorityException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.LayoutPrototype;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -61,11 +62,13 @@ import com.liferay.portal.kernel.upload.UploadException;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.staging.StagingGroupHelper;
+import com.liferay.translation.exporter.TranslationInfoItemFieldValuesExporterTracker;
+import com.liferay.translation.security.permission.TranslationPermission;
+import com.liferay.translation.url.provider.TranslationURLProvider;
 
 import java.io.IOException;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -75,21 +78,13 @@ import javax.portlet.PortletException;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Jorge Ferrer
  */
 @Component(
-	configurationPid = {
-		"com.liferay.layout.admin.web.internal.configuration.LayoutConverterConfiguration",
-		"com.liferay.layout.admin.web.internal.configuration.LayoutEditorTypeConfiguration"
-	},
 	immediate = true,
 	property = {
 		"com.liferay.portlet.add-default-resource=true",
@@ -97,6 +92,7 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.header-portlet-css=/css/main.css",
 		"com.liferay.portlet.icon=/icons/group_pages.png",
 		"com.liferay.portlet.preferences-owned-by-group=true",
+		"com.liferay.portlet.preferences-unique-per-layout=false",
 		"com.liferay.portlet.private-request-attributes=false",
 		"com.liferay.portlet.private-session-attributes=false",
 		"com.liferay.portlet.render-weight=50",
@@ -108,7 +104,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + LayoutAdminPortletKeys.GROUP_PAGES,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.supported-public-render-parameter=layoutSetBranchId"
+		"javax.portlet.supported-public-render-parameter=layoutSetBranchId",
+		"javax.portlet.supported-public-render-parameter=selPlid"
 	},
 	service = Portlet.class
 )
@@ -129,26 +126,19 @@ public class GroupPagesPortlet extends MVCPortlet {
 		}
 	}
 
-	@Activate
-	@Modified
-	protected void activate(Map<String, Object> properties) {
-		_layoutConverterConfiguration = ConfigurableUtil.createConfigurable(
-			LayoutConverterConfiguration.class, properties);
-
-		_layoutEditorTypeConfiguration = ConfigurableUtil.createConfigurable(
-			LayoutEditorTypeConfiguration.class, properties);
-	}
-
 	@Override
 	protected void doDispatch(
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws IOException, PortletException {
 
-		HttpServletRequest httpServletRequest = _portal.getHttpServletRequest(
-			renderRequest);
+		Group group = _groupProvider.getGroup(
+			_portal.getHttpServletRequest(renderRequest));
 
-		renderRequest.setAttribute(
-			WebKeys.GROUP, _groupProvider.getGroup(httpServletRequest));
+		if (group.isCompany()) {
+			throw new PortletException();
+		}
+
+		renderRequest.setAttribute(WebKeys.GROUP, group);
 
 		if (SessionErrors.contains(
 				renderRequest, NoSuchGroupException.class.getName()) ||
@@ -186,23 +176,43 @@ public class GroupPagesPortlet extends MVCPortlet {
 				}
 			}
 
+			LayoutsAdminDisplayContext layoutsAdminDisplayContext =
+				new LayoutsAdminDisplayContext(
+					_layoutConverterRegistry, _layoutCopyHelper,
+					_portal.getLiferayPortletRequest(renderRequest),
+					_portal.getLiferayPortletResponse(renderResponse),
+					_stagingGroupHelper);
+
+			LayoutActionDropdownItemsProvider
+				layoutActionDropdownItemsProvider =
+					new LayoutActionDropdownItemsProvider(
+						_portal.getHttpServletRequest(renderRequest),
+						layoutsAdminDisplayContext, _translationPermission,
+						_translationURLProvider);
+
+			renderRequest.setAttribute(
+				LayoutAdminWebKeys.LAYOUT_ACTION_DROPDOWN_ITEMS_PROVIDER,
+				layoutActionDropdownItemsProvider);
+
 			renderRequest.setAttribute(
 				LayoutAdminWebKeys.LAYOUT_PAGE_LAYOUT_ADMIN_DISPLAY_CONTEXT,
-				new LayoutsAdminDisplayContext(
-					_layoutConverterConfiguration, _layoutConverterRegistry,
-					_layoutCopyHelper, _layoutEditorTypeConfiguration,
-					_portal.getLiferayPortletRequest(renderRequest),
-					_portal.getLiferayPortletResponse(renderResponse),
-					_stagingGroupHelper));
+				layoutsAdminDisplayContext);
+
 			renderRequest.setAttribute(
-				LayoutAdminWebKeys.
-					LAYOUT_PAGE_LAYOUT_ADMIN_REACT_DISPLAY_CONTEXT,
-				new LayoutsAdminReactDisplayContext(
-					_layoutConverterConfiguration, _layoutConverterRegistry,
-					_layoutCopyHelper, _layoutEditorTypeConfiguration,
+				LayoutAdminWebKeys.MILLER_COLUMNS_DISPLAY_CONTEXT,
+				new MillerColumnsDisplayContext(
+					layoutActionDropdownItemsProvider,
+					layoutsAdminDisplayContext,
 					_portal.getLiferayPortletRequest(renderRequest),
 					_portal.getLiferayPortletResponse(renderResponse),
-					_stagingGroupHelper));
+					_translationInfoItemFieldValuesExporterTracker));
+
+			renderRequest.setAttribute(
+				LayoutAdminWebKeys.SELECT_LAYOUT_COLLECTION_DISPLAY_CONTEXT,
+				new SelectLayoutCollectionDisplayContext(
+					_infoItemServiceTracker,
+					_portal.getLiferayPortletRequest(renderRequest),
+					_portal.getLiferayPortletResponse(renderResponse)));
 
 			super.doDispatch(renderRequest, renderResponse);
 		}
@@ -214,27 +224,29 @@ public class GroupPagesPortlet extends MVCPortlet {
 	}
 
 	@Override
-	protected boolean isSessionErrorException(Throwable cause) {
-		if (cause instanceof AssetCategoryException ||
-			cause instanceof DDMFormValuesValidationException ||
-			cause instanceof DuplicateLayoutPageTemplateCollectionException ||
-			cause instanceof GroupInheritContentException ||
-			cause instanceof ImageTypeException ||
-			cause instanceof LayoutFriendlyURLException ||
-			cause instanceof LayoutFriendlyURLsException ||
-			cause instanceof LayoutNameException ||
-			cause instanceof LayoutPageTemplateCollectionNameException ||
-			cause instanceof LayoutParentLayoutIdException ||
-			cause instanceof LayoutSetVirtualHostException ||
-			cause instanceof LayoutTypeException ||
-			cause instanceof NoSuchGroupException ||
-			cause instanceof PrincipalException ||
-			cause instanceof RequiredLayoutException ||
-			cause instanceof RequiredLayoutPrototypeException ||
-			cause instanceof SitemapChangeFrequencyException ||
-			cause instanceof SitemapIncludeException ||
-			cause instanceof SitemapPagePriorityException ||
-			cause instanceof UploadException) {
+	protected boolean isSessionErrorException(Throwable throwable) {
+		if (throwable instanceof AssetCategoryException ||
+			throwable instanceof DDMFormValuesValidationException ||
+			throwable instanceof DuplicateFriendlyURLEntryException ||
+			throwable instanceof
+				DuplicateLayoutPageTemplateCollectionException ||
+			throwable instanceof GroupInheritContentException ||
+			throwable instanceof ImageTypeException ||
+			throwable instanceof LayoutFriendlyURLException ||
+			throwable instanceof LayoutFriendlyURLsException ||
+			throwable instanceof LayoutNameException ||
+			throwable instanceof LayoutPageTemplateCollectionNameException ||
+			throwable instanceof LayoutParentLayoutIdException ||
+			throwable instanceof LayoutSetVirtualHostException ||
+			throwable instanceof LayoutTypeException ||
+			throwable instanceof NoSuchGroupException ||
+			throwable instanceof PrincipalException ||
+			throwable instanceof RequiredLayoutException ||
+			throwable instanceof RequiredLayoutPrototypeException ||
+			throwable instanceof SitemapChangeFrequencyException ||
+			throwable instanceof SitemapIncludeException ||
+			throwable instanceof SitemapPagePriorityException ||
+			throwable instanceof UploadException) {
 
 			return true;
 		}
@@ -246,21 +258,16 @@ public class GroupPagesPortlet extends MVCPortlet {
 		GroupPagesPortlet.class);
 
 	@Reference
-	private DLAppService _dlAppService;
-
-	@Reference
 	private GroupProvider _groupProvider;
 
-	private volatile LayoutConverterConfiguration _layoutConverterConfiguration;
+	@Reference
+	private InfoItemServiceTracker _infoItemServiceTracker;
 
 	@Reference
 	private LayoutConverterRegistry _layoutConverterRegistry;
 
 	@Reference
 	private LayoutCopyHelper _layoutCopyHelper;
-
-	private volatile LayoutEditorTypeConfiguration
-		_layoutEditorTypeConfiguration;
 
 	@Reference
 	private LayoutPageTemplateEntryLocalService
@@ -274,5 +281,15 @@ public class GroupPagesPortlet extends MVCPortlet {
 
 	@Reference
 	private StagingGroupHelper _stagingGroupHelper;
+
+	@Reference
+	private TranslationInfoItemFieldValuesExporterTracker
+		_translationInfoItemFieldValuesExporterTracker;
+
+	@Reference
+	private TranslationPermission _translationPermission;
+
+	@Reference
+	private TranslationURLProvider _translationURLProvider;
 
 }

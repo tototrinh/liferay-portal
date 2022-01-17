@@ -35,7 +35,6 @@ import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
@@ -55,10 +54,8 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserGroupService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserService;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.language.LanguageResources;
@@ -69,7 +66,6 @@ import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Dictionary;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -105,20 +101,13 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		_scopesList = new ArrayList<>(_SAP_ENTRY_OBJECT_ARRAYS.length);
+		_scopeAliasesList = new ArrayList<>(_SAP_ENTRY_OBJECT_ARRAYS.length);
 
 		for (String[] sapEntryObjectArray : _SAP_ENTRY_OBJECT_ARRAYS) {
-			_scopesList.add(
+			_scopeAliasesList.add(
 				StringUtil.replaceFirst(
 					sapEntryObjectArray[0], "OAUTH2_", StringPool.BLANK));
 		}
-
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			"osgi.jaxrs.name",
-			OAuth2ProviderShortcutConstants.APPLICATION_NAME);
-		properties.put("sap.scope.finder", true);
 
 		_serviceRegistration = bundleContext.registerService(
 			new String[] {
@@ -127,7 +116,12 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 				ScopeFinder.class.getName(), ScopeMapper.class.getName()
 			},
 			new OAuth2ProviderShortcutScopeFinder(_sapEntryLocalService),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"osgi.jaxrs.name",
+				OAuth2ProviderShortcutConstants.APPLICATION_NAME
+			).put(
+				"sap.scope.finder", true
+			).build());
 	}
 
 	@Deactivate
@@ -219,17 +213,7 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 			});
 	}
 
-	private void _addSAPEntries(long companyId, long userId)
-		throws PortalException {
-
-		Class<?> clazz = getClass();
-
-		ResourceBundleLoader resourceBundleLoader =
-			new AggregateResourceBundleLoader(
-				ResourceBundleUtil.getResourceBundleLoader(
-					"content.Language", clazz.getClassLoader()),
-				LanguageResources.RESOURCE_BUNDLE_LOADER);
-
+	private void _addSAPEntries(long companyId, long userId) throws Exception {
 		for (String[] sapEntryObjectArray : _SAP_ENTRY_OBJECT_ARRAYS) {
 			String sapEntryName = sapEntryObjectArray[0];
 
@@ -242,7 +226,8 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 
 			Map<Locale, String> titleMap =
 				ResourceBundleUtil.getLocalizationMap(
-					resourceBundleLoader, sapEntryName);
+					LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
+					sapEntryName);
 
 			_sapEntryLocalService.addSAPEntry(
 				userId, sapEntryObjectArray[1], false, true, sapEntryName,
@@ -254,7 +239,7 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 		builder.forApplication(
 			OAuth2ProviderShortcutConstants.APPLICATION_NAME,
 			"com.liferay.oauth2.provider.shortcut",
-			applicationScopeAssigner -> _scopesList.forEach(
+			applicationScopeAssigner -> _scopeAliasesList.forEach(
 				applicationScopeAssigner::assignScope));
 	}
 
@@ -343,7 +328,7 @@ public class AnalyticsCloudPortalInstanceLifecycleListener
 	@Reference
 	private SAPEntryLocalService _sapEntryLocalService;
 
-	private List<String> _scopesList;
+	private List<String> _scopeAliasesList;
 	private ServiceRegistration<?> _serviceRegistration;
 
 	@Reference

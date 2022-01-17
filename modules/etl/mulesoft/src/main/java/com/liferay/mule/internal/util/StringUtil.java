@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-2021 Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,13 +22,14 @@ public class StringUtil {
 	public static String replace(String pattern, String... tplArgs) {
 		String replaced = pattern;
 
-		for (int i = 0; i < tplArgs.length;) {
+		for (int i = 0; i < tplArgs.length; i = i + 2) {
 			replaced = replaced.replace(tplArgs[i], tplArgs[i + 1]);
-
-			i = i + 2;
 		}
 
 		return replaced;
+	}
+
+	private StringUtil() {
 	}
 
 }

@@ -73,7 +73,7 @@ if (portletTitleBasedNavigation) {
 	/>
 </c:if>
 
-<div <%= portletTitleBasedNavigation ? "class=\"container-fluid-1280\"" : StringPool.BLANK %>>
+<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl container-form-lg\"" : StringPool.BLANK %>>
 	<liferay-portlet:actionURL name="updateKBArticle" var="updateKBArticleURL" />
 
 	<aui:form action="<%= updateKBArticleURL %>" method="post" name="fm">
@@ -145,17 +145,8 @@ if (portletTitleBasedNavigation) {
 			<aui:fieldset-group markupView="lexicon">
 				<aui:fieldset>
 					<h1 class="kb-title">
-						<liferay-ui:input-editor
-							contents="<%= HtmlUtil.escape(title) %>"
-							editorName="alloyeditor"
-							name="titleEditor"
-							onChangeMethod='<%= (kbArticle == null) ? "onChangeEditor" : StringPool.BLANK %>'
-							placeholder="title"
-							showSource="<%= false %>"
-						/>
+						<aui:input autocomplete="off" label='<%= LanguageUtil.get(request, "title") %>' name="title" required="<%= true %>" type="text" value="<%= HtmlUtil.escape(title) %>" />
 					</h1>
-
-					<aui:input name="title" type="hidden" />
 
 					<div class="kb-entity-body">
 
@@ -167,7 +158,7 @@ if (portletTitleBasedNavigation) {
 						}
 						%>
 
-						<liferay-ui:input-editor
+						<liferay-editor:editor
 							contents="<%= content %>"
 							editorName="<%= kbGroupServiceConfiguration.getEditorName() %>"
 							fileBrowserParams="<%= fileBrowserParams %>"
@@ -202,6 +193,7 @@ if (portletTitleBasedNavigation) {
 					<liferay-asset:asset-categories-selector
 						className="<%= KBArticle.class.getName() %>"
 						classPK="<%= (kbArticle != null) ? kbArticle.getClassPK() : 0 %>"
+						visibilityTypes="<%= AssetVocabularyConstants.VISIBILITY_TYPES %>"
 					/>
 
 					<liferay-asset:asset-tags-selector
@@ -256,66 +248,69 @@ if (portletTitleBasedNavigation) {
 				</aui:fieldset>
 
 				<c:if test="<%= kbArticle == null %>">
-					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" cssClass='<%= (parentResourcePrimKey != KBFolderConstants.DEFAULT_PARENT_FOLDER_ID) ? "hide" : StringPool.BLANK %>' label="permissions">
+					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="permissions">
 						<liferay-ui:input-permissions
 							modelName="<%= KBArticle.class.getName() %>"
 						/>
 					</aui:fieldset>
 				</c:if>
+
+				<div class="kb-submit-buttons sheet-footer">
+
+					<%
+					boolean pending = false;
+
+					if (kbArticle != null) {
+						pending = kbArticle.isPending();
+					}
+
+					String saveButtonLabel = "save";
+
+					if ((kbArticle == null) || kbArticle.isDraft() || kbArticle.isApproved()) {
+						saveButtonLabel = "save-as-draft";
+					}
+
+					String publishButtonLabel = "publish";
+
+					if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, KBArticle.class.getName())) {
+						publishButtonLabel = "submit-for-publication";
+					}
+					%>
+
+					<aui:button disabled="<%= pending %>" name="publishButton" type="submit" value="<%= publishButtonLabel %>" />
+
+					<aui:button primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
+
+					<aui:button href="<%= redirect %>" type="cancel" />
+				</div>
 			</aui:fieldset-group>
 		</div>
-
-		<aui:button-row cssClass="kb-submit-buttons">
-
-			<%
-			boolean pending = false;
-
-			if (kbArticle != null) {
-				pending = kbArticle.isPending();
-			}
-
-			String saveButtonLabel = "save";
-
-			if ((kbArticle == null) || kbArticle.isDraft() || kbArticle.isApproved()) {
-				saveButtonLabel = "save-as-draft";
-			}
-
-			String publishButtonLabel = "publish";
-
-			if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, KBArticle.class.getName())) {
-				publishButtonLabel = "submit-for-publication";
-			}
-			%>
-
-			<aui:button disabled="<%= pending %>" name="publishButton" type="submit" value="<%= publishButtonLabel %>" />
-
-			<aui:button primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
-
-			<aui:button href="<%= redirect %>" type="cancel" />
-		</aui:button-row>
 	</aui:form>
 </div>
 
-<aui:script>
+<script>
 	<c:if test="<%= kbArticle == null %>">
+		var titleInput = document.getElementById('<portlet:namespace />title');
 		var urlTitleInput = document.getElementById('<portlet:namespace />urlTitle');
 
-		function <portlet:namespace />onChangeEditor(html) {
+		titleInput.addEventListener('input', (event) => {
 			var customUrl = urlTitleInput.dataset.customUrl;
 
 			if (customUrl === 'false') {
-				urlTitleInput.value = Liferay.Util.normalizeFriendlyURL(html);
-			}
-		}
+				var title = event.target.value;
 
-		urlTitleInput.addEventListener('input', function(event) {
+				urlTitleInput.value = Liferay.Util.normalizeFriendlyURL(title);
+			}
+		});
+
+		urlTitleInput.addEventListener('input', (event) => {
 			event.currentTarget.dataset.customUrl = urlTitleInput.value !== '';
 		});
 	</c:if>
 
 	document
 		.getElementById('<portlet:namespace />publishButton')
-		.addEventListener('click', function() {
+		.addEventListener('click', () => {
 			var workflowActionInput = document.getElementById(
 				'<portlet:namespace />workflowAction'
 			);
@@ -336,7 +331,7 @@ if (portletTitleBasedNavigation) {
 
 	var form = document.getElementById('<portlet:namespace />fm');
 
-	var updateMultipleKBArticleAttachments = function() {
+	var updateMultipleKBArticleAttachments = function () {
 		var selectedFileNameContainer = document.getElementById(
 			'<portlet:namespace />selectedFileNameContainer'
 		);
@@ -358,16 +353,13 @@ if (portletTitleBasedNavigation) {
 		selectedFileNameContainer.innerHTML = buffer.join('');
 	};
 
-	form.addEventListener('submit', function() {
+	form.addEventListener('submit', () => {
 		document.getElementById(
 			'<portlet:namespace />content'
 		).value = window.<portlet:namespace />contentEditor.getHTML();
-		document.getElementById(
-			'<portlet:namespace />title'
-		).value = window.<portlet:namespace />titleEditor.getText();
 		updateMultipleKBArticleAttachments();
 	});
-</aui:script>
+</script>
 
 <%!
 private String _getFriendlyURLPrefix(long parentResourceClassNameId, long parentResourcePrimKey) throws PortalException {

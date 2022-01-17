@@ -15,9 +15,9 @@
 package com.liferay.oauth2.provider.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.oauth2.provider.model.OAuth2Authorization;
-import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -47,41 +47,43 @@ public class OAuth2ConnectedApplicationsManagementToolbarDisplayContext
 	}
 
 	public List<DropdownItem> getActionDropdownItems() {
-		DropdownItemList dropdownItems = new DropdownItemList();
-
-		dropdownItems.add(
+		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				dropdownItem.setHref(
-					StringBundler.concat(
-						"javascript:", liferayPortletResponse.getNamespace(),
-						"removeAccess();"));
+				dropdownItem.putData("action", "removeAccess");
 				dropdownItem.setIcon("trash");
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "remove-access"));
 				dropdownItem.setQuickAction(true);
-			});
+			}
+		).build();
+	}
 
-		return dropdownItems;
+	public Map<String, Object> getAdditionalProps() {
+		return HashMapBuilder.<String, Object>put(
+			"revokeOauthAuthorizationsURL",
+			() -> PortletURLBuilder.createActionURL(
+				liferayPortletResponse
+			).setActionName(
+				"/connected_applications/revoke_oauth2_authorizations"
+			).buildString()
+		).build();
 	}
 
 	public List<DropdownItem> getFilterDropdownItems() {
-		return new DropdownItemList() {
-			{
-				Map<String, String> orderColumnsMap = HashMapBuilder.put(
-					"createDate", "authorization"
-				).put(
-					"oAuth2ApplicationId", "application-id"
-				).build();
+		return DropdownItemListBuilder.addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					getOrderByDropdownItems(
+						HashMapBuilder.put(
+							"createDate", "authorization"
+						).put(
+							"oAuth2ApplicationId", "application-id"
+						).build()));
 
-				addGroup(
-					dropdownGroupItem -> {
-						dropdownGroupItem.setDropdownItems(
-							getOrderByDropdownItems(orderColumnsMap));
-						dropdownGroupItem.setLabel(
-							LanguageUtil.get(httpServletRequest, "order-by"));
-					});
+				dropdownGroupItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "order-by"));
 			}
-		};
+		).build();
 	}
 
 	public OrderByComparator<OAuth2Authorization> getOrderByComparator() {

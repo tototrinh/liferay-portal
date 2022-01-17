@@ -60,6 +60,7 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.private-request-attributes=false",
 		"com.liferay.portlet.private-session-attributes=false",
 		"com.liferay.portlet.restore-current-view=false",
+		"com.liferay.portlet.show-portlet-access-denied=false",
 		"com.liferay.portlet.use-default-template=true",
 		"javax.portlet.display-name=Search Insights",
 		"javax.portlet.expiration-cache=0",
@@ -115,7 +116,10 @@ public class SearchInsightsPortlet extends MVCPortlet {
 				searchInsightsPortletPreferences.
 					getFederatedSearchKeyOptional());
 
-		if (isOmniadmin() && isRequestStringPresent(searchResponse)) {
+		if (isCompanyAdmin() &&
+			(isRequestStringPresent(searchResponse) ||
+			 isResponseStringPresent(searchResponse))) {
+
 			searchInsightsDisplayContext.setRequestString(
 				buildRequestString(searchResponse));
 
@@ -138,10 +142,10 @@ public class SearchInsightsPortlet extends MVCPortlet {
 	}
 
 	protected String buildResponseString(SearchResponse searchResponse) {
-		Optional<String> responseString = SearchStringUtil.maybe(
+		Optional<String> responseStringOptional = SearchStringUtil.maybe(
 			searchResponse.getResponseString());
 
-		return responseString.orElse(StringPool.BLANK);
+		return responseStringOptional.orElse(StringPool.BLANK);
 	}
 
 	protected String getHelpMessage(RenderRequest renderRequest) {
@@ -151,18 +155,25 @@ public class SearchInsightsPortlet extends MVCPortlet {
 		return language.get(resourceBundle, "search-insights-help");
 	}
 
-	protected boolean isOmniadmin() {
+	protected boolean isCompanyAdmin() {
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
 
-		return permissionChecker.isOmniadmin();
+		return permissionChecker.isCompanyAdmin();
 	}
 
 	protected boolean isRequestStringPresent(SearchResponse searchResponse) {
-		Optional<String> requestString = SearchStringUtil.maybe(
+		Optional<String> requestStringOptional = SearchStringUtil.maybe(
 			searchResponse.getRequestString());
 
-		return requestString.isPresent();
+		return requestStringOptional.isPresent();
+	}
+
+	protected boolean isResponseStringPresent(SearchResponse searchResponse) {
+		Optional<String> responseStringOptional = SearchStringUtil.maybe(
+			searchResponse.getResponseString());
+
+		return responseStringOptional.isPresent();
 	}
 
 	@Reference

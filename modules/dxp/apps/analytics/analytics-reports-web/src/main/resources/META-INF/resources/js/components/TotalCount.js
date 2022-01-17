@@ -9,64 +9,73 @@
  * distribution rights of the Software.
  */
 
-import ClayIcon from '@clayui/icon';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useStateSafe} from '@liferay/frontend-js-react-web';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useContext, useEffect} from 'react';
 
-import Popover from './Popover';
+import ConnectionContext from '../context/ConnectionContext';
+import {StoreDispatchContext, StoreStateContext} from '../context/StoreContext';
+import {numberFormat} from '../utils/numberFormat';
+import Hint from './Hint';
 
 function TotalCount({
 	className,
 	dataProvider,
 	label,
+	percentage = false,
 	popoverHeader,
-	popoverMessage
+	popoverMessage,
+	popoverPosition,
 }) {
-	const iconRef = React.useRef();
-	const [showTooltip, setShowTooltip] = React.useState(false);
-	const [value, setValue] = React.useState(null);
-	const isMounted = useIsMounted();
+	const {validAnalyticsConnection} = useContext(ConnectionContext);
 
-	React.useEffect(() => {
-		dataProvider()
-			.then(value => {
-				if (isMounted()) {
-					setValue(value);
-				}
-			})
-			.catch(() => {
-				if (isMounted()) {
+	const [value, setValue] = useStateSafe('-');
+
+	const dispatch = useContext(StoreDispatchContext);
+
+	const {languageTag, publishedToday} = useContext(StoreStateContext);
+
+	useEffect(() => {
+		if (validAnalyticsConnection) {
+			dataProvider()
+				.then(setValue)
+				.catch(() => {
 					setValue('-');
-				}
-			});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dataProvider]);
+					dispatch({type: 'ADD_WARNING'});
+				});
+		}
+	}, [dispatch, dataProvider, setValue, validAnalyticsConnection]);
+
+	let displayValue = '-';
+
+	if (validAnalyticsConnection && !publishedToday) {
+		displayValue =
+			value !== '-' ? (
+				percentage ? (
+					<span>{`${value}%`}</span>
+				) : (
+					numberFormat(languageTag, value)
+				)
+			) : (
+				value
+			);
+	}
 
 	return (
 		<div className={className}>
-			<span className="text-secondary">
-				{label}
-				<span
-					className="p-1"
-					onMouseEnter={() => setShowTooltip(true)}
-					onMouseLeave={() => setShowTooltip(false)}
-					ref={iconRef}
-				>
-					<ClayIcon
-						className="mr-1"
-						small="true"
-						symbol="question-circle"
-					/>
-				</span>
+			<span className="text-secondary">{label}</span>
 
-				{showTooltip && (
-					<Popover anchor={iconRef.current} header={popoverHeader}>
-						{popoverMessage}
-					</Popover>
-				)}
+			<span className="text-secondary">
+				<Hint
+					message={popoverMessage}
+					position={popoverPosition}
+					title={popoverHeader}
+				/>
 			</span>
-			<span className="font-weight-bold">{value}</span>
+
+			<span className="font-weight-bold inline-item-after">
+				{displayValue}
+			</span>
 		</div>
 	);
 }
@@ -74,8 +83,9 @@ function TotalCount({
 TotalCount.propTypes = {
 	dataProvider: PropTypes.func.isRequired,
 	label: PropTypes.string.isRequired,
+	percentage: PropTypes.bool,
 	popoverHeader: PropTypes.string.isRequired,
-	popoverMessage: PropTypes.string.isRequired
+	popoverMessage: PropTypes.string.isRequired,
 };
 
 export default TotalCount;

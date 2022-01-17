@@ -80,7 +80,16 @@ public class LinkEditableElementParser implements EditableElementParser {
 
 		Element replaceableElement = elements.get(0);
 
-		return replaceableElement.html();
+		String html = replaceableElement.html();
+
+		if (Validator.isNull(html.trim())) {
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+				"content.Language", getClass());
+
+			return LanguageUtil.get(resourceBundle, "example-link");
+		}
+
+		return html;
 	}
 
 	@Override
@@ -110,6 +119,15 @@ public class LinkEditableElementParser implements EditableElementParser {
 
 		EditableElementParserUtil.addAttribute(
 			replaceableElement, configJSONObject, "href", "href");
+
+		String target = configJSONObject.getString("target");
+
+		if (StringUtil.equalsIgnoreCase(target, "_parent") ||
+			StringUtil.equalsIgnoreCase(target, "_top")) {
+
+			configJSONObject.put("target", "_self");
+		}
+
 		EditableElementParserUtil.addAttribute(
 			replaceableElement, configJSONObject, "target", "target");
 

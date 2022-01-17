@@ -28,6 +28,11 @@ import com.liferay.portal.kernel.util.Time;
  */
 public class PropsValues {
 
+	public static final boolean ACCESS_CONTROL_SANITIZE_SECURITY_EXCEPTION =
+		GetterUtil.getBoolean(
+			PropsUtil.get(
+				PropsKeys.ACCESS_CONTROL_SANITIZE_SECURITY_EXCEPTION));
+
 	public static String[] ADMIN_ANALYTICS_TYPES = StringUtil.splitLines(
 		PropsUtil.get(PropsKeys.ADMIN_ANALYTICS_TYPES));
 
@@ -150,6 +155,9 @@ public class PropsValues {
 	public static final String[] APPLICATION_STARTUP_EVENTS =
 		PropsUtil.getArray(PropsKeys.APPLICATION_STARTUP_EVENTS);
 
+	public static String APPLICATIONS_MENU_DEFAULT_LIFERAY_NAME = PropsUtil.get(
+		PropsKeys.APPLICATIONS_MENU_DEFAULT_LIFERAY_NAME);
+
 	public static final boolean ASSET_BROWSER_SEARCH_WITH_DATABASE =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.ASSET_BROWSER_SEARCH_WITH_DATABASE));
@@ -165,6 +173,11 @@ public class PropsValues {
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.ASSET_CATEGORIES_SELECTOR_MAX_ENTRIES));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #VIEW_COUNT_ENABLED}
+	 */
+	@Deprecated
 	public static final boolean ASSET_ENTRY_BUFFERED_INCREMENT_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(
@@ -200,6 +213,10 @@ public class PropsValues {
 	public static final String AUTH_LOGIN_PORTLET_NAME = PropsUtil.get(
 		PropsKeys.AUTH_LOGIN_PORTLET_NAME);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final boolean AUTH_LOGIN_PROMPT_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.AUTH_LOGIN_PROMPT_ENABLED));
@@ -314,6 +331,12 @@ public class PropsValues {
 	public static final String AUTO_DEPLOY_WILDFLY_PREFIX = PropsUtil.get(
 		PropsKeys.AUTO_DEPLOY_WILDFLY_PREFIX);
 
+	public static final boolean AXIS_SERVLET_ENABLED = GetterUtil.getBoolean(
+		PropsUtil.get(PropsKeys.AXIS_SERVLET_ENABLED));
+
+	public static final String AXIS_SERVLET_MAPPING = PropsUtil.get(
+		PropsKeys.AXIS_SERVLET_MAPPING);
+
 	public static final boolean BASIC_AUTH_PASSWORD_REQUIRED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.BASIC_AUTH_PASSWORD_REQUIRED));
@@ -380,6 +403,11 @@ public class PropsValues {
 	public static final String BROWSER_LAUNCHER_URL = PropsUtil.get(
 		PropsKeys.BROWSER_LAUNCHER_URL);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #VIEW_COUNT_ENABLED}
+	 */
+	@Deprecated
 	public static final boolean BUFFERED_INCREMENT_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.BUFFERED_INCREMENT_ENABLED));
@@ -435,34 +463,6 @@ public class PropsValues {
 	public static final boolean CALENDAR_PUBLISH_TO_LIVE_BY_DEFAULT =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.CALENDAR_PUBLISH_TO_LIVE_BY_DEFAULT));
-
-	public static final boolean CAS_AUTH_ENABLED = GetterUtil.getBoolean(
-		PropsUtil.get(PropsKeys.CAS_AUTH_ENABLED));
-
-	public static final boolean CAS_IMPORT_FROM_LDAP = GetterUtil.getBoolean(
-		PropsUtil.get(PropsKeys.CAS_IMPORT_FROM_LDAP));
-
-	public static final String CAS_LOGIN_URL = PropsUtil.get(
-		PropsKeys.CAS_LOGIN_URL);
-
-	public static final boolean CAS_LOGOUT_ON_SESSION_EXPIRATION =
-		GetterUtil.getBoolean(
-			PropsUtil.get(PropsKeys.CAS_LOGOUT_ON_SESSION_EXPIRATION));
-
-	public static final String CAS_LOGOUT_URL = PropsUtil.get(
-		PropsKeys.CAS_LOGOUT_URL);
-
-	public static final String CAS_NO_SUCH_USER_REDIRECT_URL = PropsUtil.get(
-		PropsKeys.CAS_NO_SUCH_USER_REDIRECT_URL);
-
-	public static final String CAS_SERVER_NAME = PropsUtil.get(
-		PropsKeys.CAS_SERVER_NAME);
-
-	public static final String CAS_SERVER_URL = PropsUtil.get(
-		PropsKeys.CAS_SERVER_URL);
-
-	public static final String CAS_SERVICE_URL = PropsUtil.get(
-		PropsKeys.CAS_SERVICE_URL);
 
 	public static final boolean CDN_DYNAMIC_RESOURCES_ENABLED =
 		GetterUtil.getBoolean(
@@ -564,6 +564,10 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.COMPANY_SECURITY_STRANGERS_WITH_MX));
 
+	public static final boolean COMPANY_SECURITY_UPDATE_PASSWORD_REQUIRED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.COMPANY_SECURITY_UPDATE_PASSWORD_REQUIRED));
+
 	public static String[] COMPANY_SETTINGS_FORM_AUTHENTICATION =
 		PropsUtil.getArray(PropsKeys.COMPANY_SETTINGS_FORM_AUTHENTICATION);
 
@@ -580,6 +584,10 @@ public class PropsValues {
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.CONTROL_PANEL_NAVIGATION_MAX_SITES));
 
+	public static final boolean CORS_DISABLE_AUTHORIZATION_CONTEXT_CHECK =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.CORS_DISABLE_AUTHORIZATION_CONTEXT_CHECK));
+
 	public static final int COUNTER_DATA_CENTER_COUNT = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.COUNTER_DATA_CENTER_COUNT), 1);
 
@@ -595,6 +603,73 @@ public class PropsValues {
 
 	public static final String CUSTOM_SQL_FUNCTION_ISNULL = PropsUtil.get(
 		PropsKeys.CUSTOM_SQL_FUNCTION_ISNULL);
+
+	public static final long DATA_LIMIT_DL_STORAGE_MAX_SIZE =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_DL_STORAGE_MAX_SIZE));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_DL_STORAGE_SIZE =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_DL_STORAGE_SIZE));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_ORGANIZATION_COUNT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_ORGANIZATION_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_ROLE_COUNT = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_ROLE_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_SITE_COUNT = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_SITE_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_TEAM_COUNT = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_TEAM_COUNT));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final long DATA_LIMIT_MAX_USER_COUNT = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_USER_COUNT));
+
+	public static final long DATA_LIMIT_SITE_MAX_COUNT = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.DATA_LIMIT_SITE_MAX_COUNT));
 
 	public static final int DATABASE_IN_MAX_PARAMETERS = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.DATABASE_IN_MAX_PARAMETERS));
@@ -746,6 +821,11 @@ public class PropsValues {
 	public static final String[] DL_DISPLAY_VIEWS = PropsUtil.getArray(
 		PropsKeys.DL_DISPLAY_VIEWS);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #VIEW_COUNT_ENABLED}
+	 */
+	@Deprecated
 	public static final boolean DL_FILE_ENTRY_BUFFERED_INCREMENT_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(
@@ -809,6 +889,9 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(
 				PropsKeys.DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_ENABLED));
+
+	public static final String DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_JVM_OPTIONS =
+		PropsUtil.get(PropsKeys.DL_FILE_ENTRY_PREVIEW_FORK_PROCESS_JVM_OPTIONS);
 
 	public static final String[]
 		DL_FILE_ENTRY_PREVIEW_GENERATION_DECRYPT_PASSWORDS_PDFBOX =
@@ -934,9 +1017,6 @@ public class PropsValues {
 	public static boolean DL_STORE_ANTIVIRUS_ENABLED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.DL_STORE_ANTIVIRUS_ENABLED));
 
-	public static final String DL_STORE_ANTIVIRUS_IMPL = PropsUtil.get(
-		PropsKeys.DL_STORE_ANTIVIRUS_IMPL);
-
 	public static final String DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_AMPERSAND =
 		PropsUtil.get(PropsKeys.DL_STORE_FILE_IMPL_SAFE_FILE_NAME_2_AMPERSAND);
 
@@ -969,6 +1049,10 @@ public class PropsValues {
 
 	public static final String EDITOR_WYSIWYG_DEFAULT = PropsUtil.get(
 		PropsKeys.EDITOR_WYSIWYG_DEFAULT);
+
+	public static final boolean ENTERPRISE_PRODUCT_NOTIFICATION_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.ENTERPRISE_PRODUCT_NOTIFICATION_ENABLED));
 
 	public static final int ETAG_RESPONSE_SIZE_MAX = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.ETAG_RESPONSE_SIZE_MAX));
@@ -1073,16 +1157,6 @@ public class PropsValues {
 		HIBERNATE_SESSION_FACTORY_IMPORTED_CLASS_NAME_REGEXP = PropsUtil.get(
 			PropsKeys.HIBERNATE_SESSION_FACTORY_IMPORTED_CLASS_NAME_REGEXP);
 
-	public static final boolean HOT_UNDEPLOY_ENABLED = GetterUtil.getBoolean(
-		PropsUtil.get(PropsKeys.HOT_UNDEPLOY_ENABLED));
-
-	public static final int HOT_UNDEPLOY_INTERVAL = GetterUtil.getInteger(
-		PropsUtil.get(PropsKeys.HOT_UNDEPLOY_INTERVAL));
-
-	public static final boolean HOT_UNDEPLOY_ON_REDEPLOY =
-		GetterUtil.getBoolean(
-			PropsUtil.get(PropsKeys.HOT_UNDEPLOY_ON_REDEPLOY));
-
 	public static final String HTTP_HEADER_VERSION_VERBOSITY = PropsUtil.get(
 		PropsKeys.HTTP_HEADER_VERSION_VERBOSITY);
 
@@ -1123,6 +1197,10 @@ public class PropsValues {
 	public static final int INDEX_ON_STARTUP_DELAY = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.INDEX_ON_STARTUP_DELAY));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean INDEX_ON_UPGRADE = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.INDEX_ON_UPGRADE));
 
@@ -1231,6 +1309,10 @@ public class PropsValues {
 	public static final String[] JSON_SERVICE_INVALID_METHOD_NAMES =
 		PropsUtil.getArray(PropsKeys.JSON_SERVICE_INVALID_METHOD_NAMES);
 
+	public static final boolean JSON_SERVICE_SERIALIZE_THROWABLE =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.JSON_SERVICE_SERIALIZE_THROWABLE));
+
 	public static final boolean JSON_WEB_SERVICE_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.JSON_WEB_SERVICE_ENABLED));
@@ -1248,8 +1330,7 @@ public class PropsValues {
 
 	public static final boolean LAYOUT_AJAX_RENDER_ENABLE =
 		GetterUtil.getBoolean(
-			PropsUtil.get(PropsKeys.LAYOUT_AJAX_RENDER_ENABLE)) &&
-		!GetterUtil.getBoolean(PropsUtil.get(PropsKeys.SESSION_DISABLED));
+			PropsUtil.get(PropsKeys.LAYOUT_AJAX_RENDER_ENABLE));
 
 	public static final String LAYOUT_CLONE_IMPL = PropsUtil.get(
 		PropsKeys.LAYOUT_CLONE_IMPL);
@@ -1293,8 +1374,16 @@ public class PropsValues {
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.LAYOUT_MANAGE_PAGES_INITIAL_CHILDREN));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean LAYOUT_PARALLEL_RENDER_ENABLE = false;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int
 		LAYOUT_PARALLEL_RENDER_THREAD_POOL_CORE_THREAD_COUNT =
 			GetterUtil.getInteger(
@@ -1302,16 +1391,28 @@ public class PropsValues {
 					PropsKeys.
 						LAYOUT_PARALLEL_RENDER_THREAD_POOL_CORE_THREAD_COUNT));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final long
 		LAYOUT_PARALLEL_RENDER_THREAD_POOL_KEEP_ALIVE_TIME = GetterUtil.getLong(
 			PropsUtil.get(
 				PropsKeys.LAYOUT_PARALLEL_RENDER_THREAD_POOL_KEEP_ALIVE_TIME));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int LAYOUT_PARALLEL_RENDER_THREAD_POOL_MAX_QUEUE_SIZE =
 		GetterUtil.getInteger(
 			PropsUtil.get(
 				PropsKeys.LAYOUT_PARALLEL_RENDER_THREAD_POOL_MAX_QUEUE_SIZE));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int
 		LAYOUT_PARALLEL_RENDER_THREAD_POOL_MAX_THREAD_COUNT =
 			GetterUtil.getInteger(
@@ -1319,6 +1420,10 @@ public class PropsValues {
 					PropsKeys.
 						LAYOUT_PARALLEL_RENDER_THREAD_POOL_MAX_THREAD_COUNT));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int LAYOUT_PARALLEL_RENDER_TIMEOUT =
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.LAYOUT_PARALLEL_RENDER_TIMEOUT));
@@ -1404,9 +1509,23 @@ public class PropsValues {
 			PropsUtil.get(
 				PropsKeys.LAYOUT_USER_PUBLIC_LAYOUTS_POWER_USER_REQUIRED));
 
+	public static final boolean LEARN_RESOURCES_CDN_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.LEARN_RESOURCES_CDN_ENABLED));
+
+	public static final boolean LEARN_RESOURCES_ENABLED = GetterUtil.getBoolean(
+		PropsUtil.get(PropsKeys.LEARN_RESOURCES_ENABLED));
+
+	public static final long LEARN_RESOURCES_REFRESH_TIME = GetterUtil.getLong(
+		PropsUtil.get(PropsKeys.LEARN_RESOURCES_REFRESH_TIME));
+
 	public static final String LIFERAY_HOME = PropsUtil.get(
 		PropsKeys.LIFERAY_HOME);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String LIFERAY_LIB_GLOBAL_DIR = PropsUtil.get(
 		PropsKeys.LIFERAY_LIB_GLOBAL_DIR);
 
@@ -1415,6 +1534,9 @@ public class PropsValues {
 
 	public static final String LIFERAY_LIB_PORTAL_DIR = PropsUtil.get(
 		PropsKeys.LIFERAY_LIB_PORTAL_DIR);
+
+	public static final String LIFERAY_SHIELDED_CONTAINER_LIB_PORTAL_DIR =
+		PropsUtil.get(PropsKeys.LIFERAY_SHIELDED_CONTAINER_LIB_PORTAL_DIR);
 
 	public static String LIFERAY_WEB_PORTAL_CONTEXT_TEMPDIR;
 
@@ -1521,6 +1643,10 @@ public class PropsValues {
 
 	public static final int MAIL_SESSION_MAIL_SMTP_PORT = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.MAIL_SESSION_MAIL_SMTP_PORT));
+
+	public static final boolean MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE));
 
 	public static final String MAIL_SESSION_MAIL_SMTP_USER = PropsUtil.get(
 		PropsKeys.MAIL_SESSION_MAIL_SMTP_USER);
@@ -1642,6 +1768,10 @@ public class PropsValues {
 			PropsUtil.get(
 				PropsKeys.MODULE_FRAMEWORK_EXPORT_PASSWORD_ATTRIBUTES));
 
+	public static final boolean MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED));
+
 	public static final String MODULE_FRAMEWORK_MARKETPLACE_DIR = PropsUtil.get(
 		PropsKeys.MODULE_FRAMEWORK_MARKETPLACE_DIR);
 
@@ -1749,27 +1879,6 @@ public class PropsValues {
 
 	public static final int NOTIFICATIONS_MAX_EVENTS = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.NOTIFICATIONS_MAX_EVENTS));
-
-	public static final boolean NTLM_AUTH_ENABLED = GetterUtil.getBoolean(
-		PropsUtil.get(PropsKeys.NTLM_AUTH_ENABLED));
-
-	public static final String NTLM_AUTH_NEGOTIATE_FLAGS = GetterUtil.getString(
-		PropsUtil.get(PropsKeys.NTLM_AUTH_NEGOTIATE_FLAGS));
-
-	public static final String NTLM_DOMAIN = PropsUtil.get(
-		PropsKeys.NTLM_DOMAIN);
-
-	public static final String NTLM_DOMAIN_CONTROLLER = PropsUtil.get(
-		PropsKeys.NTLM_DOMAIN_CONTROLLER);
-
-	public static final String NTLM_DOMAIN_CONTROLLER_NAME = PropsUtil.get(
-		PropsKeys.NTLM_DOMAIN_CONTROLLER_NAME);
-
-	public static final String NTLM_SERVICE_ACCOUNT = PropsUtil.get(
-		PropsKeys.NTLM_SERVICE_ACCOUNT);
-
-	public static final String NTLM_SERVICE_PASSWORD = PropsUtil.get(
-		PropsKeys.NTLM_SERVICE_PASSWORD);
 
 	public static final long[] OMNIADMIN_USERS = StringUtil.split(
 		PropsUtil.get(PropsKeys.OMNIADMIN_USERS), 0L);
@@ -1999,6 +2108,10 @@ public class PropsValues {
 			PropsUtil.get(
 				PropsKeys.PERMISSIONS_CUSTOM_ATTRIBUTE_WRITE_CHECK_BY_DEFAULT));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean PERMISSIONS_OBJECT_BLOCKING_CACHE =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.PERMISSIONS_OBJECT_BLOCKING_CACHE));
@@ -2150,19 +2263,39 @@ public class PropsValues {
 	public static final String PORTAL_INSTANCE_PROTOCOL = PropsUtil.get(
 		PropsKeys.PORTAL_INSTANCE_PROTOCOL);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static final String PORTAL_JAAS_AUTH_TYPE = GetterUtil.getString(
 		PropsUtil.get(PropsKeys.PORTAL_JAAS_AUTH_TYPE));
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static boolean PORTAL_JAAS_ENABLE = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.PORTAL_JAAS_ENABLE));
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static final String PORTAL_JAAS_IMPL = PropsUtil.get(
 		PropsKeys.PORTAL_JAAS_IMPL);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static final boolean PORTAL_JAAS_PLAIN_PASSWORD =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.PORTAL_JAAS_PLAIN_PASSWORD));
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static final boolean PORTAL_JAAS_STRICT_PASSWORD =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.PORTAL_JAAS_STRICT_PASSWORD));
@@ -2170,14 +2303,26 @@ public class PropsValues {
 	public static final String PORTAL_PROXY_PATH = PropsUtil.get(
 		PropsKeys.PORTAL_PROXY_PATH);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean PORTAL_RESILIENCY_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.PORTAL_RESILIENCY_ENABLED));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean PORTAL_RESILIENCY_PORTLET_SHOW_FOOTER =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.PORTAL_RESILIENCY_PORTLET_SHOW_FOOTER));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int PORTAL_RESILIENCY_SPI_AGENT_CLIENT_POOL_MAX_SIZE =
 		GetterUtil.getInteger(
 			PropsUtil.get(
@@ -2311,12 +2456,27 @@ public class PropsValues {
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.RECENT_CONTENT_MAX_DISPLAY_ITEMS));
 
+	public static final int RECENT_GROUPS_MAX_ELEMENTS = GetterUtil.getInteger(
+		PropsUtil.get(PropsKeys.RECENT_GROUPS_MAX_ELEMENTS));
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String[] REDIRECT_URL_DOMAINS_ALLOWED =
 		PropsUtil.getArray(PropsKeys.REDIRECT_URL_DOMAINS_ALLOWED);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String[] REDIRECT_URL_IPS_ALLOWED = PropsUtil.getArray(
 		PropsKeys.REDIRECT_URL_IPS_ALLOWED);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	public static final String REDIRECT_URL_SECURITY_MODE = PropsUtil.get(
 		PropsKeys.REDIRECT_URL_SECURITY_MODE);
 
@@ -2339,6 +2499,10 @@ public class PropsValues {
 	public static final boolean RESOURCE_ACTIONS_READ_PORTLET_RESOURCES =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.RESOURCE_ACTIONS_READ_PORTLET_RESOURCES));
+
+	public static final boolean RESOURCE_ACTIONS_STRICT_MODE_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.RESOURCE_ACTIONS_STRICT_MODE_ENABLED));
 
 	public static final String RESOURCE_REPOSITORIES_ROOT = PropsUtil.get(
 		PropsKeys.RESOURCE_REPOSITORIES_ROOT);
@@ -2420,6 +2584,10 @@ public class PropsValues {
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.SEARCH_CONTAINER_PAGE_ITERATOR_MAX_PAGES));
 
+	public static final int SEARCH_CONTAINER_PAGE_MAX_DELTA =
+		GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.SEARCH_CONTAINER_PAGE_MAX_DELTA), 200);
+
 	/**
 	 * @deprecated As of Judson (7.1.x), with no direct replacement
 	 */
@@ -2469,6 +2637,10 @@ public class PropsValues {
 				PropsKeys.SESSION_COOKIE_USE_FULL_HOSTNAME,
 				new Filter(ServerDetector.getServerId())));
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean SESSION_DISABLED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.SESSION_DISABLED));
 
@@ -2716,6 +2888,17 @@ public class PropsValues {
 	public static String[] STRIP_MIME_TYPES = PropsUtil.getArray(
 		PropsKeys.STRIP_MIME_TYPES);
 
+	public static final boolean
+		TEMPLATE_ENGINE_FREEMARKER_TRANSACTION_READ_ONLY =
+			GetterUtil.getBoolean(
+				PropsUtil.get(
+					PropsKeys.
+						TEMPLATE_ENGINE_FREEMARKER_TRANSACTION_READ_ONLY));
+
+	public static final boolean TEMPLATE_ENGINE_SERVICE_LOCATOR_RESTRICT =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.TEMPLATE_ENGINE_SERVICE_LOCATOR_RESTRICT));
+
 	public static boolean TERMS_OF_USE_REQUIRED = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.TERMS_OF_USE_REQUIRED));
 
@@ -2816,6 +2999,9 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.UPGRADE_DATABASE_TRANSACTIONS_DISABLED));
 
+	public static final boolean UPGRADE_REPORT_ENABLED = GetterUtil.getBoolean(
+		PropsUtil.get(PropsKeys.UPGRADE_REPORT_ENABLED));
+
 	public static boolean USER_GROUPS_NAME_ALLOW_NUMERIC =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.USER_GROUPS_NAME_ALLOW_NUMERIC));
@@ -2864,6 +3050,11 @@ public class PropsValues {
 			PropsUtil.get(
 				PropsKeys.USERS_REMINDER_QUERIES_CUSTOM_QUESTION_ENABLED));
 
+	public static final boolean USERS_REMINDER_QUERIES_DISPLAY_IN_PLAIN_TEXT =
+		GetterUtil.getBoolean(
+			PropsUtil.get(
+				PropsKeys.USERS_REMINDER_QUERIES_DISPLAY_IN_PLAIN_TEXT));
+
 	public static final boolean USERS_REMINDER_QUERIES_ENABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.USERS_REMINDER_QUERIES_ENABLED));
@@ -2889,6 +3080,10 @@ public class PropsValues {
 	public static final boolean USERS_UPDATE_LAST_LOGIN = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.USERS_UPDATE_LAST_LOGIN));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean VALUE_OBJECT_ENTITY_BLOCKING_CACHE =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.VALUE_OBJECT_ENTITY_BLOCKING_CACHE));
@@ -2902,6 +3097,10 @@ public class PropsValues {
 			PropsUtil.get(
 				PropsKeys.VALUE_OBJECT_ENTITY_THREAD_LOCAL_CACHE_MAX_SIZE));
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final boolean VALUE_OBJECT_FINDER_BLOCKING_CACHE =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_BLOCKING_CACHE));
@@ -2927,9 +3126,22 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.VERIFY_PATCH_LEVELS_DISABLED));
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int VERIFY_PROCESS_CONCURRENCY_THRESHOLD =
 		GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.VERIFY_PROCESS_CONCURRENCY_THRESHOLD));
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             com.liferay.view.count.configuration.ViewCountConfiguration
+	 *             #enabled()}
+	 */
+	@Deprecated
+	public static final boolean VIEW_COUNT_ENABLED = GetterUtil.getBoolean(
+		PropsUtil.get(PropsKeys.VIEW_COUNT_ENABLED));
 
 	public static final String VIRTUAL_HOSTS_DEFAULT_SITE_NAME = PropsUtil.get(
 		PropsKeys.VIRTUAL_HOSTS_DEFAULT_SITE_NAME);

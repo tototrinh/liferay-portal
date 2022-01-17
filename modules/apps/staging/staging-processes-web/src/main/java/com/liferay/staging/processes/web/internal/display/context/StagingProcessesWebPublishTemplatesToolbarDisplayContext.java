@@ -14,13 +14,14 @@
 
 package com.liferay.staging.processes.web.internal.display.context;
 
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalServiceUtil;
 import com.liferay.exportimport.util.comparator.ExportImportConfigurationNameComparator;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.BaseManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -69,11 +70,11 @@ public class StagingProcessesWebPublishTemplatesToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getRenderURL();
-
-		clearResultsURL.setParameter("mvcPath", "/publish_templates/view.jsp");
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getRenderURL()
+		).setMVCPath(
+			"/publish_templates/view_publish_configurations.jsp"
+		).buildString();
 	}
 
 	@Override
@@ -82,14 +83,17 @@ public class StagingProcessesWebPublishTemplatesToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.setHref(
 					getRenderURL(), "mvcRenderCommandName",
-					"editPublishConfiguration", "groupId",
+					"/staging_processes/edit_publish_configuration", "groupId",
 					String.valueOf(_stagingGroupId), "layoutSetBranchId",
-					ParamUtil.getString(request, "layoutSetBranchId"),
+					ParamUtil.getString(
+						httpServletRequest, "layoutSetBranchId"),
 					"layoutSetBranchName",
-					ParamUtil.getString(request, "layoutSetBranchName"),
+					ParamUtil.getString(
+						httpServletRequest, "layoutSetBranchName"),
 					"privateLayout", Boolean.FALSE.toString());
 
-				dropdownItem.setLabel(LanguageUtil.get(request, "new"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "new"));
 			}
 		).build();
 	}
@@ -101,15 +105,14 @@ public class StagingProcessesWebPublishTemplatesToolbarDisplayContext
 
 	@Override
 	public String getSearchActionURL() {
-		PortletURL searchActionURL = getRenderURL();
-
-		searchActionURL.setParameter(
-			"mvcRenderCommandName", "viewPublishConfigurations");
-
-		return searchActionURL.toString();
+		return PortletURLBuilder.create(
+			getRenderURL()
+		).setMVCRenderCommandName(
+			"/staging_processes/view_publish_configurations"
+		).buildString();
 	}
 
-	public SearchContainer getSearchContainer() {
+	public SearchContainer<ExportImportConfiguration> getSearchContainer() {
 		return _searchContainer;
 	}
 
@@ -117,16 +120,18 @@ public class StagingProcessesWebPublishTemplatesToolbarDisplayContext
 		return liferayPortletResponse.createRenderURL();
 	}
 
-	private SearchContainer _createSearchContainer(
+	private SearchContainer<ExportImportConfiguration> _createSearchContainer(
 		long companyId, long groupId, PortletURL iteratorURL,
 		boolean stagedRemotely) {
 
-		SearchContainer searchContainer = new SearchContainer(
-			liferayPortletRequest,
-			new PublishConfigurationDisplayTerms(liferayPortletRequest),
-			new PublishConfigurationSearchTerms(liferayPortletRequest),
-			SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA,
-			iteratorURL, null, "there-are-no-saved-publish-templates");
+		SearchContainer<ExportImportConfiguration> searchContainer =
+			new SearchContainer(
+				liferayPortletRequest,
+				new PublishConfigurationDisplayTerms(liferayPortletRequest),
+				new PublishConfigurationSearchTerms(liferayPortletRequest),
+				SearchContainer.DEFAULT_CUR_PARAM,
+				SearchContainer.DEFAULT_DELTA, iteratorURL, null,
+				"there-are-no-saved-publish-templates");
 
 		searchContainer.setOrderByCol("name");
 		searchContainer.setOrderByComparator(
@@ -164,7 +169,7 @@ public class StagingProcessesWebPublishTemplatesToolbarDisplayContext
 		return searchContainer;
 	}
 
-	private final SearchContainer _searchContainer;
+	private final SearchContainer<ExportImportConfiguration> _searchContainer;
 	private final long _stagingGroupId;
 
 }

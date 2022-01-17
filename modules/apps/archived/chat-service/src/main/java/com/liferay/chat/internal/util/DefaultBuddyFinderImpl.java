@@ -115,9 +115,7 @@ public class DefaultBuddyFinderImpl implements BuddyFinder {
 			buddies = new ArrayList<>();
 		}
 
-		buddies = JabberUtil.getStatuses(companyId, userId, buddies);
-
-		return buddies;
+		return JabberUtil.getStatuses(companyId, userId, buddies);
 	}
 
 	@Activate
@@ -127,6 +125,7 @@ public class DefaultBuddyFinderImpl implements BuddyFinder {
 			ChatGroupServiceConfiguration.class, properties);
 	}
 
-	private ChatGroupServiceConfiguration _chatGroupServiceConfiguration;
+	private volatile ChatGroupServiceConfiguration
+		_chatGroupServiceConfiguration;
 
 }

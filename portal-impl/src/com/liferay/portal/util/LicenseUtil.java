@@ -183,9 +183,9 @@ public class LicenseUtil {
 		return HashMapBuilder.put(
 			"hostName", PortalUtil.getComputerName()
 		).put(
-			"ipAddresses", StringUtil.merge(getIpAddresses())
+			"ipAddresses", StringUtil.merge(_ipAddresses)
 		).put(
-			"macAddresses", StringUtil.merge(getMacAddresses())
+			"macAddresses", StringUtil.merge(_macAddresses)
 		).put(
 			"processorCores", String.valueOf(getProcessorCores())
 		).build();
@@ -446,9 +446,9 @@ public class LicenseUtil {
 			jsonObject.put(
 				"hostName", PortalUtil.getComputerName()
 			).put(
-				"ipAddresses", StringUtil.merge(getIpAddresses())
+				"ipAddresses", StringUtil.merge(_ipAddresses)
 			).put(
-				"macAddresses", StringUtil.merge(getMacAddresses())
+				"macAddresses", StringUtil.merge(_macAddresses)
 			).put(
 				"processorCores", getProcessorCores()
 			).put(
@@ -472,10 +472,10 @@ public class LicenseUtil {
 		Map<String, String> sortedMap = new TreeMap<>(
 			String.CASE_INSENSITIVE_ORDER);
 
-		Iterator<String> itr = productsJSONObject.keys();
+		Iterator<String> iterator = productsJSONObject.keys();
 
-		while (itr.hasNext()) {
-			String key = itr.next();
+		while (iterator.hasNext()) {
+			String key = iterator.next();
 
 			sortedMap.put(key, productsJSONObject.getString(key));
 		}
@@ -573,7 +573,7 @@ public class LicenseUtil {
 					continue;
 				}
 
-				StringBuilder sb = new StringBuilder(
+				StringBundler sb = new StringBundler(
 					(hardwareAddress.length * 3) - 1);
 
 				String hexString = StringUtil.bytesToHexString(hardwareAddress);

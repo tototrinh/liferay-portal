@@ -21,12 +21,18 @@ String analyticsReportsPanelState = SessionClicks.get(request, "com.liferay.anal
 %>
 
 <div class="lfr-analytics-reports-sidebar" id="analyticsReportsSidebar">
-	<div class="sidebar-header">
+	<div class="d-flex justify-content-between p-3 sidebar-header">
 		<h1 class="sr-only"><liferay-ui:message key="content-performance-panel" /></h1>
 
-		<span><liferay-ui:message key="content-performance" /></span>
+		<span class="font-weight-bold"><liferay-ui:message key="content-performance" /></span>
 
-		<aui:icon cssClass="icon-monospaced sidenav-close" image="times" markupView="lexicon" url="javascript:;" />
+		<clay:button
+			aria-label='<%= LanguageUtil.get(request, "close") %>'
+			cssClass="sidenav-close text-secondary"
+			displayType="unstyled"
+			icon="times"
+			monospaced="<%= true %>"
+		/>
 	</div>
 
 	<div class="sidebar-body">
@@ -45,21 +51,21 @@ String analyticsReportsPanelState = SessionClicks.get(request, "com.liferay.anal
 		analyticsReportsPanelToggle
 	);
 
-	sidenavInstance.on('open.lexicon.sidenav', function(event) {
+	sidenavInstance.on('open.lexicon.sidenav', (event) => {
 		Liferay.Util.Session.set(
 			'com.liferay.analytics.reports.web_panelState',
 			'open'
 		);
 	});
 
-	sidenavInstance.on('closed.lexicon.sidenav', function(event) {
+	sidenavInstance.on('closed.lexicon.sidenav', (event) => {
 		Liferay.Util.Session.set(
 			'com.liferay.analytics.reports.web_panelState',
 			'closed'
 		);
 	});
 
-	Liferay.once('screenLoad', function() {
+	Liferay.once('screenLoad', () => {
 		Liferay.SideNavigation.destroy(analyticsReportsPanelToggle);
 	});
 </aui:script>

@@ -43,15 +43,15 @@ public class KaleoTransitionLocalServiceImpl
 
 	@Override
 	public KaleoTransition addKaleoTransition(
-			long kaleoDefinitionVersionId, long kaleoNodeId,
-			Transition transition, KaleoNode sourceKaleoNode,
+			long kaleoDefinitionId, long kaleoDefinitionVersionId,
+			long kaleoNodeId, Transition transition, KaleoNode sourceKaleoNode,
 			KaleoNode targetKaleoNode, ServiceContext serviceContext)
 		throws PortalException {
 
 		// Kaleo transition
 
 		User user = userLocalService.getUser(serviceContext.getGuestOrUserId());
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoTransitionId = counterLocalService.increment();
 
@@ -61,8 +61,9 @@ public class KaleoTransitionLocalServiceImpl
 		kaleoTransition.setCompanyId(user.getCompanyId());
 		kaleoTransition.setUserId(user.getUserId());
 		kaleoTransition.setUserName(user.getFullName());
-		kaleoTransition.setCreateDate(now);
-		kaleoTransition.setModifiedDate(now);
+		kaleoTransition.setCreateDate(date);
+		kaleoTransition.setModifiedDate(date);
+		kaleoTransition.setKaleoDefinitionId(kaleoDefinitionId);
 		kaleoTransition.setKaleoDefinitionVersionId(kaleoDefinitionVersionId);
 		kaleoTransition.setKaleoNodeId(kaleoNodeId);
 		kaleoTransition.setName(transition.getName());
@@ -81,7 +82,8 @@ public class KaleoTransitionLocalServiceImpl
 		if (timer != null) {
 			_kaleoTimerLocalService.addKaleoTimer(
 				KaleoTransition.class.getName(), kaleoTransitionId,
-				kaleoDefinitionVersionId, timer, serviceContext);
+				kaleoDefinitionId, kaleoDefinitionVersionId, timer,
+				serviceContext);
 		}
 
 		return kaleoTransition;

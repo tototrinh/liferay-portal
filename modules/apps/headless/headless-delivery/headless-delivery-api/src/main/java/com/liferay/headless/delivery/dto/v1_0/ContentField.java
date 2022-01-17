@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -41,10 +44,83 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentField")
+@GraphQLName(
+	description = "Represents the value of each field in structured content. Fields can contain different information types (e.g., documents, geolocation, etc.).",
+	value = "ContentField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentField")
-public class ContentField {
+public class ContentField implements Serializable {
+
+	public static ContentField toDTO(String json) {
+		return ObjectMapperUtil.readValue(ContentField.class, json);
+	}
+
+	public static ContentField unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ContentField.class, json);
+	}
+
+	@Schema(description = "The field's value.")
+	@Valid
+	public ContentFieldValue getContentFieldValue() {
+		return contentFieldValue;
+	}
+
+	public void setContentFieldValue(ContentFieldValue contentFieldValue) {
+		this.contentFieldValue = contentFieldValue;
+	}
+
+	@JsonIgnore
+	public void setContentFieldValue(
+		UnsafeSupplier<ContentFieldValue, Exception>
+			contentFieldValueUnsafeSupplier) {
+
+		try {
+			contentFieldValue = contentFieldValueUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The field's value.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected ContentFieldValue contentFieldValue;
+
+	@Schema(description = "The localized field's values.")
+	@Valid
+	public Map<String, ContentFieldValue> getContentFieldValue_i18n() {
+		return contentFieldValue_i18n;
+	}
+
+	public void setContentFieldValue_i18n(
+		Map<String, ContentFieldValue> contentFieldValue_i18n) {
+
+		this.contentFieldValue_i18n = contentFieldValue_i18n;
+	}
+
+	@JsonIgnore
+	public void setContentFieldValue_i18n(
+		UnsafeSupplier<Map<String, ContentFieldValue>, Exception>
+			contentFieldValue_i18nUnsafeSupplier) {
+
+		try {
+			contentFieldValue_i18n = contentFieldValue_i18nUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The localized field's values.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Map<String, ContentFieldValue> contentFieldValue_i18n;
 
 	@Schema(description = "The field type (e.g., image, text, etc.).")
 	public String getDataType() {
@@ -134,7 +210,7 @@ public class ContentField {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String label;
 
-	@Schema
+	@Schema(description = "The localized field's labels.")
 	@Valid
 	public Map<String, String> getLabel_i18n() {
 		return label_i18n;
@@ -160,7 +236,7 @@ public class ContentField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized field's labels.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> label_i18n;
 
@@ -260,63 +336,6 @@ public class ContentField {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean repeatable;
 
-	@Schema
-	@Valid
-	public Value getValue() {
-		return value;
-	}
-
-	public void setValue(Value value) {
-		this.value = value;
-	}
-
-	@JsonIgnore
-	public void setValue(UnsafeSupplier<Value, Exception> valueUnsafeSupplier) {
-		try {
-			value = valueUnsafeSupplier.get();
-		}
-		catch (RuntimeException re) {
-			throw re;
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected Value value;
-
-	@Schema
-	@Valid
-	public Map<String, Object> getValue_i18n() {
-		return value_i18n;
-	}
-
-	public void setValue_i18n(Map<String, Object> value_i18n) {
-		this.value_i18n = value_i18n;
-	}
-
-	@JsonIgnore
-	public void setValue_i18n(
-		UnsafeSupplier<Map<String, Object>, Exception>
-			value_i18nUnsafeSupplier) {
-
-		try {
-			value_i18n = value_i18nUnsafeSupplier.get();
-		}
-		catch (RuntimeException re) {
-			throw re;
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected Map<String, Object> value_i18n;
-
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -343,6 +362,26 @@ public class ContentField {
 		StringBundler sb = new StringBundler();
 
 		sb.append("{");
+
+		if (contentFieldValue != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"contentFieldValue\": ");
+
+			sb.append(String.valueOf(contentFieldValue));
+		}
+
+		if (contentFieldValue_i18n != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"contentFieldValue_i18n\": ");
+
+			sb.append(_toJSON(contentFieldValue_i18n));
+		}
 
 		if (dataType != null) {
 			if (sb.length() > 1) {
@@ -440,32 +479,13 @@ public class ContentField {
 			sb.append(repeatable);
 		}
 
-		if (value != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"value\": ");
-
-			sb.append(String.valueOf(value));
-		}
-
-		if (value_i18n != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"value_i18n\": ");
-
-			sb.append(_toJSON(value_i18n));
-		}
-
 		sb.append("}");
 
 		return sb.toString();
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentField",
 		name = "x-class-name"
 	)
@@ -475,6 +495,16 @@ public class ContentField {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -491,13 +521,46 @@ public class ContentField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

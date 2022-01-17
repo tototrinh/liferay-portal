@@ -19,6 +19,7 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLinkLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.service.DDMStructureServiceUtil;
 import com.liferay.dynamic.data.mapping.util.DDMUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -61,7 +62,9 @@ public class DLSelectDDMStructureDisplayContext {
 		return _ddmStructureId;
 	}
 
-	public SearchContainer getDDMStructureSearch() throws Exception {
+	public SearchContainer<DDMStructure> getDDMStructureSearch()
+		throws Exception {
+
 		if (_ddmStructureSearch != null) {
 			return _ddmStructureSearch;
 		}
@@ -70,12 +73,11 @@ public class DLSelectDDMStructureDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer ddmStructureSearch = new SearchContainer(
-			_renderRequest, _getPortletURL(), null, "there-are-no-structures");
+		SearchContainer<DDMStructure> ddmStructureSearch = new SearchContainer(
+			_renderRequest, _getPortletURL(), null, "there-are-no-results");
 
 		if (Validator.isNotNull(_getKeywords())) {
-			ddmStructureSearch.setEmptyResultsMessage(
-				"no-structures-were-found");
+			ddmStructureSearch.setEmptyResultsMessage("no-results-were-found");
 		}
 
 		String orderByCol = getOrderByCol();
@@ -172,13 +174,12 @@ public class DLSelectDDMStructureDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = _getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public boolean isSearch() {
@@ -200,37 +201,54 @@ public class DLSelectDDMStructureDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/document_library/ddm/select_ddm_structure.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		portletURL.setParameter(
-			"mvcPath", "/document_library/ddm/select_ddm_structure.jsp");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		long ddmStructureId = getDDMStructureId();
+				return null;
+			}
+		).setParameter(
+			"ddmStructureId",
+			() -> {
+				long ddmStructureId = getDDMStructureId();
 
-		if (ddmStructureId != 0) {
-			portletURL.setParameter(
-				"ddmStructureId", String.valueOf(ddmStructureId));
-		}
+				if (ddmStructureId != 0) {
+					return ddmStructureId;
+				}
 
-		String keywords = _getKeywords();
+				return null;
+			}
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private long _getSearchRestrictionClassNameId() {
@@ -267,7 +285,7 @@ public class DLSelectDDMStructureDisplayContext {
 	}
 
 	private Long _ddmStructureId;
-	private SearchContainer _ddmStructureSearch;
+	private SearchContainer<DDMStructure> _ddmStructureSearch;
 	private final HttpServletRequest _httpServletRequest;
 	private String _keywords;
 	private String _orderByCol;

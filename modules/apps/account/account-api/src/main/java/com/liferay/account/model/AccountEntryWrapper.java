@@ -43,17 +43,25 @@ public class AccountEntryWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("externalReferenceCode", getExternalReferenceCode());
 		attributes.put("accountEntryId", getAccountEntryId());
 		attributes.put("companyId", getCompanyId());
 		attributes.put("userId", getUserId());
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("defaultBillingAddressId", getDefaultBillingAddressId());
+		attributes.put(
+			"defaultShippingAddressId", getDefaultShippingAddressId());
 		attributes.put("parentAccountEntryId", getParentAccountEntryId());
-		attributes.put("name", getName());
 		attributes.put("description", getDescription());
 		attributes.put("domains", getDomains());
+		attributes.put("emailAddress", getEmailAddress());
 		attributes.put("logoId", getLogoId());
+		attributes.put("name", getName());
+		attributes.put("taxExemptionCode", getTaxExemptionCode());
+		attributes.put("taxIdNumber", getTaxIdNumber());
+		attributes.put("type", getType());
 		attributes.put("status", getStatus());
 
 		return attributes;
@@ -65,6 +73,13 @@ public class AccountEntryWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		String externalReferenceCode = (String)attributes.get(
+			"externalReferenceCode");
+
+		if (externalReferenceCode != null) {
+			setExternalReferenceCode(externalReferenceCode);
 		}
 
 		Long accountEntryId = (Long)attributes.get("accountEntryId");
@@ -103,17 +118,25 @@ public class AccountEntryWrapper
 			setModifiedDate(modifiedDate);
 		}
 
+		Long defaultBillingAddressId = (Long)attributes.get(
+			"defaultBillingAddressId");
+
+		if (defaultBillingAddressId != null) {
+			setDefaultBillingAddressId(defaultBillingAddressId);
+		}
+
+		Long defaultShippingAddressId = (Long)attributes.get(
+			"defaultShippingAddressId");
+
+		if (defaultShippingAddressId != null) {
+			setDefaultShippingAddressId(defaultShippingAddressId);
+		}
+
 		Long parentAccountEntryId = (Long)attributes.get(
 			"parentAccountEntryId");
 
 		if (parentAccountEntryId != null) {
 			setParentAccountEntryId(parentAccountEntryId);
-		}
-
-		String name = (String)attributes.get("name");
-
-		if (name != null) {
-			setName(name);
 		}
 
 		String description = (String)attributes.get("description");
@@ -128,10 +151,40 @@ public class AccountEntryWrapper
 			setDomains(domains);
 		}
 
+		String emailAddress = (String)attributes.get("emailAddress");
+
+		if (emailAddress != null) {
+			setEmailAddress(emailAddress);
+		}
+
 		Long logoId = (Long)attributes.get("logoId");
 
 		if (logoId != null) {
 			setLogoId(logoId);
+		}
+
+		String name = (String)attributes.get("name");
+
+		if (name != null) {
+			setName(name);
+		}
+
+		String taxExemptionCode = (String)attributes.get("taxExemptionCode");
+
+		if (taxExemptionCode != null) {
+			setTaxExemptionCode(taxExemptionCode);
+		}
+
+		String taxIdNumber = (String)attributes.get("taxIdNumber");
+
+		if (taxIdNumber != null) {
+			setTaxIdNumber(taxIdNumber);
+		}
+
+		String type = (String)attributes.get("type");
+
+		if (type != null) {
+			setType(type);
 		}
 
 		Integer status = (Integer)attributes.get("status");
@@ -139,6 +192,11 @@ public class AccountEntryWrapper
 		if (status != null) {
 			setStatus(status);
 		}
+	}
+
+	@Override
+	public AccountEntry cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	@Override
@@ -181,6 +239,36 @@ public class AccountEntryWrapper
 		return model.getCreateDate();
 	}
 
+	@Override
+	public com.liferay.portal.kernel.model.Address getDefaultBillingAddress() {
+		return model.getDefaultBillingAddress();
+	}
+
+	/**
+	 * Returns the default billing address ID of this account entry.
+	 *
+	 * @return the default billing address ID of this account entry
+	 */
+	@Override
+	public long getDefaultBillingAddressId() {
+		return model.getDefaultBillingAddressId();
+	}
+
+	@Override
+	public com.liferay.portal.kernel.model.Address getDefaultShippingAddress() {
+		return model.getDefaultShippingAddress();
+	}
+
+	/**
+	 * Returns the default shipping address ID of this account entry.
+	 *
+	 * @return the default shipping address ID of this account entry
+	 */
+	@Override
+	public long getDefaultShippingAddressId() {
+		return model.getDefaultShippingAddressId();
+	}
+
 	/**
 	 * Returns the description of this account entry.
 	 *
@@ -199,6 +287,31 @@ public class AccountEntryWrapper
 	@Override
 	public String getDomains() {
 		return model.getDomains();
+	}
+
+	@Override
+	public String[] getDomainsArray() {
+		return model.getDomainsArray();
+	}
+
+	/**
+	 * Returns the email address of this account entry.
+	 *
+	 * @return the email address of this account entry
+	 */
+	@Override
+	public String getEmailAddress() {
+		return model.getEmailAddress();
+	}
+
+	/**
+	 * Returns the external reference code of this account entry.
+	 *
+	 * @return the external reference code of this account entry
+	 */
+	@Override
+	public String getExternalReferenceCode() {
+		return model.getExternalReferenceCode();
 	}
 
 	/**
@@ -272,6 +385,36 @@ public class AccountEntryWrapper
 	}
 
 	/**
+	 * Returns the tax exemption code of this account entry.
+	 *
+	 * @return the tax exemption code of this account entry
+	 */
+	@Override
+	public String getTaxExemptionCode() {
+		return model.getTaxExemptionCode();
+	}
+
+	/**
+	 * Returns the tax ID number of this account entry.
+	 *
+	 * @return the tax ID number of this account entry
+	 */
+	@Override
+	public String getTaxIdNumber() {
+		return model.getTaxIdNumber();
+	}
+
+	/**
+	 * Returns the type of this account entry.
+	 *
+	 * @return the type of this account entry
+	 */
+	@Override
+	public String getType() {
+		return model.getType();
+	}
+
+	/**
 	 * Returns the user ID of this account entry.
 	 *
 	 * @return the user ID of this account entry
@@ -337,6 +480,26 @@ public class AccountEntryWrapper
 	}
 
 	/**
+	 * Sets the default billing address ID of this account entry.
+	 *
+	 * @param defaultBillingAddressId the default billing address ID of this account entry
+	 */
+	@Override
+	public void setDefaultBillingAddressId(long defaultBillingAddressId) {
+		model.setDefaultBillingAddressId(defaultBillingAddressId);
+	}
+
+	/**
+	 * Sets the default shipping address ID of this account entry.
+	 *
+	 * @param defaultShippingAddressId the default shipping address ID of this account entry
+	 */
+	@Override
+	public void setDefaultShippingAddressId(long defaultShippingAddressId) {
+		model.setDefaultShippingAddressId(defaultShippingAddressId);
+	}
+
+	/**
 	 * Sets the description of this account entry.
 	 *
 	 * @param description the description of this account entry
@@ -354,6 +517,26 @@ public class AccountEntryWrapper
 	@Override
 	public void setDomains(String domains) {
 		model.setDomains(domains);
+	}
+
+	/**
+	 * Sets the email address of this account entry.
+	 *
+	 * @param emailAddress the email address of this account entry
+	 */
+	@Override
+	public void setEmailAddress(String emailAddress) {
+		model.setEmailAddress(emailAddress);
+	}
+
+	/**
+	 * Sets the external reference code of this account entry.
+	 *
+	 * @param externalReferenceCode the external reference code of this account entry
+	 */
+	@Override
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		model.setExternalReferenceCode(externalReferenceCode);
 	}
 
 	/**
@@ -424,6 +607,36 @@ public class AccountEntryWrapper
 	@Override
 	public void setStatus(int status) {
 		model.setStatus(status);
+	}
+
+	/**
+	 * Sets the tax exemption code of this account entry.
+	 *
+	 * @param taxExemptionCode the tax exemption code of this account entry
+	 */
+	@Override
+	public void setTaxExemptionCode(String taxExemptionCode) {
+		model.setTaxExemptionCode(taxExemptionCode);
+	}
+
+	/**
+	 * Sets the tax ID number of this account entry.
+	 *
+	 * @param taxIdNumber the tax ID number of this account entry
+	 */
+	@Override
+	public void setTaxIdNumber(String taxIdNumber) {
+		model.setTaxIdNumber(taxIdNumber);
+	}
+
+	/**
+	 * Sets the type of this account entry.
+	 *
+	 * @param type the type of this account entry
+	 */
+	@Override
+	public void setType(String type) {
+		model.setType(type);
 	}
 
 	/**

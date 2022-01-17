@@ -17,8 +17,8 @@ import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput, ClaySelect} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayModal from '@clayui/modal';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 
@@ -26,17 +26,17 @@ import {config} from '../../../app/config/index';
 import Button from '../../../common/components/Button';
 
 const ExperienceModal = ({
+	canUpdateSegments,
 	errorMessage,
 	experienceId,
-	hasSegmentsPermission,
 	initialName = '',
 	observer,
-	onErrorDismiss,
 	onClose,
+	onErrorDismiss,
 	onNewSegmentClick,
 	onSubmit,
 	segmentId,
-	segments = []
+	segments = [],
 }) => {
 	const [selectedSegmentId, setSelectedSegmentId] = useState(
 		segmentId !== undefined
@@ -48,22 +48,15 @@ const ExperienceModal = ({
 
 	const [name, setName] = useState(initialName);
 	const [requiredNameError, setRequiredNameError] = useState(false);
-	const [requiredSegmentError, setRequiredSegmentError] = useState(false);
 	const [loading, setLoading] = useState(false);
 
-	const handleFormSubmit = event => {
+	const handleFormSubmit = (event) => {
 		event.preventDefault();
 
 		const validName = _getValidValue(name);
-		const validSegmentId = _getValidValue(selectedSegmentId);
 
-		if (!validName || !validSegmentId) {
-			if (!validName) {
-				setRequiredNameError(true);
-			}
-			if (!validSegmentId) {
-				setRequiredSegmentError(true);
-			}
+		if (!validName) {
+			setRequiredNameError(true);
 		}
 		else {
 			setLoading(true);
@@ -71,7 +64,7 @@ const ExperienceModal = ({
 			onSubmit({
 				name,
 				segmentsEntryId: selectedSegmentId,
-				segmentsExperienceId: experienceId
+				segmentsExperienceId: experienceId,
 			}).finally(() => {
 				if (isMounted()) {
 					setLoading(false);
@@ -79,7 +72,7 @@ const ExperienceModal = ({
 			});
 		}
 	};
-	const handleNameChange = event => {
+	const handleNameChange = (event) => {
 		const {value} = event.target;
 
 		if (!_getValidValue(value)) {
@@ -91,25 +84,16 @@ const ExperienceModal = ({
 
 		setName(value);
 	};
-	const handleSegmentChange = event => {
-		const {value} = event.target;
-
-		if (!_getValidValue(value)) {
-			setRequiredSegmentError(true);
-		}
-		else {
-			setRequiredSegmentError(false);
-		}
-
+	const handleSegmentChange = (event) => {
 		setSelectedSegmentId(event.target.value);
 	};
-	const handleNewSegmentClick = event => {
+	const handleNewSegmentClick = (event) => {
 		event.preventDefault();
 
 		onNewSegmentClick({
 			experienceId,
 			experienceName: name,
-			segmentId: selectedSegmentId
+			segmentId: selectedSegmentId,
 		});
 	};
 
@@ -117,10 +101,7 @@ const ExperienceModal = ({
 	const segmentSelectId = `${config.portletNamespace}segmentsExperienceSegment`;
 
 	const nameGroupClassName = classNames('my-2', {
-		'has-error': requiredNameError
-	});
-	const segmentGroupClassName = classNames('my-2', {
-		'has-error': requiredSegmentError
+		'has-error': requiredNameError,
 	});
 
 	const modalTitle = experienceId
@@ -128,7 +109,11 @@ const ExperienceModal = ({
 		: Liferay.Language.get('new-experience');
 
 	return (
-		<ClayModal observer={observer} size="md">
+		<ClayModal
+			containerProps={{className: 'cadmin'}}
+			observer={observer}
+			size="md"
+		>
 			<ClayModal.Header>{modalTitle}</ClayModal.Header>
 
 			<ClayModal.Body>
@@ -145,6 +130,7 @@ const ExperienceModal = ({
 							title={errorMessage}
 						/>
 					)}
+
 					<ClayForm.Group className={nameGroupClassName}>
 						<label htmlFor={nameInputId}>
 							{Liferay.Language.get('name')}
@@ -175,6 +161,7 @@ const ExperienceModal = ({
 									className="mr-1"
 									symbol="exclamation-full"
 								/>
+
 								{Liferay.Language.get(
 									'an-experience-name-is-required'
 								)}
@@ -182,7 +169,7 @@ const ExperienceModal = ({
 						)}
 					</ClayForm.Group>
 
-					<ClayForm.Group className={segmentGroupClassName}>
+					<ClayForm.Group className="my-2">
 						<label htmlFor={segmentSelectId}>
 							{Liferay.Language.get('audience')}
 
@@ -193,6 +180,7 @@ const ExperienceModal = ({
 								symbol="asterisk"
 							/>
 						</label>
+
 						<div className="d-flex">
 							<ClaySelect
 								disabled={segments.length === 0}
@@ -201,7 +189,7 @@ const ExperienceModal = ({
 								value={selectedSegmentId}
 							>
 								{segments.length ? (
-									segments.map(segment => {
+									segments.map((segment) => {
 										return (
 											<ClaySelect.Option
 												key={segment.segmentsEntryId}
@@ -220,7 +208,7 @@ const ExperienceModal = ({
 								)}
 							</ClaySelect>
 
-							{hasSegmentsPermission === true && (
+							{canUpdateSegments === true && (
 								<Button
 									className="flex-shrink-0 ml-2"
 									disabled={loading}
@@ -232,19 +220,10 @@ const ExperienceModal = ({
 								</Button>
 							)}
 						</div>
-
-						{requiredSegmentError && (
-							<ClayForm.FeedbackItem>
-								<ClayForm.FeedbackIndicator symbol="exclamation" />
-
-								{Liferay.Language.get(
-									'an-audience-is-required'
-								)}
-							</ClayForm.FeedbackItem>
-						)}
 					</ClayForm.Group>
 				</ClayForm>
 			</ClayModal.Body>
+
 			<ClayModal.Footer
 				last={
 					<ClayButton.Group spaced>
@@ -272,9 +251,9 @@ const ExperienceModal = ({
 };
 
 ExperienceModal.propTypes = {
+	canUpdateSegments: PropTypes.bool.isRequired,
 	errorMessage: PropTypes.string,
 	experienceId: PropTypes.string,
-	hasSegmentsPermission: PropTypes.bool.isRequired,
 	initialName: PropTypes.string,
 	observer: PropTypes.object.isRequired,
 	onClose: PropTypes.func.isRequired,
@@ -282,7 +261,7 @@ ExperienceModal.propTypes = {
 	onNewSegmentClick: PropTypes.func.isRequired,
 	onSubmit: PropTypes.func.isRequired,
 	segmentId: PropTypes.string,
-	segments: PropTypes.array.isRequired
+	segments: PropTypes.array.isRequired,
 };
 
 function _getValidValue(value) {

@@ -36,11 +36,11 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.Field;
 import com.liferay.dynamic.data.mapping.storage.Fields;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -48,15 +48,11 @@ import java.io.Serializable;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.mockito.Matchers;
 
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
@@ -90,10 +86,8 @@ public class DDMImplTest extends BaseDDMTestCase {
 		setUpDDMFormValuesJSONSerializer();
 		setUpDDMStructureLocalServiceUtil();
 		setUpJSONFactoryUtil();
-		setUpHtmlUtil();
 		setUpLanguageUtil();
 		setUpLocaleUtil();
-		setUpPortalUtil();
 		setUpPropsValues();
 		setUpSAXReaderUtil();
 	}
@@ -752,29 +746,28 @@ public class DDMImplTest extends BaseDDMTestCase {
 			DDMFormValuesJSONDeserializer.class, "_jsonFactory");
 
 		field.set(_ddmFormValuesDeserializer, new JSONFactoryImpl());
+
+		field = ReflectionUtil.getDeclaredField(
+			DDMFormValuesJSONDeserializer.class, "_serviceTrackerMap");
+
+		field.set(
+			_ddmFormValuesDeserializer,
+			ProxyFactory.newDummyInstance(ServiceTrackerMap.class));
 	}
 
+	@Override
 	protected void setUpDDMFormValuesJSONSerializer() throws Exception {
 		java.lang.reflect.Field field = ReflectionUtil.getDeclaredField(
 			DDMFormValuesJSONSerializer.class, "_jsonFactory");
 
 		field.set(_ddmFormValuesSerializer, new JSONFactoryImpl());
-	}
 
-	protected void setUpPortalUtil() {
-		PortalUtil portalUtil = new PortalUtil();
+		field = ReflectionUtil.getDeclaredField(
+			DDMFormValuesJSONSerializer.class, "_serviceTrackerMap");
 
-		Portal portal = mock(Portal.class);
-
-		ResourceBundle resourceBundle = mock(ResourceBundle.class);
-
-		when(
-			portal.getResourceBundle(Matchers.any(Locale.class))
-		).thenReturn(
-			resourceBundle
-		);
-
-		portalUtil.setPortal(portal);
+		field.set(
+			_ddmFormValuesSerializer,
+			ProxyFactory.newDummyInstance(ServiceTrackerMap.class));
 	}
 
 	protected void testValues(

@@ -60,7 +60,12 @@ if (assetTagNames.length == 0) {
 				for (int i = 0; i < assetTagNames.length; i++) {
 				%>
 
-					<span class="label label-lg label-secondary text-uppercase"><%= assetTagNames[i] %></span>
+					<clay:label
+						displayType="secondary"
+						label="<%= assetTagNames[i] %>"
+						large="<%= true %>"
+						translated="<%= false %>"
+					/>
 
 				<%
 				}

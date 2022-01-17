@@ -1,18 +1,9 @@
 definition {
 
 	macro configureAnonymousPostingCP {
-		Navigator.openURL();
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
-
-		Click(locator1 = "Portlet#OPTIONS_ICON");
-
-		MenuItem.click(menuItem = "Configuration");
-
-		Pause(locator1 = "10000");
+		Portlet.gotoPortletOptions(portletOption = "Configuration");
 
 		SelectFrame(locator1 = "IFrame#CONFIGURATION");
 
@@ -27,18 +18,9 @@ definition {
 	}
 
 	macro configureGeneralCP {
-		Navigator.openURL();
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
-
-		Click(locator1 = "Portlet#OPTIONS_ICON");
-
-		MenuItem.click(menuItem = "Configuration");
-
-		Pause(locator1 = "10000");
+		Portlet.gotoPortletOptions(portletOption = "Configuration");
 
 		SelectFrame(locator1 = "IFrame#CONFIGURATION");
 
@@ -49,13 +31,8 @@ definition {
 		PortletEntry.save();
 	}
 
-	macro configureMessageAddedEmailCP {
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
+	macro configureMessageAddedEmail {
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
 
@@ -82,7 +59,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			panel = "Site Administration",
 			portlet = "Message Boards");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
@@ -110,13 +86,8 @@ definition {
 		PortletEntry.save();
 	}
 
-	macro configureMessageUpdatedEmailCP {
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
+	macro configureMessageUpdatedEmail {
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
 
@@ -138,30 +109,14 @@ definition {
 		PortletEntry.save();
 	}
 
-	macro configureScopePG {
-		Portlet.gotoPortletOptions(
-			portletName = "${portletName}",
-			portletOption = "Configuration");
-
-		SelectFrame(locator1 = "IFrame#CONFIGURATION");
-
-		AssertClick(
-			locator1 = "MessageBoardsConfiguration#NAVIGATION_SCOPE",
-			value1 = "Scope");
-
-		Select(
-			locator1 = "Select#SCOPE",
-			value1 = "${scopeName}");
-
-		PortletEntry.save();
-	}
-
 	macro gotoInlinePermissionsPG {
 		Click(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
 
 		MenuItem.click(menuItem = "Permissions");
 
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 	}
 
 	macro gotoRecentPostsPG {
@@ -183,7 +138,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			panel = "Site Administration",
 			portlet = "Message Boards");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
@@ -214,7 +168,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			panel = "Site Administration",
 			portlet = "Message Boards");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
@@ -229,6 +182,10 @@ definition {
 	}
 
 	macro viewAnonymousPostingConfigurationCP {
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
+
+		Portlet.gotoPortletOptions(portletOption = "Configuration");
+
 		SelectFrame(locator1 = "IFrame#CONFIGURATION");
 
 		if ("${anonymousPostingEnabled}" == "true") {
@@ -240,10 +197,7 @@ definition {
 	}
 
 	macro viewBannedUserCP {
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
 		AssertClick(
 			locator1 = "MessageBoards#NAVIGATION_BANNED_USERS",
@@ -269,6 +223,8 @@ definition {
 			locator1 = "MessageBoardsBannedUsers#BANNED_USERS_TABLE_BANNED_USER",
 			value1 = "${userScreenName}");
 
+		ProductMenuHelper.openProductMenu();
+
 		var key_siteName = "${userScreenName}";
 
 		AssertTextEquals.assertPartialText(
@@ -277,12 +233,7 @@ definition {
 	}
 
 	macro viewDefaultEmailFromCP {
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Message Boards");
+		MessageBoardsAdmin.openMessageBoardsAdmin(siteURLKey = "${siteURLKey}");
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
 
@@ -296,7 +247,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "TextInput#EMAIL_FROM_NAME",
-			value1 = "Joe Bloggs");
+			value1 = "[$MESSAGE_USER_NAME$]");
 
 		AssertTextEquals(
 			locator1 = "TextInput#EMAIL_FROM_ADDRESS",
@@ -335,12 +286,12 @@ definition {
 		var key_threadSubject = "${threadSubject}";
 
 		AssertTextEquals(
-			locator1 = "MessageBoards#THREAD_LIST_THREAD",
+			locator1 = "MessageBoards#THREAD_LIST_THREAD_UNREAD",
 			value1 = "${threadSubject}");
 
 		if (isSet(mbThreadAttachment)) {
 			AssertClick(
-				locator1 = "MessageBoards#THREAD_LIST_THREAD",
+				locator1 = "MessageBoards#THREAD_LIST_THREAD_UNREAD",
 				value1 = "${threadSubject}");
 
 			AssertVisible(locator1 = "Link#MESSAGE_BOARDS_ATTACHMENT");

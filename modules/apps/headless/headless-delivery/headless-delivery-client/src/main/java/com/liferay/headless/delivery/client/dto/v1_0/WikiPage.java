@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.WikiPageSerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -28,37 +30,10 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class WikiPage implements Cloneable {
+public class WikiPage implements Cloneable, Serializable {
 
-	public static enum ViewableBy {
-
-		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
-
-		public static ViewableBy create(String value) {
-			for (ViewableBy viewableBy : values()) {
-				if (Objects.equals(viewableBy.getValue(), value)) {
-					return viewableBy;
-				}
-			}
-
-			return null;
-		}
-
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ViewableBy(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static WikiPage toDTO(String json) {
+		return WikiPageSerDes.toDTO(json);
 	}
 
 	public Map<String, Map<String, String>> getActions() {
@@ -252,6 +227,27 @@ public class WikiPage implements Cloneable {
 
 	protected String encodingFormat;
 
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String externalReferenceCode;
+
 	public String getHeadline() {
 		return headline;
 	}
@@ -440,27 +436,29 @@ public class WikiPage implements Cloneable {
 
 	protected Boolean subscribed;
 
-	public TaxonomyCategory[] getTaxonomyCategories() {
-		return taxonomyCategories;
+	public TaxonomyCategoryBrief[] getTaxonomyCategoryBriefs() {
+		return taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(TaxonomyCategory[] taxonomyCategories) {
-		this.taxonomyCategories = taxonomyCategories;
+	public void setTaxonomyCategoryBriefs(
+		TaxonomyCategoryBrief[] taxonomyCategoryBriefs) {
+
+		this.taxonomyCategoryBriefs = taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(
-		UnsafeSupplier<TaxonomyCategory[], Exception>
-			taxonomyCategoriesUnsafeSupplier) {
+	public void setTaxonomyCategoryBriefs(
+		UnsafeSupplier<TaxonomyCategoryBrief[], Exception>
+			taxonomyCategoryBriefsUnsafeSupplier) {
 
 		try {
-			taxonomyCategories = taxonomyCategoriesUnsafeSupplier.get();
+			taxonomyCategoryBriefs = taxonomyCategoryBriefsUnsafeSupplier.get();
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	protected TaxonomyCategory[] taxonomyCategories;
+	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
@@ -512,6 +510,27 @@ public class WikiPage implements Cloneable {
 
 	protected ViewableBy viewableBy;
 
+	public Long getWikiNodeId() {
+		return wikiNodeId;
+	}
+
+	public void setWikiNodeId(Long wikiNodeId) {
+		this.wikiNodeId = wikiNodeId;
+	}
+
+	public void setWikiNodeId(
+		UnsafeSupplier<Long, Exception> wikiNodeIdUnsafeSupplier) {
+
+		try {
+			wikiNodeId = wikiNodeIdUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Long wikiNodeId;
+
 	@Override
 	public WikiPage clone() throws CloneNotSupportedException {
 		return (WikiPage)super.clone();
@@ -541,6 +560,39 @@ public class WikiPage implements Cloneable {
 
 	public String toString() {
 		return WikiPageSerDes.toJSON(this);
+	}
+
+	public static enum ViewableBy {
+
+		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
+
+		public static ViewableBy create(String value) {
+			for (ViewableBy viewableBy : values()) {
+				if (Objects.equals(viewableBy.getValue(), value) ||
+					Objects.equals(viewableBy.name(), value)) {
+
+					return viewableBy;
+				}
+			}
+
+			return null;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ViewableBy(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
 	}
 
 }

@@ -25,6 +25,8 @@ import com.liferay.dynamic.data.mapping.model.UnlocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -32,8 +34,6 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,16 +41,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Marcellus Tavares
@@ -67,18 +65,18 @@ public class DDMFormValuesJSONDeserializer
 		DDMFormValuesDeserializerDeserializeRequest
 			ddmFormValuesDeserializerDeserializeRequest) {
 
-		DDMFormValues ddmFormValues = null;
+		DDMForm ddmForm =
+			ddmFormValuesDeserializerDeserializeRequest.getDDMForm();
+
+		DDMFormValues ddmFormValues = new DDMFormValues(ddmForm);
+
+		DDMFormValuesDeserializerDeserializeResponse.Builder builder =
+			DDMFormValuesDeserializerDeserializeResponse.Builder.newBuilder(
+				ddmFormValues);
 
 		try {
-			String content =
-				ddmFormValuesDeserializerDeserializeRequest.getContent();
-
-			DDMForm ddmForm =
-				ddmFormValuesDeserializerDeserializeRequest.getDDMForm();
-
-			JSONObject jsonObject = _jsonFactory.createJSONObject(content);
-
-			ddmFormValues = new DDMFormValues(ddmForm);
+			JSONObject jsonObject = _jsonFactory.createJSONObject(
+				ddmFormValuesDeserializerDeserializeRequest.getContent());
 
 			setDDMFormValuesAvailableLocales(
 				jsonObject.getJSONArray("availableLanguageIds"), ddmFormValues);
@@ -86,38 +84,32 @@ public class DDMFormValuesJSONDeserializer
 				jsonObject.getString("defaultLanguageId"), ddmFormValues);
 			setDDMFormFieldValues(
 				jsonObject.getJSONArray("fieldValues"), ddmForm, ddmFormValues);
+
 			setDDMFormLocalizedValuesDefaultLocale(ddmFormValues);
+
+			return builder.build();
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(exception, exception);
 			}
-		}
 
-		DDMFormValuesDeserializerDeserializeResponse.Builder builder =
-			DDMFormValuesDeserializerDeserializeResponse.Builder.newBuilder(
-				ddmFormValues);
+			builder = builder.exception(exception);
+		}
 
 		return builder.build();
 	}
 
-	@Reference(
-		cardinality = ReferenceCardinality.MULTIPLE,
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY
-	)
-	protected void addDDMFormFieldValueJSONDeserializer(
-		DDMFormFieldValueJSONDeserializer ddmFormFieldValueJSONDeserializer,
-		Map<String, Object> properties) {
+	@Activate
+	protected void activate(BundleContext bundleContext) {
+		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
+			bundleContext, DDMFormFieldValueJSONDeserializer.class,
+			"ddm.form.field.type.name");
+	}
 
-		String type = MapUtil.getString(properties, "ddm.form.field.type.name");
-
-		if (Validator.isNull(type)) {
-			return;
-		}
-
-		_ddmFormFieldValueJSONDeserializers.put(
-			type, ddmFormFieldValueJSONDeserializer);
+	@Deactivate
+	protected void deactivate() {
+		_serviceTrackerMap.close();
 	}
 
 	protected Set<Locale> getAvailableLocales(JSONArray jsonArray) {
@@ -142,7 +134,15 @@ public class DDMFormValuesJSONDeserializer
 
 		DDMFormFieldValue ddmFormFieldValue = new DDMFormFieldValue();
 
-		ddmFormFieldValue.setInstanceId(jsonObject.getString("instanceId"));
+		ddmFormFieldValue.setFieldReference(
+			jsonObject.getString("fieldReference"));
+
+		String instanceId = jsonObject.getString("instanceId");
+
+		if (instanceId.matches("[a-zA-Z0-9]*")) {
+			ddmFormFieldValue.setInstanceId(instanceId);
+		}
+
 		ddmFormFieldValue.setName(jsonObject.getString("name"));
 
 		setDDMFormFieldValueValue(
@@ -163,7 +163,7 @@ public class DDMFormValuesJSONDeserializer
 			return null;
 		}
 
-		return _ddmFormFieldValueJSONDeserializers.get(ddmFormField.getType());
+		return _serviceTrackerMap.getService(ddmFormField.getType());
 	}
 
 	protected List<DDMFormFieldValue> getDDMFormFieldValues(
@@ -184,10 +184,10 @@ public class DDMFormValuesJSONDeserializer
 	protected LocalizedValue getLocalizedValue(JSONObject jsonObject) {
 		LocalizedValue localizedValue = new LocalizedValue();
 
-		Iterator<String> itr = jsonObject.keys();
+		Iterator<String> iterator = jsonObject.keys();
 
-		while (itr.hasNext()) {
-			String languageId = itr.next();
+		while (iterator.hasNext()) {
+			String languageId = iterator.next();
 
 			if (LanguageUtil.isAvailableLocale(languageId)) {
 				localizedValue.addString(
@@ -241,15 +241,6 @@ public class DDMFormValuesJSONDeserializer
 		return true;
 	}
 
-	protected void removeDDMFormFieldValueJSONDeserializer(
-		DDMFormFieldValueJSONDeserializer ddmFormFieldValueJSONDeserializer,
-		Map<String, Objects> properties) {
-
-		String type = MapUtil.getString(properties, "ddm.form.field.type.name");
-
-		_ddmFormFieldValueJSONDeserializers.remove(type);
-	}
-
 	protected void setDDMFormFieldValueLocalizedValueDefaultLocale(
 		DDMFormFieldValue ddmFormFieldValue, Locale defaultLocale) {
 
@@ -286,9 +277,7 @@ public class DDMFormValuesJSONDeserializer
 			return;
 		}
 
-		Value value = getValue(ddmFormField, jsonObject);
-
-		ddmFormFieldValue.setValue(value);
+		ddmFormFieldValue.setValue(getValue(ddmFormField, jsonObject));
 	}
 
 	protected void setDDMFormLocalizedValuesDefaultLocale(
@@ -346,8 +335,8 @@ public class DDMFormValuesJSONDeserializer
 	private static final Log _log = LogFactoryUtil.getLog(
 		DDMFormValuesJSONDeserializer.class);
 
-	private final Map<String, DDMFormFieldValueJSONDeserializer>
-		_ddmFormFieldValueJSONDeserializers = new ConcurrentHashMap<>();
 	private JSONFactory _jsonFactory;
+	private ServiceTrackerMap<String, DDMFormFieldValueJSONDeserializer>
+		_serviceTrackerMap;
 
 }

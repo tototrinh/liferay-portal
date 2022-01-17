@@ -15,6 +15,8 @@
 package com.liferay.source.formatter.checkstyle.checks;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 import com.liferay.source.formatter.parser.JavaClass;
@@ -67,12 +69,20 @@ public class PersistenceCallCheck extends BaseCheck {
 
 		String content = (String)fileText.getFullText();
 
+		if (!content.contains(".service.persistence.")) {
+			return;
+		}
+
 		JavaClass javaClass = null;
 
 		try {
 			javaClass = JavaClassParser.parseJavaClass(absolutePath, content);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return;
 		}
 
@@ -86,7 +96,7 @@ public class PersistenceCallCheck extends BaseCheck {
 
 		for (DetailAST methodCallDetailAST : methodCallDetailASTList) {
 			_checkMethodCall(
-				methodCallDetailAST, javaClass.getImports(), variablesMap,
+				methodCallDetailAST, javaClass.getImportNames(), variablesMap,
 				javaClass.getPackageName());
 		}
 	}
@@ -217,6 +227,10 @@ public class PersistenceCallCheck extends BaseCheck {
 				FileUtil.read(new File(extendedClassFileName)));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -224,7 +238,7 @@ public class PersistenceCallCheck extends BaseCheck {
 	private String _getFullyQualifiedName(
 		String className, JavaClass javaClass) {
 
-		for (String importName : javaClass.getImports()) {
+		for (String importName : javaClass.getImportNames()) {
 			if (importName.endsWith(StringPool.PERIOD + className)) {
 				return importName;
 			}
@@ -269,6 +283,9 @@ public class PersistenceCallCheck extends BaseCheck {
 
 	private static final String _MSG_ILLEGAL_PERSISTENCE_CALL =
 		"persistence.call.illegal";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		PersistenceCallCheck.class);
 
 	private static final Pattern _extendedClassPattern = Pattern.compile(
 		"\\sextends\\s+(\\w+)\\W");

@@ -16,7 +16,6 @@ package com.liferay.portal.search.elasticsearch7.internal.information;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
@@ -25,11 +24,10 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.search.configuration.CrossClusterReplicationConfigurationWrapper;
-import com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration;
 import com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConnectionConfiguration;
-import com.liferay.portal.search.elasticsearch7.configuration.OperationMode;
 import com.liferay.portal.search.elasticsearch7.internal.ElasticsearchSearchEngine;
+import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationWrapper;
+import com.liferay.portal.search.elasticsearch7.internal.configuration.OperationModeResolver;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnection;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionManager;
 import com.liferay.portal.search.engine.ConnectionInformation;
@@ -40,7 +38,6 @@ import com.liferay.portal.search.engine.NodeInformationBuilder;
 import com.liferay.portal.search.engine.NodeInformationBuilderFactory;
 import com.liferay.portal.search.engine.SearchEngineInformation;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
-import com.liferay.portal.search.engine.adapter.cluster.ClusterHealthStatus;
 import com.liferay.portal.search.engine.adapter.cluster.HealthClusterRequest;
 import com.liferay.portal.search.engine.adapter.cluster.HealthClusterResponse;
 
@@ -48,8 +45,6 @@ import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,19 +59,13 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
 
 /**
  * @author Adam Brandizzi
  */
-@Component(
-	configurationPid = "com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration",
-	immediate = true, service = SearchEngineInformation.class
-)
+@Component(immediate = true, service = SearchEngineInformation.class)
 public class ElasticsearchSearchEngineInformation
 	implements SearchEngineInformation {
 
@@ -90,36 +79,42 @@ public class ElasticsearchSearchEngineInformation
 		List<ConnectionInformation> connectionInformationList =
 			new LinkedList<>();
 
-		addMainConnection(
-			elasticsearchConnectionManager.getElasticsearchConnection(),
-			connectionInformationList);
+		ElasticsearchConnection elasticsearchConnection =
+			elasticsearchConnectionManager.getElasticsearchConnection();
+
+		addMainConnection(elasticsearchConnection, connectionInformationList);
 
 		String filterString = String.format(
 			"(&(service.factoryPid=%s)(active=%s)",
 			ElasticsearchConnectionConfiguration.class.getName(), true);
 
-		if (!isOperationModeEmbedded()) {
+		if (operationModeResolver.isProductionModeEnabled() &&
+			!Validator.isBlank(
+				elasticsearchConfigurationWrapper.
+					remoteClusterConnectionId())) {
+
 			filterString = filterString.concat(
 				String.format(
 					"(!(connectionId=%s))",
-					elasticsearchConfiguration.remoteClusterConnectionId()));
+					elasticsearchConfigurationWrapper.
+						remoteClusterConnectionId()));
 		}
 
-		if (!isOperationModeEmbedded() &&
-			elasticsearchConnectionManager.isCrossClusterReplicationEnabled()) {
+		ElasticsearchConnection localClusterElasticsearchConnection =
+			elasticsearchConnectionManager.getElasticsearchConnection(true);
+
+		if (operationModeResolver.isProductionModeEnabled() &&
+			elasticsearchConnectionManager.isCrossClusterReplicationEnabled() &&
+			!elasticsearchConnection.equals(
+				localClusterElasticsearchConnection)) {
 
 			addCCRConnection(
-				elasticsearchConnectionManager.getElasticsearchConnection(true),
-				connectionInformationList);
+				localClusterElasticsearchConnection, connectionInformationList);
 
-			String connectionId =
-				crossClusterReplicationConfigurationWrapper.
-					getCCRLocalClusterConnectionId();
-
-			if (!Validator.isBlank(connectionId)) {
-				filterString = filterString.concat(
-					String.format("(!(connectionId=%s))", connectionId));
-			}
+			filterString = filterString.concat(
+				String.format(
+					"(!(connectionId=%s))",
+					localClusterElasticsearchConnection.getConnectionId()));
 		}
 
 		filterString = filterString.concat(")");
@@ -142,7 +137,7 @@ public class ElasticsearchSearchEngineInformation
 			String clusterNodesString = getClusterNodesString(
 				elasticsearchConnectionManager.getRestHighLevelClient());
 
-			if (!isOperationModeEmbedded() &&
+			if (operationModeResolver.isProductionModeEnabled() &&
 				elasticsearchConnectionManager.
 					isCrossClusterReplicationEnabled()) {
 
@@ -151,21 +146,9 @@ public class ElasticsearchSearchEngineInformation
 						null, true));
 
 				if (!Validator.isBlank(localClusterNodesString)) {
-					StringBundler sb = new StringBundler(11);
-
-					sb.append("Remote Cluster");
-					sb.append(StringPool.SPACE);
-					sb.append(StringPool.EQUAL);
-					sb.append(StringPool.SPACE);
-					sb.append(clusterNodesString);
-					sb.append(StringPool.COMMA_AND_SPACE);
-					sb.append("Local Cluster");
-					sb.append(StringPool.SPACE);
-					sb.append(StringPool.EQUAL);
-					sb.append(StringPool.SPACE);
-					sb.append(localClusterNodesString);
-
-					clusterNodesString = sb.toString();
+					clusterNodesString = StringBundler.concat(
+						"Remote Cluster = ", clusterNodesString,
+						", Local Cluster = ", localClusterNodesString);
 				}
 			}
 
@@ -180,26 +163,11 @@ public class ElasticsearchSearchEngineInformation
 	public String getVendorString() {
 		String vendor = elasticsearchSearchEngine.getVendor();
 
-		if (isOperationModeEmbedded()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(vendor);
-			sb.append(StringPool.SPACE);
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append("Embedded");
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			return sb.toString();
+		if (operationModeResolver.isDevelopmentModeEnabled()) {
+			return vendor + " (Sidecar)";
 		}
 
 		return vendor;
-	}
-
-	@Activate
-	@Modified
-	protected void activate(Map<String, Object> properties) {
-		elasticsearchConfiguration = ConfigurableUtil.createConfigurable(
-			ElasticsearchConfiguration.class, properties);
 	}
 
 	protected void addActiveConnections(
@@ -209,6 +177,10 @@ public class ElasticsearchSearchEngineInformation
 
 		Configuration[] configurations = configurationAdmin.listConfigurations(
 			filterString);
+
+		if (ArrayUtil.isEmpty(configurations)) {
+			return;
+		}
 
 		for (Configuration configuration : configurations) {
 			Dictionary<String, Object> properties =
@@ -286,8 +258,11 @@ public class ElasticsearchSearchEngineInformation
 
 		String[] labels = {"read", "write"};
 
-		if (!isOperationModeEmbedded() &&
-			elasticsearchConnectionManager.isCrossClusterReplicationEnabled()) {
+		if (operationModeResolver.isProductionModeEnabled() &&
+			elasticsearchConnectionManager.isCrossClusterReplicationEnabled() &&
+			!elasticsearchConnection.equals(
+				elasticsearchConnectionManager.getElasticsearchConnection(
+					true))) {
 
 			labels = new String[] {"write"};
 		}
@@ -321,56 +296,26 @@ public class ElasticsearchSearchEngineInformation
 
 			Stream<NodeInformation> stream = nodeInformations.stream();
 
-			String nodesString = stream.map(
-				nodeInfo -> {
-					StringBundler sb = new StringBundler(5);
-
-					sb.append(nodeInfo.getName());
-					sb.append(StringPool.SPACE);
-					sb.append(StringPool.OPEN_PARENTHESIS);
-					sb.append(nodeInfo.getVersion());
-					sb.append(StringPool.CLOSE_PARENTHESIS);
-
-					return sb.toString();
-				}
-			).collect(
-				Collectors.joining(StringPool.COMMA_AND_SPACE)
-			);
-
-			StringBundler sb = new StringBundler(6);
-
-			sb.append(clusterName);
-			sb.append(StringPool.COLON);
-			sb.append(StringPool.SPACE);
-			sb.append(StringPool.OPEN_BRACKET);
-			sb.append(nodesString);
-			sb.append(StringPool.CLOSE_BRACKET);
-
-			return sb.toString();
+			return StringBundler.concat(
+				clusterName, StringPool.COLON, StringPool.SPACE,
+				StringPool.OPEN_BRACKET,
+				stream.map(
+					nodeInfo -> StringBundler.concat(
+						nodeInfo.getName(), StringPool.SPACE,
+						StringPool.OPEN_PARENTHESIS, nodeInfo.getVersion(),
+						StringPool.CLOSE_PARENTHESIS)
+				).collect(
+					Collectors.joining(StringPool.COMMA_AND_SPACE)
+				),
+				StringPool.CLOSE_BRACKET);
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn("Unable to get node information", exception);
 			}
 
-			StringBundler sb = new StringBundler(6);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append("Error");
-			sb.append(StringPool.COLON);
-			sb.append(StringPool.SPACE);
-			sb.append(exception.toString());
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			return sb.toString();
+			return StringBundler.concat("(Error: ", exception.toString(), ")");
 		}
-	}
-
-	protected boolean isOperationModeEmbedded() {
-		OperationMode operationMode =
-			elasticsearchConfiguration.operationMode();
-
-		return Objects.equals(operationMode, OperationMode.EMBEDDED);
 	}
 
 	@Reference
@@ -380,11 +325,9 @@ public class ElasticsearchSearchEngineInformation
 	protected ConnectionInformationBuilderFactory
 		connectionInformationBuilderFactory;
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL)
-	protected volatile CrossClusterReplicationConfigurationWrapper
-		crossClusterReplicationConfigurationWrapper;
-
-	protected volatile ElasticsearchConfiguration elasticsearchConfiguration;
+	@Reference
+	protected volatile ElasticsearchConfigurationWrapper
+		elasticsearchConfigurationWrapper;
 
 	@Reference
 	protected ElasticsearchConnectionManager elasticsearchConnectionManager;
@@ -394,6 +337,9 @@ public class ElasticsearchSearchEngineInformation
 
 	@Reference
 	protected NodeInformationBuilderFactory nodeInformationBuilderFactory;
+
+	@Reference
+	protected OperationModeResolver operationModeResolver;
 
 	@Reference
 	protected SearchEngineAdapter searchEngineAdapter;
@@ -458,10 +404,8 @@ public class ElasticsearchSearchEngineInformation
 		HealthClusterResponse healthClusterResponse =
 			searchEngineAdapter.execute(healthClusterRequest);
 
-		ClusterHealthStatus clusterHealthStatus =
-			healthClusterResponse.getClusterHealthStatus();
-
-		connectionInformationBuilder.health(clusterHealthStatus.toString());
+		connectionInformationBuilder.health(
+			String.valueOf(healthClusterResponse.getClusterHealthStatus()));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

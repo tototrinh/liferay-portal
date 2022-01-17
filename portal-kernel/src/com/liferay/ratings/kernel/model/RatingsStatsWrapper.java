@@ -20,6 +20,8 @@ import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -42,6 +44,8 @@ public class RatingsStatsWrapper
 	public Map<String, Object> getModelAttributes() {
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
+		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("statsId", getStatsId());
 		attributes.put("companyId", getCompanyId());
 		attributes.put("createDate", getCreateDate());
@@ -57,6 +61,18 @@ public class RatingsStatsWrapper
 
 	@Override
 	public void setModelAttributes(Map<String, Object> attributes) {
+		Long mvccVersion = (Long)attributes.get("mvccVersion");
+
+		if (mvccVersion != null) {
+			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
+		}
+
 		Long statsId = (Long)attributes.get("statsId");
 
 		if (statsId != null) {
@@ -110,6 +126,11 @@ public class RatingsStatsWrapper
 		if (averageScore != null) {
 			setAverageScore(averageScore);
 		}
+	}
+
+	@Override
+	public RatingsStats cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -173,6 +194,16 @@ public class RatingsStatsWrapper
 	}
 
 	/**
+	 * Returns the ct collection ID of this ratings stats.
+	 *
+	 * @return the ct collection ID of this ratings stats
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
+	}
+
+	/**
 	 * Returns the modified date of this ratings stats.
 	 *
 	 * @return the modified date of this ratings stats
@@ -180,6 +211,16 @@ public class RatingsStatsWrapper
 	@Override
 	public Date getModifiedDate() {
 		return model.getModifiedDate();
+	}
+
+	/**
+	 * Returns the mvcc version of this ratings stats.
+	 *
+	 * @return the mvcc version of this ratings stats
+	 */
+	@Override
+	public long getMvccVersion() {
+		return model.getMvccVersion();
 	}
 
 	/**
@@ -283,6 +324,16 @@ public class RatingsStatsWrapper
 	}
 
 	/**
+	 * Sets the ct collection ID of this ratings stats.
+	 *
+	 * @param ctCollectionId the ct collection ID of this ratings stats
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
 	 * Sets the modified date of this ratings stats.
 	 *
 	 * @param modifiedDate the modified date of this ratings stats
@@ -290,6 +341,16 @@ public class RatingsStatsWrapper
 	@Override
 	public void setModifiedDate(Date modifiedDate) {
 		model.setModifiedDate(modifiedDate);
+	}
+
+	/**
+	 * Sets the mvcc version of this ratings stats.
+	 *
+	 * @param mvccVersion the mvcc version of this ratings stats
+	 */
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		model.setMvccVersion(mvccVersion);
 	}
 
 	/**
@@ -330,6 +391,20 @@ public class RatingsStatsWrapper
 	@Override
 	public void setTotalScore(double totalScore) {
 		model.setTotalScore(totalScore);
+	}
+
+	@Override
+	public Map<String, Function<RatingsStats, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<RatingsStats, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

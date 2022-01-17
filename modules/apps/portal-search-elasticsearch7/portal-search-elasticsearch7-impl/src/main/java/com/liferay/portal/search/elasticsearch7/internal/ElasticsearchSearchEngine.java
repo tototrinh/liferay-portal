@@ -15,6 +15,7 @@
 package com.liferay.portal.search.elasticsearch7.internal;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -23,11 +24,13 @@ import com.liferay.portal.kernel.search.IndexSearcher;
 import com.liferay.portal.kernel.search.IndexWriter;
 import com.liferay.portal.kernel.search.SearchEngine;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.search.ccr.CrossClusterReplicationHelper;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionManager;
 import com.liferay.portal.search.elasticsearch7.internal.index.IndexFactory;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
@@ -36,6 +39,8 @@ import com.liferay.portal.search.engine.adapter.cluster.HealthClusterRequest;
 import com.liferay.portal.search.engine.adapter.cluster.HealthClusterResponse;
 import com.liferay.portal.search.engine.adapter.index.CloseIndexRequest;
 import com.liferay.portal.search.engine.adapter.index.CloseIndexResponse;
+import com.liferay.portal.search.engine.adapter.index.GetIndexIndexRequest;
+import com.liferay.portal.search.engine.adapter.index.GetIndexIndexResponse;
 import com.liferay.portal.search.engine.adapter.snapshot.CreateSnapshotRepositoryRequest;
 import com.liferay.portal.search.engine.adapter.snapshot.CreateSnapshotRequest;
 import com.liferay.portal.search.engine.adapter.snapshot.CreateSnapshotResponse;
@@ -48,6 +53,8 @@ import com.liferay.portal.search.engine.adapter.snapshot.SnapshotRepositoryDetai
 import com.liferay.portal.search.engine.adapter.snapshot.SnapshotState;
 import com.liferay.portal.search.index.IndexNameBuilder;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +64,8 @@ import org.elasticsearch.common.Strings;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Michael C. Han
@@ -102,6 +111,33 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 	}
 
 	@Override
+	public Collection<Long> getIndexedCompanyIds() {
+		Collection<Long> companyIds = new ArrayList<>();
+
+		String firstIndexName = _indexNameBuilder.getIndexName(0);
+
+		String prefix = firstIndexName.substring(
+			0, firstIndexName.length() - 1);
+
+		GetIndexIndexResponse getIndexIndexResponse =
+			_searchEngineAdapter.execute(
+				new GetIndexIndexRequest(prefix + StringPool.STAR));
+
+		for (String indexName : getIndexIndexResponse.getIndexNames()) {
+			long companyId = GetterUtil.getLong(
+				StringUtil.removeSubstring(indexName, prefix));
+
+			if (companyId == 0) {
+				continue;
+			}
+
+			companyIds.add(companyId);
+		}
+
+		return companyIds;
+	}
+
+	@Override
 	public void initialize(long companyId) {
 		super.initialize(companyId);
 
@@ -112,9 +148,14 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 
 		_indexFactory.createIndices(restHighLevelClient.indices(), companyId);
 
-		_elasticsearchConnectionManager.registerCompanyId(companyId);
+		_indexFactory.registerCompanyId(companyId);
 
 		waitForYellowStatus();
+
+		if (_crossClusterReplicationHelper != null) {
+			_crossClusterReplicationHelper.follow(
+				_indexNameBuilder.getIndexName(companyId));
+		}
 	}
 
 	@Override
@@ -133,6 +174,11 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 	public void removeCompany(long companyId) {
 		super.removeCompany(companyId);
 
+		if (_crossClusterReplicationHelper != null) {
+			_crossClusterReplicationHelper.unfollow(
+				_indexNameBuilder.getIndexName(companyId));
+		}
+
 		try {
 			RestHighLevelClient restHighLevelClient =
 				_elasticsearchConnectionManager.getRestHighLevelClient();
@@ -140,7 +186,7 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 			_indexFactory.deleteIndices(
 				restHighLevelClient.indices(), companyId);
 
-			_elasticsearchConnectionManager.unregisterCompanyId(companyId);
+			_indexFactory.unregisterCompanyId(companyId);
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
@@ -192,6 +238,12 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 		super.setIndexWriter(indexWriter);
 	}
 
+	public void unsetCrossClusterReplicationHelper(
+		CrossClusterReplicationHelper crossClusterReplicationHelper) {
+
+		_crossClusterReplicationHelper = null;
+	}
+
 	public void unsetElasticsearchConnectionManager(
 		ElasticsearchConnectionManager elasticsearchConnectionManager) {
 
@@ -205,6 +257,12 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 	@Activate
 	protected void activate(Map<String, Object> properties) {
 		setVendor(MapUtil.getString(properties, "search.engine.impl"));
+
+		if (StartupHelperUtil.isDBNew()) {
+			for (long companyId : getIndexedCompanyIds()) {
+				removeCompany(companyId);
+			}
+		}
 	}
 
 	protected void createBackupRepository() {
@@ -220,25 +278,30 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 	}
 
 	protected boolean hasBackupRepository() {
-		try {
-			GetSnapshotRepositoriesRequest getSnapshotRepositoriesRequest =
-				new GetSnapshotRepositoriesRequest(_BACKUP_REPOSITORY_NAME);
+		GetSnapshotRepositoriesRequest getSnapshotRepositoriesRequest =
+			new GetSnapshotRepositoriesRequest(_BACKUP_REPOSITORY_NAME);
 
-			GetSnapshotRepositoriesResponse getSnapshotRepositoriesResponse =
-				_searchEngineAdapter.execute(getSnapshotRepositoriesRequest);
+		GetSnapshotRepositoriesResponse getSnapshotRepositoriesResponse =
+			_searchEngineAdapter.execute(getSnapshotRepositoriesRequest);
 
-			List<SnapshotRepositoryDetails> snapshotRepositoryDetailsList =
-				getSnapshotRepositoriesResponse.getSnapshotRepositoryDetails();
+		List<SnapshotRepositoryDetails> snapshotRepositoryDetailsList =
+			getSnapshotRepositoriesResponse.getSnapshotRepositoryDetails();
 
-			if (snapshotRepositoryDetailsList.isEmpty()) {
-				return false;
-			}
-		}
-		catch (Exception exception) {
-			_log.error(exception, exception);
+		if (snapshotRepositoryDetailsList.isEmpty()) {
+			return false;
 		}
 
 		return true;
+	}
+
+	@Reference(
+		cardinality = ReferenceCardinality.OPTIONAL,
+		policyOption = ReferencePolicyOption.GREEDY
+	)
+	protected void setCrossClusterReplicationHelper(
+		CrossClusterReplicationHelper crossClusterReplicationHelper) {
+
+		_crossClusterReplicationHelper = crossClusterReplicationHelper;
 	}
 
 	@Reference
@@ -333,6 +396,7 @@ public class ElasticsearchSearchEngine extends BaseSearchEngine {
 	private static final Log _log = LogFactoryUtil.getLog(
 		ElasticsearchSearchEngine.class);
 
+	private CrossClusterReplicationHelper _crossClusterReplicationHelper;
 	private ElasticsearchConnectionManager _elasticsearchConnectionManager;
 	private IndexFactory _indexFactory;
 	private IndexNameBuilder _indexNameBuilder;

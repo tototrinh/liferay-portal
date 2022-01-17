@@ -53,8 +53,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             XugglerAutoInstallUtil}
  */
+@Deprecated
 public class XugglerAutoInstallHelper {
 
 	public static void installNativeLibraries() throws ProcessException {
@@ -254,6 +257,10 @@ public class XugglerAutoInstallHelper {
 			return callable.call();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return false;
 		}
 		finally {

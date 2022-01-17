@@ -14,26 +14,25 @@
 
 package com.liferay.dynamic.data.mapping.internal.util;
 
+import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.Field;
-import com.liferay.dynamic.data.mapping.storage.FieldConstants;
 import com.liferay.dynamic.data.mapping.storage.Fields;
+import com.liferay.dynamic.data.mapping.storage.constants.FieldConstants;
+import com.liferay.dynamic.data.mapping.util.DDMFormValuesConverterUtil;
 import com.liferay.dynamic.data.mapping.util.DDMFormValuesToFieldsConverter;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
-
-import java.text.NumberFormat;
-import java.text.ParseException;
 
 import java.util.Locale;
 import java.util.Map;
@@ -51,6 +50,13 @@ public class DDMFormValuesToFieldsConverterImpl
 	public Fields convert(
 			DDMStructure ddmStructure, DDMFormValues ddmFormValues)
 		throws PortalException {
+
+		DDMForm ddmForm = ddmStructure.getDDMForm();
+
+		ddmFormValues.setDDMFormFieldValues(
+			DDMFormValuesConverterUtil.addMissingDDMFormFieldValues(
+				ddmForm.getDDMFormFields(),
+				ddmFormValues.getDDMFormFieldValuesMap(true)));
 
 		Map<String, DDMFormField> ddmFormFieldsMap =
 			ddmStructure.getFullHierarchyDDMFormFieldsMap(true);
@@ -74,7 +80,9 @@ public class DDMFormValuesToFieldsConverterImpl
 			Locale defaultLocale)
 		throws PortalException {
 
-		if ((ddmFormField == null) || ddmFormField.isTransient()) {
+		if ((ddmFormField == null) || ddmFormField.isTransient() ||
+			(ddmFormFieldValue.getValue() == null)) {
+
 			return;
 		}
 
@@ -172,48 +180,20 @@ public class DDMFormValuesToFieldsConverterImpl
 	protected String getFieldDisplayValue(DDMFormFieldValue ddmFormFieldValue) {
 		String fieldName = ddmFormFieldValue.getName();
 
-		return fieldName.concat(
-			DDMImpl.INSTANCE_SEPARATOR
-		).concat(
-			ddmFormFieldValue.getInstanceId()
-		);
+		return StringBundler.concat(
+			fieldName, DDMImpl.INSTANCE_SEPARATOR,
+			ddmFormFieldValue.getInstanceId());
 	}
 
 	protected void setDDMFieldLocalizedValue(
 		Field ddmField, String type, Value value) {
 
-		for (Locale availableLocales : value.getAvailableLocales()) {
-			Serializable serializable = null;
+		for (Locale availableLocale : value.getAvailableLocales()) {
+			Serializable serializable = FieldConstants.getSerializable(
+				availableLocale, availableLocale, type,
+				value.getString(availableLocale));
 
-			if (FieldConstants.isNumericType(type)) {
-				NumberFormat numberFormat = NumberFormat.getInstance(
-					availableLocales);
-
-				if (type.equals(FieldConstants.DOUBLE) ||
-					type.equals(FieldConstants.FLOAT)) {
-
-					numberFormat.setMinimumFractionDigits(1);
-				}
-
-				try {
-					Number number = numberFormat.parse(
-						GetterUtil.getString(
-							value.getString(availableLocales)));
-
-					serializable = FieldConstants.getSerializable(
-						type, number.toString());
-				}
-				catch (ParseException parseException) {
-					serializable = FieldConstants.getSerializable(
-						type, value.getString(availableLocales));
-				}
-			}
-			else {
-				serializable = FieldConstants.getSerializable(
-					type, value.getString(availableLocales));
-			}
-
-			ddmField.addValue(availableLocales, serializable);
+			ddmField.addValue(availableLocale, serializable);
 		}
 	}
 
@@ -221,7 +201,8 @@ public class DDMFormValuesToFieldsConverterImpl
 		Field ddmField, String type, Value value, Locale defaultLocale) {
 
 		Serializable serializable = FieldConstants.getSerializable(
-			type, value.getString(LocaleUtil.ROOT));
+			defaultLocale, LocaleUtil.ROOT, type,
+			value.getString(LocaleUtil.ROOT));
 
 		ddmField.addValue(defaultLocale, serializable);
 	}

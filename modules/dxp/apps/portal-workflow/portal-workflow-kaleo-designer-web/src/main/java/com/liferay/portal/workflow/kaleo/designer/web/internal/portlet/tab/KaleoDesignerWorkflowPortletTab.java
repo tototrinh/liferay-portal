@@ -18,11 +18,11 @@ import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.workflow.configuration.WorkflowDefinitionConfiguration;
@@ -127,9 +127,7 @@ public class KaleoDesignerWorkflowPortletTab extends BaseWorkflowPortletTab {
 		if (_kaleoDesignerDisplayContext == null) {
 			_kaleoDesignerDisplayContext = new KaleoDesignerDisplayContext(
 				renderRequest, _kaleoDefinitionVersionLocalService,
-				ResourceBundleLoaderUtil.
-					getResourceBundleLoaderByBundleSymbolicName(
-						"com.liferay.portal.workflow.kaleo.designer.web"),
+				ResourceBundleLoaderUtil.getPortalResourceBundleLoader(),
 				_userLocalService);
 		}
 
@@ -175,6 +173,7 @@ public class KaleoDesignerWorkflowPortletTab extends BaseWorkflowPortletTab {
 			"portletTabServletContext", getServletContext());
 	}
 
+	@Override
 	@Reference(
 		target = "(osgi.web.symbolicname=com.liferay.portal.workflow.kaleo.designer.web)",
 		unbind = "-"
@@ -195,7 +194,7 @@ public class KaleoDesignerWorkflowPortletTab extends BaseWorkflowPortletTab {
 	private static final Log _log = LogFactoryUtil.getLog(
 		KaleoDesignerWorkflowPortletTab.class);
 
-	private boolean _companyAdministratorCanPublish;
+	private volatile boolean _companyAdministratorCanPublish;
 	private KaleoDefinitionVersionLocalService
 		_kaleoDefinitionVersionLocalService;
 	private KaleoDesignerDisplayContext _kaleoDesignerDisplayContext;

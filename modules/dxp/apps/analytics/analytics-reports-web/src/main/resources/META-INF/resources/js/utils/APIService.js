@@ -11,64 +11,61 @@
 
 import {fetch} from 'frontend-js-web';
 
-function APIService({endpoints, namespace, page}) {
-	const {
-		getAnalyticsReportsHistoricalReadsURL,
-		getAnalyticsReportsHistoricalViewsURL,
-		getAnalyticsReportsTotalReadsURL,
-		getAnalyticsReportsTotalViewsURL
-	} = endpoints;
-	const {plid} = page;
+export default {
+	getHistoricalReads(
+		analyticsReportsHistoricalReadsURL,
+		{namespace, plid, timeSpanKey, timeSpanOffset}
+	) {
+		const body = {plid, timeSpanKey, timeSpanOffset};
 
-	function getTotalReads() {
+		return _fetchWithError(analyticsReportsHistoricalReadsURL, {
+			body: _getFormDataRequest(body, namespace),
+			method: 'POST',
+		});
+	},
+
+	getHistoricalViews(
+		analyticsReportsHistoricalViewsURL,
+		{namespace, plid, timeSpanKey, timeSpanOffset}
+	) {
+		const body = {plid, timeSpanKey, timeSpanOffset};
+
+		return _fetchWithError(analyticsReportsHistoricalViewsURL, {
+			body: _getFormDataRequest(body, namespace),
+			method: 'POST',
+		});
+	},
+
+	getTotalReads(analyticsReportsTotalReadsURL, {namespace, plid}) {
 		const body = {plid};
 
-		return _fetchWithError(getAnalyticsReportsTotalReadsURL, {
+		return _fetchWithError(analyticsReportsTotalReadsURL, {
 			body: _getFormDataRequest(body, namespace),
-			credentials: 'include',
-			method: 'POST'
+			method: 'POST',
 		});
-	}
+	},
 
-	function getTotalViews() {
+	getTotalViews(analyticsReportsTotalViewsURL, {namespace, plid}) {
 		const body = {plid};
 
-		return _fetchWithError(getAnalyticsReportsTotalViewsURL, {
+		return _fetchWithError(analyticsReportsTotalViewsURL, {
 			body: _getFormDataRequest(body, namespace),
-			credentials: 'include',
-			method: 'POST'
+			method: 'POST',
 		});
-	}
+	},
 
-	function getHistoricalReads() {
-		const body = {plid};
+	getTrafficSources(
+		analyticsReportsTrafficSourcesURL,
+		{namespace, plid, timeSpanKey, timeSpanOffset}
+	) {
+		const body = {plid, timeSpanKey, timeSpanOffset};
 
-		return _fetchWithError(getAnalyticsReportsHistoricalReadsURL, {
+		return _fetchWithError(analyticsReportsTrafficSourcesURL, {
 			body: _getFormDataRequest(body, namespace),
-			credentials: 'include',
-			method: 'POST'
+			method: 'POST',
 		});
-	}
-
-	function getHistoricalViews() {
-		const body = {plid};
-
-		return _fetchWithError(getAnalyticsReportsHistoricalViewsURL, {
-			body: _getFormDataRequest(body, namespace),
-			credentials: 'include',
-			method: 'POST'
-		});
-	}
-
-	return {
-		getHistoricalReads,
-		getHistoricalViews,
-		getTotalReads,
-		getTotalViews
-	};
-}
-
-export default APIService;
+	},
+};
 
 /**
  *
@@ -92,8 +89,8 @@ export function _getFormDataRequest(body, prefix, formData = new FormData()) {
  */
 function _fetchWithError(url, options = {}) {
 	return fetch(url, options)
-		.then(response => response.json())
-		.then(objectResponse => {
+		.then((response) => response.json())
+		.then((objectResponse) => {
 			if (objectResponse.error) {
 				throw objectResponse.error;
 			}

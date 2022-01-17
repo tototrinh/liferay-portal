@@ -16,7 +16,10 @@ package com.liferay.portal.search.tuning.synonyms.web.internal.application.list;
 
 import com.liferay.application.list.BasePanelApp;
 import com.liferay.application.list.PanelApp;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.search.tuning.synonyms.web.internal.constants.SynonymsPortletKeys;
 import com.liferay.portal.search.tuning.web.application.list.constants.SearchTuningPanelCategoryKeys;
 
@@ -39,6 +42,13 @@ public class SynonymsPanelApp extends BasePanelApp {
 	@Override
 	public String getPortletId() {
 		return SynonymsPortletKeys.SYNONYMS;
+	}
+
+	@Override
+	public boolean isShow(PermissionChecker permissionChecker, Group group)
+		throws PortalException {
+
+		return super.isShow(permissionChecker, group);
 	}
 
 	@Override

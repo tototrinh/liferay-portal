@@ -26,10 +26,8 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionLogic;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-
-import java.util.Dictionary;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -46,13 +44,9 @@ public class DDMFormInstanceRecordModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			"model.class.name", DDMFormInstanceRecord.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<DDMFormInstanceRecord>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				DDMFormInstanceRecord.class,
 				DDMFormInstanceRecord::getFormInstanceRecordId,
@@ -64,7 +58,9 @@ public class DDMFormInstanceRecordModelResourcePermissionRegistrar {
 					consumer.accept(
 						new DDMFormInstanceRecordInheritanceModelResourcePermissionLogic());
 				}),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", DDMFormInstanceRecord.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -85,7 +81,8 @@ public class DDMFormInstanceRecordModelResourcePermissionRegistrar {
 	@Reference(target = "(resource.name=" + DDMConstants.RESOURCE_NAME + ")")
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<DDMFormInstanceRecord>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

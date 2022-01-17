@@ -6,7 +6,7 @@ $chartPurple: #af78ff;
 
 $propertyGroupsColors: (
 	'context': $chartPurple,
-	'user-organization': $chartOrange
+	'user-organization': $chartOrange,
 );
 
 $main: #272833;
@@ -29,5 +29,10 @@ $white: #fff;
 $pageContentMaxWidth: 1248px;
 $productMenuWidth: 320px;
 $sidebarWidth: 380px;
+$topHeaderHeight: 56px;
 
 $gap: 8px;
+
+// ---------- Animations ----------
+
+$segmentsTransition: 200ms ease-in-out;

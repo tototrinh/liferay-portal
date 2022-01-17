@@ -205,6 +205,20 @@ public interface KaleoNotificationRecipientModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo notification recipient.
+	 *
+	 * @return the kaleo definition ID of this kaleo notification recipient
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo notification recipient.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo notification recipient
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo notification recipient.
 	 *
 	 * @return the kaleo definition version ID of this kaleo notification recipient
@@ -349,5 +363,8 @@ public interface KaleoNotificationRecipientModel
 	 * @param notificationReceptionType the notification reception type of this kaleo notification recipient
 	 */
 	public void setNotificationReceptionType(String notificationReceptionType);
+
+	@Override
+	public KaleoNotificationRecipient cloneWithOriginalValues();
 
 }

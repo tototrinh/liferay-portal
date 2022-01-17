@@ -2,11 +2,13 @@
 <head>
 <title>Radio</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Radio</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>APPEND</td>
@@ -19,6 +21,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>AUTOMATIC_URL_DISABLED</td>
+	<td>//label[contains(.,'Automatic')]/input[@type='radio' and @disabled]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>CHOOSE_MENU</td>
 	<td>//label[contains(.,'Choose Menu')]/input[@type='radio']</td>
 	<td></td>
@@ -26,6 +33,11 @@
 <tr>
 	<td>CUSTOM_URL</td>
 	<td>//label[contains(.,'Custom')]/input[@type='radio']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CUSTOM_URL_DISABLED</td>
+	<td>//label[contains(.,'Custom')]/input[@type='radio' and @disabled]</td>
 	<td></td>
 </tr>
 <tr>
@@ -51,11 +63,6 @@
 <tr>
 	<td>FIRST_400_ABSTRACT</td>
 	<td>//label[contains(.,'first 400 characters')]/input[contains(@id,'customAbstract')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>KEEP</td>
-	<td>//label[contains(.,'Keep')]/input[@type='radio']</td>
 	<td></td>
 </tr>
 <tr>

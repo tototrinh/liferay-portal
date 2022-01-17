@@ -16,9 +16,12 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetTag;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.exportimport.kernel.staging.StagingUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.NoSuchGroupException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -46,6 +49,7 @@ import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.service.permission.RolePermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
+import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
@@ -428,7 +432,7 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 
 		GroupPermissionUtil.check(getPermissionChecker(), ActionKeys.VIEW);
 
-		return groupPersistence.findByG_C_P_S(
+		return groupPersistence.findByGtG_C_P_S(
 			gtGroupId, companyId, parentGroupId, site, 0, size,
 			new GroupIdComparator(true));
 	}
@@ -452,14 +456,12 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 		PermissionChecker permissionChecker = getPermissionChecker();
 
 		if (permissionChecker.isCompanyAdmin()) {
-			LinkedHashMap<String, Object> params =
-				LinkedHashMapBuilder.<String, Object>put(
-					"site", Boolean.TRUE
-				).build();
-
 			return ListUtil.unique(
 				groupLocalService.search(
-					permissionChecker.getCompanyId(), null, null, null, params,
+					permissionChecker.getCompanyId(), null, null, null,
+					LinkedHashMapBuilder.<String, Object>put(
+						"site", Boolean.TRUE
+					).build(),
 					true, 0, max));
 		}
 
@@ -467,10 +469,10 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 
 		List<Group> userSitesGroups = getUserSitesGroups(null, max);
 
-		Iterator<Group> itr = userSitesGroups.iterator();
+		Iterator<Group> iterator = userSitesGroups.iterator();
 
-		while (itr.hasNext()) {
-			Group group = itr.next();
+		while (iterator.hasNext()) {
+			Group group = iterator.next();
 
 			if (group.isSite() &&
 				PortletPermissionUtil.hasControlPanelAccessPermission(
@@ -574,6 +576,16 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 		return getUserSitesGroups(null, QueryUtil.ALL_POS);
 	}
 
+	@Override
+	public List<Group> getUserSitesGroups(long userId, int start, int end)
+		throws PortalException {
+
+		List<Group> groups = groupLocalService.getUserSitesGroups(
+			userId, start, end);
+
+		return filterGroups(groups);
+	}
+
 	/**
 	 * Returns the user's groups &quot;sites&quot; associated with the group
 	 * entity class names, including the Control Panel group if the user is
@@ -612,7 +624,7 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 			long userId, String[] classNames, int max)
 		throws PortalException {
 
-		User user = userPersistence.findByPrimaryKey(userId);
+		User user = _userPersistence.findByPrimaryKey(userId);
 
 		boolean checkPermissions = true;
 
@@ -808,11 +820,12 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 	public List<Group> search(
 			long companyId, long[] classNameIds, String keywords,
 			LinkedHashMap<String, Object> params, int start, int end,
-			OrderByComparator<Group> obc)
+			OrderByComparator<Group> orderByComparator)
 		throws PortalException {
 
 		List<Group> groups = groupLocalService.search(
-			companyId, classNameIds, keywords, params, start, end, obc);
+			companyId, classNameIds, keywords, params, start, end,
+			orderByComparator);
 
 		return filterGroups(groups);
 	}
@@ -822,12 +835,12 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 			long companyId, long[] classNameIds, String name,
 			String description, LinkedHashMap<String, Object> params,
 			boolean andOperator, int start, int end,
-			OrderByComparator<Group> obc)
+			OrderByComparator<Group> orderByComparator)
 		throws PortalException {
 
 		List<Group> groups = groupLocalService.search(
 			companyId, classNameIds, name, description, params, andOperator,
-			start, end, obc);
+			start, end, orderByComparator);
 
 		return filterGroups(groups);
 	}
@@ -1007,10 +1020,10 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 			Group oldGroup = group;
 
 			List<AssetCategory> oldAssetCategories =
-				assetCategoryLocalService.getCategories(
+				_assetCategoryLocalService.getCategories(
 					Group.class.getName(), groupId);
 
-			List<AssetTag> oldAssetTags = assetTagLocalService.getTags(
+			List<AssetTag> oldAssetTags = _assetTagLocalService.getTags(
 				Group.class.getName(), groupId);
 
 			ExpandoBridge oldExpandoBridge = oldGroup.getExpandoBridge();
@@ -1057,17 +1070,18 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 		if (group.isSite()) {
 			Group oldGroup = group;
 
-			UnicodeProperties oldTypeSettingsProperties =
+			UnicodeProperties oldTypeSettingsUnicodeProperties =
 				oldGroup.getTypeSettingsProperties();
 
 			group = groupLocalService.updateGroup(groupId, typeSettings);
 
 			RatingsDataTransformerUtil.transformGroupRatingsData(
-				groupId, oldTypeSettingsProperties,
+				groupId, oldTypeSettingsUnicodeProperties,
 				group.getTypeSettingsProperties());
 
 			SiteMembershipPolicyUtil.verifyPolicy(
-				group, oldGroup, null, null, null, oldTypeSettingsProperties);
+				group, oldGroup, null, null, null,
+				oldTypeSettingsUnicodeProperties);
 
 			return group;
 		}
@@ -1085,11 +1099,11 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 		GroupPermissionUtil.check(
 			getPermissionChecker(), group, ActionKeys.UPDATE);
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
 		for (Map.Entry<String, String> entry : stagedPortletIds.entrySet()) {
-			typeSettingsProperties.setProperty(
+			typeSettingsUnicodeProperties.setProperty(
 				StagingUtil.getStagedPortletId(entry.getKey()),
 				entry.getValue());
 		}
@@ -1123,5 +1137,14 @@ public class GroupServiceImpl extends GroupServiceBaseImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		GroupServiceImpl.class);
+
+	@BeanReference(type = AssetCategoryLocalService.class)
+	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@BeanReference(type = AssetTagLocalService.class)
+	private AssetTagLocalService _assetTagLocalService;
+
+	@BeanReference(type = UserPersistence.class)
+	private UserPersistence _userPersistence;
 
 }

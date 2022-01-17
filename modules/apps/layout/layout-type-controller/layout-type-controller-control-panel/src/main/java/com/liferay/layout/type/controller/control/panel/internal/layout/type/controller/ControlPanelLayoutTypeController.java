@@ -18,12 +18,12 @@ import com.liferay.application.list.PanelAppRegistry;
 import com.liferay.application.list.PanelCategoryRegistry;
 import com.liferay.application.list.constants.ApplicationListWebKeys;
 import com.liferay.layout.type.controller.BaseLayoutTypeControllerImpl;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypeController;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.taglib.servlet.PipingServletResponse;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletResponse;
@@ -99,6 +99,22 @@ public class ControlPanelLayoutTypeController
 	protected ServletResponse createServletResponse(
 		HttpServletResponse httpServletResponse,
 		UnsyncStringWriter unsyncStringWriter) {
+
+		return new PipingServletResponse(
+			httpServletResponse, unsyncStringWriter);
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #createServletResponse(HttpServletResponse,
+	 *             UnsyncStringWriter)}
+	 */
+	@Deprecated
+	@Override
+	protected ServletResponse createServletResponse(
+		HttpServletResponse httpServletResponse,
+		com.liferay.portal.kernel.io.unsync.UnsyncStringWriter
+			unsyncStringWriter) {
 
 		return new PipingServletResponse(
 			httpServletResponse, unsyncStringWriter);

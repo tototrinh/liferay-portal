@@ -24,14 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.dynamic.data.lists.service.http.DDLRecordServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class DDLRecordSoap implements Serializable {
 
 	public static DDLRecordSoap toSoapModel(DDLRecord model) {
 		DDLRecordSoap soapModel = new DDLRecordSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setRecordId(model.getRecordId());
 		soapModel.setGroupId(model.getGroupId());
@@ -45,6 +48,8 @@ public class DDLRecordSoap implements Serializable {
 		soapModel.setDDMStorageId(model.getDDMStorageId());
 		soapModel.setRecordSetId(model.getRecordSetId());
 		soapModel.setRecordSetVersion(model.getRecordSetVersion());
+		soapModel.setClassName(model.getClassName());
+		soapModel.setClassPK(model.getClassPK());
 		soapModel.setVersion(model.getVersion());
 		soapModel.setDisplayIndex(model.getDisplayIndex());
 		soapModel.setLastPublishDate(model.getLastPublishDate());
@@ -107,6 +112,14 @@ public class DDLRecordSoap implements Serializable {
 
 	public void setMvccVersion(long mvccVersion) {
 		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public String getUuid() {
@@ -213,6 +226,22 @@ public class DDLRecordSoap implements Serializable {
 		_recordSetVersion = recordSetVersion;
 	}
 
+	public String getClassName() {
+		return _className;
+	}
+
+	public void setClassName(String className) {
+		_className = className;
+	}
+
+	public long getClassPK() {
+		return _classPK;
+	}
+
+	public void setClassPK(long classPK) {
+		_classPK = classPK;
+	}
+
 	public String getVersion() {
 		return _version;
 	}
@@ -238,6 +267,7 @@ public class DDLRecordSoap implements Serializable {
 	}
 
 	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _recordId;
 	private long _groupId;
@@ -251,6 +281,8 @@ public class DDLRecordSoap implements Serializable {
 	private long _DDMStorageId;
 	private long _recordSetId;
 	private String _recordSetVersion;
+	private String _className;
+	private long _classPK;
 	private String _version;
 	private int _displayIndex;
 	private Date _lastPublishDate;

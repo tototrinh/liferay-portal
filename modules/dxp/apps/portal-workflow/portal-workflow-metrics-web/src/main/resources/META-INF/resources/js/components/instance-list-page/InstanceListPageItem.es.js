@@ -9,118 +9,102 @@
  * distribution rights of the Software.
  */
 
+/* eslint-disable @liferay/empty-line-between-elements */
+
 import {ClayCheckbox} from '@clayui/form';
+import ClayIcon from '@clayui/icon';
+import ClayLayout from '@clayui/layout';
+import ClayModal, {useModal} from '@clayui/modal';
+import ClayPopover from '@clayui/popover';
 import ClayTable from '@clayui/table';
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import WorkflowInstanceTracker from '@liferay/portal-workflow-instance-tracker-web/js/components/WorkflowInstanceTracker';
+import React, {useContext, useState} from 'react';
 
-import Icon from '../../shared/components/Icon.es';
+import useDebounceCallback from '../../hooks/useDebounceCallback.es';
 import QuickActionKebab from '../../shared/components/quick-action-kebab/QuickActionKebab.es';
+import {remainingTimeFormat} from '../../shared/util/duration.es';
 import moment from '../../shared/util/moment.es';
-import {capitalize} from '../../shared/util/util.es';
-import {ModalContext} from './modal/ModalContext.es';
-import {InstanceListContext} from './store/InstanceListPageStore.es';
-
-const getSLAStatusIcon = slaStatus => {
-	const items = {
-		OnTime: {
-			bgColor: 'bg-success-light',
-			iconColor: 'text-success',
-			iconName: 'check-circle'
-		},
-		Overdue: {
-			bgColor: 'bg-danger-light',
-			iconColor: 'text-danger',
-			iconName: 'exclamation-circle'
-		},
-		Untracked: {
-			bgColor: 'bg-info-light',
-			iconColor: 'text-info',
-			iconName: 'hr'
-		}
-	};
-
-	return items[slaStatus] || items.Untracked;
-};
-
-const Item = ({totalCount, ...instance}) => {
+import {capitalize, getSLAStatusIconInfo} from '../../shared/util/util.es';
+import {AppContext} from '../AppContext.es';
+import {InstanceListContext} from './InstanceListPageProvider.es';
+import {ModalContext} from './modal/ModalProvider.es';
+function Item({totalCount, ...instance}) {
+	const {userId} = useContext(AppContext);
 	const {
 		selectedItems = [],
 		setInstanceId,
 		setSelectAll,
-		setSelectedItems
+		setSelectedItems,
 	} = useContext(InstanceListContext);
-	const {instanceDetailsModal, setInstanceDetailsModal} = useContext(
-		ModalContext
-	);
-
-	const [checked, setChecked] = useState(false);
+	const {openModal} = useContext(ModalContext);
 
 	const {
 		assetTitle,
 		assetType,
-		assigneeUsers = [],
-		creatorUser,
+		assignees = [],
+		completed,
+		creator,
 		dateCreated,
 		id,
-		status,
+		slaResults = [],
 		slaStatus,
-		taskNames
+		taskNames = [Liferay.Language.get('not-available')],
 	} = instance;
 
-	useEffect(() => {
-		setChecked(!!selectedItems.find(item => item.id === id));
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedItems]);
+	const [showInstanceTrackerModal, setShowInstanceTrackerModal] = useState(
+		false
+	);
 
-	const completed = status === 'Completed';
-	const slaStatusIcon = getSLAStatusIcon(slaStatus);
+	const {observer} = useModal({
+		onClose: () => {
+			setShowInstanceTrackerModal(false);
+		},
+	});
 
-	const assigneeUserNames = assigneeUsers
-		.map(assigneeUser => assigneeUser.name)
-		.join(', ');
+	const checked = !!selectedItems.find((item) => item.id === id);
+
+	const assignedToUser = !!assignees.find(({id}) => id === Number(userId));
+	const assigneeNames = assignees.map((user) => user.name).join(', ');
+	const {reviewer} = assignees.find(({id}) => id === -1) || {};
+
+	const disableCheckbox = (!assignedToUser && !reviewer) || completed;
 
 	const formattedAssignees = !completed
-		? assigneeUserNames || Liferay.Language.get('unassigned')
+		? assigneeNames
 		: Liferay.Language.get('not-available');
 
 	const formattedTaskNames = !completed
-		? taskNames
-			? taskNames.join(', ')
-			: Liferay.Language.get('not-available')
+		? taskNames.join(', ')
 		: Liferay.Language.get('completed');
 
 	const handleCheck = ({target}) => {
-		setChecked(target.checked);
-
 		const updatedItems = target.checked
 			? [...selectedItems, instance]
-			: selectedItems.filter(item => item.id !== id);
+			: selectedItems.filter((item) => item.id !== id);
 
 		setSelectAll(totalCount > 0 && totalCount === updatedItems.length);
 		setSelectedItems(updatedItems);
 	};
 
+	const slaStatusIconInfo = getSLAStatusIconInfo(slaStatus);
+
 	return (
-		<ClayTable.Row
-			className={checked ? 'table-active' : ''}
-			data-testid="instanceRow"
-		>
+		<ClayTable.Row className={checked ? 'table-active' : ''}>
 			<ClayTable.Cell>
 				<div className="table-first-element-group">
 					<ClayCheckbox
 						checked={checked}
-						data-testid="instanceCheckbox"
-						disabled={completed}
+						disabled={disableCheckbox}
 						onChange={handleCheck}
 					/>
 
 					<span
-						className={`sticker sticker-sm ${slaStatusIcon.bgColor}`}
+						className={`ml-2 sticker sticker-sm ${slaStatusIconInfo?.bgColor}`}
 					>
 						<span className="inline-item">
-							<Icon
-								elementClasses={slaStatusIcon.iconColor}
-								iconName={slaStatusIcon.iconName}
+							<ClayIcon
+								className={slaStatusIconInfo?.textColor}
+								symbol={slaStatusIconInfo?.name}
 							/>
 						</span>
 					</span>
@@ -130,14 +114,10 @@ const Item = ({totalCount, ...instance}) => {
 			<ClayTable.Cell>
 				<span
 					className="link-text"
-					data-testid="instanceIdLink"
 					onClick={() => {
 						setInstanceId(id);
 
-						setInstanceDetailsModal(() => ({
-							...instanceDetailsModal,
-							visible: true
-						}));
+						openModal('instanceDetails');
 					}}
 					tabIndex="-1"
 				>
@@ -145,126 +125,266 @@ const Item = ({totalCount, ...instance}) => {
 				</span>
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="assetInfoCell">
-				{`${assetType}: ${assetTitle} `}
+			<ClayTable.Cell>
+				<DueDateSLAResults
+					slaResults={slaResults}
+					slaStatusIconInfo={slaStatusIconInfo}
+				/>
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="taskNamesCell">
+			<ClayTable.Cell
+				className="bounded-column"
+				data-tooltip-align="bottom"
+				title={`${assetType}: ${assetTitle}`}
+			>{`${assetType}: ${assetTitle}`}</ClayTable.Cell>
+
+			<ClayTable.Cell
+				className="bounded-column"
+				data-tooltip-align="bottom"
+				title={formattedTaskNames}
+			>
 				{formattedTaskNames}
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="assigneesCell">
+			<ClayTable.Cell
+				className="bounded-column"
+				data-tooltip-align="bottom"
+				title={formattedAssignees}
+			>
 				{formattedAssignees}
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="creatorUserCell">
-				{creatorUser ? creatorUser.name : ''}
+			<ClayTable.Cell
+				className="bounded-column"
+				data-tooltip-align="bottom"
+				title={creator ? creator.name : ''}
+			>
+				{creator ? creator.name : ''}
 			</ClayTable.Cell>
 
-			<ClayTable.Cell data-testid="dateCreatedCell">
+			<ClayTable.Cell>
 				{moment
 					.utc(dateCreated)
 					.format(Liferay.Language.get('mmm-dd-yyyy-lt'))}
 			</ClayTable.Cell>
 
 			<ClayTable.Cell style={{paddingRight: '0rem'}}>
-				<QuickActionMenu disabled={completed} instance={instance} />
+				<QuickActionMenu
+					disabled={disableCheckbox}
+					instance={instance}
+					setShowInstanceTrackerModal={() =>
+						setShowInstanceTrackerModal(true)
+					}
+				/>
 			</ClayTable.Cell>
+
+			{showInstanceTrackerModal && (
+				<ClayModal observer={observer} size="full-screen">
+					<ClayModal.Header>
+						{Liferay.Language.get('track-workflow')}
+					</ClayModal.Header>
+
+					<ClayModal.Body>
+						<WorkflowInstanceTracker workflowInstanceId={id} />
+					</ClayModal.Body>
+				</ClayModal>
+			)}
 		</ClayTable.Row>
 	);
-};
+}
 
-const QuickActionMenu = ({disabled, instance}) => {
-	const {
-		bulkModal,
-		setBulkModal,
-		setSingleModal,
-		setSingleTransition,
-		setUpdateDueDate
-	} = useContext(ModalContext);
+function QuickActionMenu({disabled, instance, setShowInstanceTrackerModal}) {
+	const {openModal, setSingleTransition} = useContext(ModalContext);
+	const {workflowInstanceTrackerEnabled} = useContext(AppContext);
+	const {setSelectedItems} = useContext(InstanceListContext);
+	const {transitions = [], taskNames = []} = instance;
 
-	const {id, transitions = [], taskNames} = instance;
-
-	const handleClickReassignTask = useCallback(
-		() => {
-			if (taskNames.length > 1) {
-				setBulkModal({...bulkModal, visible: true});
-
-				setSingleModal({selectedItem: instance});
-			}
-			else {
-				setSingleModal({
-					selectedItem: instance,
-					visible: true
-				});
-			}
-		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[instance]
-	);
-
-	const handleClickUpdateDueDate = useCallback(
-		() => {
-			if (taskNames.length > 1) {
-				setBulkModal({...bulkModal, visible: true});
-			}
-			else {
-				setUpdateDueDate({selectedItem: instance, visible: true});
-			}
-		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[instance]
-	);
+	const handleClick = (bulkModal, singleModal) => {
+		openModal(taskNames.length > 1 ? bulkModal : singleModal);
+		setSelectedItems([instance]);
+	};
 
 	const transitionLabel = capitalize(Liferay.Language.get('transition'));
+	const updateDueDateItem = {
+		icon: 'date',
+		label: Liferay.Language.get('update-due-date'),
+		onClick: () => handleClick('bulkUpdateDueDate', 'updateDueDate'),
+	};
 
-	const kebabItems = [
+	let kebabItems = [
 		{
 			icon: 'change',
 			label: Liferay.Language.get('reassign-task'),
-			onClick: handleClickReassignTask
+			onClick: () => handleClick('bulkReassign', 'singleReassign'),
 		},
-		{
-			icon: 'date',
-			label: Liferay.Language.get('update-due-date'),
-			onClick: handleClickUpdateDueDate
-		}
+		updateDueDateItem,
 	];
+
+	if (workflowInstanceTrackerEnabled) {
+		kebabItems = [
+			...kebabItems,
+			{
+				label: Liferay.Language.get('track-workflow'),
+				onClick: setShowInstanceTrackerModal,
+			},
+		];
+	}
 
 	if (transitions.length > 0) {
 		const transitionItems = [
 			{
-				type: 'divider'
+				type: 'divider',
 			},
 			{
 				items: transitions.map(({label, name}) => ({
 					label,
 					name,
 					onClick: () => {
+						openModal('singleTransition');
+						setSelectedItems([instance]);
 						setSingleTransition({
-							selectedItemId: id,
 							title: label,
 							transitionName: name,
-							visible: true
 						});
-					}
+					},
 				})),
 				label: transitionLabel,
 				name: transitionLabel,
-				type: 'group'
-			}
+				type: 'group',
+			},
 		];
 
 		kebabItems.push(...transitionItems);
 	}
+	else if (transitions.length === 0 && taskNames.length > 1) {
+		kebabItems.splice(
+			1,
+			1,
+			{
+				label: transitionLabel,
+				onClick: () => {
+					setSelectedItems([instance]);
+					openModal('bulkTransition');
+				},
+			},
+			updateDueDateItem
+		);
+	}
 
 	return (
-		<div className="autofit-col">
+		<ClayLayout.ContentCol>
 			<QuickActionKebab disabled={disabled} items={kebabItems} />
+		</ClayLayout.ContentCol>
+	);
+}
+
+function DueDateSLAResults({slaResults, slaStatusIconInfo}) {
+	const [popover, setPopover] = useState(false);
+
+	const [showPopover, cancelShowPopover] = useDebounceCallback(
+		() => setPopover(true),
+		1000
+	);
+
+	const getDueDateFormatted = (dateOverdue, fullDatetime = false) => {
+		if (!dateOverdue) {
+			return '';
+		}
+
+		let format = '';
+
+		const sameYear =
+			dateOverdue.split('-')[0] === new Date().getFullYear().toString();
+
+		if (sameYear) {
+			format = fullDatetime
+				? Liferay.Language.get('mmm-dd-lt')
+				: Liferay.Language.get('mmm-dd');
+		}
+		else {
+			format = fullDatetime
+				? Liferay.Language.get('mmm-dd-yyyy-lt')
+				: Liferay.Language.get('mmm-dd-yyyy');
+		}
+
+		return moment.utc(dateOverdue).format(format);
+	};
+
+	const instanceSlaResults = slaResults.slice(0, 2).map((slaResult) => {
+		const datetimeOverdueFormatted = getDueDateFormatted(
+			slaResult.dateOverdue,
+			true
+		);
+
+		const [durationText, onTimeText] = remainingTimeFormat(
+			slaResult.onTime,
+			slaResult.remainingTime,
+			true
+		);
+
+		const textClass = slaResult.onTime ? 'text-success' : 'text-danger';
+
+		return {
+			...slaResult,
+			datetimeOverdueFormatted,
+			durationText,
+			onTimeText,
+			textClass,
+		};
+	});
+
+	const slaResultDateOverdue = instanceSlaResults?.length
+		? getDueDateFormatted(instanceSlaResults[0].dateOverdue)
+		: '';
+
+	return (
+		<div
+			className={`due-date ${
+				instanceSlaResults?.length
+					? slaStatusIconInfo?.textColor
+					: 'text-info'
+			}`}
+		>
+			{!instanceSlaResults?.length ? (
+				'-'
+			) : (
+				<ClayPopover
+					alignPosition="bottom-left"
+					className="due-date-popover"
+					header={Liferay.Language.get('due-date')}
+					onMouseEnter={() => setPopover(true)}
+					onMouseLeave={() => setPopover(false)}
+					show={popover}
+					trigger={
+						<div
+							onMouseOut={() => {
+								cancelShowPopover();
+
+								setPopover(false);
+							}}
+							onMouseOver={() => showPopover()}
+						>
+							<span className="due-date-badge"></span>
+
+							{slaResultDateOverdue}
+						</div>
+					}
+				>
+					{instanceSlaResults.map((slaResult) => (
+						<div key={`critical-sla-${slaResult.id}`}>
+							<div>{slaResult.name}:</div>
+
+							<div className={slaResult.textClass}>
+								{`${slaResult.datetimeOverdueFormatted} (${slaResult.durationText} ${slaResult.onTimeText})`}
+							</div>
+						</div>
+					))}
+				</ClayPopover>
+			)}
 		</div>
 	);
-};
+}
 
 Item.QuickActionMenu = QuickActionMenu;
 
-export {Item};
+export default Item;

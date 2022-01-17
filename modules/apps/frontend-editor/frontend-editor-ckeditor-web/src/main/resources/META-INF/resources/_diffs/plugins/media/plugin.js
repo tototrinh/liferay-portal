@@ -12,7 +12,7 @@
  * details.
  */
 
-(function() {
+(function () {
 	var STR_DIV = 'div';
 
 	CKEDITOR.plugins.add('media', {
@@ -114,7 +114,7 @@
 										fakeElement.attributes.style = fakeStyle;
 									}
 
-									if (typeof height != 'undefined') {
+									if (typeof height !== 'undefined') {
 										fakeStyle +=
 											'height:' +
 											CKEDITOR.tools.cssLength(height) +
@@ -123,7 +123,7 @@
 										fakeElement.attributes.style = fakeStyle;
 									}
 
-									if (typeof width != 'undefined') {
+									if (typeof width !== 'undefined') {
 										fakeStyle +=
 											'width:' +
 											CKEDITOR.tools.cssLength(width) +
@@ -135,8 +135,8 @@
 							}
 
 							return fakeElement;
-						}
-					}
+						},
+					},
 				});
 			}
 			if (htmlFilter) {
@@ -164,8 +164,8 @@
 							}
 
 							return realElement;
-						}
-					}
+						},
+					},
 				});
 			}
 		},
@@ -174,7 +174,7 @@
 			var instance = this;
 
 			var dialogReplace = {
-				dialog
+				dialog,
 			};
 
 			var mediaAUI = 'Audio';
@@ -200,7 +200,7 @@
 			);
 
 			var textScriptRender = scriptRender.output({
-				mediaAUI
+				mediaAUI,
 			});
 
 			instance.replaceScriptContent(
@@ -261,7 +261,7 @@
 		},
 
 		hasClass(attributeClass, target) {
-			return attributeClass && attributeClass.indexOf(target) != -1;
+			return attributeClass && attributeClass.indexOf(target) !== -1;
 		},
 
 		init(editor) {
@@ -276,13 +276,13 @@
 			editor.ui.addButton('Audio', {
 				command: 'Audio',
 				icon: instance.path + 'icons/icon_audio.png',
-				label: Liferay.Language.get('audio')
+				label: Liferay.Language.get('audio'),
 			});
 
 			editor.ui.addButton('Video', {
 				command: 'Video',
 				icon: instance.path + 'icons/icon_video.png',
-				label: Liferay.Language.get('video')
+				label: Liferay.Language.get('video'),
 			});
 
 			if (editor.addMenuItems) {
@@ -290,17 +290,17 @@
 					audio: {
 						command: 'Audio',
 						group: 'flash',
-						label: Liferay.Language.get('edit-audio')
+						label: Liferay.Language.get('edit-audio'),
 					},
 					video: {
 						command: 'Video',
 						group: 'flash',
-						label: Liferay.Language.get('edit-video')
-					}
+						label: Liferay.Language.get('edit-video'),
+					},
 				});
 			}
 
-			editor.on('doubleclick', event => {
+			editor.on('doubleclick', (event) => {
 				var element = event.data.element;
 
 				var type;
@@ -318,7 +318,7 @@
 			});
 
 			if (editor.contextMenu) {
-				editor.contextMenu.addListener(element => {
+				editor.contextMenu.addListener((element) => {
 					var value = {};
 
 					if (!element.isReadOnly()) {
@@ -344,9 +344,11 @@
 			editor.lang.fakeobjects.video = Liferay.Language.get('video');
 		},
 
-		isElementType(el, type) {
+		isElementType(element, type) {
 			return (
-				el && el.is('img') && el.data('cke-real-element-type') === type
+				element &&
+				element.is('img') &&
+				element.data('cke-real-element-type') === type
 			);
 		},
 
@@ -422,12 +424,12 @@
 		},
 
 		replaceScriptContent(divNode, scriptContent) {
-			if (divNode.getChildCount() == 2) {
+			if (divNode.getChildCount() === 2) {
 				var scriptTmp = null;
 
 				divNode.getChild(1).remove();
 
-				AUI().use('aui-node', A => {
+				AUI().use('aui-node', (A) => {
 					var scriptNode = A.Node.create(
 						'<script type="text/javascript">' +
 							scriptContent +
@@ -455,6 +457,6 @@
 			}
 
 			instance.setupContent(content);
-		}
+		},
 	});
 })();

@@ -84,9 +84,9 @@ public class UploadServletRequestImpl
 		LiferayServletRequest liferayServletRequest = null;
 
 		try {
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			session.removeAttribute(ProgressTracker.PERCENT);
+			httpSession.removeAttribute(ProgressTracker.PERCENT);
 
 			ServletFileUpload servletFileUpload;
 
@@ -100,12 +100,22 @@ public class UploadServletRequestImpl
 					new LiferayFileItemFactory(getTempDir()));
 			}
 
+			long uploadServletRequestImplMaxSize =
+				UploadServletRequestConfigurationHelperUtil.getMaxSize();
+
 			if (maxRequestSize > 0) {
 				servletFileUpload.setSizeMax(maxRequestSize);
+			}
+			else {
+				servletFileUpload.setSizeMax(uploadServletRequestImplMaxSize);
 			}
 
 			if (maxFileSize > 0) {
 				servletFileUpload.setFileSizeMax(maxFileSize);
+			}
+			else {
+				servletFileUpload.setFileSizeMax(
+					uploadServletRequestImplMaxSize);
 			}
 
 			liferayServletRequest = new LiferayServletRequest(
@@ -116,8 +126,6 @@ public class UploadServletRequestImpl
 
 			liferayServletRequest.setFinishedReadingOriginalStream(true);
 
-			long uploadServletRequestImplMaxSize =
-				UploadServletRequestConfigurationHelperUtil.getMaxSize();
 			long uploadServletRequestImplSize = 0;
 
 			int contentLength = httpServletRequest.getContentLength();
@@ -138,15 +146,11 @@ public class UploadServletRequestImpl
 					if ((uploadServletRequestImplSize + itemSize) >
 							uploadServletRequestImplMaxSize) {
 
-						StringBundler sb = new StringBundler(3);
-
-						sb.append(
-							"Request reached the maximum permitted size of ");
-						sb.append(uploadServletRequestImplMaxSize);
-						sb.append(" bytes");
-
 						UploadException uploadException = new UploadException(
-							sb.toString());
+							StringBundler.concat(
+								"Request reached the maximum permitted size ",
+								"of ", uploadServletRequestImplMaxSize,
+								" bytes"));
 
 						uploadException.setExceededUploadRequestSizeLimit(true);
 
@@ -175,16 +179,11 @@ public class UploadServletRequestImpl
 					if (liferayFileItem.getSize() >
 							LiferayFileItem.THRESHOLD_SIZE) {
 
-						StringBundler sb = new StringBundler(5);
-
-						sb.append("The field ");
-						sb.append(fieldName);
-						sb.append(" exceeds its maximum permitted size of ");
-						sb.append(LiferayFileItem.THRESHOLD_SIZE);
-						sb.append(" bytes");
-
 						UploadException uploadException = new UploadException(
-							sb.toString());
+							StringBundler.concat(
+								"The field ", fieldName,
+								" exceeds its maximum permitted size of ",
+								LiferayFileItem.THRESHOLD_SIZE, " bytes"));
 
 						uploadException.setExceededLiferayFileItemSizeLimit(
 							true);
@@ -507,10 +506,10 @@ public class UploadServletRequestImpl
 	public Map<String, String[]> getParameterMap() {
 		Map<String, String[]> map = new HashMap<>();
 
-		Enumeration<String> enu = getParameterNames();
+		Enumeration<String> enumeration = getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			String[] values = getParameterValues(name);
 
@@ -526,10 +525,10 @@ public class UploadServletRequestImpl
 	public Enumeration<String> getParameterNames() {
 		Set<String> parameterNames = new LinkedHashSet<>();
 
-		Enumeration<String> enu = super.getParameterNames();
+		Enumeration<String> enumeration = super.getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			parameterNames.add(enu.nextElement());
+		while (enumeration.hasMoreElements()) {
+			parameterNames.add(enumeration.nextElement());
 		}
 
 		parameterNames.addAll(_regularParameters.keySet());
@@ -689,11 +688,9 @@ public class UploadServletRequestImpl
 				return 0;
 			}
 
-			if (_key.equals(groupedFileItems._key)) {
-				return 1;
-			}
+			if (_key.equals(groupedFileItems._key) ||
+				(getFileItemsSize() >= groupedFileItems.getFileItemsSize())) {
 
-			if (getFileItemsSize() >= groupedFileItems.getFileItemsSize()) {
 				return 1;
 			}
 

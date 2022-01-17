@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-layouts-tree-state',
-	A => {
+	(A) => {
 		var AArray = A.Array;
 
 		var Lang = A.Lang;
@@ -32,23 +32,23 @@ AUI.add(
 		var LayoutsTreeState = A.Component.create({
 			ATTRS: {
 				checkedNodes: {
-					validator: Lang.isObject
+					validator: Lang.isObject,
 				},
 
 				localCheckedNodes: {
 					validator: Lang.isArray,
-					value: []
+					value: [],
 				},
 
 				localUncheckedNodes: {
 					validator: Lang.isArray,
-					value: []
+					value: [],
 				},
 
 				rootNodeExpanded: {
 					validator: Lang.isBoolean,
-					value: true
-				}
+					value: true,
+				},
 			},
 
 			EXTENDS: A.Plugin.Base,
@@ -61,18 +61,18 @@ AUI.add(
 				_invokeSessionClick(data, callback) {
 					A.mix(data, {
 						p_auth: Liferay.authToken,
-						useHttpSession: true
+						useHttpSession: true,
 					});
 
 					Liferay.Util.fetch(
 						themeDisplay.getPathMain() + '/portal/session_click',
 						{
 							body: Liferay.Util.objectToFormData(data),
-							method: 'POST'
+							method: 'POST',
 						}
 					)
-						.then(response => response.text())
-						.then(text => {
+						.then((response) => response.text())
+						.then((text) => {
 							if (callback && text) {
 								callback(text);
 							}
@@ -106,7 +106,7 @@ AUI.add(
 						instance._updateCheckedNodes({
 							checked,
 							forceChildrenState: true,
-							node
+							node,
 						});
 					}
 				},
@@ -161,7 +161,7 @@ AUI.add(
 
 					var paginationMap = {};
 
-					var updatePaginationMap = function(map, curNode) {
+					var updatePaginationMap = function (map, curNode) {
 						if (A.instanceOf(curNode, A.TreeNodeIO)) {
 							var paginationLimit = host.get('maxChildren');
 
@@ -194,17 +194,17 @@ AUI.add(
 					instance._invokeSessionClick(
 						{
 							cmd: 'get',
-							key
+							key,
 						},
-						responseData => {
+						(responseData) => {
 							try {
 								paginationMap = JSON.parse(responseData);
 							}
-							catch (e) {}
+							catch (error) {}
 
 							updatePaginationMap(paginationMap, target);
 
-							target.eachParent(parent => {
+							target.eachParent((parent) => {
 								updatePaginationMap(paginationMap, parent);
 							});
 
@@ -241,7 +241,7 @@ AUI.add(
 
 					instance._updateCheckedNodes({
 						checked: newVal,
-						node: target
+						node: target,
 					});
 				},
 
@@ -254,7 +254,7 @@ AUI.add(
 						instance._updateCheckedNodes({
 							checked: true,
 							forceChildrenState: true,
-							node
+							node,
 						});
 					}
 
@@ -331,7 +331,7 @@ AUI.add(
 							checkedNodes.push(plid);
 						}
 
-						if (localCheckedIndex == -1) {
+						if (localCheckedIndex === -1) {
 							localCheckedNodes.push(plid);
 						}
 
@@ -361,11 +361,11 @@ AUI.add(
 							? undefined
 							: checked;
 
-						A.each(children, child => {
+						A.each(children, (child) => {
 							instance._updateCheckedNodes({
 								checked: childrenChecked,
 								forceChildrenState,
-								node: child
+								node: child,
 							});
 						});
 					}
@@ -376,7 +376,7 @@ AUI.add(
 
 					var data = {
 						cmd: state ? 'layoutCheck' : 'layoutUncheck',
-						plid: nodeId
+						plid: nodeId,
 					};
 
 					instance._updateSessionTreeClick(treeId, data);
@@ -389,26 +389,24 @@ AUI.add(
 
 					var root = host.get('root');
 
-					data = A.merge(
-						{
-							groupId: root.groupId,
-							privateLayout: root.privateLayout,
-							recursive: true,
-							treeId
-						},
-						data
-					);
+					data = {
+						groupId: root.groupId,
+						privateLayout: root.privateLayout,
+						recursive: true,
+						treeId,
+						...data,
+					};
 
 					Liferay.Util.fetch(
 						themeDisplay.getPathMain() +
 							'/portal/session_tree_js_click',
 						{
 							body: Liferay.Util.objectToFormData(data),
-							method: 'POST'
+							method: 'POST',
 						}
 					)
-						.then(response => response.json())
-						.then(checkedNodes => {
+						.then((response) => response.json())
+						.then((checkedNodes) => {
 							if (checkedNodes) {
 								instance.set(STR_CHECKED_NODES, checkedNodes);
 							}
@@ -421,7 +419,7 @@ AUI.add(
 
 					var data = {
 						nodeId,
-						openNode: state
+						openNode: state,
 					};
 
 					instance._updateSessionTreeClick(treeId, data);
@@ -476,16 +474,16 @@ AUI.add(
 							'selectableTreeRender',
 							instance._onSelectableTreeRender,
 							instance
-						)
+						),
 					];
-				}
-			}
+				},
+			},
 		});
 
 		A.Plugin.LayoutsTreeState = LayoutsTreeState;
 	},
 	'',
 	{
-		requires: ['aui-base']
+		requires: ['aui-base'],
 	}
 );

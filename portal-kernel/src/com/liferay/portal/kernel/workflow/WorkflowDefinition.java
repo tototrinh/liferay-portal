@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.workflow;
 import java.io.InputStream;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,13 +26,17 @@ import java.util.Map;
  * @author Brian Wing Shun Chan
  * @author Eduardo Lundgren
  */
-public interface WorkflowDefinition {
+public interface WorkflowDefinition extends WorkflowModel {
 
 	public default long getCompanyId() {
 		return 0;
 	}
 
 	public String getContent();
+
+	public default Date getCreateDate() {
+		return null;
+	}
 
 	public default String getDescription() {
 		return "";
@@ -47,6 +52,10 @@ public interface WorkflowDefinition {
 
 	public Map<String, Object> getOptionalAttributes();
 
+	public default String getScope() {
+		return "";
+	}
+
 	public String getTitle();
 
 	public String getTitle(String languageId);
@@ -60,6 +69,10 @@ public interface WorkflowDefinition {
 	public default long getWorkflowDefinitionId() {
 		return 0;
 	}
+
+	public List<WorkflowNode> getWorkflowNodes();
+
+	public List<WorkflowTransition> getWorkflowTransitions();
 
 	public boolean isActive();
 

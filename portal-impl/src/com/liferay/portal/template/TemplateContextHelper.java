@@ -22,7 +22,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.audit.AuditMessageFactoryUtil;
 import com.liferay.portal.kernel.audit.AuditRouterUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.image.ImageToolUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -31,12 +30,14 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.Theme;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.PortletModeFactory_IW;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.portlet.PortletRequestModelFactory;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.WindowStateFactory_IW;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.GroupService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
@@ -44,8 +45,8 @@ import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.OrganizationService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserService;
-import com.liferay.portal.kernel.service.permission.AccountPermissionUtil;
 import com.liferay.portal.kernel.service.permission.CommonPermissionUtil;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
@@ -96,6 +97,7 @@ import com.liferay.portal.struts.TilesUtil;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.net.URI;
 import java.net.URL;
 
 import java.util.Collections;
@@ -188,7 +190,7 @@ public class TemplateContextHelper {
 		Map<String, Object> helperUtilities = new HashMap<>();
 
 		populateCommonHelperUtilities(helperUtilities);
-		populateExtraHelperUtilities(helperUtilities);
+		populateExtraHelperUtilities(helperUtilities, restricted);
 
 		if (restricted) {
 			Set<String> restrictedVariables = getRestrictedVariables();
@@ -293,7 +295,6 @@ public class TemplateContextHelper {
 
 		if (themeDisplay != null) {
 			Layout layout = themeDisplay.getLayout();
-			List<Layout> layouts = themeDisplay.getLayouts();
 
 			HttpServletRequest originalHttpServletRequest =
 				PortalUtil.getOriginalServletRequest(httpServletRequest);
@@ -309,7 +310,7 @@ public class TemplateContextHelper {
 			contextObjects.put("colorScheme", themeDisplay.getColorScheme());
 			contextObjects.put("company", themeDisplay.getCompany());
 			contextObjects.put("layout", layout);
-			contextObjects.put("layouts", layouts);
+			contextObjects.put("layouts", themeDisplay.getLayouts());
 			contextObjects.put(
 				"layoutTypePortlet", themeDisplay.getLayoutTypePortlet());
 			contextObjects.put("locale", themeDisplay.getLocale());
@@ -323,7 +324,15 @@ public class TemplateContextHelper {
 				"scopeGroupId", Long.valueOf(themeDisplay.getScopeGroupId()));
 			contextObjects.put("themeDisplay", themeDisplay);
 			contextObjects.put("timeZone", themeDisplay.getTimeZone());
-			contextObjects.put("user", themeDisplay.getUser());
+
+			User user = UserLocalServiceUtil.fetchUser(
+				PrincipalThreadLocal.getUserId());
+
+			if (user == null) {
+				user = themeDisplay.getUser();
+			}
+
+			contextObjects.put("user", user);
 
 			// Navigation items
 
@@ -334,8 +343,8 @@ public class TemplateContextHelper {
 
 					contextObjects.put("navItems", navItems);
 				}
-				catch (PortalException portalException) {
-					_log.error(portalException, portalException);
+				catch (Exception exception) {
+					_log.error(exception, exception);
 				}
 			}
 
@@ -714,15 +723,6 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put(
-				"accountPermission",
-				AccountPermissionUtil.getAccountPermission());
-		}
-		catch (SecurityException securityException) {
-			_log.error(securityException, securityException);
-		}
-
-		try {
-			variables.put(
 				"commonPermission", CommonPermissionUtil.getCommonPermission());
 		}
 		catch (SecurityException securityException) {
@@ -863,7 +863,16 @@ public class TemplateContextHelper {
 		}
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #populateExtraHelperUtilities(Map, boolean)}
+	 */
+	@Deprecated
 	protected void populateExtraHelperUtilities(Map<String, Object> variables) {
+	}
+
+	protected void populateExtraHelperUtilities(
+		Map<String, Object> variables, boolean restricted) {
 	}
 
 	protected void prepareTiles(
@@ -1048,6 +1057,11 @@ public class TemplateContextHelper {
 		}
 
 		@Override
+		public String getQueryString(HttpServletRequest httpServletRequest) {
+			return _http.getQueryString(httpServletRequest);
+		}
+
+		@Override
 		public String getQueryString(String url) {
 			return _http.getQueryString(url);
 		}
@@ -1055,6 +1069,11 @@ public class TemplateContextHelper {
 		@Override
 		public String getRequestURL(HttpServletRequest httpServletRequest) {
 			return _http.getRequestURL(httpServletRequest);
+		}
+
+		@Override
+		public URI getURI(String uriString) {
+			return _http.getURI(uriString);
 		}
 
 		@Override
@@ -1070,6 +1089,11 @@ public class TemplateContextHelper {
 		@Override
 		public boolean hasProxyConfig() {
 			return _http.hasProxyConfig();
+		}
+
+		@Override
+		public boolean isForwarded(HttpServletRequest httpServletRequest) {
+			return _http.isForwarded(httpServletRequest);
 		}
 
 		@Override

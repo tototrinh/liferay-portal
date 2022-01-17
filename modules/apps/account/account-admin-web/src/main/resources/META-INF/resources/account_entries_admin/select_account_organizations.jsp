@@ -19,16 +19,14 @@
 <%
 long accountEntryId = ParamUtil.getLong(request, "accountEntryId");
 
-SearchContainer organizationSearchContainer = AssignableAccountOrganizationSearchContainerFactory.create(accountEntryId, liferayPortletRequest, liferayPortletResponse);
-
-SelectAccountOrganizationsManagementToolbarDisplayContext selectAccountOrganizationsManagementToolbarDisplayContext = new SelectAccountOrganizationsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, organizationSearchContainer);
+SearchContainer<Organization> organizationSearchContainer = AssignableAccountOrganizationSearchContainerFactory.create(accountEntryId, liferayPortletRequest, liferayPortletResponse);
 %>
 
 <clay:management-toolbar
-	displayContext="<%= selectAccountOrganizationsManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= new SelectAccountOrganizationsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, organizationSearchContainer) %>"
 />
 
-<aui:container cssClass="container-fluid container-fluid-max-xl">
+<clay:container-fluid>
 	<liferay-ui:search-container
 		searchContainer="<%= organizationSearchContainer %>"
 	>
@@ -54,29 +52,4 @@ SelectAccountOrganizationsManagementToolbarDisplayContext selectAccountOrganizat
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</aui:container>
-
-<aui:script use="liferay-search-container">
-	var searchContainer = Liferay.SearchContainer.get(
-		'<portlet:namespace />organizations'
-	);
-
-	searchContainer.on('rowToggled', function(event) {
-		var selectedItems = event.elements.allSelectedElements;
-
-		var result = {};
-
-		if (!selectedItems.isEmpty()) {
-			result = {
-				data: {
-					value: selectedItems.get('value').join(',')
-				}
-			};
-		}
-
-		Liferay.Util.getOpener().Liferay.fire(
-			'<%= HtmlUtil.escapeJS(renderResponse.getNamespace() + "assignAccountOrganizations") %>',
-			result
-		);
-	});
-</aui:script>
+</clay:container-fluid>

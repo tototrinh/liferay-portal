@@ -213,9 +213,14 @@ public class SLASerDes {
 			map.put("calendarKey", String.valueOf(sla.getCalendarKey()));
 		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(sla.getDateModified()));
+		if (sla.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(sla.getDateModified()));
+		}
 
 		if (sla.getDescription() == null) {
 			map.put("description", null);
@@ -361,10 +366,6 @@ public class SLASerDes {
 						StopNodeKeysSerDes.toDTO((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -393,7 +394,7 @@ public class SLASerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -419,14 +420,17 @@ public class SLASerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

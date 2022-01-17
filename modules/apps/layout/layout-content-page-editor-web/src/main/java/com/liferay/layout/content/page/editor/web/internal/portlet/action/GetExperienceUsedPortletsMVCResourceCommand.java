@@ -23,10 +23,8 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.segments.util.SegmentsExperiencePortletUtil;
 
 import java.util.List;
 
@@ -43,7 +41,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/get_experience_used_portlets"
+		"mvc.command.name=/layout_content_page_editor/get_experience_used_portlets"
 	},
 	service = MVCResourceCommand.class
 )
@@ -57,9 +55,6 @@ public class GetExperienceUsedPortletsMVCResourceCommand
 
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
-		long segmentsExperienceId = ParamUtil.getLong(
-			resourceRequest, "segmentsExperienceId");
-
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
@@ -69,17 +64,8 @@ public class GetExperienceUsedPortletsMVCResourceCommand
 				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, themeDisplay.getPlid());
 
 		portletPreferencesList.forEach(
-			portletPreferences -> {
-				long portletSegmentsExperienceId =
-					SegmentsExperiencePortletUtil.getSegmentsExperienceId(
-						portletPreferences.getPortletId());
-
-				if (portletSegmentsExperienceId == segmentsExperienceId) {
-					jsonArray.put(
-						SegmentsExperiencePortletUtil.decodePortletName(
-							portletPreferences.getPortletId()));
-				}
-			});
+			portletPreferences -> jsonArray.put(
+				portletPreferences.getPortletId()));
 
 		JSONPortletResponseUtil.writeJSON(
 			resourceRequest, resourceResponse, jsonArray);

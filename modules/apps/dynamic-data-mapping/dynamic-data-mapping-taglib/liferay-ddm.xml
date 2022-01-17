@@ -97,6 +97,12 @@
 				<defaultValue>true</defaultValue>
 			</attribute>
 			<attribute>
+				<name>showLanguageSelector</name>
+				<inputType>boolean</inputType>
+				<outputType>boolean</outputType>
+				<defaultValue>true</defaultValue>
+			</attribute>
+			<attribute>
 				<name>synchronousFormSubmission</name>
 				<inputType>boolean</inputType>
 				<outputType>boolean</outputType>
@@ -189,6 +195,7 @@
 		</attributes>
 	</component>
 	<component bodyContent="false" name="TemplateSelector" writeJSP="true">
+		<description>Deprecated as of Cavanaugh (7.4.x), replaced by liferay-template:template-selector.</description>
 		<attributes>
 			<attribute>
 				<name>className</name>

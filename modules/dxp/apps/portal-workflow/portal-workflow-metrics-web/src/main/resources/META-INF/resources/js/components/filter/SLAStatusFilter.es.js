@@ -16,30 +16,47 @@ import {useFilterName} from '../../shared/components/filter/hooks/useFilterName.
 import {useFilterStatic} from '../../shared/components/filter/hooks/useFilterStatic.es';
 import filterConstants from '../../shared/components/filter/util/filterConstants.es';
 
-const SLAStatusFilter = ({
+const slaStatusConstants = {
+	onTime: 'OnTime',
+	overdue: 'Overdue',
+	untracked: 'Untracked',
+};
+
+const slaStatuses = [
+	{
+		key: slaStatusConstants.onTime,
+		name: Liferay.Language.get('on-time'),
+	},
+	{
+		key: slaStatusConstants.overdue,
+		name: Liferay.Language.get('overdue'),
+	},
+	{
+		key: slaStatusConstants.untracked,
+		name: Liferay.Language.get('untracked'),
+	},
+];
+
+export default function SLAStatusFilter({
 	className,
 	filterKey = filterConstants.slaStatus.key,
 	options = {},
-	prefixKey = ''
-}) => {
-	const defaultOptions = {
-		hideControl: false,
-		multiple: true,
-		position: 'left',
+	prefixKey = '',
+}) {
+	options = {
 		withSelectionTitle: true,
-		withoutRouteParams: false
+		withoutRouteParams: false,
+		...options,
 	};
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	options = useMemo(() => ({...defaultOptions, ...options}), [options]);
 
-	const {items, selectedItems} = useFilterStatic(
+	const {items, selectedItems} = useFilterStatic({
 		filterKey,
 		prefixKey,
-		options.withoutRouteParams,
-		slaStatuses
-	);
+		staticItems: slaStatuses,
+		...options,
+	});
 
-	const defaultItem = useMemo(() => (items ? items[0] : undefined), [items]);
+	const defaultItem = useMemo(() => items[0], [items]);
 
 	const filterName = useFilterName(
 		options.multiple,
@@ -50,7 +67,6 @@ const SLAStatusFilter = ({
 
 	return (
 		<Filter
-			dataTestId="SLAStatusFilter"
 			defaultItem={defaultItem}
 			elementClasses={className}
 			filterKey={filterKey}
@@ -60,28 +76,6 @@ const SLAStatusFilter = ({
 			{...options}
 		/>
 	);
-};
+}
 
-const slaStatusConstants = {
-	onTime: 'OnTime',
-	overdue: 'Overdue',
-	untracked: 'Untracked'
-};
-
-const slaStatuses = [
-	{
-		key: slaStatusConstants.onTime,
-		name: Liferay.Language.get('on-time')
-	},
-	{
-		key: slaStatusConstants.overdue,
-		name: Liferay.Language.get('overdue')
-	},
-	{
-		key: slaStatusConstants.untracked,
-		name: Liferay.Language.get('untracked')
-	}
-];
-
-export default SLAStatusFilter;
 export {slaStatusConstants};

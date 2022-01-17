@@ -61,10 +61,10 @@ public class AssetCategoryPropertyFinderImpl
 			queryPos.add(groupId);
 			queryPos.add(key);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -108,17 +108,15 @@ public class AssetCategoryPropertyFinderImpl
 
 			List<AssetCategoryProperty> categoryProperties = new ArrayList<>();
 
-			Iterator<String> itr = (Iterator<String>)QueryUtil.iterate(
+			Iterator<String> iterator = (Iterator<String>)QueryUtil.iterate(
 				sqlQuery, getDialect(), start, end);
 
-			while (itr.hasNext()) {
-				String value = itr.next();
-
+			while (iterator.hasNext()) {
 				AssetCategoryProperty categoryProperty =
 					new AssetCategoryPropertyImpl();
 
 				categoryProperty.setKey(key);
-				categoryProperty.setValue(value);
+				categoryProperty.setValue(iterator.next());
 
 				categoryProperties.add(categoryProperty);
 			}

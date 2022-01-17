@@ -50,6 +50,7 @@ public class KaleoTransitionWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("kaleoDefinitionId", getKaleoDefinitionId());
 		attributes.put(
 			"kaleoDefinitionVersionId", getKaleoDefinitionVersionId());
 		attributes.put("kaleoNodeId", getKaleoNodeId());
@@ -114,6 +115,12 @@ public class KaleoTransitionWrapper
 			setModifiedDate(modifiedDate);
 		}
 
+		Long kaleoDefinitionId = (Long)attributes.get("kaleoDefinitionId");
+
+		if (kaleoDefinitionId != null) {
+			setKaleoDefinitionId(kaleoDefinitionId);
+		}
+
 		Long kaleoDefinitionVersionId = (Long)attributes.get(
 			"kaleoDefinitionVersionId");
 
@@ -173,6 +180,11 @@ public class KaleoTransitionWrapper
 		}
 	}
 
+	@Override
+	public KaleoTransition cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
 	/**
 	 * Returns the company ID of this kaleo transition.
 	 *
@@ -221,6 +233,16 @@ public class KaleoTransitionWrapper
 	@Override
 	public long getGroupId() {
 		return model.getGroupId();
+	}
+
+	/**
+	 * Returns the kaleo definition ID of this kaleo transition.
+	 *
+	 * @return the kaleo definition ID of this kaleo transition
+	 */
+	@Override
+	public long getKaleoDefinitionId() {
+		return model.getKaleoDefinitionId();
 	}
 
 	/**
@@ -440,6 +462,16 @@ public class KaleoTransitionWrapper
 	@Override
 	public void setGroupId(long groupId) {
 		model.setGroupId(groupId);
+	}
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo transition.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo transition
+	 */
+	@Override
+	public void setKaleoDefinitionId(long kaleoDefinitionId) {
+		model.setKaleoDefinitionId(kaleoDefinitionId);
 	}
 
 	/**

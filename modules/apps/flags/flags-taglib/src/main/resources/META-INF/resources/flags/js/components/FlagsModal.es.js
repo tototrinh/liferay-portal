@@ -12,6 +12,7 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayModal from '@clayui/modal';
 import PropTypes from 'prop-types';
@@ -23,11 +24,14 @@ import {
 	STATUS_ERROR,
 	STATUS_LOGIN,
 	STATUS_REPORT,
-	STATUS_SUCCESS
+	STATUS_SUCCESS,
 } from '../constants.es';
 import {sub} from '../utils.es';
+import Captcha from './Captcha.es';
 
 const ModalContentForm = ({
+	captchaURI,
+	error,
 	handleClose,
 	handleInputChange,
 	handleSubmit,
@@ -35,13 +39,22 @@ const ModalContentForm = ({
 	pathTermsOfUse,
 	reasons,
 	selectedReason,
-	signedIn
+	signedIn,
 }) => {
 	const {namespace} = useContext(ThemeContext);
 
 	return (
 		<form onSubmit={handleSubmit}>
 			<ClayModal.Body>
+				{error && (
+					<ClayAlert
+						displayType="danger"
+						title={Liferay.Language.get('error')}
+					>
+						{error}
+					</ClayAlert>
+				)}
+
 				<p>
 					{sub(
 						Liferay.Language.get(
@@ -50,11 +63,12 @@ const ModalContentForm = ({
 						[
 							<a href={pathTermsOfUse} key={pathTermsOfUse}>
 								{Liferay.Language.get('terms-of-use')}
-							</a>
+							</a>,
 						],
 						false
 					)}
 				</p>
+
 				<div className="form-group">
 					<label
 						className="control-label"
@@ -62,6 +76,7 @@ const ModalContentForm = ({
 					>
 						{Liferay.Language.get('reason-for-the-report')}
 					</label>
+
 					<select
 						className="form-control"
 						id={`${namespace}selectedReason`}
@@ -74,11 +89,13 @@ const ModalContentForm = ({
 								{text}
 							</option>
 						))}
+
 						<option value={OTHER_REASON_VALUE}>
 							{Liferay.Language.get('other-reason')}
 						</option>
 					</select>
 				</div>
+
 				{selectedReason === OTHER_REASON_VALUE && (
 					<div className="form-group">
 						<label
@@ -87,6 +104,7 @@ const ModalContentForm = ({
 						>
 							{Liferay.Language.get('other-reason')}
 						</label>
+
 						<input
 							autoFocus
 							className="form-control"
@@ -96,6 +114,7 @@ const ModalContentForm = ({
 						/>
 					</div>
 				)}
+
 				{!signedIn && (
 					<div className="form-group">
 						<label
@@ -104,6 +123,7 @@ const ModalContentForm = ({
 						>
 							{Liferay.Language.get('email-address')}
 						</label>
+
 						<input
 							className="form-control"
 							id={`${namespace}otherRreporterEmailAddresseason`}
@@ -113,7 +133,10 @@ const ModalContentForm = ({
 						/>
 					</div>
 				)}
+
+				{captchaURI && <Captcha uri={captchaURI} />}
 			</ClayModal.Body>
+
 			<ClayModal.Footer
 				last={
 					<ClayButton.Group spaced>
@@ -123,6 +146,7 @@ const ModalContentForm = ({
 						>
 							{Liferay.Language.get('cancel')}
 						</ClayButton>
+
 						<ClayButton
 							disabled={isSending}
 							displayType="primary"
@@ -142,6 +166,7 @@ const ModalBodySuccess = ({companyName}) => (
 		<p>
 			<strong>{Liferay.Language.get('thank-you-for-your-report')}</strong>
 		</p>
+
 		<p>
 			{sub(
 				Liferay.Language.get(
@@ -192,7 +217,9 @@ const ModalBody = ({companyName, status}) => {
 };
 
 const FlagsModal = ({
+	captchaURI,
 	companyName,
+	error,
 	handleClose,
 	handleInputChange,
 	handleSubmit,
@@ -202,15 +229,18 @@ const FlagsModal = ({
 	reasons,
 	selectedReason,
 	signedIn,
-	status
+	status,
 }) => {
 	return (
 		<ClayModal observer={observer} size="md">
 			<ClayModal.Header>
 				{Liferay.Language.get('report-inappropriate-content')}
 			</ClayModal.Header>
+
 			{status === STATUS_REPORT ? (
 				<ModalContentForm
+					captchaURI={captchaURI}
+					error={error}
 					handleClose={handleClose}
 					handleInputChange={handleInputChange}
 					handleSubmit={handleSubmit}
@@ -244,7 +274,9 @@ const FlagsModal = ({
 };
 
 FlagsModal.propTypes = {
+	captchaURI: PropTypes.string.isRequired,
 	companyName: PropTypes.string.isRequired,
+	error: PropTypes.string,
 	handleClose: PropTypes.func.isRequired,
 	handleInputChange: PropTypes.func.isRequired,
 	handleSubmit: PropTypes.func.isRequired,
@@ -257,8 +289,8 @@ FlagsModal.propTypes = {
 		STATUS_ERROR,
 		STATUS_LOGIN,
 		STATUS_REPORT,
-		STATUS_SUCCESS
-	]).isRequired
+		STATUS_SUCCESS,
+	]).isRequired,
 };
 
 export default FlagsModal;

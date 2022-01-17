@@ -125,16 +125,13 @@ public class LinksToLayoutsExportImportContentProcessor
 
 				String oldLinkToLayout = matcher.group(0);
 
-				StringBundler sb = new StringBundler(3);
-
-				sb.append(type);
-				sb.append(StringPool.AT);
-				sb.append(layout.getPlid());
-
 				String newLinkToLayout = StringUtil.replace(
-					oldLinkToLayout, type, sb.toString());
+					oldLinkToLayout, type,
+					StringBundler.concat(
+						type, StringPool.AT, layout.getPlid()));
 
 				oldLinksToLayout.add(oldLinkToLayout);
+
 				newLinksToLayout.add(newLinkToLayout);
 
 				Element entityElement = portletDataContext.getExportDataElement(
@@ -166,11 +163,9 @@ public class LinksToLayoutsExportImportContentProcessor
 			}
 		}
 
-		content = StringUtil.replace(
+		return StringUtil.replace(
 			content, ArrayUtil.toStringArray(oldLinksToLayout.toArray()),
 			ArrayUtil.toStringArray(newLinksToLayout.toArray()));
-
-		return content;
 	}
 
 	protected String replaceImportLinksToLayouts(
@@ -250,7 +245,7 @@ public class LinksToLayoutsExportImportContentProcessor
 				newLayoutId = layout.getLayoutId();
 			}
 			else if (_log.isWarnEnabled()) {
-				_log.warn("Unable to get layout with plid " + oldPlid);
+				_log.warn("Unable to get layout with PLID " + oldPlid);
 			}
 
 			String oldLinkToLayout = matcher.group(0);
@@ -281,11 +276,9 @@ public class LinksToLayoutsExportImportContentProcessor
 			newLinksToLayout.add(newLinkToLayout);
 		}
 
-		content = StringUtil.replace(
+		return StringUtil.replace(
 			content, ArrayUtil.toStringArray(oldLinksToLayout.toArray()),
 			ArrayUtil.toStringArray(newLinksToLayout.toArray()));
-
-		return content;
 	}
 
 	@Reference(unbind = "-")
@@ -319,17 +312,15 @@ public class LinksToLayoutsExportImportContentProcessor
 							LinksToLayoutsExportImportContentProcessor.class.
 								getName());
 
-				Map<String, String> layoutReferenceParameters =
-					HashMapBuilder.put(
-						"groupId", String.valueOf(groupId)
-					).put(
-						"layoutId", String.valueOf(layoutId)
-					).put(
-						"privateLayout", String.valueOf(privateLayout)
-					).build();
-
 				exportImportContentValidationException.
-					setLayoutReferenceParameters(layoutReferenceParameters);
+					setLayoutReferenceParameters(
+						HashMapBuilder.put(
+							"groupId", String.valueOf(groupId)
+						).put(
+							"layoutId", String.valueOf(layoutId)
+						).put(
+							"privateLayout", String.valueOf(privateLayout)
+						).build());
 
 				exportImportContentValidationException.setType(
 					ExportImportContentValidationException.LAYOUT_NOT_FOUND);

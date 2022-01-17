@@ -37,17 +37,17 @@ public class DLFileEntryTypeCacheModel
 	implements CacheModel<DLFileEntryType>, Externalizable, MVCCModel {
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof DLFileEntryTypeCacheModel)) {
+		if (!(object instanceof DLFileEntryTypeCacheModel)) {
 			return false;
 		}
 
 		DLFileEntryTypeCacheModel dlFileEntryTypeCacheModel =
-			(DLFileEntryTypeCacheModel)obj;
+			(DLFileEntryTypeCacheModel)object;
 
 		if ((fileEntryTypeId == dlFileEntryTypeCacheModel.fileEntryTypeId) &&
 			(mvccVersion == dlFileEntryTypeCacheModel.mvccVersion)) {
@@ -77,10 +77,12 @@ public class DLFileEntryTypeCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(33);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
 		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", fileEntryTypeId=");
@@ -97,12 +99,16 @@ public class DLFileEntryTypeCacheModel
 		sb.append(createDate);
 		sb.append(", modifiedDate=");
 		sb.append(modifiedDate);
+		sb.append(", dataDefinitionId=");
+		sb.append(dataDefinitionId);
 		sb.append(", fileEntryTypeKey=");
 		sb.append(fileEntryTypeKey);
 		sb.append(", name=");
 		sb.append(name);
 		sb.append(", description=");
 		sb.append(description);
+		sb.append(", scope=");
+		sb.append(scope);
 		sb.append(", lastPublishDate=");
 		sb.append(lastPublishDate);
 		sb.append("}");
@@ -115,6 +121,7 @@ public class DLFileEntryTypeCacheModel
 		DLFileEntryTypeImpl dlFileEntryTypeImpl = new DLFileEntryTypeImpl();
 
 		dlFileEntryTypeImpl.setMvccVersion(mvccVersion);
+		dlFileEntryTypeImpl.setCtCollectionId(ctCollectionId);
 
 		if (uuid == null) {
 			dlFileEntryTypeImpl.setUuid("");
@@ -149,6 +156,8 @@ public class DLFileEntryTypeCacheModel
 			dlFileEntryTypeImpl.setModifiedDate(new Date(modifiedDate));
 		}
 
+		dlFileEntryTypeImpl.setDataDefinitionId(dataDefinitionId);
+
 		if (fileEntryTypeKey == null) {
 			dlFileEntryTypeImpl.setFileEntryTypeKey("");
 		}
@@ -170,6 +179,8 @@ public class DLFileEntryTypeCacheModel
 			dlFileEntryTypeImpl.setDescription(description);
 		}
 
+		dlFileEntryTypeImpl.setScope(scope);
+
 		if (lastPublishDate == Long.MIN_VALUE) {
 			dlFileEntryTypeImpl.setLastPublishDate(null);
 		}
@@ -185,6 +196,8 @@ public class DLFileEntryTypeCacheModel
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		fileEntryTypeId = objectInput.readLong();
@@ -197,15 +210,21 @@ public class DLFileEntryTypeCacheModel
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
+		dataDefinitionId = objectInput.readLong();
 		fileEntryTypeKey = objectInput.readUTF();
 		name = objectInput.readUTF();
 		description = objectInput.readUTF();
+
+		scope = objectInput.readInt();
 		lastPublishDate = objectInput.readLong();
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
 
 		if (uuid == null) {
 			objectOutput.writeUTF("");
@@ -232,6 +251,8 @@ public class DLFileEntryTypeCacheModel
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
 
+		objectOutput.writeLong(dataDefinitionId);
+
 		if (fileEntryTypeKey == null) {
 			objectOutput.writeUTF("");
 		}
@@ -253,10 +274,12 @@ public class DLFileEntryTypeCacheModel
 			objectOutput.writeUTF(description);
 		}
 
+		objectOutput.writeInt(scope);
 		objectOutput.writeLong(lastPublishDate);
 	}
 
 	public long mvccVersion;
+	public long ctCollectionId;
 	public String uuid;
 	public long fileEntryTypeId;
 	public long groupId;
@@ -265,9 +288,11 @@ public class DLFileEntryTypeCacheModel
 	public String userName;
 	public long createDate;
 	public long modifiedDate;
+	public long dataDefinitionId;
 	public String fileEntryTypeKey;
 	public String name;
 	public String description;
+	public int scope;
 	public long lastPublishDate;
 
 }

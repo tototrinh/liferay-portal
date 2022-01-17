@@ -20,7 +20,7 @@ import {
 	GROUP,
 	NOT_OPERATORS,
 	PROPERTY_TYPES,
-	RELATIONAL_OPERATORS
+	RELATIONAL_OPERATORS,
 } from './constants.es';
 import {generateGroupId} from './utils.es';
 
@@ -39,12 +39,12 @@ const EXPRESSION_TYPES = {
 	NOT: 'NotExpression',
 	OR: 'OrExpression',
 	PAREN: 'ParenExpression',
-	PROPERTY_PATH: 'PropertyPathExpression'
+	PROPERTY_PATH: 'PropertyPathExpression',
 };
 
 const OPERATORS = {
 	...FUNCTIONAL_OPERATORS,
-	...RELATIONAL_OPERATORS
+	...RELATIONAL_OPERATORS,
 };
 
 /**
@@ -60,7 +60,7 @@ const oDataV4ParserNameMap = {
 	[EXPRESSION_TYPES.GREATER_THAN]: OPERATORS.GT,
 	[EXPRESSION_TYPES.LESSER_OR_EQUALS]: OPERATORS.LE,
 	[EXPRESSION_TYPES.LESSER_THAN]: OPERATORS.LT,
-	[EXPRESSION_TYPES.OR]: CONJUNCTIONS.OR
+	[EXPRESSION_TYPES.OR]: CONJUNCTIONS.OR,
 };
 
 /**
@@ -74,9 +74,9 @@ function addNewGroup({oDataASTNode, prevConjunction}) {
 		lastNodeWasGroup: false,
 		oDataASTNode: {
 			type: EXPRESSION_TYPES.BOOL_PAREN,
-			value: oDataASTNode
+			value: oDataASTNode,
 		},
-		prevConjunction
+		prevConjunction,
 	};
 }
 
@@ -91,7 +91,7 @@ const getTypeByPropertyName = (propertyName, properties) => {
 
 	if (propertyName && properties) {
 		const property = properties.find(
-			property => property.name === propertyName
+			(property) => property.name === propertyName
 		);
 
 		type = property ? property.type : null;
@@ -120,7 +120,7 @@ function valueParser(value, type) {
 		case PROPERTY_TYPES.COLLECTION:
 		case PROPERTY_TYPES.STRING:
 		default:
-			parsedValue = `'${value}'`;
+			parsedValue = `'${value.replace("'", "''")}'`;
 			break;
 	}
 
@@ -145,7 +145,7 @@ function buildQueryString(criteria, queryConjunction, properties) {
 			items,
 			operatorName,
 			propertyName,
-			value
+			value,
 		} = criterion;
 
 		if (index > 0) {
@@ -196,8 +196,8 @@ function buildQueryString(criteria, queryConjunction, properties) {
 						operatorName: baseOperator,
 						propertyName,
 						type,
-						value
-					}
+						value,
+					},
 				];
 
 				// Not is wrapped in a group to simplify AST parsing.
@@ -273,7 +273,7 @@ function getExpressionName(oDataASTNode) {
 
 	let returnValue = oDataV4ParserNameMap[type];
 
-	if (type == EXPRESSION_TYPES.METHOD_CALL) {
+	if (type === EXPRESSION_TYPES.METHOD_CALL) {
 		returnValue = oDataASTNode.value.method;
 	}
 
@@ -289,7 +289,7 @@ function getFunctionName(oDataASTNode) {
  * @param {object} oDataASTNode
  * @returns String value of the internal name of the next expression.
  */
-const getNextNonGroupExpression = oDataASTNode => {
+const getNextNonGroupExpression = (oDataASTNode) => {
 	let returnValue;
 
 	if (oDataASTNode.value.type === EXPRESSION_TYPES.BOOL_PAREN) {
@@ -312,7 +312,7 @@ const getNextNonGroupExpression = oDataASTNode => {
  * @param {object} oDataASTNode
  * @returns String value of the internal name of the next expression.
  */
-const getNextOperatorExpression = oDataASTNode => {
+const getNextOperatorExpression = (oDataASTNode) => {
 	let returnValue;
 
 	const nextNode = oDataASTNode.value.left
@@ -349,7 +349,7 @@ const getNextOperatorExpression = oDataASTNode => {
 function hasDifferentConjunctions({
 	lastNodeWasGroup,
 	oDataASTNode,
-	prevConjunction
+	prevConjunction,
 }) {
 	return prevConjunction !== oDataASTNode.type && !lastNodeWasGroup;
 }
@@ -403,7 +403,7 @@ function skipGroup({oDataASTNode, prevConjunction}) {
 	return {
 		lastNodeWasGroup: true,
 		oDataASTNode: oDataASTNode.value,
-		prevConjunction
+		prevConjunction,
 	};
 }
 
@@ -429,7 +429,7 @@ function translateQueryToCriteria(queryString) {
 			? criteriaArray[0]
 			: wrapInCriteriaGroup(criteriaArray);
 	}
-	catch (e) {
+	catch (error) {
 		criteria = null;
 	}
 
@@ -491,10 +491,10 @@ function transformCommonNode({oDataASTNode}) {
 
 	let value;
 
-	if (methodExpressionName == OPERATORS.CONTAINS) {
+	if (methodExpressionName === OPERATORS.CONTAINS) {
 		value = formatCriterionValue(methodExpression.value.parameters[1].raw);
 	}
-	else if (methodExpressionName == OPERATORS.EQ) {
+	else if (methodExpressionName === OPERATORS.EQ) {
 		value = formatCriterionValue(methodExpression.value.right.raw);
 	}
 
@@ -502,8 +502,8 @@ function transformCommonNode({oDataASTNode}) {
 		{
 			operatorName: methodExpressionName,
 			propertyName: nextNodeExpression.value.current.raw,
-			value
-		}
+			value,
+		},
 	];
 }
 
@@ -528,12 +528,12 @@ function transformConjunctionNode(context) {
 		: [
 				...toCriteria({
 					oDataASTNode: nextNode.left,
-					prevConjunction: conjunctionType
+					prevConjunction: conjunctionType,
 				}),
 				...toCriteria({
 					oDataASTNode: nextNode.right,
-					prevConjunction: conjunctionType
-				})
+					prevConjunction: conjunctionType,
+				}),
 		  ];
 }
 
@@ -549,8 +549,8 @@ function transformFunctionalNode({oDataASTNode}) {
 		{
 			operatorName: getFunctionName(oDataASTNode),
 			propertyName: oDataASTNode.value.parameters[0].raw,
-			value: formatCriterionValue(oDataASTNode.value.parameters[1].raw)
-		}
+			value: formatCriterionValue(oDataASTNode.value.parameters[1].raw),
+		},
 	];
 }
 
@@ -576,9 +576,9 @@ function transformGroupNode(context) {
 					items: toCriteria({
 						lastNodeWasGroup: true,
 						oDataASTNode: oDataASTNode.value,
-						prevConjunction
-					})
-				}
+						prevConjunction,
+					}),
+				},
 		  ];
 }
 
@@ -596,53 +596,53 @@ function transformNotNode({oDataASTNode}) {
 
 	let returnValue;
 
-	if (nextNodeExpressionName == OPERATORS.CONTAINS) {
+	if (nextNodeExpressionName === OPERATORS.CONTAINS) {
 		returnValue = [
 			{
 				operatorName: NOT_OPERATORS.NOT_CONTAINS,
 				propertyName: nextNodeExpression.value.parameters[0].raw,
 				value: formatCriterionValue(
 					nextNodeExpression.value.parameters[1].raw
-				)
-			}
+				),
+			},
 		];
 	}
-	else if (nextNodeExpressionName == OPERATORS.EQ) {
+	else if (nextNodeExpressionName === OPERATORS.EQ) {
 		returnValue = [
 			{
 				operatorName: NOT_OPERATORS.NOT_EQ,
 				propertyName: nextNodeExpression.value.left.raw,
-				value: formatCriterionValue(nextNodeExpression.value.right.raw)
-			}
+				value: formatCriterionValue(nextNodeExpression.value.right.raw),
+			},
 		];
 	}
-	else if (nextNodeExpression.type == EXPRESSION_TYPES.PROPERTY_PATH) {
+	else if (nextNodeExpression.type === EXPRESSION_TYPES.PROPERTY_PATH) {
 		const anyExpression = nextNodeExpression.value.next.value;
 
 		const methodExpression = anyExpression.value.predicate.value;
 
 		const methodExpressionName = getExpressionName(methodExpression);
 
-		if (methodExpressionName == OPERATORS.CONTAINS) {
+		if (methodExpressionName === OPERATORS.CONTAINS) {
 			returnValue = [
 				{
 					operatorName: NOT_OPERATORS.NOT_CONTAINS,
 					propertyName: nextNodeExpression.value.current.raw,
 					value: formatCriterionValue(
 						methodExpression.value.parameters[1].raw
-					)
-				}
+					),
+				},
 			];
 		}
-		else if (methodExpressionName == OPERATORS.EQ) {
+		else if (methodExpressionName === OPERATORS.EQ) {
 			returnValue = [
 				{
 					operatorName: NOT_OPERATORS.NOT_EQ,
 					propertyName: nextNodeExpression.value.current.raw,
 					value: formatCriterionValue(
 						methodExpression.value.right.raw
-					)
-				}
+					),
+				},
 			];
 		}
 	}
@@ -662,8 +662,8 @@ function transformOperatorNode({oDataASTNode}) {
 		{
 			operatorName: getExpressionName(oDataASTNode),
 			propertyName: oDataASTNode.value.left.raw,
-			value: formatCriterionValue(oDataASTNode.value.right.raw)
-		}
+			value: formatCriterionValue(oDataASTNode.value.right.raw),
+		},
 	];
 }
 
@@ -675,7 +675,7 @@ function wrapInCriteriaGroup(criteriaArray) {
 	return {
 		conjunctionName: CONJUNCTIONS.AND,
 		groupId: generateGroupId(),
-		items: criteriaArray
+		items: criteriaArray,
 	};
 }
 

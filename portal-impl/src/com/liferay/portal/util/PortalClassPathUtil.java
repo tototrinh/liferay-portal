@@ -20,7 +20,6 @@ import com.liferay.petra.process.ProcessLog;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -40,6 +39,7 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.ServletContext;
@@ -53,15 +53,13 @@ public class PortalClassPathUtil {
 	public static ProcessConfig createProcessConfig(Class<?>... classes) {
 		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
-		builder.setArguments(Arrays.asList("-Djava.awt.headless=true"));
+		builder.setArguments(_processArgs);
 
 		String classpath = _buildClassPath(classes);
 
-		classpath = classpath.concat(
-			File.pathSeparator
-		).concat(
-			_portalProcessConfig.getBootstrapClassPath()
-		);
+		classpath = StringBundler.concat(
+			classpath, File.pathSeparator,
+			_portalProcessConfig.getBootstrapClassPath());
 
 		builder.setBootstrapClassPath(classpath);
 
@@ -111,26 +109,21 @@ public class PortalClassPathUtil {
 
 		StringBundler sb = new StringBundler(8);
 
-		String appServerGlobalClassPath = _buildClassPath(
-			classLoader, ServletException.class.getName());
-
-		sb.append(appServerGlobalClassPath);
+		sb.append(
+			_buildClassPath(classLoader, ServletException.class.getName()));
 
 		sb.append(File.pathSeparator);
+		sb.append(
+			_buildClassPath(
+				classLoader, CentralizedThreadLocal.class.getName()));
 
-		String portalGlobalClassPath = _buildClassPath(
-			classLoader, CentralizedThreadLocal.class.getName(),
-			PortalException.class.getName());
-
-		sb.append(portalGlobalClassPath);
-
-		String globalClassPath = sb.toString();
+		String bootstrapClassPath = sb.toString();
 
 		sb.append(File.pathSeparator);
 		sb.append(
 			_buildClassPath(
 				classLoader,
-				"com.liferay.portal.internal.servlet.MainServlet"));
+				"com.liferay.shielded.container.ShieldedContainerInitializer"));
 
 		if (servletContext != null) {
 			sb.append(File.pathSeparator);
@@ -142,8 +135,8 @@ public class PortalClassPathUtil {
 
 		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
-		builder.setArguments(Arrays.asList("-Djava.awt.headless=true"));
-		builder.setBootstrapClassPath(globalClassPath);
+		builder.setArguments(_processArgs);
+		builder.setBootstrapClassPath(bootstrapClassPath);
 		builder.setReactClassLoader(classLoader);
 		builder.setRuntimeClassPath(portalClassPath);
 
@@ -338,5 +331,8 @@ public class PortalClassPathUtil {
 		PortalClassPathUtil.class);
 
 	private static ProcessConfig _portalProcessConfig;
+	private static final List<String> _processArgs = Arrays.asList(
+		"-Dconfiguration.impl.quiet=true", "-Djava.awt.headless=true",
+		"-Dserver.detector.quiet=true", "-Dsystem.properties.quiet=true");
 
 }

@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -36,6 +39,7 @@ import java.util.Set;
 
 import javax.annotation.Generated;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -45,11 +49,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Segment")
+@GraphQLName(
+	description = "Represents a set of users that meet certain criteria. Segments may be used to create customized experiences for users.",
+	value = "Segment"
+)
 @JsonFilter("Liferay.Vulcan")
-@Schema(requiredProperties = {"criteria", "name"})
+@Schema(
+	description = "Represents a set of users that meet certain criteria. Segments may be used to create customized experiences for users.",
+	requiredProperties = {"criteria", "name"}
+)
 @XmlRootElement(name = "Segment")
-public class Segment {
+public class Segment implements Serializable {
+
+	public static Segment toDTO(String json) {
+		return ObjectMapperUtil.readValue(Segment.class, json);
+	}
+
+	public static Segment unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Segment.class, json);
+	}
 
 	@Schema(
 		description = "A flag that indicates whether the segment is active."
@@ -111,6 +129,36 @@ public class Segment {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	@NotEmpty
 	protected String criteria;
+
+	@Schema(description = "The segment's criteria in JSON.")
+	@Valid
+	public Map<String, Object> getCriteriaValue() {
+		return criteriaValue;
+	}
+
+	public void setCriteriaValue(Map<String, Object> criteriaValue) {
+		this.criteriaValue = criteriaValue;
+	}
+
+	@JsonIgnore
+	public void setCriteriaValue(
+		UnsafeSupplier<Map<String, Object>, Exception>
+			criteriaValueUnsafeSupplier) {
+
+		try {
+			criteriaValue = criteriaValueUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The segment's criteria in JSON.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Map<String, Object> criteriaValue;
 
 	@Schema(description = "The segment's creation date.")
 	public Date getDateCreated() {
@@ -331,6 +379,16 @@ public class Segment {
 			sb.append("\"");
 		}
 
+		if (criteriaValue != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"criteriaValue\": ");
+
+			sb.append(_toJSON(criteriaValue));
+		}
+
 		if (dateCreated != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -413,6 +471,7 @@ public class Segment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.Segment",
 		name = "x-class-name"
 	)
@@ -422,6 +481,16 @@ public class Segment {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -438,13 +507,46 @@ public class Segment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -36,7 +36,9 @@ import java.util.List;
  * @author Brian Wing Shun Chan
  * @author Miguel Pastor
  * @author Raymond Augé
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public class ServiceLoader {
 
 	public static <S> List<S> load(Class<S> clazz) throws Exception {
@@ -58,13 +60,13 @@ public class ServiceLoader {
 			Class<S> clazz)
 		throws Exception {
 
-		Enumeration<URL> enu = lookupClassLoader.getResources(
+		Enumeration<URL> enumeration = lookupClassLoader.getResources(
 			"META-INF/services/" + clazz.getName());
 
 		List<S> services = new ArrayList<>();
 
-		while (enu.hasMoreElements()) {
-			URL url = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			URL url = enumeration.nextElement();
 
 			try {
 				_load(services, defineClassLoader, clazz, url);

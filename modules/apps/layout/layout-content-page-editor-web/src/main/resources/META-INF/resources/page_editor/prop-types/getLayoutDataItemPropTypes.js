@@ -19,8 +19,8 @@ export default function getLayoutDataItemPropTypes(extraPropTypes = {}) {
 		children: PropTypes.arrayOf(PropTypes.string).isRequired,
 		config: PropTypes.object,
 		itemId: PropTypes.string.isRequired,
-		parentId: PropTypes.string.isRequired,
+		parentId: PropTypes.string,
 		type: PropTypes.string.isRequired,
-		...extraPropTypes
+		...extraPropTypes,
 	});
 }

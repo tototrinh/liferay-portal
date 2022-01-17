@@ -14,6 +14,7 @@
 
 package com.liferay.login.authentication.facebook.connect.web.internal.struts;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.struts.StrutsAction;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -57,7 +59,6 @@ import java.util.Objects;
 
 import javax.portlet.PortletMode;
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -130,9 +131,9 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 				themeDisplay.getCompanyId(), FacebookConnect.class.getName());
 		}
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		String nonce = (String)session.getAttribute(WebKeys.FACEBOOK_NONCE);
+		String nonce = (String)httpSession.getAttribute(WebKeys.FACEBOOK_NONCE);
 
 		String state = ParamUtil.getString(httpServletRequest, "state");
 
@@ -168,9 +169,13 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 			themeDisplay.getCompanyId(), redirect, code);
 
 		if (Validator.isNotNull(token)) {
+			ServiceContext serviceContext = ServiceContextFactory.getInstance(
+				httpServletRequest);
+
 			try {
 				User user = setFacebookCredentials(
-					session, themeDisplay.getCompanyId(), token);
+					httpSession, themeDisplay.getCompanyId(), token,
+					serviceContext);
 
 				if ((user != null) &&
 					(user.getStatus() == WorkflowConstants.STATUS_INCOMPLETE)) {
@@ -210,7 +215,8 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 	}
 
 	protected User addUser(
-			HttpSession session, long companyId, JSONObject jsonObject)
+			HttpSession httpSession, long companyId, JSONObject jsonObject,
+			ServiceContext serviceContext)
 		throws Exception {
 
 		long creatorUserId = 0;
@@ -239,8 +245,6 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 		long[] userGroupIds = null;
 		boolean sendEmail = true;
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		User user = _userLocalService.addUser(
 			creatorUserId, companyId, autoPassword, password1, password2,
 			autoScreenName, screenName, emailAddress, facebookId, openId,
@@ -256,7 +260,8 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 		user = _userLocalService.updateEmailAddressVerified(
 			user.getUserId(), true);
 
-		session.setAttribute(WebKeys.FACEBOOK_USER_EMAIL_ADDRESS, emailAddress);
+		httpSession.setAttribute(
+			WebKeys.FACEBOOK_USER_EMAIL_ADDRESS, emailAddress);
 
 		return user;
 	}
@@ -266,22 +271,30 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 			HttpServletResponse httpServletResponse, User user)
 		throws Exception {
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			httpServletRequest, PortletKeys.LOGIN, PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("saveLastPath", Boolean.FALSE.toString());
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/login/associate_facebook_user");
-		portletURL.setParameter(
-			"redirect", ParamUtil.getString(httpServletRequest, "redirect"));
-		portletURL.setParameter("userId", String.valueOf(user.getUserId()));
-		portletURL.setParameter("emailAddress", user.getEmailAddress());
-		portletURL.setParameter("firstName", user.getFirstName());
-		portletURL.setParameter("lastName", user.getLastName());
-		portletURL.setPortletMode(PortletMode.VIEW);
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		httpServletResponse.sendRedirect(portletURL.toString());
+		httpServletResponse.sendRedirect(
+			PortletURLBuilder.create(
+				PortletURLFactoryUtil.create(
+					httpServletRequest, PortletKeys.LOGIN,
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/login_authentication_facebook_connect/associate_facebook_user"
+			).setRedirect(
+				ParamUtil.getString(httpServletRequest, "redirect")
+			).setParameter(
+				"emailAddress", user.getEmailAddress()
+			).setParameter(
+				"firstName", user.getFirstName()
+			).setParameter(
+				"lastName", user.getLastName()
+			).setParameter(
+				"saveLastPath", false
+			).setParameter(
+				"userId", user.getUserId()
+			).setPortletMode(
+				PortletMode.VIEW
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).buildString());
 	}
 
 	protected void sendError(
@@ -293,7 +306,9 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 			httpServletRequest, PortletKeys.LOGIN, PortletRequest.RENDER_PHASE);
 
 		portletURL.setParameter(
-			"mvcRenderCommandName", "/login/facebook_connect_login_error");
+			"mvcRenderCommandName",
+			"/login_authentication_facebook_connect" +
+				"/facebook_connect_login_error");
 		portletURL.setParameter("error", error);
 		portletURL.setWindowState(LiferayWindowState.POP_UP);
 
@@ -306,7 +321,8 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 	}
 
 	protected User setFacebookCredentials(
-			HttpSession session, long companyId, String token)
+			HttpSession httpSession, long companyId, String token,
+			ServiceContext serviceContext)
 		throws Exception {
 
 		JSONObject jsonObject = _facebookConnect.getGraphResources(
@@ -330,7 +346,7 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 		long facebookId = jsonObject.getLong("id");
 
 		if (facebookId > 0) {
-			session.setAttribute(
+			httpSession.setAttribute(
 				FacebookConnectWebKeys.FACEBOOK_ACCESS_TOKEN, token);
 
 			user = _userLocalService.fetchUserByFacebookId(
@@ -343,7 +359,7 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 					 (user.getStatus() !=
 						 WorkflowConstants.STATUS_INCOMPLETE)) {
 
-				session.setAttribute(
+				httpSession.setAttribute(
 					FacebookConnectWebKeys.FACEBOOK_USER_ID,
 					String.valueOf(facebookId));
 			}
@@ -362,14 +378,14 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 					 (user.getStatus() !=
 						 WorkflowConstants.STATUS_INCOMPLETE)) {
 
-				session.setAttribute(
+				httpSession.setAttribute(
 					WebKeys.FACEBOOK_USER_EMAIL_ADDRESS, emailAddress);
 			}
 		}
 
 		if (user != null) {
 			if (user.getStatus() == WorkflowConstants.STATUS_INCOMPLETE) {
-				session.setAttribute(
+				httpSession.setAttribute(
 					WebKeys.FACEBOOK_INCOMPLETE_USER_ID, facebookId);
 
 				user.setEmailAddress(jsonObject.getString("email"));
@@ -379,12 +395,12 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 				return user;
 			}
 
-			user = updateUser(user, jsonObject);
+			user = updateUser(user, jsonObject, serviceContext);
 		}
 		else {
 			_checkAllowUserCreation(companyId, jsonObject);
 
-			user = addUser(session, companyId, jsonObject);
+			user = addUser(httpSession, companyId, jsonObject, serviceContext);
 		}
 
 		return user;
@@ -395,7 +411,8 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 		_userLocalService = userLocalService;
 	}
 
-	protected User updateUser(User user, JSONObject jsonObject)
+	protected User updateUser(
+			User user, JSONObject jsonObject, ServiceContext serviceContext)
 		throws Exception {
 
 		long facebookId = jsonObject.getLong("id");
@@ -428,8 +445,6 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 		List<UserGroupRole> userGroupRoles = null;
 		long[] userGroupIds = null;
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		if (!StringUtil.equalsIgnoreCase(
 				emailAddress, user.getEmailAddress())) {
 
@@ -454,7 +469,7 @@ public class FacebookConnectStrutsAction implements StrutsAction {
 	}
 
 	private void _checkAllowUserCreation(long companyId, JSONObject jsonObject)
-		throws PortalException {
+		throws Exception {
 
 		Company company = _companyLocalService.getCompany(companyId);
 

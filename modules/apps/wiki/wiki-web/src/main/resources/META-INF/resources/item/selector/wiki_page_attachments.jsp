@@ -29,7 +29,7 @@ int end = startAndEnd[1];
 
 WikiPage wikiPage = wikiAttachmentItemSelectorViewDisplayContext.getWikiPage();
 
-List portletFileEntries = null;
+List<RepositoryEntry> portletFileEntries = new ArrayList<>();
 int portletFileEntriesCount = 0;
 
 String[] mimeTypes = wikiAttachmentItemSelectorViewDisplayContext.getMimeTypes();
@@ -52,11 +52,7 @@ if (wikiPage.getAttachmentsFolderId() != DLFolderConstants.DEFAULT_PARENT_FOLDER
 
 		portletFileEntriesCount = hits.getLength();
 
-		Document[] docs = hits.getDocs();
-
-		portletFileEntries = new ArrayList(docs.length);
-
-		for (Document doc : docs) {
+		for (Document doc : hits.getDocs()) {
 			long fileEntryId = GetterUtil.getLong(doc.get(Field.ENTRY_CLASS_PK));
 
 			FileEntry fileEntry = null;
@@ -77,11 +73,11 @@ if (wikiPage.getAttachmentsFolderId() != DLFolderConstants.DEFAULT_PARENT_FOLDER
 	}
 	else {
 		if (ArrayUtil.isNotEmpty(mimeTypes)) {
-			portletFileEntries = wikiPage.getAttachmentsFileEntries(mimeTypes, start, end, wikiAttachmentItemSelectorViewDisplayContext.getOrderByComparator());
+			portletFileEntries.addAll(wikiPage.getAttachmentsFileEntries(mimeTypes, start, end, wikiAttachmentItemSelectorViewDisplayContext.getOrderByComparator()));
 			portletFileEntriesCount = wikiPage.getAttachmentsFileEntriesCount(mimeTypes);
 		}
 		else {
-			portletFileEntries = wikiPage.getAttachmentsFileEntries(start, end, wikiAttachmentItemSelectorViewDisplayContext.getOrderByComparator());
+			portletFileEntries.addAll(wikiPage.getAttachmentsFileEntries(start, end, wikiAttachmentItemSelectorViewDisplayContext.getOrderByComparator()));
 			portletFileEntriesCount = wikiPage.getAttachmentsFileEntriesCount();
 		}
 	}
@@ -89,6 +85,8 @@ if (wikiPage.getAttachmentsFolderId() != DLFolderConstants.DEFAULT_PARENT_FOLDER
 %>
 
 <liferay-item-selector:repository-entry-browser
+	allowedCreationMenuUIItemKeys="<%= wikiAttachmentItemSelectorViewDisplayContext.getAllowedCreationMenuUIItemKeys() %>"
+	editImageURL="<%= wikiAttachmentItemSelectorViewDisplayContext.getEditImageURL(liferayPortletResponse) %>"
 	emptyResultsMessage='<%= LanguageUtil.get(resourceBundle, "there-are-no-wiki-attachments") %>'
 	extensions="<%= ListUtil.toList(mimeTypes) %>"
 	itemSelectedEventName="<%= wikiAttachmentItemSelectorViewDisplayContext.getItemSelectedEventName() %>"
@@ -103,5 +101,5 @@ if (wikiPage.getAttachmentsFolderId() != DLFolderConstants.DEFAULT_PARENT_FOLDER
 />
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("com_liferay_wiki_web.item.selector.wiki_page_attachments_jsp");
+private static final Log _log = LogFactoryUtil.getLog("com_liferay_wiki_web.item.selector.wiki_page_attachments_jsp");
 %>

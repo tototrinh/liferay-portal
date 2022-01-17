@@ -12,14 +12,16 @@
  * details.
  */
 
-import {core} from 'metal';
 import State from 'metal-state';
+
+import isObject from './util/is_object';
 
 /**
  * Adds compatibility for YUI events, re-emitting events according to YUI naming
  * and adding the capability of adding targets to bubble events to them.
  */
 class CompatibilityEventProxy extends State {
+
 	/**
 	 * @inheritDoc
 	 */
@@ -67,19 +69,21 @@ class CompatibilityEventProxy extends State {
 	 * @private
 	 */
 	emitCompatibleEvents_(eventName, event) {
-		this.eventTargets_.forEach(target => {
+		this.eventTargets_.forEach((target) => {
 			if (target.fire) {
 				const prefixedEventName = this.namespace
 					? this.namespace + ':' + eventName
 					: eventName;
 				const yuiEvent = target._yuievt.events[prefixedEventName];
 
-				if (core.isObject(event)) {
+				if (isObject(event)) {
 					try {
 						event.target = this.host;
 					}
-					catch (e) {
+					catch (error) {
+
 						// Do nothing
+
 					}
 				}
 
@@ -131,6 +135,7 @@ class CompatibilityEventProxy extends State {
  * @type {!Object}
  */
 CompatibilityEventProxy.STATE = {
+
 	/**
 	 * Replaces event names with adapted YUI names.
 	 *
@@ -141,8 +146,8 @@ CompatibilityEventProxy.STATE = {
 	adaptedEvents: {
 		value: {
 			match: /(.*)(Changed)$/,
-			replace: '$1Change'
-		}
+			replace: '$1Change',
+		},
 	},
 
 	/**
@@ -154,8 +159,8 @@ CompatibilityEventProxy.STATE = {
 	 * @type {String}
 	 */
 	emitFacade: {
-		value: false
-	}
+		value: false,
+	},
 };
 
 export default CompatibilityEventProxy;

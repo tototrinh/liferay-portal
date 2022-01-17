@@ -12,7 +12,7 @@
  * details.
  */
 
-import updateLayoutData from '../actions/updateLayoutData';
+import updateItemConfigAction from '../actions/updateItemConfig';
 import updatePageContents from '../actions/updatePageContents';
 import InfoItemService from '../services/InfoItemService';
 import LayoutService from '../services/LayoutService';
@@ -20,25 +20,25 @@ import LayoutService from '../services/LayoutService';
 export default function updateItemConfig({
 	itemConfig,
 	itemId,
-	segmentsExperienceId
+	segmentsExperienceId,
 }) {
-	return dispatch =>
+	return (dispatch) =>
 		LayoutService.updateItemConfig({
 			itemConfig,
 			itemId,
 			onNetworkStatus: dispatch,
-			segmentsExperienceId
+			segmentsExperienceId,
 		})
-			.then(layoutData => {
-				dispatch(updateLayoutData({layoutData}));
+			.then((layoutData) => {
+				dispatch(updateItemConfigAction({itemId, layoutData}));
 			})
 			.then(() => {
 				InfoItemService.getPageContents({
-					onNetworkStatus: dispatch
-				}).then(pageContents => {
+					onNetworkStatus: dispatch,
+				}).then((pageContents) => {
 					dispatch(
 						updatePageContents({
-							pageContents
+							pageContents,
 						})
 					);
 				});

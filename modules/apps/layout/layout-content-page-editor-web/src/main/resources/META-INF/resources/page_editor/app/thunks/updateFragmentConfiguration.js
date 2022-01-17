@@ -12,54 +12,49 @@
  * details.
  */
 
-import updateEditableValues from '../actions/updateEditableValues';
-import updateFragmentEntryLinkContent from '../actions/updateFragmentEntryLinkContent';
+import updateFragmentEntryLinkConfiguration from '../actions/updateFragmentEntryLinkConfiguration';
+import updatePageContents from '../actions/updatePageContents';
 import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../config/constants/freemarkerFragmentEntryProcessor';
 import FragmentService from '../services/FragmentService';
+import InfoItemService from '../services/InfoItemService';
 
 export default function updateFragmentConfiguration({
 	configurationValues,
 	fragmentEntryLink,
-	segmentsExperienceId
 }) {
 	const {editableValues, fragmentEntryLinkId} = fragmentEntryLink;
 
 	const nextEditableValues = {
 		...editableValues,
-		[FREEMARKER_FRAGMENT_ENTRY_PROCESSOR]: {
-			...editableValues[FREEMARKER_FRAGMENT_ENTRY_PROCESSOR],
-			[segmentsExperienceId]: configurationValues
-		}
+		[FREEMARKER_FRAGMENT_ENTRY_PROCESSOR]: configurationValues,
 	};
 
-	return dispatch => {
-		return FragmentService.updateEditableValues({
+	return (dispatch, getState) => {
+		return FragmentService.updateConfigurationValues({
 			editableValues: nextEditableValues,
 			fragmentEntryLinkId,
-			onNetworkStatus: dispatch
+			languageId: getState().languageId,
+			onNetworkStatus: dispatch,
 		})
-			.then(() => {
-				return FragmentService.renderFragmentEntryLinkContent({
-					fragmentEntryLinkId,
-					onNetworkStatus: dispatch,
-					segmentsExperienceId
-				});
-			})
-			.then(({content}) => {
+			.then(({fragmentEntryLink, layoutData}) => {
 				dispatch(
-					updateEditableValues({
-						editableValues: nextEditableValues,
+					updateFragmentEntryLinkConfiguration({
+						fragmentEntryLink,
 						fragmentEntryLinkId,
-						segmentsExperienceId
+						layoutData,
 					})
 				);
-
-				dispatch(
-					updateFragmentEntryLinkContent({
-						content,
-						fragmentEntryLinkId
-					})
-				);
+			})
+			.then(() => {
+				InfoItemService.getPageContents({
+					onNetworkStatus: dispatch,
+				}).then((pageContents) => {
+					dispatch(
+						updatePageContents({
+							pageContents,
+						})
+					);
+				});
 			});
 	};
 }

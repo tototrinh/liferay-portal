@@ -69,23 +69,25 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 				return 1;
 			}
 
-			if (javaTerm1.isStatic()) {
-				String accessModifier = javaTerm1.getAccessModifier();
+			if (javaTerm1.isPrivate() && javaTerm1.isStatic()) {
+				if (name1.matches("_log(ger)?") &&
+					!name2.matches("_log(ger)?")) {
 
-				if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) {
-					if (name2.equals("_log") || name2.equals("_logger")) {
-						return 1;
-					}
+					return -1;
+				}
 
-					if (name1.equals("_instance") || name1.equals("_log") ||
-						name1.equals("_logger")) {
+				if (!name1.matches("_log(ger)?") &&
+					name2.matches("_log(ger)?")) {
 
-						return -1;
-					}
+					return 1;
+				}
 
-					if (name2.equals("_instance")) {
-						return 1;
-					}
+				if (name1.equals("_instance")) {
+					return -1;
+				}
+
+				if (name2.equals("_instance")) {
+					return 1;
 				}
 			}
 		}
@@ -207,8 +209,8 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 			JavaParameter parameter1 = parameters1.get(i);
 			JavaParameter parameter2 = parameters2.get(i);
 
-			String parameterType1 = parameter1.getParameterType();
-			String parameterType2 = parameter2.getParameterType();
+			String parameterType1 = parameter1.getParameterType(false);
+			String parameterType2 = parameter2.getParameterType(false);
 
 			if ((parameters1.size() != parameters2.size()) &&
 				(parameterType1.equals(parameterType2.concat("...")) ||
@@ -216,6 +218,17 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 
 				continue;
 			}
+
+			if (parameterType1.compareToIgnoreCase(parameterType2) != 0) {
+				return parameterType1.compareToIgnoreCase(parameterType2);
+			}
+
+			if (parameterType1.compareTo(parameterType2) != 0) {
+				return -parameterType1.compareTo(parameterType2);
+			}
+
+			parameterType1 = parameter1.getParameterType(true);
+			parameterType2 = parameter2.getParameterType(true);
 
 			if (parameterType1.compareToIgnoreCase(parameterType2) != 0) {
 				return parameterType1.compareToIgnoreCase(parameterType2);
@@ -268,9 +281,7 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 			return -1;
 		}
 
-		String accessModifier = javaTerm.getAccessModifier();
-
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PUBLIC)) {
+		if (javaTerm.isPublic()) {
 			if (javaTerm.isStatic()) {
 				if (javaTerm.isJavaVariable()) {
 					return 1;
@@ -303,7 +314,7 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 			}
 		}
 
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PROTECTED)) {
+		if (javaTerm.isProtected()) {
 			if (javaTerm.isStatic()) {
 				if (javaTerm.isJavaMethod()) {
 					return 8;
@@ -336,7 +347,7 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 			}
 		}
 
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) {
+		if (javaTerm.isPrivate()) {
 			if (javaTerm.isStatic()) {
 				if (javaTerm.isJavaMethod()) {
 					return 15;

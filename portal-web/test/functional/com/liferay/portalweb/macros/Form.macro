@@ -4,35 +4,129 @@ definition {
 	var formName = "Created Form Name";
 	var rowNumber = "1";
 
-	macro _addField {
-		if (IsElementNotPresent(locator1 = "Form#SIDEBAR_CLOSE")) {
-			MouseOver.mouseOverNotVisible(locator1 = "Form#ADD_FIELD");
+	macro addFieldFromSidebarToFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldLabel = "${key_fieldLabel}",
+			key_fieldName = "${key_fieldName}",
+			locator1 = "Sidebar#ADD_FIELD_NAME",
+			locator2 = "FormFields#LABEL");
+	}
 
-			Click(locator1 = "Form#ADD_FIELD");
+	macro addFieldOutsideOfFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldName = "${fieldName}",
+			key_index = "${index}",
+			locator1 = "Sidebar#ADD_FIELD_NAME",
+			locator2 = "Form#FIELD_ROW_TARGET");
+	}
+
+	macro addFieldSameRow {
+		var key_fieldLabel = "${fieldType}";
+
+		if (isSet(formPageNumber)) {
+			key_formPageNumber = "${formPageNumber}";
 		}
+		else {
+			key_formPageNumber = "0";
+		}
+
+		if (isSet(fieldColumnNumber)) {
+			key_fieldColumnNumber = "${fieldColumnNumber}";
+		}
+		else {
+			key_fieldColumnNumber = "0";
+		}
+
+		if (isSet(fieldRowNumber)) {
+			key_fieldRowNumber = "${fieldRowNumber}";
+		}
+		else {
+			key_fieldRowNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToObject(
+			locator1 = "FormViewBuilder#SIDEBAR_FIELD_LABEL",
+			locator2 = "Form#ADD_FIELD_SPECIFIC_POSITION",
+			value1 = "${fieldType}");
+	}
+
+	macro addFieldToFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToBottom(
+			key_fieldLabel = "${targetFieldLabel}",
+			key_fieldName = "${sourceFieldName}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "FormFields#LABEL");
 	}
 
 	macro addPage {
-		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+		var key_formAddNewPageNumber = "${formAddNewPageNumber}";
+
+		ScrollBy(value1 = "0, 230");
 
 		AssertClick(
 			locator1 = "Form#PAGE_CONTROLS_ADD_NEW_PAGE",
-			value1 = "Add New Page");
+			value1 = "New Page");
 	}
 
 	macro addSuccessPage {
 		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		ScrollBy(value1 = "0, 230");
 
 		AssertClick(
 			locator1 = "Form#PAGE_CONTROLS_ADD_SUCCESS_PAGE",
 			value1 = "Add Success Page");
 	}
 
+	macro addSuccessPageForm {
+		Click(locator1 = "Form#SUCCESS_PAGE_ADD");
+
+		AssertTextEquals(
+			locator1 = "Form#SUCCESS_PAGE_TITLE_FIELD",
+			value1 = "Thank you.");
+
+		AssertTextEquals(
+			locator1 = "Form#SUCCESS_PAGE_DESCRIPTION_FIELD",
+			value1 = "Your information was successfully received. Thank you for filling out the form.");
+	}
+
 	macro addTextField {
-		Form.gotoAddField(fieldType = "Text");
+		if (isSet(formPageNumber)) {
+			Form.gotoAddField(
+				fieldPositionNumber = "${fieldPositionNumber}",
+				fieldType = "Text",
+				formPageNumber = "${formPageNumber}");
+		}
+		else {
+			Form.gotoAddField(
+				fieldPositionNumber = "${fieldPositionNumber}",
+				fieldType = "Text");
+		}
+	}
+
+	macro addTextFieldReference {
+		if (isSet(formPageNumber)) {
+			Form.gotoAddField(
+				fieldPositionNumber = "${fieldPositionNumber}",
+				fieldType = "Text",
+				formPageNumber = "${formPageNumber}");
+		}
+		else {
+			Form.gotoAddField(
+				fieldPositionNumber = "${fieldPositionNumber}",
+				fieldType = "Text");
+		}
+
+		Form.gotoAdvancedTab();
+
+		Type(
+			locator1 = "Form#FIELD_REFERENCE",
+			value1 = "${key_fieldReferenceText}");
 	}
 
 	macro addTranslation {
+		ScrollWebElementIntoView(locator1 = "Translation#ADD");
+
 		Click(locator1 = "Translation#ADD");
 
 		var key_localizedLanguage = "${localizedLanguage}";
@@ -42,24 +136,36 @@ definition {
 			value1 = "${localizedLanguage}");
 	}
 
+	macro assertFieldPositionAtFormsGroupOnPublishedForm {
+		AssertElementPresent(
+			key_formPageNumber = "${key_formPageNumber}",
+			key_rowNumber = "${key_rowNumber}",
+			key_text = "${key_text}",
+			locator1 = "Form#FIELD_SPECIFIC_POSITION_PUBLISHED_FORM");
+	}
+
 	macro assertFormWasPublished {
 		AssertVisible(locator1 = "Form#PUBLISH_URL_ICON");
 	}
 
+	macro changeFieldTypeModalConfirmation {
+		FormFields.changeFieldType(selectOption = "${selectOption}");
+
+		while (IsElementPresent(locator1 = "Form#VALIDATE_CHANGE_FIELD_TYPE_MODAL_MESSAGE")) {
+			Click(locator1 = "Form#SIDEBAR_CHANGE_FIELD_TYPE_MODAL_BUTTON");
+		}
+	}
+
 	macro closeSidebar {
-		Pause(locator1 = "1000");
-
-		Click(locator1 = "Form#SIDEBAR_CLOSE");
-
-		Pause(locator1 = "1000");
+		Click(locator1 = "Sidebar#BACK");
 	}
 
 	macro configureEmailNotifications {
 		AssertClick(
 			locator1 = "Form#SETTINGS_TAB_EMAIL_NOTIFICATIONS",
-			value1 = "Email Notifications");
+			value1 = "Notifications");
 
-		FormFields.enableSwitcher(fieldName = "sendEmailNotification");
+		FormFields.enableSwitch(fieldName = "sendEmailNotification");
 
 		FormFields.editText(
 			fieldName = "emailFromName",
@@ -80,8 +186,36 @@ definition {
 		Button.clickDone();
 	}
 
+	macro configureRedirectURL {
+		AssertClick(
+			locator1 = "Form#SETTINGS_TAB_PERSONALIZATION",
+			value1 = "Personalization");
+
+		FormFields.editText(
+			fieldName = "redirectURL",
+			fieldValue = "${URL}");
+	}
+
+	macro configureRequireAuthentication {
+		FormFields.enableSwitch(fieldName = "Require User Authentication");
+
+		Button.clickDone();
+	}
+
 	macro configureRequireCaptcha {
-		FormFields.enableSwitcher(fieldName = "requireCaptcha");
+		FormFields.enableSwitch(fieldName = "requireCaptcha");
+
+		Button.clickDone();
+	}
+
+	macro configureSubmitLabel {
+		AssertClick(
+			locator1 = "Form#SETTINGS_TAB_PERSONALIZATION",
+			value1 = "Personalization");
+
+		FormFields.editText(
+			fieldName = "submitLabel",
+			fieldValue = "${submitLabel}");
 
 		Button.clickDone();
 	}
@@ -98,26 +232,74 @@ definition {
 		Button.clickDone();
 	}
 
-	macro deleteCurrentPage {
-		var key_formPageName = "${formPageName}";
+	macro deleteCP {
+		LexiconEntry.viewEntryName(rowEntry = "${formName}");
 
-		AssertElementPresent(locator1 = "FormPortlet#FORM_PAGE_ACTIVE");
+		LexiconEntry.gotoEllipsisMenuItemNoError(menuItem = "Delete");
+
+		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
+
+		Alert.viewSuccessMessage();
+
+		LexiconEntry.viewNoEntry(rowEntry = "${formName}");
+	}
+
+	macro deleteCurrentLastPage {
+		var key_formDropDownNumber = "${formDropDownNumber}";
+		var key_formPageNumber = "${formPageNumber}";
+
+		//AssertElementPresent(locator1 = "FormPortlet#FORM_PAGE_ACTIVE");
+
+		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		AssertClick(
+			locator1 = "Form#PAGE_CONTROLS_DELETE_CURRENT_PAGE_LAST",
+			value1 = "Remove Page");
+
+		AssertElementNotPresent(locator1 = "FormPortlet#FORM_PAGE");
+	}
+
+	macro deleteCurrentPage {
+		var key_formDropDownNumber = "${formDropDownNumber}";
+		var key_formPageNumber = "${formPageNumber}";
+
+		//AssertElementPresent(locator1 = "FormPortlet#FORM_PAGE_ACTIVE");
 
 		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
 
 		AssertClick(
 			locator1 = "Form#PAGE_CONTROLS_DELETE_CURRENT_PAGE",
-			value1 = "Delete Current Page");
+			value1 = "Remove Page");
+
+		AssertElementNotPresent(locator1 = "FormPortlet#FORM_PAGE");
+	}
+
+	macro deleteFieldModalConfirmation {
+		FormsAdminNavigator.gotoDeleteField(fieldName = "${fieldName}");
+
+		while (IsElementPresent(locator1 = "Form#VALIDATE_DELETE_FIELD_MODAL_DELETE_MESSAGE")) {
+			Click(locator1 = "Form#SIDEBAR_DELETE_FIELD_MODAL_DELETE_BUTTON");
+		}
+
+		Form.validateNoFieldLabel(fieldLabel = "${fieldLabel}");
+	}
+
+	macro deleteSuccessPage {
+		var key_formPageNumber = "${formPageNumber}";
+
+		//AssertElementPresent(locator1 = "FormPortlet#FORM_PAGE_ACTIVE");
+
+		Click(locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		AssertClick(
+			locator1 = "Form#PAGE_CONTROLS_DELETE_SUCCESS_PAGE",
+			value1 = "Remove Success Page");
 
 		AssertElementNotPresent(locator1 = "FormPortlet#FORM_PAGE");
 	}
 
 	macro disableAutocompleteConfiguration {
-		FormFields.disableSwitcher(fieldName = "Autocomplete");
-	}
-
-	macro disableAutocompleteSwitcherTextField {
-		Click(locator1 = "FormFields#SWITCHER_TEXTFIELD");
+		FormFields.disableSwitch(fieldName = "Autocomplete");
 	}
 
 	macro duplicate {
@@ -126,12 +308,42 @@ definition {
 			rowEntry = "${formName}");
 	}
 
+	macro duplicateFieldsGroup {
+		while (IsElementNotPresent(locator1 = "Form#SIDEBAR_MENUITEM_DUPLICATE_FIELD")) {
+			Click(
+				key_fieldName = "${fieldName}",
+				locator1 = "Form#FIELD_LABEL");
+		}
+
+		Click(locator1 = "Form#SIDEBAR_ELLIPSIS");
+
+		AssertClick(
+			locator1 = "Form#SIDEBAR_MENUITEM_DUPLICATE_FIELD",
+			value1 = "Duplicate");
+	}
+
 	macro editDescription {
+		WaitForElementPresent(locator1 = "Form#DESCRIPTION_FIELD");
+
 		Click(locator1 = "Form#DESCRIPTION_FIELD");
 
 		Type(
 			locator1 = "Form#DESCRIPTION_FIELD",
 			value1 = "${formDescription}");
+	}
+
+	macro editElementSetFieldLabel {
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
+
+		while (IsTextNotEqual(key_fieldName = "label", locator1 = "FormFields#TEXT_FIELD", value1 = "") && (maxIterations = "10")) {
+			FormFields.editTextWithBackspace(fieldName = "label");
+		}
+
+		if (!(isSet(fieldName))) {
+			var fieldName = StringUtil.replace("${fieldValue}", " ", "");
+		}
+
+		Form.editFieldLabelMetal(fieldValue = "${fieldValue}");
 	}
 
 	macro editFieldDataProvider {
@@ -150,24 +362,6 @@ definition {
 			selectOption = "${dataProviderOutput}");
 	}
 
-	macro editFieldLabel {
-		FormFields.editText(
-			fieldName = "label",
-			fieldValue = "${fieldValue}");
-
-		if (!(isSet(fieldName))) {
-			var fieldName = StringUtil.replace("${fieldValue}", " ", "");
-		}
-
-		FormFields.viewFieldName(fieldName = "${fieldName}");
-
-		var key_fieldName = "${fieldName}";
-
-		AssertTextEquals(
-			locator1 = "Form#FIELD_LABEL",
-			value1 = "${fieldValue}");
-	}
-
 	macro editFieldLabelMetal {
 		FormFields.editText(
 			fieldName = "label",
@@ -175,60 +369,86 @@ definition {
 
 		var key_fieldName = "${fieldValue}";
 
-		if (!(isSet(fieldName))) {
-			var fieldName = StringUtil.replace("${fieldValue}", " ", "");
-		}
-
-		//TODO: adding it to test, remove this line after this bug (LPS-87612) is fixed
-		//Type(locator1 = "FormFields#FIELD_NAME_EDIT", value1 = "${fieldName}");
-
-		if ((isSet(localeAdvanced)) && (isSet(localeBasic))) {
-			var key_localeAdvanced = "${localeAdvanced}";
-			var key_localeBasic = "${localeBasic}";
-
-			FormFields.viewFieldName(
-				fieldName = "${fieldName}",
-				localeAdvanced = "${key_localeAdvanced}",
-				localeBasic = "${key_localeBasic}");
-		}
-		else {
-			FormFields.viewFieldName(fieldName = "${fieldName}");
-		}
-
 		AssertTextEquals(
 			locator1 = "Form#FIELD_LABEL",
 			value1 = "${fieldValue}");
 	}
 
+	macro editFieldReferenceMetal {
+		FormFields.editText(
+			fieldName = "fieldReference",
+			fieldValue = "${fieldValue}");
+
+		var key_fieldName = "${fieldValue}";
+
+		AssertTextEquals(
+			locator1 = "Form#FIELD_REFERENCE",
+			value1 = "${fieldValue}");
+	}
+
+	macro editImageDescription {
+		var descriptionPosition = "${descriptionPosition}";
+
+		Type(
+			locator1 = "Form#ADD_IMAGE_DESCRIPTION",
+			value1 = "${descriptionContent}");
+	}
+
 	macro editName {
-		AssertVisible(locator1 = "Form#ADD_FIELD");
+		Pause(locator1 = "2000");
+
+		WaitForElementPresent(locator1 = "Form#NAME_FIELD");
+
+		AssertVisible(locator1 = "Form#BUILDER_SIDEBAR_PANEL");
 
 		AssertVisible(locator1 = "Form#NAME_FIELD");
 
 		AssertVisible(locator1 = "Form#DESCRIPTION_FIELD");
 
-		Click(locator1 = "Form#NAME_FIELD");
+		if (isSet(formTitle)) {
+			formName = "${formTitle}";
+		}
 
-		AlloyEditor.typeEditor(
-			content = "${formName}",
-			editor = "name");
+		Type(
+			locator1 = "Form#NAME_FIELD",
+			value1 = "${formName}");
 	}
 
 	macro editNameLocalized {
-		AssertVisible(locator1 = "Form#ADD_FIELD");
+		WaitForElementPresent(locator1 = "Form#NAME_FIELD");
+
+		AssertVisible(locator1 = "Form#BUILDER_SIDEBAR_PANEL");
 
 		AssertVisible(locator1 = "Form#NAME_FIELD");
 
 		AssertVisible(locator1 = "Form#DESCRIPTION_FIELD");
 
-		Click(locator1 = "Form#NAME_FIELD");
+		Type(
+			locator1 = "Form#NAME_FIELD",
+			value1 = "${formName}");
+	}
 
-		AlloyEditor.typeEditor(
-			content = "${formName}",
-			editor = "name");
+	macro editPageDescription {
+		ScrollWebElementIntoView(locator1 = "Form#PAGE_DESCRIPTION_FIELD");
+
+		WaitForElementPresent(
+			locator1 = "Form#PAGE_DESCRIPTION_FIELD",
+			value1 = "${formPageDescriptionName}");
+
+		Type(
+			locator1 = "Form#PAGE_DESCRIPTION_FIELD",
+			value1 = "${formPageDescriptionName}");
 	}
 
 	macro editPageTitle {
+		var key_titleNumber = "${formTitleNumber}";
+
+		ScrollWebElementIntoView(locator1 = "Form#PAGE_TITLE_FIELD");
+
+		WaitForElementPresent(
+			locator1 = "Form#PAGE_TITLE_FIELD",
+			value1 = "${formPageName}");
+
 		Type(
 			locator1 = "Form#PAGE_TITLE_FIELD",
 			value1 = "${formPageName}");
@@ -261,87 +481,108 @@ definition {
 	}
 
 	macro enableAutocompleteConfiguration {
-		Click(locator1 = "FormFields#SWITCHER_TEXTFIELD");
+		FormFields.enableSwitch(fieldName = "Autocomplete");
 	}
 
 	macro getPublishedFormPublicURL {
+		WaitForElementPresent(locator1 = "Form#PUBLISH_FORM_PUBLIC_URL");
+
 		var publicURL = selenium.getElementValue("Form#PUBLISH_FORM_PUBLIC_URL");
 
 		return "${publicURL}";
 	}
 
 	macro gotoAddElementSet {
-		Form._addField();
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
 
 		Form.gotoElementSetsTab();
 
+		if (isSet(fieldPositionNumber)) {
+			var key_fieldPositionNumber = "${fieldPositionNumber}";
+		}
+		else {
+			var key_fieldPositionNumber = "0";
+		}
+
 		var key_fieldType = "${elementSetTitle}";
 
-		DragAndDrop(
+		if (isSet(formPageNumber)) {
+			var key_formPageNumber = "${formPageNumber}";
+		}
+		else {
+			var key_formPageNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToObject(
 			locator1 = "Form#ADD_FIELD_TYPE",
 			locator2 = "Form#ADD_FIELD_POSITION",
 			value1 = "${elementSetTitle}");
 	}
 
+	@summary = "Add the ${key_fieldType} field inside page ${formPageNumber} in position ${fieldPositionNumber}."
 	macro gotoAddField {
-		Form._addField();
+		WaitForElementPresent(locator1 = "Form#SIDEBAR_CONTENT_OPEN");
 
-		if (isSet(localeElements)) {
-			Form.gotoElementsTab(key_localeElements = "${localeElements}");
+		Form.gotoFieldsTab();
+
+		if (isSet(fieldPositionNumber)) {
+			var key_fieldPositionNumber = "${fieldPositionNumber}";
 		}
 		else {
-			Form.gotoElementsTab();
+			var key_fieldPositionNumber = "0";
 		}
 
 		var key_fieldType = "${fieldType}";
 
-		DragAndDrop.dragAndDropPortletToObject(
-			locator1 = "Form#ADD_FIELD_TYPE",
+		if (isSet(formPageNumber)) {
+			var key_formPageNumber = "${formPageNumber}";
+		}
+		else {
+			var key_formPageNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToObject(
+			locator1 = "Form#ADD_FIELD_NAME",
 			locator2 = "Form#ADD_FIELD_POSITION",
 			value1 = "${fieldType}");
 
-		if (isSet(localeBasic)) {
-			var key_localeBasic = "${localeBasic}";
-			AssertElementPresent(locator1 = "Form#SIDEBAR_BASIC_TAB_LOCALE");
-		}
-		else {
-			AssertElementPresent(locator1 = "Form#SIDEBAR_BASIC_TAB");
+		if (IsElementNotPresent(key_tab = "Basic", locator1 = "NavTab#ACTIVE_TAB_LINK")) {
+			Navigator.gotoNavTab(navTab = "Basic");
 		}
 	}
 
 	macro gotoAdvancedTab {
 		if (isSet(key_localeAdvanced)) {
-			AssertClick(
+			AssertClick.assertPartialTextClickAt(
 				locator1 = "Form#SIDEBAR_ADVANCED_TAB_LOCALE",
 				value1 = "${key_localeAdvanced}");
 		}
 		else {
-			AssertClick(
+			AssertClick.assertPartialTextClickAt(
 				locator1 = "Form#SIDEBAR_ADVANCED_TAB",
 				value1 = "Advanced");
 		}
-		Pause(locator1 = "1000");
 	}
 
 	macro gotoAutocompleteTab {
 		AssertClick(
 			locator1 = "Form#SIDEBAR_AUTOCOMPLETE_TAB",
 			value1 = "Autocomplete");
+
 		Pause(locator1 = "1000");
 	}
 
 	macro gotoBasicTab {
 		if (isSet(key_localeBasic)) {
-			AssertClick(
+			AssertClick.assertPartialTextClickAt(
 				locator1 = "Form#SIDEBAR_BASIC_TAB_LOCALE",
 				value1 = "${key_localeBasic}");
 		}
 		else {
-			AssertClick(
+			AssertClick.assertPartialTextClickAt(
 				locator1 = "Form#SIDEBAR_BASIC_TAB",
 				value1 = "Basic");
 		}
-		Pause(locator1 = "1000");
 	}
 
 	macro gotoElementSetsTab {
@@ -356,11 +597,24 @@ definition {
 				locator1 = "Form#SIDEBAR_ELEMENTS_TAB_LOCALE",
 				value1 = "${key_localeElements}");
 		}
+
 		else {
 			AssertClick(
 				locator1 = "Form#SIDEBAR_ELEMENTS_TAB",
 				value1 = "Elements");
 		}
+	}
+
+	macro gotoFieldContainer {
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "Form#FIELD_LABEL");
+	}
+
+	macro gotoFieldsTab {
+		AssertClick(
+			locator1 = "Form#SIDEBAR_FIELDS_TAB",
+			value1 = "Fields");
 	}
 
 	macro gotoFormPage {
@@ -375,8 +629,68 @@ definition {
 		Click(locator1 = "Form#ALT_PAGINATION_PAGE");
 	}
 
+	macro gotoPropertiesTab {
+		if (isSet(key_localeAdvanced)) {
+			AssertClick(
+				locator1 = "Form#SIDEBAR_PROPERTIES_TAB",
+				value1 = "Properties");
+		}
+		else {
+			AssertClick(
+				locator1 = "Form#SIDEBAR_PROPERTIES_TAB",
+				value1 = "Properties");
+		}
+		Pause(locator1 = "1000");
+	}
+
+	macro moveFieldToRow {
+		if (isSet(formPageNumber)) {
+			key_formPageNumber = "${formPageNumber}";
+		}
+		else {
+			key_formPageNumber = "0";
+		}
+
+		if (isSet(fieldPositionNumber)) {
+			key_fieldPositionNumber = "${fieldPositionNumber}";
+		}
+		else {
+			key_fieldPositionNumber = "0";
+		}
+
+		DragAndDrop.javaScriptDragAndDropToUp(
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldNameTarget}",
+			locator1 = "FormFields#LABEL",
+			locator2 = "Form#ADD_FIELD_POSITION");
+	}
+
+	macro movePageDown {
+		Click(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_DOWN_ENABLED");
+	}
+
+	macro movePageUp {
+		Click(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_UP_ENABLED");
+	}
+
+	macro pageReset {
+		Click(
+			key_formPageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_CONTROLS_ELLIPSIS_ICON");
+
+		Click(
+			key_saveButton = "Reset Page",
+			locator1 = "Form#SAVE_FORM_BUTTON_LOCALIZED");
+	}
+
 	macro previewForm {
 		Navigator.selectSpecificWindow(windowTitle = "Form - Forms");
+
+		Pause(locator1 = "5000");
 
 		var key_formName = "${formName}";
 
@@ -396,52 +710,95 @@ definition {
 			fieldName = "${fieldName}",
 			fieldValue = "${fieldValue}");
 
-		AssertElementNotPresent(locator1 = "Button#SUBMIT");
+		AssertElementNotPresent(locator1 = "FormPortlet#SUBMIT_BUTTON");
 	}
 
 	macro publishForm {
+		WaitForElementPresent(locator1 = "Form#PUBLISH_FORM_BUTTON");
+
 		AssertElementPresent(locator1 = "Form#NAME_FIELD");
 
-		Click(locator1 = "Button#PUBLISH");
+		Click(locator1 = "Form#PUBLISH_FORM_BUTTON");
 
 		Form.assertFormWasPublished();
+	}
+
+	macro reorderFields {
+		DragAndDrop.javaScriptDragAndDropToObject(
+			key_fieldName = "${fieldName}",
+			key_index = "${index}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "Form#FIELD_ROW_TARGET");
+	}
+
+	macro reorderFieldsFromFieldsGroup {
+		DragAndDrop.javaScriptDragAndDropToObject(
+			key_fieldName = "${key_fieldName}",
+			key_pageNumber = "${key_pageNumber}",
+			key_rowNumber = "${key_rowNumber}",
+			locator1 = "Form#PAGE_FIELD_LABEL",
+			locator2 = "Form#FIELDS_GROUP_TARGET_POSITON");
 	}
 
 	macro save {
 		if (isSet(localeSaveForm)) {
 			var key_localeSaveForm = "${localeSaveForm}";
 
+			WaitForElementPresent(
+				locator1 = "Form#SAVE_FORM_BUTTON_LOCALE",
+				value1 = "${key_localeSaveForm}");
+
 			AssertClick(
 				locator1 = "Form#SAVE_FORM_BUTTON_LOCALE",
 				value1 = "${key_localeSaveForm}");
 		}
 		else {
+			WaitForElementPresent(
+				locator1 = "Form#SAVE_FORM_BUTTON",
+				value1 = "Save");
+
 			AssertClick(
 				locator1 = "Form#SAVE_FORM_BUTTON",
-				value1 = "Save Form");
+				value1 = "Save");
 		}
 
 		Alert.viewSuccessMessage();
+
+		Pause(locator1 = "2000");
 	}
 
 	macro saveElementSet {
-		Button.clickSave();
+		WaitForElementPresent(
+			locator1 = "Form#SAVE_ELEMENT_SET_BUTTON",
+			value1 = "Save");
 
-		Alert.viewSuccessMessage();
+		AssertClick(
+			locator1 = "Form#SAVE_ELEMENT_SET_BUTTON",
+			value1 = "Save");
+
+		VerifyElementPresent(locator1 = "Message#SUCCESS_DISMISSIBLE");
 	}
 
 	macro saveLocalized {
 		var key_saveButton = "${saveButton}";
+
+		WaitForElementPresent(
+			locator1 = "Form#SAVE_FORM_BUTTON_LOCALIZED",
+			value1 = "${saveButton}");
 
 		AssertClick(
 			locator1 = "Form#SAVE_FORM_BUTTON_LOCALIZED",
 			value1 = "${saveButton}");
 
 		Alert.viewSuccessMessage();
+
+		Pause(locator1 = "2000");
 	}
 
 	macro selectTranslation {
 		var key_localizedLanguage = "${localizedLanguage}";
+
+		ScrollWebElementIntoView(locator1 = "Translation#UNSELECTED_LOCALE_ICON");
 
 		Click(locator1 = "Translation#UNSELECTED_LOCALE_ICON");
 	}
@@ -488,13 +845,21 @@ definition {
 	}
 
 	macro unpublishForm {
+		WaitForElementPresent(locator1 = "Form#UNPUBLISH_FORM_BUTTON");
+
 		AssertElementPresent(locator1 = "Form#NAME_FIELD");
 
-		Click(locator1 = "Button#UNPUBLISH");
+		Click(locator1 = "Form#UNPUBLISH_FORM_BUTTON");
 
-		var key_uniqueSuccess = "The form was unpublished successfully!";
+		var key_successMessage = "Your request completed successfully.";
 
-		AssertElementPresent(locator1 = "Message#UNIQUE_SUCCESS");
+		AssertElementPresent(locator1 = "Form#UNPUBLISH_FORM_MESSAGE_SUCCESS");
+	}
+
+	macro validateNoFieldLabel {
+		AssertElementNotPresent(
+			locator1 = "Form#FIELD_LABEL",
+			value1 = "${fieldLabel}");
 	}
 
 	macro viewAltPagePagination {
@@ -507,6 +872,78 @@ definition {
 		AssertElementPresent(locator1 = "Form#ALT_PAGINATION_SUCCESS_PAGE");
 	}
 
+	macro viewButtonPageDisabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			key_movePage = "Move Page ${pageMove}",
+			locator1 = "Form#PAGE_MOVE_DISABLED");
+	}
+
+	macro viewButtonPageDownEnabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_DOWN_ENABLED");
+	}
+
+	macro viewButtonPageUpEnabled {
+		AssertElementPresent(
+			key_formPageName = "${formPageName}",
+			locator1 = "Form#PAGE_MOVE_UP_ENABLED");
+	}
+
+	macro viewCollapsedCollapseButton {
+		AssertElementPresent(locator1 = "Form#FIELDS_GROUP_COLLAPSED");
+	}
+
+	macro viewExpandedCollapseButton {
+		AssertElementPresent(locator1 = "Form#FIELDS_GROUP_EXPANDED");
+	}
+
+	macro viewFieldReference {
+		key_fieldName = "${fieldName}";
+		key_fieldReference = "${fieldReference}";
+
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "Form#FIELD_BODY");
+
+		Form.gotoAdvancedTab();
+
+		AssertTextEquals(
+			locator1 = "Form#FIELD_REFERENCE",
+			value1 = "${fieldReference}");
+	}
+
+	macro viewFieldReferenceFromTextField {
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "Form#FIELD_BODY");
+
+		Form.gotoAdvancedTab();
+
+		AssertTextEquals(
+			locator1 = "Form#FIELD_REFERENCE",
+			value1 = "${key_fieldReference}");
+	}
+
+	macro viewFieldsGroupCollapsedField {
+		AssertElementPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELDS_GROUP_COLLAPSED_FIELD");
+	}
+
+	macro viewFieldsGroupNotCollapsedField {
+		AssertElementNotPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELDS_GROUP_COLLAPSED_FIELD");
+	}
+
+	macro viewFormDescription {
+		AssertTextEquals(
+			locator1 = "Form#DESCRIPTION_FIELD",
+			value1 = "${formDescription}");
+	}
+
 	macro viewFormName {
 		AssertTextEquals(
 			locator1 = "Form#NAME_FIELD",
@@ -514,9 +951,11 @@ definition {
 	}
 
 	macro viewFormNotPublished {
+		WaitForElementPresent(locator1 = "Form#PUBLISH_ICON");
+
 		Click(locator1 = "Form#PUBLISH_ICON");
 
-		var publishFormURL = selenium.getElementValue("Form#PUBLISH_FORM_PUBLIC_URL");
+		var publishFormURL = Form.getPublishedFormPublicURL();
 
 		Form.unpublishForm();
 
@@ -525,6 +964,18 @@ definition {
 		AssertTextEquals(
 			locator1 = "Message#ERROR_3_ALT",
 			value1 = "This form is not available or it was not published.");
+	}
+
+	macro viewFormPlaceholderPage {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_DEFAULT_DESCRIPTION_BY_NUMBER");
+	}
+
+	macro viewFormPlaceholderText {
+		AssertElementPresent(
+			key_value = "${fieldPlaceholderText}",
+			locator1 = "Form#PLACEHOLDER_TEXT_FIELD");
 	}
 
 	macro viewFormPublish {
@@ -541,16 +992,74 @@ definition {
 			fieldName = "${fieldName}");
 	}
 
+	macro viewFormTemporarilyNotAvailableMessage {
+		AssertElementPresent(locator1 = "Form#FORM_TEMPORARILY_NOT_AVAILABLE");
+	}
+
+	macro viewHiddenField {
+		AssertElementPresent(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "Form#FIELD_HIDDEN_LABEL");
+	}
+
+	macro viewPageEmptyField {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_EMPTY_FORM_FIELD_BY_NUMBER");
+	}
+
+	macro viewPageName {
+		AssertElementPresent(
+			key_pageName = "${formTitleNumber}",
+			locator1 = "Form#PAGE_NAME",
+			pageName = "${formPageName}");
+	}
+
+	macro viewPageTitleDefault {
+		AssertElementPresent(
+			key_pageNumber = "${pageIndex}",
+			locator1 = "Form#PAGE_DEFAULT_TITLE_BY_NUMBER");
+	}
+
 	macro viewPublishFormSuccessMessage {
 		var key_alertMessage = "The form was published successfully! Access it with this URL";
 
 		AssertVisible(locator1 = "Form#PUBLISH_UNPUBLISH_ICON_CLOSE");
 	}
 
+	macro viewRedirectedURL {
+		WaitForElementPresent(
+			key_navItem = "Home",
+			locator1 = "NavBar#NAV_ITEM_LINK");
+
+		AssertLocation(value1 = "${friendlyURL}");
+	}
+
+	macro viewRequiredFieldIndicator {
+		AssertElementPresent(locator1 = "Form#FIELD_REQUIRED_INDICATOR");
+	}
+
 	macro viewSaveNotification {
 		AssertTextEquals.assertPartialText(
 			locator1 = "Form#SAVE_NOTIFICATION",
 			value1 = "Draft");
+	}
+
+	macro viewSelectFromListOptionOnPreview {
+		AssertElementPresent(
+			key_optionValue = "${optionValue}",
+			key_rowPosition = "${rowPosition}",
+			locator1 = "FormFields#SELECT_OPTIONS_FIELD_BY_ROW_PREVIEW");
+	}
+
+	macro viewSubmitButtonText {
+		AssertTextEquals(
+			locator1 = "FormPortlet#SUBMIT_BUTTON",
+			value1 = "${key_buttonText}");
+	}
+
+	macro viewSubmitNotPresent {
+		AssertElementNotPresent(locator1 = "FormPortlet#SUBMIT_BUTTON");
 	}
 
 }

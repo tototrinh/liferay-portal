@@ -16,51 +16,47 @@ import {config} from '../config/index';
 import serviceFetch from './serviceFetch';
 
 export default {
+
 	/**
-	 * Get an asset's value
+	 * Get available list item renderers for the list style
 	 * @param {object} options
-	 * @param {string} options.classNameId Asset's className
-	 * @param {string} options.classPK Asset's classPK
-	 * @param {string} options.fieldId
-	 * @param {string} [options.languageId]
+	 * @param {string} options.itemSubtype itemSubtype
+	 * @param {string} options.itemType itemType
+	 * @param {string} options.listStyle listStyle
 	 * @param {function} options.onNetworkStatus
 	 */
-	getAssetFieldValue({
-		classNameId,
-		classPK,
-		fieldId,
-		languageId,
-		onNetworkStatus
+	getAvailableListItemRenderers({
+		itemSubtype,
+		itemType,
+		listStyle,
+		onNetworkStatus,
 	}) {
 		return serviceFetch(
-			config.getAssetFieldValueURL,
+			config.getAvailableListItemRenderersURL,
 			{
 				body: {
-					classNameId,
-					classPK,
-					fieldId,
-					languageId
-				}
+					itemSubtype,
+					itemType,
+					listStyle,
+				},
 			},
 			onNetworkStatus
 		);
 	},
 
 	/**
-	 * Get available asset mapping fields
+	 * Get available list renderers for the class name
 	 * @param {object} options
-	 * @param {string} options.classNameId Asset's className
-	 * @param {string} options.classPK Asset's classPK
+	 * @param {string} options.className className
 	 * @param {function} options.onNetworkStatus
 	 */
-	getAvailableAssetMappingFields({classNameId, classPK, onNetworkStatus}) {
+	getAvailableListRenderers({className, onNetworkStatus}) {
 		return serviceFetch(
-			config.getAssetMappingFieldsURL,
+			config.getAvailableListRenderersURL,
 			{
 				body: {
-					classNameId,
-					classPK
-				}
+					className,
+				},
 			},
 			onNetworkStatus
 		);
@@ -71,20 +67,21 @@ export default {
 	 * @param {object} options
 	 * @param {string} options.classNameId Asset's className
 	 * @param {string} options.classTypeId Asset's classTypeId
+	 * @param {string} options.fieldType Type of field to which we are mapping
 	 * @param {function} options.onNetworkStatus
 	 */
 	getAvailableStructureMappingFields({
 		classNameId,
 		classTypeId,
-		onNetworkStatus
+		onNetworkStatus,
 	}) {
 		return serviceFetch(
 			config.mappingFieldsURL,
 			{
 				body: {
 					classNameId,
-					classTypeId
-				}
+					classTypeId,
+				},
 			},
 			onNetworkStatus
 		);
@@ -103,8 +100,38 @@ export default {
 			{
 				body: {
 					className,
-					classPK
-				}
+					classPK,
+				},
+			},
+			onNetworkStatus
+		);
+	},
+
+	/**
+	 * Get an item's value
+	 * @param {object} options
+	 * @param {string} options.classNameId Asset's className
+	 * @param {string} options.classPK Asset's classPK
+	 * @param {string} options.fieldId
+	 * @param {string} [options.languageId]
+	 * @param {function} options.onNetworkStatus
+	 */
+	getInfoItemFieldValue({
+		classNameId,
+		classPK,
+		fieldId,
+		languageId,
+		onNetworkStatus,
+	}) {
+		return serviceFetch(
+			config.getInfoItemFieldValueURL,
+			{
+				body: {
+					classNameId,
+					classPK,
+					fieldId,
+					languageId,
+				},
 			},
 			onNetworkStatus
 		);
@@ -117,5 +144,5 @@ export default {
 	 */
 	getPageContents({onNetworkStatus}) {
 		return serviceFetch(config.getPageContentsURL, {}, onNetworkStatus);
-	}
+	},
 };

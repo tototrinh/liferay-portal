@@ -14,6 +14,7 @@
 
 package com.liferay.saml.persistence.service.base;
 
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -33,14 +34,17 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.saml.persistence.model.SamlIdpSsoSession;
 import com.liferay.saml.persistence.service.SamlIdpSsoSessionLocalService;
+import com.liferay.saml.persistence.service.SamlIdpSsoSessionLocalServiceUtil;
 import com.liferay.saml.persistence.service.persistence.SamlIdpSpConnectionPersistence;
 import com.liferay.saml.persistence.service.persistence.SamlIdpSpSessionPersistence;
 import com.liferay.saml.persistence.service.persistence.SamlIdpSsoSessionPersistence;
+import com.liferay.saml.persistence.service.persistence.SamlPeerBindingPersistence;
 import com.liferay.saml.persistence.service.persistence.SamlSpAuthRequestPersistence;
 import com.liferay.saml.persistence.service.persistence.SamlSpIdpConnectionPersistence;
 import com.liferay.saml.persistence.service.persistence.SamlSpMessagePersistence;
@@ -48,10 +52,13 @@ import com.liferay.saml.persistence.service.persistence.SamlSpSessionPersistence
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -73,11 +80,15 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>SamlIdpSsoSessionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.saml.persistence.service.SamlIdpSsoSessionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>SamlIdpSsoSessionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>SamlIdpSsoSessionLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the saml idp sso session to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SamlIdpSsoSessionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param samlIdpSsoSession the saml idp sso session
 	 * @return the saml idp sso session that was added
@@ -107,6 +118,10 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	/**
 	 * Deletes the saml idp sso session with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SamlIdpSsoSessionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param samlIdpSsoSessionId the primary key of the saml idp sso session
 	 * @return the saml idp sso session that was removed
 	 * @throws PortalException if a saml idp sso session with the primary key could not be found
@@ -122,6 +137,10 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	/**
 	 * Deletes the saml idp sso session from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SamlIdpSsoSessionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param samlIdpSsoSession the saml idp sso session
 	 * @return the saml idp sso session that was removed
 	 */
@@ -131,6 +150,18 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 		SamlIdpSsoSession samlIdpSsoSession) {
 
 		return samlIdpSsoSessionPersistence.remove(samlIdpSsoSession);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return samlIdpSsoSessionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -288,6 +319,7 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -304,6 +336,11 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 
 		return samlIdpSsoSessionLocalService.deleteSamlIdpSsoSession(
 			(SamlIdpSsoSession)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<SamlIdpSsoSession> getBasePersistence() {
+		return samlIdpSsoSessionPersistence;
 	}
 
 	/**
@@ -345,6 +382,10 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	/**
 	 * Updates the saml idp sso session in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SamlIdpSsoSessionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param samlIdpSsoSession the saml idp sso session
 	 * @return the saml idp sso session that was updated
 	 */
@@ -354,6 +395,11 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 		SamlIdpSsoSession samlIdpSsoSession) {
 
 		return samlIdpSsoSessionPersistence.update(samlIdpSsoSession);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
 	}
 
 	@Override
@@ -367,6 +413,8 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		samlIdpSsoSessionLocalService = (SamlIdpSsoSessionLocalService)aopProxy;
+
+		_setLocalServiceUtilService(samlIdpSsoSessionLocalService);
 	}
 
 	/**
@@ -412,6 +460,23 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		SamlIdpSsoSessionLocalService samlIdpSsoSessionLocalService) {
+
+		try {
+			Field field =
+				SamlIdpSsoSessionLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, samlIdpSsoSessionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@Reference
 	protected SamlIdpSpConnectionPersistence samlIdpSpConnectionPersistence;
 
@@ -422,6 +487,9 @@ public abstract class SamlIdpSsoSessionLocalServiceBaseImpl
 
 	@Reference
 	protected SamlIdpSsoSessionPersistence samlIdpSsoSessionPersistence;
+
+	@Reference
+	protected SamlPeerBindingPersistence samlPeerBindingPersistence;
 
 	@Reference
 	protected SamlSpAuthRequestPersistence samlSpAuthRequestPersistence;

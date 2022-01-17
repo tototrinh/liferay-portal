@@ -37,6 +37,7 @@ import com.liferay.portlet.documentlibrary.model.impl.DLFileEntryImpl;
 import com.liferay.portlet.documentlibrary.model.impl.DLFileVersionImpl;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -100,10 +101,10 @@ public class DLFileEntryFinderImpl
 
 			sqlQuery.addScalar(COUNT_COLUMN_NAME, Type.LONG);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -376,11 +377,20 @@ public class DLFileEntryFinderImpl
 
 			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
-			sqlQuery.addEntity(
-				DLFileEntryImpl.TABLE_NAME, DLFileEntryImpl.class);
+			sqlQuery.addScalar("fileEntryId", Type.LONG);
 
-			return (List<DLFileEntry>)QueryUtil.list(
+			List<Long> fileEntryIds = (List<Long>)QueryUtil.list(
 				sqlQuery, getDialect(), start, end);
+
+			List<DLFileEntry> dlFileEntries = new ArrayList<>(
+				fileEntryIds.size());
+
+			for (long fileEntryId : fileEntryIds) {
+				dlFileEntries.add(
+					dlFileEntryPersistence.findByPrimaryKey(fileEntryId));
+			}
+
+			return Collections.unmodifiableList(dlFileEntries);
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
@@ -510,8 +520,8 @@ public class DLFileEntryFinderImpl
 	}
 
 	protected int doCountByG_F(
-		long groupId, List<Long> folderIds, QueryDefinition queryDefinition,
-		boolean inlineSQLHelper) {
+		long groupId, List<Long> folderIds,
+		QueryDefinition<DLFileEntry> queryDefinition, boolean inlineSQLHelper) {
 
 		Session session = null;
 
@@ -534,14 +544,10 @@ public class DLFileEntryFinderImpl
 
 			queryPos.add(queryDefinition.getStatus());
 
-			for (Long folderId : folderIds) {
-				queryPos.add(folderId);
-			}
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			Iterator<Long> itr = sqlQuery.iterate();
-
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -600,18 +606,14 @@ public class DLFileEntryFinderImpl
 				queryPos.add(repositoryId);
 			}
 
-			for (Long folderId : folderIds) {
-				queryPos.add(folderId);
-			}
-
 			if (mimeTypes != null) {
 				queryPos.add(mimeTypes);
 			}
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -674,10 +676,6 @@ public class DLFileEntryFinderImpl
 				queryPos.add(repositoryId);
 			}
 
-			for (Long folderId : folderIds) {
-				queryPos.add(folderId);
-			}
-
 			if (mimeTypes != null) {
 				queryPos.add(mimeTypes);
 			}
@@ -696,7 +694,7 @@ public class DLFileEntryFinderImpl
 
 	protected String getDDMStructureIds(long[] ddmStructureIds) {
 		StringBundler sb = new StringBundler(
-			(ddmStructureIds.length * 2 - 1) + 2);
+			((ddmStructureIds.length * 2) - 1) + 2);
 
 		sb.append(StringPool.OPEN_PARENTHESIS);
 
@@ -784,13 +782,14 @@ public class DLFileEntryFinderImpl
 			return StringPool.BLANK;
 		}
 
-		StringBundler sb = new StringBundler(folderIds.size() * 3 + 1);
+		StringBundler sb = new StringBundler((folderIds.size() * 3) + 1);
 
 		sb.append(StringPool.OPEN_PARENTHESIS);
 
 		for (int i = 0; i < folderIds.size(); i++) {
 			sb.append(tableName);
-			sb.append(".folderId = ? ");
+			sb.append(".folderId = ");
+			sb.append(folderIds.get(i));
 
 			if ((i + 1) != folderIds.size()) {
 				sb.append(WHERE_OR);
@@ -807,7 +806,7 @@ public class DLFileEntryFinderImpl
 			return StringPool.BLANK;
 		}
 
-		StringBundler sb = new StringBundler(mimeTypes.length * 3 - 1);
+		StringBundler sb = new StringBundler((mimeTypes.length * 3) - 1);
 
 		for (int i = 0; i < mimeTypes.length; i++) {
 			sb.append(tableName);
@@ -828,7 +827,7 @@ public class DLFileEntryFinderImpl
 			return StringPool.BLANK;
 		}
 
-		StringBundler sb = new StringBundler(repositoryIds.size() * 3 + 1);
+		StringBundler sb = new StringBundler((repositoryIds.size() * 3) + 1);
 
 		sb.append(StringPool.OPEN_PARENTHESIS);
 

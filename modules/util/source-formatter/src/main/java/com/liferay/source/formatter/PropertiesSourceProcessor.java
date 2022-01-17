@@ -14,6 +14,9 @@
 
 package com.liferay.source.formatter;
 
+import com.liferay.source.formatter.checks.util.SourceUtil;
+
+import java.io.File;
 import java.io.IOException;
 
 import java.util.List;
@@ -43,6 +46,20 @@ public class PropertiesSourceProcessor extends BaseSourceProcessor {
 		};
 	}
 
-	private static final String[] _INCLUDES = {"**/*.properties"};
+	@Override
+	protected File format(
+			File file, String fileName, String absolutePath, String content)
+		throws Exception {
+
+		if (fileName.endsWith(".properties") && SourceUtil.isXML(content)) {
+			return file;
+		}
+
+		return super.format(file, fileName, absolutePath, content);
+	}
+
+	private static final String[] _INCLUDES = {
+		"**/*.properties", "**/.eslintignore", "**/.prettierignore"
+	};
 
 }

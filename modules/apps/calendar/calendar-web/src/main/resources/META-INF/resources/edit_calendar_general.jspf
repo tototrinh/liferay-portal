@@ -16,14 +16,14 @@
 
 <liferay-ui:header
 	backURL="<%= backURL %>"
-	cssClass="container-fluid-1280"
+	cssClass="container-fluid container-fluid-max-xl"
 	localizeTitle="<%= false %>"
 	title='<%= (calendar == null) ? LanguageUtil.format(request, "new-calendar-for-x", calendarResourceName, false) : calendarName %>'
 />
 
 <liferay-portlet:actionURL name="updateCalendar" var="updateCalendarURL" />
 
-<aui:form action="<%= updateCalendarURL %>" cssClass="container-fluid-1280" method="post" name="fm">
+<aui:form action="<%= updateCalendarURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<aui:input name="mvcPath" type="hidden" value="/edit_calendar.jsp" />
 	<aui:input name="tabs2" type="hidden" value="<%= tabs2 %>" />
 	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
@@ -90,12 +90,12 @@
 		color:
 			'<%= ColorUtil.toHexString((calendar != null) ? calendar.getColor() : CalendarServiceConfigurationValues.CALENDAR_COLOR_DEFAULT) %>',
 		on: {
-			colorChange: function(event) {
+			colorChange: function (event) {
 				A.one('#<portlet:namespace />color').val(
 					parseInt(event.newVal.substring(1), 16)
 				);
-			}
+			},
 		},
-		render: '#<portlet:namespace />colorPicker'
+		render: '#<portlet:namespace />colorPicker',
 	});
 </aui:script>

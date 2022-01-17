@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.search.hits.SearchHits;
 import com.liferay.portal.search.searcher.SearchResponse;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.List;
 import java.util.Map;
@@ -26,12 +27,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  * @author André de Oliveira
  */
 public class SearchResponseImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testDefaultsAreNullSafe() {
@@ -62,19 +70,19 @@ public class SearchResponseImplTest {
 		consumer.accept(actual);
 	}
 
-	protected static Consumer blank() {
+	protected static Consumer<String> blank() {
 		return string -> Assert.assertEquals(StringPool.BLANK, string);
 	}
 
-	protected static Consumer<List> emptyList() {
+	protected static Consumer<List<?>> emptyList() {
 		return list -> Assert.assertEquals("[]", String.valueOf(list));
 	}
 
-	protected static Consumer<Map> emptyMap() {
+	protected static Consumer<Map<String, ?>> emptyMap() {
 		return map -> Assert.assertEquals("{}", String.valueOf(map));
 	}
 
-	protected static Consumer<Stream> emptyStream() {
+	protected static Consumer<Stream<?>> emptyStream() {
 		return stream -> Assert.assertEquals(
 			"[]",
 			String.valueOf(
@@ -85,15 +93,15 @@ public class SearchResponseImplTest {
 				)));
 	}
 
-	protected static Consumer instanceOf(Class clazz) {
+	protected static Consumer<Object> instanceOf(Class<?> clazz) {
 		return object -> Assert.assertTrue(clazz.isInstance(object));
 	}
 
-	protected static Consumer nullValue() {
+	protected static Consumer<Object> nullValue() {
 		return object -> Assert.assertNull(object);
 	}
 
-	protected static Consumer same(Object expected) {
+	protected static Consumer<Object> same(Object expected) {
 		return actual -> Assert.assertSame(expected, actual);
 	}
 

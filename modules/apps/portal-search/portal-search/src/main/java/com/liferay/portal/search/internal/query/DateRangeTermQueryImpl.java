@@ -39,6 +39,7 @@ public class DateRangeTermQueryImpl
 		return queryVisitor.visit(this);
 	}
 
+	@Override
 	public String getDateFormat() {
 		return _dateFormat;
 	}
@@ -48,31 +49,25 @@ public class DateRangeTermQueryImpl
 		return 25;
 	}
 
+	@Override
 	public TimeZone getTimeZone() {
 		return _timeZone;
 	}
 
+	@Override
 	public void setDateFormat(String dateFormat) {
 		_dateFormat = dateFormat;
 	}
 
+	@Override
 	public void setTimeZone(TimeZone timeZone) {
 		_timeZone = timeZone;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(7);
-
-		sb.append("{(");
-		sb.append(super.toString());
-		sb.append("), ");
-		sb.append(_dateFormat);
-		sb.append(", ");
-		sb.append(_timeZone);
-		sb.append(")}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{(", super.toString(), "), ", _dateFormat, ", ", _timeZone, ")}");
 	}
 
 	private static final long serialVersionUID = 1L;

@@ -55,6 +55,23 @@ public class FragmentLinkSerDes {
 
 		sb.append("{");
 
+		if (fragmentLink.getHref() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"href\": ");
+
+			if (fragmentLink.getHref() instanceof String) {
+				sb.append("\"");
+				sb.append((String)fragmentLink.getHref());
+				sb.append("\"");
+			}
+			else {
+				sb.append(fragmentLink.getHref());
+			}
+		}
+
 		if (fragmentLink.getTarget() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -76,11 +93,17 @@ public class FragmentLinkSerDes {
 
 			sb.append("\"value\": ");
 
-			sb.append("\"");
+			sb.append(String.valueOf(fragmentLink.getValue()));
+		}
 
-			sb.append(_escape(fragmentLink.getValue()));
+		if (fragmentLink.getValue_i18n() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
 
-			sb.append("\"");
+			sb.append("\"value_i18n\": ");
+
+			sb.append(_toJSON(fragmentLink.getValue_i18n()));
 		}
 
 		sb.append("}");
@@ -102,6 +125,13 @@ public class FragmentLinkSerDes {
 
 		Map<String, String> map = new TreeMap<>();
 
+		if (fragmentLink.getHref() == null) {
+			map.put("href", null);
+		}
+		else {
+			map.put("href", String.valueOf(fragmentLink.getHref()));
+		}
+
 		if (fragmentLink.getTarget() == null) {
 			map.put("target", null);
 		}
@@ -114,6 +144,13 @@ public class FragmentLinkSerDes {
 		}
 		else {
 			map.put("value", String.valueOf(fragmentLink.getValue()));
+		}
+
+		if (fragmentLink.getValue_i18n() == null) {
+			map.put("value_i18n", null);
+		}
+		else {
+			map.put("value_i18n", String.valueOf(fragmentLink.getValue_i18n()));
 		}
 
 		return map;
@@ -137,7 +174,12 @@ public class FragmentLinkSerDes {
 			FragmentLink fragmentLink, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "target")) {
+			if (Objects.equals(jsonParserFieldName, "href")) {
+				if (jsonParserFieldValue != null) {
+					fragmentLink.setHref((Object)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "target")) {
 				if (jsonParserFieldValue != null) {
 					fragmentLink.setTarget(
 						FragmentLink.Target.create(
@@ -146,12 +188,17 @@ public class FragmentLinkSerDes {
 			}
 			else if (Objects.equals(jsonParserFieldName, "value")) {
 				if (jsonParserFieldValue != null) {
-					fragmentLink.setValue((Object)jsonParserFieldValue);
+					fragmentLink.setValue(
+						FragmentLinkValueSerDes.toDTO(
+							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
+			else if (Objects.equals(jsonParserFieldName, "value_i18n")) {
+				if (jsonParserFieldValue != null) {
+					fragmentLink.setValue_i18n(
+						(Map)FragmentLinkSerDes.toMap(
+							(String)jsonParserFieldValue));
+				}
 			}
 		}
 
@@ -181,7 +228,7 @@ public class FragmentLinkSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -207,14 +254,17 @@ public class FragmentLinkSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

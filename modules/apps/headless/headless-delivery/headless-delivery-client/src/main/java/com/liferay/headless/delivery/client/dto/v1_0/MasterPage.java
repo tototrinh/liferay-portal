@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.MasterPageSerDes;
 
+import java.io.Serializable;
+
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -26,7 +28,30 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class MasterPage implements Cloneable {
+public class MasterPage implements Cloneable, Serializable {
+
+	public static MasterPage toDTO(String json) {
+		return MasterPageSerDes.toDTO(json);
+	}
+
+	public String getKey() {
+		return key;
+	}
+
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	public void setKey(UnsafeSupplier<String, Exception> keyUnsafeSupplier) {
+		try {
+			key = keyUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String key;
 
 	public String getName() {
 		return name;

@@ -19,18 +19,20 @@ import com.liferay.message.boards.model.MBCategory;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.message.boards.model.MBThread;
 import com.liferay.message.boards.web.internal.portlet.action.ActionUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
@@ -69,6 +71,10 @@ public class ThreadLockPortletConfigurationIcon
 				getResourceBundle(getLocale(portletRequest)), key);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -77,12 +83,13 @@ public class ThreadLockPortletConfigurationIcon
 	public String getURL(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, MBPortletKeys.MESSAGE_BOARDS_ADMIN,
-			PortletRequest.ACTION_PHASE);
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "/message_boards/edit_message");
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				portletRequest, MBPortletKeys.MESSAGE_BOARDS_ADMIN,
+				PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/message_boards/edit_message"
+		).buildPortletURL();
 
 		try {
 			MBMessage message = ActionUtil.getMessage(portletRequest);
@@ -102,6 +109,10 @@ public class ThreadLockPortletConfigurationIcon
 				"threadId", String.valueOf(thread.getThreadId()));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 
@@ -121,17 +132,23 @@ public class ThreadLockPortletConfigurationIcon
 		try {
 			MBMessage message = ActionUtil.getMessage(portletRequest);
 
-			return ModelResourcePermissionHelper.contains(
+			return ModelResourcePermissionUtil.contains(
 				_categoryModelResourcePermission,
 				themeDisplay.getPermissionChecker(),
 				themeDisplay.getScopeGroupId(), message.getCategoryId(),
 				ActionKeys.LOCK_THREAD);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ThreadLockPortletConfigurationIcon.class);
 
 	@Reference(
 		target = "(model.class.name=com.liferay.message.boards.model.MBCategory)"

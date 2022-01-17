@@ -49,7 +49,7 @@ public abstract class BaseOAuth2PortletDisplayContext {
 		}
 
 		long oAuth2ApplicationId = ParamUtil.getLong(
-			portletRequest, "oAuth2ApplicationId", 0);
+			portletRequest, "oAuth2ApplicationId");
 
 		if (oAuth2ApplicationId > 0) {
 			oAuth2Application = oAuth2ApplicationService.getOAuth2Application(
@@ -86,6 +86,16 @@ public abstract class BaseOAuth2PortletDisplayContext {
 			OAuth2ProviderActionKeys.ACTION_ADD_APPLICATION);
 	}
 
+	public boolean hasAddTrustedApplicationPermission() {
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		return permissionChecker.hasPermission(
+			0, OAuth2ProviderConstants.RESOURCE_NAME,
+			OAuth2ProviderConstants.RESOURCE_NAME,
+			OAuth2ProviderActionKeys.ACTION_ADD_TRUSTED_APPLICATION);
+	}
+
 	public boolean hasDeletePermission(OAuth2Application oAuth2Application) {
 		return hasPermission(oAuth2Application, ActionKeys.DELETE);
 	}
@@ -116,6 +126,16 @@ public abstract class BaseOAuth2PortletDisplayContext {
 		return hasPermission(oAuth2Application, ActionKeys.PERMISSIONS);
 	}
 
+	public boolean hasRememberDevicePermission() {
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		return permissionChecker.hasPermission(
+			0, OAuth2ProviderConstants.RESOURCE_NAME,
+			OAuth2ProviderConstants.RESOURCE_NAME,
+			OAuth2ProviderActionKeys.ACTION_ADD_REMEMBER_DEVICE);
+	}
+
 	public boolean hasRevokeTokenPermission(
 		OAuth2Application oAuth2Application) {
 
@@ -141,6 +161,17 @@ public abstract class BaseOAuth2PortletDisplayContext {
 
 			return false;
 		}
+	}
+
+	protected BaseOAuth2PortletDisplayContext(
+		DLURLHelper dlURLHelper,
+		OAuth2ApplicationService oAuth2ApplicationService,
+		PortletRequest portletRequest, ThemeDisplay themeDisplay) {
+
+		this.dlURLHelper = dlURLHelper;
+		this.oAuth2ApplicationService = oAuth2ApplicationService;
+		this.portletRequest = portletRequest;
+		this.themeDisplay = themeDisplay;
 	}
 
 	protected DLURLHelper dlURLHelper;

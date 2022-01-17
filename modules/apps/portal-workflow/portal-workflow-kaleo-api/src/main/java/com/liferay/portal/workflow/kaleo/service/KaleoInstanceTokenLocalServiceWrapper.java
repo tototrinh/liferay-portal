@@ -36,6 +36,10 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	/**
 	 * Adds the kaleo instance token to the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoInstanceToken the kaleo instance token
 	 * @return the kaleo instance token that was added
 	 */
@@ -52,15 +56,17 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	@Override
 	public com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken
 			addKaleoInstanceToken(
-				long currentKaleoNodeId, long kaleoDefinitionVersionId,
-				long kaleoInstanceId, long parentKaleoInstanceTokenId,
+				long currentKaleoNodeId, long kaleoDefinitionId,
+				long kaleoDefinitionVersionId, long kaleoInstanceId,
+				long parentKaleoInstanceTokenId,
 				java.util.Map<String, java.io.Serializable> workflowContext,
 				com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _kaleoInstanceTokenLocalService.addKaleoInstanceToken(
-			currentKaleoNodeId, kaleoDefinitionVersionId, kaleoInstanceId,
-			parentKaleoInstanceTokenId, workflowContext, serviceContext);
+			currentKaleoNodeId, kaleoDefinitionId, kaleoDefinitionVersionId,
+			kaleoInstanceId, parentKaleoInstanceTokenId, workflowContext,
+			serviceContext);
 	}
 
 	@Override
@@ -134,6 +140,10 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	/**
 	 * Deletes the kaleo instance token from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoInstanceToken the kaleo instance token
 	 * @return the kaleo instance token that was removed
 	 */
@@ -149,6 +159,10 @@ public class KaleoInstanceTokenLocalServiceWrapper
 
 	/**
 	 * Deletes the kaleo instance token with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param kaleoInstanceTokenId the primary key of the kaleo instance token
 	 * @return the kaleo instance token that was removed
@@ -173,6 +187,18 @@ public class KaleoInstanceTokenLocalServiceWrapper
 
 		return _kaleoInstanceTokenLocalService.deletePersistedModel(
 			persistedModel);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _kaleoInstanceTokenLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _kaleoInstanceTokenLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -328,6 +354,15 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	@Override
 	public java.util.List
 		<com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken>
+			getKaleoInstanceTokens(long kaleoInstanceId) {
+
+		return _kaleoInstanceTokenLocalService.getKaleoInstanceTokens(
+			kaleoInstanceId);
+	}
+
+	@Override
+	public java.util.List
+		<com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken>
 			getKaleoInstanceTokens(
 				long parentKaleoInstanceTokenId, java.util.Date completionDate,
 				com.liferay.portal.kernel.service.ServiceContext
@@ -414,14 +449,15 @@ public class KaleoInstanceTokenLocalServiceWrapper
 	public com.liferay.portal.kernel.search.Hits search(
 		Long userId, String assetClassName, String assetTitle,
 		String assetDescription, String currentKaleoNodeName,
-		String kaleoDefinitionName, Boolean completed, int start, int end,
+		String kaleoDefinitionName, Boolean completed,
+		boolean searchByActiveWorkflowHandlers, int start, int end,
 		com.liferay.portal.kernel.search.Sort[] sorts,
 		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
 
 		return _kaleoInstanceTokenLocalService.search(
 			userId, assetClassName, assetTitle, assetDescription,
-			currentKaleoNodeName, kaleoDefinitionName, completed, start, end,
-			sorts, serviceContext);
+			currentKaleoNodeName, kaleoDefinitionName, completed,
+			searchByActiveWorkflowHandlers, start, end, sorts, serviceContext);
 	}
 
 	@Override
@@ -429,16 +465,21 @@ public class KaleoInstanceTokenLocalServiceWrapper
 		Long userId, String assetClassName, String assetTitle,
 		String assetDescription, String currentKaleoNodeName,
 		String kaleoDefinitionName, Boolean completed,
+		boolean searchByActiveWorkflowHandlers,
 		com.liferay.portal.kernel.service.ServiceContext serviceContext) {
 
 		return _kaleoInstanceTokenLocalService.searchCount(
 			userId, assetClassName, assetTitle, assetDescription,
 			currentKaleoNodeName, kaleoDefinitionName, completed,
-			serviceContext);
+			searchByActiveWorkflowHandlers, serviceContext);
 	}
 
 	/**
 	 * Updates the kaleo instance token in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param kaleoInstanceToken the kaleo instance token
 	 * @return the kaleo instance token that was updated

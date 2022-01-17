@@ -20,10 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -41,12 +45,23 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldText")
+@GraphQLName(
+	description = "Represents a fragment field with text.",
+	value = "FragmentFieldText"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldText")
-public class FragmentFieldText {
+public class FragmentFieldText implements Serializable {
 
-	@Schema
+	public static FragmentFieldText toDTO(String json) {
+		return ObjectMapperUtil.readValue(FragmentFieldText.class, json);
+	}
+
+	public static FragmentFieldText unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(FragmentFieldText.class, json);
+	}
+
+	@Schema(description = "A link to a fragment.")
 	@Valid
 	public FragmentLink getFragmentLink() {
 		return fragmentLink;
@@ -71,11 +86,11 @@ public class FragmentFieldText {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A link to a fragment.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected FragmentLink fragmentLink;
 
-	@Schema
+	@Schema(description = "The fragment field's text.")
 	@Valid
 	public Object getText() {
 		return text;
@@ -98,7 +113,7 @@ public class FragmentFieldText {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment field's text.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object text;
 
@@ -146,11 +161,17 @@ public class FragmentFieldText {
 
 			sb.append("\"text\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(text));
-
-			sb.append("\"");
+			if (text instanceof Map) {
+				sb.append(JSONFactoryUtil.createJSONObject((Map<?, ?>)text));
+			}
+			else if (text instanceof String) {
+				sb.append("\"");
+				sb.append((String)text);
+				sb.append("\"");
+			}
+			else {
+				sb.append(text);
+			}
 		}
 
 		sb.append("}");
@@ -159,6 +180,7 @@ public class FragmentFieldText {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldText",
 		name = "x-class-name"
 	)
@@ -168,6 +190,16 @@ public class FragmentFieldText {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -184,13 +216,46 @@ public class FragmentFieldText {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

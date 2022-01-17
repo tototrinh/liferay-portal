@@ -76,6 +76,21 @@ public interface AccountEntryModel
 	public void setMvccVersion(long mvccVersion);
 
 	/**
+	 * Returns the external reference code of this account entry.
+	 *
+	 * @return the external reference code of this account entry
+	 */
+	@AutoEscape
+	public String getExternalReferenceCode();
+
+	/**
+	 * Sets the external reference code of this account entry.
+	 *
+	 * @param externalReferenceCode the external reference code of this account entry
+	 */
+	public void setExternalReferenceCode(String externalReferenceCode);
+
+	/**
 	 * Returns the account entry ID of this account entry.
 	 *
 	 * @return the account entry ID of this account entry
@@ -187,6 +202,34 @@ public interface AccountEntryModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the default billing address ID of this account entry.
+	 *
+	 * @return the default billing address ID of this account entry
+	 */
+	public long getDefaultBillingAddressId();
+
+	/**
+	 * Sets the default billing address ID of this account entry.
+	 *
+	 * @param defaultBillingAddressId the default billing address ID of this account entry
+	 */
+	public void setDefaultBillingAddressId(long defaultBillingAddressId);
+
+	/**
+	 * Returns the default shipping address ID of this account entry.
+	 *
+	 * @return the default shipping address ID of this account entry
+	 */
+	public long getDefaultShippingAddressId();
+
+	/**
+	 * Sets the default shipping address ID of this account entry.
+	 *
+	 * @param defaultShippingAddressId the default shipping address ID of this account entry
+	 */
+	public void setDefaultShippingAddressId(long defaultShippingAddressId);
+
+	/**
 	 * Returns the parent account entry ID of this account entry.
 	 *
 	 * @return the parent account entry ID of this account entry
@@ -199,21 +242,6 @@ public interface AccountEntryModel
 	 * @param parentAccountEntryId the parent account entry ID of this account entry
 	 */
 	public void setParentAccountEntryId(long parentAccountEntryId);
-
-	/**
-	 * Returns the name of this account entry.
-	 *
-	 * @return the name of this account entry
-	 */
-	@AutoEscape
-	public String getName();
-
-	/**
-	 * Sets the name of this account entry.
-	 *
-	 * @param name the name of this account entry
-	 */
-	public void setName(String name);
 
 	/**
 	 * Returns the description of this account entry.
@@ -246,6 +274,21 @@ public interface AccountEntryModel
 	public void setDomains(String domains);
 
 	/**
+	 * Returns the email address of this account entry.
+	 *
+	 * @return the email address of this account entry
+	 */
+	@AutoEscape
+	public String getEmailAddress();
+
+	/**
+	 * Sets the email address of this account entry.
+	 *
+	 * @param emailAddress the email address of this account entry
+	 */
+	public void setEmailAddress(String emailAddress);
+
+	/**
 	 * Returns the logo ID of this account entry.
 	 *
 	 * @return the logo ID of this account entry
@@ -260,6 +303,66 @@ public interface AccountEntryModel
 	public void setLogoId(long logoId);
 
 	/**
+	 * Returns the name of this account entry.
+	 *
+	 * @return the name of this account entry
+	 */
+	@AutoEscape
+	public String getName();
+
+	/**
+	 * Sets the name of this account entry.
+	 *
+	 * @param name the name of this account entry
+	 */
+	public void setName(String name);
+
+	/**
+	 * Returns the tax exemption code of this account entry.
+	 *
+	 * @return the tax exemption code of this account entry
+	 */
+	@AutoEscape
+	public String getTaxExemptionCode();
+
+	/**
+	 * Sets the tax exemption code of this account entry.
+	 *
+	 * @param taxExemptionCode the tax exemption code of this account entry
+	 */
+	public void setTaxExemptionCode(String taxExemptionCode);
+
+	/**
+	 * Returns the tax ID number of this account entry.
+	 *
+	 * @return the tax ID number of this account entry
+	 */
+	@AutoEscape
+	public String getTaxIdNumber();
+
+	/**
+	 * Sets the tax ID number of this account entry.
+	 *
+	 * @param taxIdNumber the tax ID number of this account entry
+	 */
+	public void setTaxIdNumber(String taxIdNumber);
+
+	/**
+	 * Returns the type of this account entry.
+	 *
+	 * @return the type of this account entry
+	 */
+	@AutoEscape
+	public String getType();
+
+	/**
+	 * Sets the type of this account entry.
+	 *
+	 * @param type the type of this account entry
+	 */
+	public void setType(String type);
+
+	/**
 	 * Returns the status of this account entry.
 	 *
 	 * @return the status of this account entry
@@ -272,5 +375,8 @@ public interface AccountEntryModel
 	 * @param status the status of this account entry
 	 */
 	public void setStatus(int status);
+
+	@Override
+	public AccountEntry cloneWithOriginalValues();
 
 }

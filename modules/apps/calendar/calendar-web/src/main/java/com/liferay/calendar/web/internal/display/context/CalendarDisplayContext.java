@@ -35,7 +35,9 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -88,6 +90,7 @@ public class CalendarDisplayContext {
 		_calendarLocalService = calendarLocalService;
 		_calendarResourceLocalService = calendarResourceLocalService;
 		_calendarService = calendarService;
+
 		_themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 	}
@@ -103,12 +106,11 @@ public class CalendarDisplayContext {
 	}
 
 	public String getClearResultsURL() throws PortletException {
-		PortletURL clearResultsURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() {
@@ -172,6 +174,17 @@ public class CalendarDisplayContext {
 			for (Calendar groupCalendar : groupCalendars) {
 				if (groupCalendar.isDefaultCalendar() &&
 					CalendarPermission.contains(
+						_themeDisplay.getPermissionChecker(), groupCalendar,
+						CalendarActionKeys.VIEW_BOOKING_DETAILS)) {
+
+					defaultCalendar = groupCalendar;
+				}
+			}
+		}
+
+		if (defaultCalendar == null) {
+			for (Calendar groupCalendar : groupCalendars) {
+				if (CalendarPermission.contains(
 						_themeDisplay.getPermissionChecker(), groupCalendar,
 						CalendarActionKeys.VIEW_BOOKING_DETAILS)) {
 
@@ -247,29 +260,21 @@ public class CalendarDisplayContext {
 			_renderRequest, "active", Boolean.TRUE.toString());
 
 		return NavigationItemList.of(
-			() -> {
-				NavigationItem navigationItem = new NavigationItem();
-
-				navigationItem.setActive(tabs1.equals("calendar"));
-				navigationItem.setHref(
-					_renderResponse.createRenderURL(), "tabs1", "calendar");
-				navigationItem.setLabel(
-					LanguageUtil.get(httpServletRequest, "calendar"));
-
-				return navigationItem;
-			},
-			() -> {
-				NavigationItem navigationItem = new NavigationItem();
-
-				navigationItem.setActive(tabs1.equals("resources"));
-				navigationItem.setHref(
-					_renderResponse.createRenderURL(), "tabs1", "resources",
-					"scope", scope, "active", active);
-				navigationItem.setLabel(
-					LanguageUtil.get(httpServletRequest, "resources"));
-
-				return navigationItem;
-			});
+			NavigationItemBuilder.setActive(
+				tabs1.equals("calendar")
+			).setHref(
+				_renderResponse.createRenderURL(), "tabs1", "calendar"
+			).setLabel(
+				LanguageUtil.get(httpServletRequest, "calendar")
+			).build(),
+			NavigationItemBuilder.setActive(
+				tabs1.equals("resources")
+			).setHref(
+				_renderResponse.createRenderURL(), "tabs1", "resources",
+				"scope", scope, "active", active
+			).setLabel(
+				LanguageUtil.get(httpServletRequest, "resources")
+			).build());
 	}
 
 	public List<Calendar> getOtherCalendars(User user, long[] calendarIds)
@@ -285,14 +290,11 @@ public class CalendarDisplayContext {
 			}
 			catch (PrincipalException principalException) {
 				if (_log.isInfoEnabled()) {
-					StringBundler sb = new StringBundler(4);
-
-					sb.append("No ");
-					sb.append(ActionKeys.VIEW);
-					sb.append(" permission for user ");
-					sb.append(user.getUserId());
-
-					_log.info(sb.toString(), principalException);
+					_log.info(
+						StringBundler.concat(
+							"No ", ActionKeys.VIEW, " permission for user ",
+							user.getUserId()),
+						principalException);
 				}
 
 				continue;
@@ -310,9 +312,6 @@ public class CalendarDisplayContext {
 
 			Group scopeGroup = _themeDisplay.getScopeGroup();
 
-			long scopeGroupId = scopeGroup.getGroupId();
-			long scopeLiveGroupId = scopeGroup.getLiveGroupId();
-
 			Group calendarGroup = _groupLocalService.getGroup(
 				calendar.getGroupId());
 
@@ -320,14 +319,14 @@ public class CalendarDisplayContext {
 				long calendarGroupId = calendarGroup.getGroupId();
 
 				if (calendarGroup.isStagingGroup()) {
-					if (scopeGroupId != calendarGroupId) {
+					if (scopeGroup.getGroupId() != calendarGroupId) {
 						calendar =
 							_calendarLocalService.fetchCalendarByUuidAndGroupId(
 								calendar.getUuid(),
 								calendarGroup.getLiveGroupId());
 					}
 				}
-				else if (scopeLiveGroupId == calendarGroupId) {
+				else if (scopeGroup.getLiveGroupId() == calendarGroupId) {
 					Group stagingGroup = calendarGroup.getStagingGroup();
 
 					calendar =
@@ -351,23 +350,27 @@ public class CalendarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
 
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter("tabs1", "resources");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = getKeywords();
-
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
-
-		portletURL.setParameter(
-			"active", ParamUtil.getString(_renderRequest, "active"));
-		portletURL.setParameter(
-			"scope", ParamUtil.getString(_renderRequest, "scope"));
-
-		return portletURL;
+				return null;
+			}
+		).setTabs1(
+			"resources"
+		).setParameter(
+			"active", ParamUtil.getString(_renderRequest, "active")
+		).setParameter(
+			"scope", ParamUtil.getString(_renderRequest, "scope")
+		).buildPortletURL();
 	}
 
 	public SearchContainer<?> getSearch() {
@@ -383,9 +386,7 @@ public class CalendarDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL portletURL = getPortletURL();
-
-		return portletURL.toString();
+		return String.valueOf(getPortletURL());
 	}
 
 	public String getSearchContainerId() {
@@ -399,11 +400,7 @@ public class CalendarDisplayContext {
 	}
 
 	public boolean isDisabledManagementBar() {
-		if (hasResults()) {
-			return false;
-		}
-
-		if (isSearch()) {
+		if (hasResults() || isSearch()) {
 			return false;
 		}
 
@@ -483,16 +480,16 @@ public class CalendarDisplayContext {
 	protected void setCalendarResourceSearchResults(
 		CalendarResourceSearch calendarResourceSearch) {
 
-		long[] groupIds = {_themeDisplay.getScopeGroupId()};
-		long[] classNameIds = {
-			PortalUtil.getClassNameId(CalendarResource.class.getName())
-		};
 		CalendarResourceDisplayTerms displayTerms =
 			new CalendarResourceDisplayTerms(_renderRequest);
 
 		List<CalendarResource> calendarResources =
 			_calendarResourceLocalService.searchByKeywords(
-				_themeDisplay.getCompanyId(), groupIds, classNameIds,
+				_themeDisplay.getCompanyId(),
+				new long[] {_themeDisplay.getScopeGroupId()},
+				new long[] {
+					PortalUtil.getClassNameId(CalendarResource.class.getName())
+				},
 				getKeywords(), displayTerms.isActive(),
 				displayTerms.isAndOperator(), calendarResourceSearch.getStart(),
 				calendarResourceSearch.getEnd(),
@@ -504,16 +501,16 @@ public class CalendarDisplayContext {
 	protected void setCalendarResourceSearchTotal(
 		CalendarResourceSearch calendarResourceSearch) {
 
-		long[] groupIds = {_themeDisplay.getScopeGroupId()};
-		long[] classNameIds = {
-			PortalUtil.getClassNameId(CalendarResource.class.getName())
-		};
 		CalendarResourceDisplayTerms displayTerms =
 			new CalendarResourceDisplayTerms(_renderRequest);
 
 		int total = _calendarResourceLocalService.searchCount(
-			_themeDisplay.getCompanyId(), groupIds, classNameIds, getKeywords(),
-			displayTerms.isActive());
+			_themeDisplay.getCompanyId(),
+			new long[] {_themeDisplay.getScopeGroupId()},
+			new long[] {
+				PortalUtil.getClassNameId(CalendarResource.class.getName())
+			},
+			getKeywords(), displayTerms.isActive());
 
 		calendarResourceSearch.setTotal(total);
 	}

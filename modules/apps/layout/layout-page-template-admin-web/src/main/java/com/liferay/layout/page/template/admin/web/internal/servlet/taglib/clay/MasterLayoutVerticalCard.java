@@ -19,7 +19,6 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
-import com.liferay.layout.page.template.admin.web.internal.constants.LayoutPageTemplateAdminWebKeys;
 import com.liferay.layout.page.template.admin.web.internal.security.permission.resource.LayoutPageTemplateEntryPermission;
 import com.liferay.layout.page.template.admin.web.internal.servlet.taglib.util.MasterLayoutActionDropdownItemsProvider;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
@@ -27,18 +26,20 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryServiceUtil;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.portlet.RenderRequest;
@@ -88,15 +89,12 @@ public class MasterLayoutVerticalCard
 			return null;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return LayoutPageTemplateAdminWebKeys.
-			MASTER_LAYOUT_DROPDOWN_DEFAULT_EVENT_HANDLER;
 	}
 
 	@Override
@@ -112,11 +110,8 @@ public class MasterLayoutVerticalCard
 			Layout layout = LayoutLocalServiceUtil.getLayout(
 				_layoutPageTemplateEntry.getPlid());
 
-			Layout draftLayout = LayoutLocalServiceUtil.fetchLayout(
-				PortalUtil.getClassNameId(Layout.class), layout.getPlid());
-
 			String layoutFullURL = PortalUtil.getLayoutFullURL(
-				draftLayout, _themeDisplay);
+				layout.fetchDraftLayout(), _themeDisplay);
 
 			layoutFullURL = HttpUtil.setParameter(
 				layoutFullURL, "p_l_mode", Constants.EDIT);
@@ -125,6 +120,9 @@ public class MasterLayoutVerticalCard
 				layoutFullURL, "p_l_back_url", _themeDisplay.getURLCurrent());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -142,9 +140,28 @@ public class MasterLayoutVerticalCard
 
 	@Override
 	public List<LabelItem> getLabels() {
+		if (_isBlankMasterLayout()) {
+			return LabelItemListBuilder.add(
+				labelItem -> labelItem.setStatus(
+					WorkflowConstants.STATUS_APPROVED)
+			).build();
+		}
+
+		Layout layout = LayoutLocalServiceUtil.fetchLayout(
+			_layoutPageTemplateEntry.getPlid());
+
+		if (layout == null) {
+			return Collections.emptyList();
+		}
+
+		Layout draftLayout = layout.fetchDraftLayout();
+
+		if (draftLayout == null) {
+			return Collections.emptyList();
+		}
+
 		return LabelItemListBuilder.add(
-			labelItem -> labelItem.setStatus(
-				_layoutPageTemplateEntry.getStatus())
+			labelItem -> labelItem.setStatus(draftLayout.getStatus())
 		).build();
 	}
 
@@ -171,8 +188,13 @@ public class MasterLayoutVerticalCard
 	}
 
 	@Override
+	public String getStickerStyle() {
+		return "primary";
+	}
+
+	@Override
 	public String getSubtitle() {
-		int layoutsCount = LayoutLocalServiceUtil.getLayoutsCount(
+		int layoutsCount = LayoutLocalServiceUtil.getMasterLayoutsCount(
 			_themeDisplay.getScopeGroupId(),
 			_layoutPageTemplateEntry.getPlid());
 
@@ -182,7 +204,7 @@ public class MasterLayoutVerticalCard
 
 	@Override
 	public String getTitle() {
-		return HtmlUtil.escape(_layoutPageTemplateEntry.getName());
+		return _layoutPageTemplateEntry.getName();
 	}
 
 	@Override
@@ -193,6 +215,17 @@ public class MasterLayoutVerticalCard
 
 		return false;
 	}
+
+	private boolean _isBlankMasterLayout() {
+		if (_layoutPageTemplateEntry.getLayoutPageTemplateEntryId() == 0L) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		MasterLayoutVerticalCard.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final LayoutPageTemplateEntry _layoutPageTemplateEntry;

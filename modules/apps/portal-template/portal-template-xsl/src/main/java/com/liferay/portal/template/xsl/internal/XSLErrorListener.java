@@ -77,68 +77,62 @@ public class XSLErrorListener implements ErrorListener {
 		return _message + " " + _location;
 	}
 
-	public void setLocation(Throwable exception) {
+	public void setLocation(Throwable throwable) {
 		SourceLocator locator = null;
-		Throwable cause = exception;
-		Throwable rootCause = null;
+		Throwable causeThrowable = throwable;
+		Throwable rootCauseThrowable = null;
 
-		while (cause != null) {
-			if (cause instanceof SAXParseException) {
-				locator = new SAXSourceLocator((SAXParseException)cause);
-				rootCause = cause;
+		while (causeThrowable != null) {
+			if (causeThrowable instanceof SAXParseException) {
+				locator = new SAXSourceLocator(
+					(SAXParseException)causeThrowable);
+				rootCauseThrowable = causeThrowable;
 			}
-			else if (cause instanceof TransformerException) {
+			else if (causeThrowable instanceof TransformerException) {
 				TransformerException transformerException =
-					(TransformerException)cause;
+					(TransformerException)causeThrowable;
 
 				SourceLocator causeLocator = transformerException.getLocator();
 
 				if (causeLocator != null) {
 					locator = causeLocator;
-					rootCause = cause;
+					rootCauseThrowable = causeThrowable;
 				}
 			}
 
-			if (cause instanceof TransformerException) {
+			if (causeThrowable instanceof TransformerException) {
 				TransformerException transformerException =
-					(TransformerException)cause;
+					(TransformerException)causeThrowable;
 
-				cause = transformerException.getCause();
+				causeThrowable = transformerException.getCause();
 			}
-			else if (cause instanceof WrappedRuntimeException) {
+			else if (causeThrowable instanceof WrappedRuntimeException) {
 				WrappedRuntimeException wrappedRuntimeException =
-					(WrappedRuntimeException)cause;
+					(WrappedRuntimeException)causeThrowable;
 
-				cause = wrappedRuntimeException.getException();
+				causeThrowable = wrappedRuntimeException.getException();
 			}
-			else if (cause instanceof SAXException) {
-				SAXException saxException = (SAXException)cause;
+			else if (causeThrowable instanceof SAXException) {
+				SAXException saxException = (SAXException)causeThrowable;
 
-				cause = saxException.getException();
+				causeThrowable = saxException.getException();
 			}
 			else {
-				cause = null;
+				causeThrowable = null;
 			}
 		}
 
-		_message = rootCause.getMessage();
+		_message = rootCauseThrowable.getMessage();
 
 		if (locator != null) {
 			_lineNumber = locator.getLineNumber();
 			_columnNumber = locator.getColumnNumber();
 
-			StringBundler sb = new StringBundler(8);
-
-			sb.append(LanguageUtil.get(_locale, "line"));
-			sb.append(" #");
-			sb.append(locator.getLineNumber());
-			sb.append("; ");
-			sb.append(LanguageUtil.get(_locale, "column"));
-			sb.append(" #");
-			sb.append(locator.getColumnNumber());
-			sb.append("; ");
-
-			_location = sb.toString();
+			_location = StringBundler.concat(
+				LanguageUtil.get(_locale, "line"), " #",
+				locator.getLineNumber(), "; ",
+				LanguageUtil.get(_locale, "column"), " #",
+				locator.getColumnNumber(), "; ");
 		}
 		else {
 			_location = StringPool.BLANK;

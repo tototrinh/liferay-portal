@@ -15,10 +15,14 @@
 import Component from 'metal-component';
 import {Config} from 'metal-state';
 
+import toggleDisabled from './util/toggle_disabled';
+
 /**
  * Shows a dialog and handles the selected item.
+ * @deprecated As of Cavanaugh (7.4.x), replaced by `openSelectionModal`
  */
 class ItemSelectorDialog extends Component {
+
 	/**
 	 * Closes the dialog.
 	 */
@@ -39,21 +43,21 @@ class ItemSelectorDialog extends Component {
 
 		const dialogEvents = {
 			on: {
-				click: event => {
+				click: (event) => {
 					event.domEvent.preventDefault();
 				},
-				visibleChange: event => {
+				visibleChange: (event) => {
 					if (!event.newVal) {
 						this.selectedItem = this._selectedItem;
 
 						this.emit('selectedItemChange', {
-							selectedItem: this.selectedItem
+							selectedItem: this.selectedItem,
 						});
 					}
 
 					this.emit('visibleChange', {visible: event.newVal});
-				}
-			}
+				},
+			},
 		};
 
 		Liferay.Util.selectEntity(
@@ -63,7 +67,7 @@ class ItemSelectorDialog extends Component {
 				id: eventName,
 				stack: !this.zIndex,
 				title: this.title,
-				uri: this.url
+				uri: this.url,
 			},
 			this._onItemSelected.bind(this)
 		);
@@ -75,20 +79,20 @@ class ItemSelectorDialog extends Component {
 			cssClass: this.dialogClasses,
 			destroyOnHide: true,
 			modal: true,
-			zIndex: this.zIndex
+			zIndex: this.zIndex,
 		};
 
 		if (!this.singleSelect) {
 			const dialogFooter = [
 				{
-					cssClass: 'btn-link close-modal',
+					cssClass: 'btn-secondary close-modal',
 					id: 'cancelButton',
 					label: this.buttonCancelLabel,
 					on: {
 						click: () => {
 							this.close();
-						}
-					}
+						},
+					},
 				},
 				{
 					cssClass: 'btn-primary',
@@ -99,9 +103,9 @@ class ItemSelectorDialog extends Component {
 						click: () => {
 							this._selectedItem = this._currentItem;
 							this.close();
-						}
-					}
-				}
+						},
+					},
+				},
 			];
 
 			dialogConfig['toolbars.footer'] = dialogFooter;
@@ -132,7 +136,7 @@ class ItemSelectorDialog extends Component {
 				.get('boundingBox')
 				.one('#addButton');
 
-			Liferay.Util.toggleDisabled(addButton, !currentItem);
+			toggleDisabled(addButton, !currentItem);
 		}
 
 		this._currentItem = currentItem;
@@ -146,6 +150,7 @@ class ItemSelectorDialog extends Component {
  * @type {!Object}
  */
 ItemSelectorDialog.STATE = {
+
 	/**
 	 * Label for the Add button.
 	 *
@@ -191,7 +196,7 @@ ItemSelectorDialog.STATE = {
 	 */
 	selectedItem: Config.oneOfType([
 		Config.object(),
-		Config.arrayOf(Config.object())
+		Config.arrayOf(Config.object()),
 	]),
 
 	/**
@@ -226,7 +231,7 @@ ItemSelectorDialog.STATE = {
 	 * @memberof ItemSelectorDialog
 	 * @type {Number}
 	 */
-	zIndex: Config.number()
+	zIndex: Config.number(),
 };
 
 export default ItemSelectorDialog;

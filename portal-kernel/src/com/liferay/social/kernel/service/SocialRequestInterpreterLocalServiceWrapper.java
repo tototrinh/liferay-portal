@@ -36,36 +36,6 @@ public class SocialRequestInterpreterLocalServiceWrapper
 	}
 
 	/**
-	 * Adds the social request interpreter to the list of available
-	 * interpreters.
-	 *
-	 * @param requestInterpreter the social request interpreter
-	 */
-	@Override
-	public void addRequestInterpreter(
-		com.liferay.social.kernel.model.SocialRequestInterpreter
-			requestInterpreter) {
-
-		_socialRequestInterpreterLocalService.addRequestInterpreter(
-			requestInterpreter);
-	}
-
-	/**
-	 * Removes the social request interpreter from the list of available
-	 * interpreters.
-	 *
-	 * @param requestInterpreter the social request interpreter
-	 */
-	@Override
-	public void deleteRequestInterpreter(
-		com.liferay.social.kernel.model.SocialRequestInterpreter
-			requestInterpreter) {
-
-		_socialRequestInterpreterLocalService.deleteRequestInterpreter(
-			requestInterpreter);
-	}
-
-	/**
 	 * Returns the OSGi service identifier.
 	 *
 	 * @return the OSGi service identifier

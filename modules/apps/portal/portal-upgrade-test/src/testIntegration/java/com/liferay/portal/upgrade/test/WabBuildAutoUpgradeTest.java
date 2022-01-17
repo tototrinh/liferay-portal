@@ -70,15 +70,12 @@ public class WabBuildAutoUpgradeTest extends BaseBuildAutoUpgradeTestCase {
 
 			URL url = uri.toURL();
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(url.getPath());
-			sb.append("?");
-			sb.append(Constants.BUNDLE_SYMBOLICNAME);
-			sb.append("=BuildAutoUpgradeTest&Web-ContextPath=");
-			sb.append("/BuildAutoUpgradeTest&protocol=file");
-
-			_warURLs[i] = new URL("webbundle", null, sb.toString());
+			_warURLs[i] = new URL(
+				"webbundle", null,
+				StringBundler.concat(
+					url.getPath(), "?", Constants.BUNDLE_SYMBOLICNAME,
+					"=BuildAutoUpgradeTest&Web-ContextPath=",
+					"/BuildAutoUpgradeTest&protocol=file"));
 		}
 	}
 
@@ -100,7 +97,7 @@ public class WabBuildAutoUpgradeTest extends BaseBuildAutoUpgradeTestCase {
 	}
 
 	private File _createWabBundleFile(Object[][] tableColumns, int version)
-		throws IOException {
+		throws Exception {
 
 		File file = FileUtil.createTempFile("war");
 

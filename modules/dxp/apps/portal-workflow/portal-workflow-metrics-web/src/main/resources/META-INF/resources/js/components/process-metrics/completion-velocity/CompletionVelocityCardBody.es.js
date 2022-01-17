@@ -9,71 +9,57 @@
  * distribution rights of the Software.
  */
 
+import ClayPanel from '@clayui/panel';
 import React from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
-import EmptyState from '../../../shared/components/empty-state/EmptyState.es';
+import ContentView from '../../../shared/components/content-view/ContentView.es';
 import ReloadButton from '../../../shared/components/list/ReloadButton.es';
-import LoadingState from '../../../shared/components/loading/LoadingState.es';
-import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {formatNumber} from '../../../shared/util/numeral.es';
 import VelocityChart from './VelocityChart.es';
 
-const Body = props => {
-	return (
-		<Panel.Body elementClasses="pt-0">
-			<PromisesResolver.Pending>
-				<Body.Loading />
-			</PromisesResolver.Pending>
+function Body(props) {
+	const statesProps = {
+		errorProps: {
+			actionButton: <ReloadButton />,
+			className: 'mb-3 mt-5 py-8',
+			hideAnimation: true,
+			message: Liferay.Language.get(
+				'there-was-a-problem-retrieving-data-please-try-reloading-the-page'
+			),
+			messageClassName: 'small',
+		},
+		loadingProps: {className: 'mb-5 mt-4 py-8'},
+	};
 
-			<PromisesResolver.Resolved>
-				{props.data && (
+	return (
+		<ClayPanel.Body className="pt-0">
+			<ContentView {...statesProps}>
+				{props.data ? (
 					<>
 						<Body.Info {...props} />
 
 						<VelocityChart velocityData={props.data} {...props} />
 					</>
+				) : (
+					<></>
 				)}
-			</PromisesResolver.Resolved>
-
-			<PromisesResolver.Rejected>
-				<Body.Error />
-			</PromisesResolver.Rejected>
-		</Panel.Body>
+			</ContentView>
+		</ClayPanel.Body>
 	);
-};
+}
 
-const Info = ({data, velocityUnit}) => {
+function Info({data, velocityUnit}) {
 	const formattedValue = formatNumber(data.value, '0[.]00');
 
 	return (
 		<div className="pb-2">
 			<span className="velocity-value">{formattedValue}</span>
+
 			<span className="velocity-unit">{velocityUnit.name}</span>
 		</div>
 	);
-};
+}
 
-const ErrorView = () => {
-	return (
-		<EmptyState
-			actionButton={<ReloadButton />}
-			className="border-0 mb-5"
-			hideAnimation={true}
-			message={Liferay.Language.get(
-				'there-was-a-problem-retrieving-data-please-try-reloading-the-page'
-			)}
-			messageClassName="small"
-		/>
-	);
-};
-
-const LoadingView = () => {
-	return <LoadingState className="border-0 mt-8 pb-5 pt-5 sheet" />;
-};
-
-Body.Error = ErrorView;
 Body.Info = Info;
-Body.Loading = LoadingView;
 
-export {Body};
+export default Body;

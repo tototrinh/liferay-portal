@@ -27,12 +27,12 @@ import com.liferay.headless.delivery.client.http.HttpInvoker;
 import com.liferay.headless.delivery.client.pagination.Page;
 import com.liferay.headless.delivery.client.resource.v1_0.MessageBoardAttachmentResource;
 import com.liferay.headless.delivery.client.serdes.v1_0.MessageBoardAttachmentSerDes;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -42,10 +42,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
@@ -70,7 +69,6 @@ import javax.annotation.Generated;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -111,7 +109,9 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		MessageBoardAttachmentResource.Builder builder =
 			MessageBoardAttachmentResource.builder();
 
-		messageBoardAttachmentResource = builder.locale(
+		messageBoardAttachmentResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -188,6 +188,7 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 			randomMessageBoardAttachment();
 
 		messageBoardAttachment.setContentUrl(regex);
+		messageBoardAttachment.setContentValue(regex);
 		messageBoardAttachment.setEncodingFormat(regex);
 		messageBoardAttachment.setFileExtension(regex);
 		messageBoardAttachment.setTitle(regex);
@@ -200,6 +201,7 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		messageBoardAttachment = MessageBoardAttachmentSerDes.toDTO(json);
 
 		Assert.assertEquals(regex, messageBoardAttachment.getContentUrl());
+		Assert.assertEquals(regex, messageBoardAttachment.getContentValue());
 		Assert.assertEquals(regex, messageBoardAttachment.getEncodingFormat());
 		Assert.assertEquals(regex, messageBoardAttachment.getFileExtension());
 		Assert.assertEquals(regex, messageBoardAttachment.getTitle());
@@ -207,6 +209,7 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 
 	@Test
 	public void testDeleteMessageBoardAttachment() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
 		MessageBoardAttachment messageBoardAttachment =
 			testDeleteMessageBoardAttachment_addMessageBoardAttachment();
 
@@ -241,33 +244,22 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		MessageBoardAttachment messageBoardAttachment =
 			testGraphQLMessageBoardAttachment_addMessageBoardAttachment();
 
-		GraphQLField graphQLField = new GraphQLField(
-			"mutation",
-			new GraphQLField(
-				"deleteMessageBoardAttachment",
-				new HashMap<String, Object>() {
-					{
-						put(
-							"messageBoardAttachmentId",
-							messageBoardAttachment.getId());
-					}
-				}));
-
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			invoke(graphQLField.toString()));
-
-		JSONObject dataJSONObject = jsonObject.getJSONObject("data");
-
 		Assert.assertTrue(
-			dataJSONObject.getBoolean("deleteMessageBoardAttachment"));
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"deleteMessageBoardAttachment",
+						new HashMap<String, Object>() {
+							{
+								put(
+									"messageBoardAttachmentId",
+									messageBoardAttachment.getId());
+							}
+						})),
+				"JSONObject/data", "Object/deleteMessageBoardAttachment"));
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
-
-			graphQLField = new GraphQLField(
-				"query",
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
 				new GraphQLField(
 					"messageBoardAttachment",
 					new HashMap<String, Object>() {
@@ -277,15 +269,10 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 								messageBoardAttachment.getId());
 						}
 					},
-					new GraphQLField("id")));
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-			jsonObject = JSONFactoryUtil.createJSONObject(
-				invoke(graphQLField.toString()));
-
-			JSONArray errorsJSONArray = jsonObject.getJSONArray("errors");
-
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		Assert.assertTrue(errorsJSONArray.length() > 0);
 	}
 
 	@Test
@@ -314,49 +301,66 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		MessageBoardAttachment messageBoardAttachment =
 			testGraphQLMessageBoardAttachment_addMessageBoardAttachment();
 
-		List<GraphQLField> graphQLFields = getGraphQLFields();
-
-		GraphQLField graphQLField = new GraphQLField(
-			"query",
-			new GraphQLField(
-				"messageBoardAttachment",
-				new HashMap<String, Object>() {
-					{
-						put(
-							"messageBoardAttachmentId",
-							messageBoardAttachment.getId());
-					}
-				},
-				graphQLFields.toArray(new GraphQLField[0])));
-
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			invoke(graphQLField.toString()));
-
-		JSONObject dataJSONObject = jsonObject.getJSONObject("data");
-
 		Assert.assertTrue(
-			equalsJSONObject(
+			equals(
 				messageBoardAttachment,
-				dataJSONObject.getJSONObject("messageBoardAttachment")));
+				MessageBoardAttachmentSerDes.toDTO(
+					JSONUtil.getValueAsString(
+						invokeGraphQLQuery(
+							new GraphQLField(
+								"messageBoardAttachment",
+								new HashMap<String, Object>() {
+									{
+										put(
+											"messageBoardAttachmentId",
+											messageBoardAttachment.getId());
+									}
+								},
+								getGraphQLFields())),
+						"JSONObject/data", "Object/messageBoardAttachment"))));
+	}
+
+	@Test
+	public void testGraphQLGetMessageBoardAttachmentNotFound()
+		throws Exception {
+
+		Long irrelevantMessageBoardAttachmentId = RandomTestUtil.randomLong();
+
+		Assert.assertEquals(
+			"Not Found",
+			JSONUtil.getValueAsString(
+				invokeGraphQLQuery(
+					new GraphQLField(
+						"messageBoardAttachment",
+						new HashMap<String, Object>() {
+							{
+								put(
+									"messageBoardAttachmentId",
+									irrelevantMessageBoardAttachmentId);
+							}
+						},
+						getGraphQLFields())),
+				"JSONArray/errors", "Object/0", "JSONObject/extensions",
+				"Object/code"));
 	}
 
 	@Test
 	public void testGetMessageBoardMessageMessageBoardAttachmentsPage()
 		throws Exception {
 
-		Page<MessageBoardAttachment> page =
-			messageBoardAttachmentResource.
-				getMessageBoardMessageMessageBoardAttachmentsPage(
-					testGetMessageBoardMessageMessageBoardAttachmentsPage_getMessageBoardMessageId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long messageBoardMessageId =
 			testGetMessageBoardMessageMessageBoardAttachmentsPage_getMessageBoardMessageId();
 		Long irrelevantMessageBoardMessageId =
 			testGetMessageBoardMessageMessageBoardAttachmentsPage_getIrrelevantMessageBoardMessageId();
 
-		if ((irrelevantMessageBoardMessageId != null)) {
+		Page<MessageBoardAttachment> page =
+			messageBoardAttachmentResource.
+				getMessageBoardMessageMessageBoardAttachmentsPage(
+					messageBoardMessageId);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantMessageBoardMessageId != null) {
 			MessageBoardAttachment irrelevantMessageBoardAttachment =
 				testGetMessageBoardMessageMessageBoardAttachmentsPage_addMessageBoardAttachment(
 					irrelevantMessageBoardMessageId,
@@ -464,19 +468,19 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 	public void testGetMessageBoardThreadMessageBoardAttachmentsPage()
 		throws Exception {
 
-		Page<MessageBoardAttachment> page =
-			messageBoardAttachmentResource.
-				getMessageBoardThreadMessageBoardAttachmentsPage(
-					testGetMessageBoardThreadMessageBoardAttachmentsPage_getMessageBoardThreadId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long messageBoardThreadId =
 			testGetMessageBoardThreadMessageBoardAttachmentsPage_getMessageBoardThreadId();
 		Long irrelevantMessageBoardThreadId =
 			testGetMessageBoardThreadMessageBoardAttachmentsPage_getIrrelevantMessageBoardThreadId();
 
-		if ((irrelevantMessageBoardThreadId != null)) {
+		Page<MessageBoardAttachment> page =
+			messageBoardAttachmentResource.
+				getMessageBoardThreadMessageBoardAttachmentsPage(
+					messageBoardThreadId);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantMessageBoardThreadId != null) {
 			MessageBoardAttachment irrelevantMessageBoardAttachment =
 				testGetMessageBoardThreadMessageBoardAttachmentsPage_addMessageBoardAttachment(
 					irrelevantMessageBoardThreadId,
@@ -588,6 +592,26 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(
+		MessageBoardAttachment messageBoardAttachment,
+		List<MessageBoardAttachment> messageBoardAttachments) {
+
+		boolean contains = false;
+
+		for (MessageBoardAttachment item : messageBoardAttachments) {
+			if (equals(messageBoardAttachment, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			messageBoardAttachments + " does not contain " +
+				messageBoardAttachment,
+			contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -652,32 +676,9 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		}
 	}
 
-	protected void assertEqualsJSONArray(
-		List<MessageBoardAttachment> messageBoardAttachments,
-		JSONArray jsonArray) {
+	protected void assertValid(MessageBoardAttachment messageBoardAttachment)
+		throws Exception {
 
-		for (MessageBoardAttachment messageBoardAttachment :
-				messageBoardAttachments) {
-
-			boolean contains = false;
-
-			for (Object object : jsonArray) {
-				if (equalsJSONObject(
-						messageBoardAttachment, (JSONObject)object)) {
-
-					contains = true;
-
-					break;
-				}
-			}
-
-			Assert.assertTrue(
-				jsonArray + " does not contain " + messageBoardAttachment,
-				contains);
-		}
-	}
-
-	protected void assertValid(MessageBoardAttachment messageBoardAttachment) {
 		boolean valid = true;
 
 		if (messageBoardAttachment.getId() == null) {
@@ -689,6 +690,14 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 
 			if (Objects.equals("contentUrl", additionalAssertFieldName)) {
 				if (messageBoardAttachment.getContentUrl() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("contentValue", additionalAssertFieldName)) {
+				if (messageBoardAttachment.getContentValue() == null) {
 					valid = false;
 				}
 
@@ -766,13 +775,51 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		return new String[0];
 	}
 
-	protected List<GraphQLField> getGraphQLFields() {
+	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (String additionalAssertFieldName :
-				getAdditionalAssertFieldNames()) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
+					com.liferay.headless.delivery.dto.v1_0.
+						MessageBoardAttachment.class)) {
 
-			graphQLFields.add(new GraphQLField(additionalAssertFieldName));
+			if (!ArrayUtil.contains(
+					getAdditionalAssertFieldNames(), field.getName())) {
+
+				continue;
+			}
+
+			graphQLFields.addAll(getGraphQLFields(field));
+		}
+
+		return graphQLFields;
+	}
+
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
+		throws Exception {
+
+		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		for (java.lang.reflect.Field field : fields) {
+			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
+				vulcanGraphQLField = field.getAnnotation(
+					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
+						class);
+
+			if (vulcanGraphQLField != null) {
+				Class<?> clazz = field.getType();
+
+				if (clazz.isArray()) {
+					clazz = clazz.getComponentType();
+				}
+
+				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
+					getDeclaredFields(clazz));
+
+				graphQLFields.add(
+					new GraphQLField(field.getName(), childrenGraphQLFields));
+			}
 		}
 
 		return graphQLFields;
@@ -797,6 +844,17 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 				if (!Objects.deepEquals(
 						messageBoardAttachment1.getContentUrl(),
 						messageBoardAttachment2.getContentUrl())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("contentValue", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						messageBoardAttachment1.getContentValue(),
+						messageBoardAttachment2.getContentValue())) {
 
 					return false;
 				}
@@ -867,81 +925,43 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		return true;
 	}
 
-	protected boolean equalsJSONObject(
-		MessageBoardAttachment messageBoardAttachment, JSONObject jsonObject) {
+	protected boolean equals(
+		Map<String, Object> map1, Map<String, Object> map2) {
 
-		for (String fieldName : getAdditionalAssertFieldNames()) {
-			if (Objects.equals("contentUrl", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getContentUrl(),
-						jsonObject.getString("contentUrl"))) {
+		if (Objects.equals(map1.keySet(), map2.keySet())) {
+			for (Map.Entry<String, Object> entry : map1.entrySet()) {
+				if (entry.getValue() instanceof Map) {
+					if (!equals(
+							(Map)entry.getValue(),
+							(Map)map2.get(entry.getKey()))) {
+
+						return false;
+					}
+				}
+				else if (!Objects.deepEquals(
+							entry.getValue(), map2.get(entry.getKey()))) {
 
 					return false;
 				}
-
-				continue;
 			}
 
-			if (Objects.equals("encodingFormat", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getEncodingFormat(),
-						jsonObject.getString("encodingFormat"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("fileExtension", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getFileExtension(),
-						jsonObject.getString("fileExtension"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("id", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getId(),
-						jsonObject.getLong("id"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("sizeInBytes", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getSizeInBytes(),
-						jsonObject.getLong("sizeInBytes"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("title", fieldName)) {
-				if (!Objects.deepEquals(
-						messageBoardAttachment.getTitle(),
-						jsonObject.getString("title"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			throw new IllegalArgumentException(
-				"Invalid field name " + fieldName);
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -998,6 +1018,14 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		if (entityFieldName.equals("contentUrl")) {
 			sb.append("'");
 			sb.append(String.valueOf(messageBoardAttachment.getContentUrl()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("contentValue")) {
+			sb.append("'");
+			sb.append(String.valueOf(messageBoardAttachment.getContentValue()));
 			sb.append("'");
 
 			return sb.toString();
@@ -1065,17 +1093,42 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 		return httpResponse.getContent();
 	}
 
+	protected JSONObject invokeGraphQLMutation(GraphQLField graphQLField)
+		throws Exception {
+
+		GraphQLField mutationGraphQLField = new GraphQLField(
+			"mutation", graphQLField);
+
+		return JSONFactoryUtil.createJSONObject(
+			invoke(mutationGraphQLField.toString()));
+	}
+
+	protected JSONObject invokeGraphQLQuery(GraphQLField graphQLField)
+		throws Exception {
+
+		GraphQLField queryGraphQLField = new GraphQLField(
+			"query", graphQLField);
+
+		return JSONFactoryUtil.createJSONObject(
+			invoke(queryGraphQLField.toString()));
+	}
+
 	protected MessageBoardAttachment randomMessageBoardAttachment()
 		throws Exception {
 
 		return new MessageBoardAttachment() {
 			{
-				contentUrl = RandomTestUtil.randomString();
-				encodingFormat = RandomTestUtil.randomString();
-				fileExtension = RandomTestUtil.randomString();
+				contentUrl = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				contentValue = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				encodingFormat = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				fileExtension = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				sizeInBytes = RandomTestUtil.randomLong();
-				title = RandomTestUtil.randomString();
+				title = StringUtil.toLowerCase(RandomTestUtil.randomString());
 			}
 		};
 	}
@@ -1106,9 +1159,22 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 			this(key, new HashMap<>(), graphQLFields);
 		}
 
+		public GraphQLField(String key, List<GraphQLField> graphQLFields) {
+			this(key, new HashMap<>(), graphQLFields);
+		}
+
 		public GraphQLField(
 			String key, Map<String, Object> parameterMap,
 			GraphQLField... graphQLFields) {
+
+			_key = key;
+			_parameterMap = parameterMap;
+			_graphQLFields = Arrays.asList(graphQLFields);
+		}
+
+		public GraphQLField(
+			String key, Map<String, Object> parameterMap,
+			List<GraphQLField> graphQLFields) {
 
 			_key = key;
 			_parameterMap = parameterMap;
@@ -1126,25 +1192,25 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
 
-			if (_graphQLFields.length > 0) {
+			if (!_graphQLFields.isEmpty()) {
 				sb.append("{");
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1152,14 +1218,14 @@ public abstract class BaseMessageBoardAttachmentResourceTestCase {
 			return sb.toString();
 		}
 
-		private final GraphQLField[] _graphQLFields;
+		private final List<GraphQLField> _graphQLFields;
 		private final String _key;
 		private final Map<String, Object> _parameterMap;
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseMessageBoardAttachmentResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseMessageBoardAttachmentResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

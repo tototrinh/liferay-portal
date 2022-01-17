@@ -39,15 +39,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-(function() {
-	if (!Parse) {
-		var Parse = {};
+(function () {
+	if (!window.Parse) {
+		var Parse = (window.parse = {});
 	}
 	if (!Parse.Simple) {
 		Parse.Simple = {};
 	}
 
-	Parse.Simple.Base = function(grammar, options) {
+	Parse.Simple.Base = function (grammar, options) {
 		if (!arguments.length) {
 			return;
 		}
@@ -64,7 +64,7 @@
 		parse(node, data, options) {
 			if (options) {
 				for (var i in this.options) {
-					if (typeof options[i] == 'undefined') {
+					if (typeof options[i] === 'undefined') {
 						options[i] = this.options[i];
 					}
 				}
@@ -79,12 +79,12 @@
 			}
 		},
 
-		ruleConstructor: null
+		ruleConstructor: null,
 	};
 
 	Parse.Simple.Base.prototype.constructor = Parse.Simple.Base;
 
-	Parse.Simple.Base.Rule = function(params) {
+	Parse.Simple.Base.Rule = function (params) {
 		if (!arguments.length) {
 			return;
 		}
@@ -112,7 +112,7 @@
 				var best = false;
 				var rule = false;
 				for (let i = 0; i < this.children.length; i++) {
-					if (typeof matches[i] == 'undefined') {
+					if (typeof matches[i] === 'undefined') {
 						if (!this.children[i].match) {
 							this.children[i] = new this.constructor(
 								this.children[i]
@@ -126,7 +126,7 @@
 					) {
 						best = matches[i];
 						rule = this.children[i];
-						if (best.index == 0) {
+						if (best.index === 0) {
 							break;
 						}
 					}
@@ -190,7 +190,7 @@
 			if (this.attrs) {
 				for (var i in this.attrs) {
 					target.setAttribute(i, this.attrs[i]);
-					if (options && options.forIE && i == 'class') {
+					if (options && options.forIE && i === 'class') {
 						target.className = this.attrs[i];
 					}
 				}
@@ -205,11 +205,13 @@
 		fallback: {
 			apply(node, data, options) {
 				if (options && options.forIE) {
+
 					// workaround for bad IE
+
 					data = data.replace(/\n/g, ' \r');
 				}
 				node.appendChild(document.createTextNode(data));
-			}
+			},
 		},
 
 		match(data) {
@@ -219,12 +221,12 @@
 		regex: null,
 		replaceRegex: null,
 		replaceString: null,
-		tag: null
+		tag: null,
 	};
 
 	Parse.Simple.Base.Rule.prototype.constructor = Parse.Simple.Base.Rule;
 
-	Parse.Simple.Creole = function(options) {
+	Parse.Simple.Creole = function (options) {
 		var rx = {};
 		rx.link = '[^\\]|~\\n]*(?:(?:\\](?!\\])|~.)[^\\]|~\\n]*)*';
 		rx.linkText = '[^\\]~\\n]*(?:(?:\\](?!\\])|~.)[^\\]~\\n]*)*';
@@ -240,13 +242,13 @@
 			(options && options.strict ? '' : ')?') +
 			'}}';
 
-		var formatLink = function(link, format) {
+		var formatLink = function (link, format) {
 			if (format instanceof Function) {
 				return format(link);
 			}
 
 			format = Array.isArray(format) ? format : [format];
-			if (typeof format[1] == 'undefined') {
+			if (typeof format[1] === 'undefined') {
 				format[1] = '';
 			}
 
@@ -268,25 +270,25 @@
 					'((?!' +
 					rx.uriPrefix +
 					')[^\\/~])*)*)(\\/\\/|\\n|$)',
-				tag: 'em'
+				tag: 'em',
 			},
 
 			escapedSequence: {
 				attrs: {class: 'escaped'},
 				capture: 1,
 				regex: '~(' + rx.rawUri + '|.)',
-				tag: 'span'
+				tag: 'span',
 			},
 
 			escapedSymbol: {
 				attrs: {class: 'escaped'},
 				capture: 1,
 				regex: /~(.)/,
-				tag: 'span'
+				tag: 'span',
 			},
 
 			hr: {regex: /(^|\n)\s*----\s*(\n|$)/, tag: 'hr'},
-
+			// eslint-disable-next-line @liferay/no-abbreviations
 			img: {
 				build(node, r, options) {
 					var imagePath = r[1];
@@ -298,17 +300,17 @@
 						}
 					}
 
-					var img = document.createElement('img');
-					img.src = imagePath;
+					var image = document.createElement('img');
+					image.src = imagePath;
 					if (r[2]) {
-						img.alt = r[2].replace(/~(.)/g, '$1');
+						image.alt = r[2].replace(/~(.)/g, '$1');
 					}
 					else if (options && options.defaultImageText) {
-						img.alt = options.defaultImageText;
+						image.alt = options.defaultImageText;
 					}
-					node.appendChild(img);
+					node.appendChild(image);
 				},
-				regex: rx.img
+				regex: rx.img,
 			},
 
 			li: {
@@ -316,7 +318,7 @@
 				regex: /[ \t]*([*#]).+(\n[ \t]*[^*#\s].*)*(\n[ \t]*[*#]{2}.+)*/,
 				replaceRegex: /(^|\n)[ \t]*[*#]/g,
 				replaceString: '$1',
-				tag: 'li'
+				tag: 'li',
 			},
 
 			namedLink: {
@@ -336,7 +338,7 @@
 
 					node.appendChild(link);
 				},
-				regex: '\\[\\[(' + rx.link + ')\\|(' + rx.linkText + ')\\]\\]'
+				regex: '\\[\\[(' + rx.link + ')\\|(' + rx.linkText + ')\\]\\]',
 			},
 
 			namedUri: {
@@ -351,13 +353,13 @@
 					}
 					node.appendChild(link);
 				},
-				regex: '\\[\\[(' + rx.uri + ')\\|(' + rx.linkText + ')\\]\\]'
+				regex: '\\[\\[(' + rx.uri + ')\\|(' + rx.linkText + ')\\]\\]',
 			},
 
 			olist: {
 				capture: 0,
 				regex: /(^|\n)([ \t]*#[^*#].*(\n|$)([ \t]*[^\s*#].*(\n|$))*([ \t]*[*#]{2}.*(\n|$))*)+/,
-				tag: 'ol'
+				tag: 'ol',
 			},
 
 			paragraph: {capture: 0, regex: /(^|\n)(\s*\S.*(\n|$))/, tag: 'p'},
@@ -367,7 +369,7 @@
 				regex: /(^|\n)\{\{\{\n((.*\n)*?)\}\}\}(\n|$)/,
 				replaceRegex: /^ ([ \t]*\}\}\})/gm,
 				replaceString: '$1',
-				tag: 'pre'
+				tag: 'pre',
 			},
 
 			rawUri: {build: 'dummy', regex: '(' + rx.rawUri + ')'},
@@ -377,14 +379,14 @@
 			strong: {
 				capture: 1,
 				regex: /\*\*([^*~]*((\*(?!\*)|~(.|(?=\n)|$))[^*~]*)*)(\*\*|\n|$)/,
-				tag: 'strong'
+				tag: 'strong',
 			},
 
 			table: {
 				attrs: {class: 'cke_show_border'},
 				capture: 0,
 				regex: /(^|\n)(\|.*?[ \t]*(\n|$))+/,
-				tag: 'table'
+				tag: 'table',
 			},
 
 			td: {
@@ -398,7 +400,7 @@
 					')?\\]\\][^|~\\[{]*)*' +
 					(options && options.strict ? '' : '|' + rx.img) +
 					'|[\\[{])[^|~]*)*)',
-				tag: 'td'
+				tag: 'td',
 			},
 
 			text: {capture: 0, regex: /(^|\n)(\s*[^\s].*(\n|$))+/},
@@ -412,28 +414,28 @@
 				regex: /\{\{\{(.*?\}\}\}+)/,
 				replaceRegex: /\}\}\}$/,
 				replaceString: '',
-				tag: 'tt'
+				tag: 'tt',
 			},
 
 			ulist: {
 				capture: 0,
 				regex: /(^|\n)([ \t]*\*[^*#].*(\n|$)([ \t]*[^\s*#].*(\n|$))*([ \t]*[*#]{2}.*(\n|$))*)+/,
-				tag: 'ul'
+				tag: 'ul',
 			},
 
 			unnamedInterwikiLink: {
 				build: 'dummy',
-				regex: '\\[\\[(' + rx.interwikiLink + ')\\]\\]'
+				regex: '\\[\\[(' + rx.interwikiLink + ')\\]\\]',
 			},
 
 			unnamedLink: {
 				build: 'dummy',
-				regex: '\\[\\[(' + rx.link + ')\\]\\]'
+				regex: '\\[\\[(' + rx.link + ')\\]\\]',
 			},
 
-			unnamedUri: {build: 'dummy', regex: '\\[\\[(' + rx.uri + ')\\]\\]'}
+			unnamedUri: {build: 'dummy', regex: '\\[\\[(' + rx.uri + ')\\]\\]'},
 		};
-		g.unnamedUri.build = g.rawUri.build = function(node, r, options) {
+		g.unnamedUri.build = g.rawUri.build = function (node, r, options) {
 			if (!options) {
 				options = {};
 			}
@@ -441,7 +443,7 @@
 			g.namedUri.build.call(this, node, Array(r[0], r[1], r[1]), options);
 			options.isPlainUri = false;
 		};
-		g.unnamedLink.build = function(node, r, options) {
+		g.unnamedLink.build = function (node, r, options) {
 			g.namedLink.build.call(
 				this,
 				node,
@@ -453,13 +455,14 @@
 			build(node, r, options) {
 				var link = document.createElement('a');
 
-				var m, f;
+				var m;
+				var f;
 				if (options && options.interwiki) {
 					m = r[1].match(/(.*?):(.*)/);
 					f = options.interwiki[m[1]];
 				}
 
-				if (typeof f == 'undefined') {
+				if (typeof f === 'undefined') {
 					if (!g.namedLink.apply) {
 						g.namedLink = new this.constructor(g.namedLink);
 					}
@@ -479,9 +482,13 @@
 				node.appendChild(link);
 			},
 			regex:
-				'\\[\\[(' + rx.interwikiLink + ')\\|(' + rx.linkText + ')\\]\\]'
+				'\\[\\[(' +
+				rx.interwikiLink +
+				')\\|(' +
+				rx.linkText +
+				')\\]\\]',
 		};
-		g.unnamedInterwikiLink.build = function(node, r, options) {
+		g.unnamedInterwikiLink.build = function (node, r, options) {
 			g.namedInterwikiLink.build.call(
 				this,
 				node,
@@ -491,7 +498,7 @@
 		};
 		g.namedUri.children = g.unnamedUri.children = g.rawUri.children = g.namedLink.children = g.unnamedLink.children = g.namedInterwikiLink.children = g.unnamedInterwikiLink.children = [
 			g.escapedSymbol,
-			g.img
+			g.img,
 		];
 
 		for (var i = 1; i <= 6; i++) {
@@ -502,7 +509,7 @@
 					i +
 					'}[ \\t]*' +
 					'([^\\n=][^~]*?(~(.|(?=\\n)|$))*)[ \\t]*=*\\s*(\\n|$)',
-				tag: 'h' + i
+				tag: 'h' + i,
 			};
 		}
 
@@ -526,7 +533,7 @@
 			g.unnamedInterwikiLink,
 			g.unnamedLink,
 			g.tt,
-			g.img
+			g.img,
 		];
 
 		g.singleLine.children = g.paragraph.children = g.text.children = g.strong.children = g.em.children = [
@@ -542,7 +549,7 @@
 			g.unnamedInterwikiLink,
 			g.unnamedLink,
 			g.tt,
-			g.img
+			g.img,
 		];
 
 		g.root = {
@@ -557,9 +564,9 @@
 				g.ulist,
 				g.olist,
 				g.preBlock,
-				g.table
+				g.table,
 			],
-			fallback: {children: [g.paragraph]}
+			fallback: {children: [g.paragraph]},
 		};
 
 		Parse.Simple.Base.call(this, g, options);

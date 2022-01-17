@@ -1,29 +1,37 @@
 @component-name = "portal-upgrades"
 definition {
 
-	property database.types = "db2,mariadb,mysql,oracle,postgresql,sybase";
+	property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Upgrades User and System Management";
 
 	setUp {
-		User.loginPG(
-			authenticationMethod = "By Screen Name",
-			userScreenName = "test");
-
 		var portalURL = PropsUtil.get("portal.url");
+
+		Navigator.openSpecificURL(url = "${portalURL}/web/test/home");
+
+		if (IsElementNotPresent(locator1 = "TextInput#SCREEN_NAME")) {
+			AssertClick(
+				locator1 = "UserBar#USER_SIGN_IN",
+				value1 = "Sign In");
+		}
+
+		Type(
+			locator1 = "TextInput#SCREEN_NAME",
+			value1 = "test");
+
+		Type.typePause(
+			locator1 = "TextInput#PASSWORD",
+			value1 = "test");
+
+		Button.click(button = "Sign In");
 
 		AssertLocation(value1 = "${portalURL}/web/test/home");
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "Search");
-
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeReindex();
 	}
 
-	@ignore = "true"
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade625 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -33,7 +41,6 @@ definition {
 		Upgrade.viewInstanceSettings();
 	}
 
-	@ignore = "true"
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade704 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -45,7 +52,6 @@ definition {
 		Upgrade.viewSystemSettings();
 	}
 
-	@ignore = "true"
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade713 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -57,7 +63,39 @@ definition {
 		Upgrade.viewSystemSettings();
 	}
 
-	@ignore = "true"
+	@priority = "5"
+	test ViewPortalConfigurationAfterUpgrade720 {
+		property data.archive.type = "data-archive-portal-settings";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "7.2.0";
+
+		Upgrade.viewInstanceSettings();
+
+		Upgrade.viewSystemSettings();
+	}
+
+	@priority = "5"
+	test ViewPortalConfigurationAfterUpgrade721 {
+		property data.archive.type = "data-archive-portal-settings";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "7.2.1";
+
+		Upgrade.viewInstanceSettings();
+
+		Upgrade.viewSystemSettings();
+	}
+
+	@priority = "5"
+	test ViewPortalConfigurationAfterUpgrade730 {
+		property data.archive.type = "data-archive-portal-settings";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "7.3.0";
+
+		Upgrade.viewInstanceSettings();
+
+		Upgrade.viewSystemSettings();
+	}
+
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade7110 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -68,7 +106,16 @@ definition {
 		Upgrade.viewSystemSettings();
 	}
 
-	@ignore = "true"
+	@priority = "5"
+	test ViewPortalConfigurationAfterUpgrade7210 {
+		property data.archive.type = "data-archive-portal-settings";
+		property portal.version = "7.2.10";
+
+		Upgrade.viewInstanceSettings();
+
+		Upgrade.viewSystemSettings();
+	}
+
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade70106 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -79,7 +126,16 @@ definition {
 		Upgrade.viewSystemSettings();
 	}
 
-	@ignore = "true"
+	@priority = "5"
+	test ViewPortalConfigurationAfterUpgrade72101 {
+		property data.archive.type = "data-archive-portal-settings";
+		property portal.version = "7.2.10.1";
+
+		Upgrade.viewInstanceSettings();
+
+		Upgrade.viewSystemSettings();
+	}
+
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade621015 {
 		property data.archive.type = "data-archive-portal-settings";
@@ -89,7 +145,6 @@ definition {
 		Upgrade.viewInstanceSettings();
 	}
 
-	@ignore = "true"
 	@priority = "5"
 	test ViewPortalConfigurationAfterUpgrade621021 {
 		property data.archive.type = "data-archive-portal-settings";

@@ -41,13 +41,13 @@ public class KaleoTaskFormLocalServiceImpl
 
 	@Override
 	public KaleoTaskForm addKaleoTaskForm(
-			long kaleoDefinitionVersionId, long kaleoNodeId,
-			KaleoTask kaleoTask, TaskForm taskForm,
+			long kaleoDefinitionId, long kaleoDefinitionVersionId,
+			long kaleoNodeId, KaleoTask kaleoTask, TaskForm taskForm,
 			ServiceContext serviceContext)
 		throws PortalException {
 
 		User user = userLocalService.getUser(serviceContext.getGuestOrUserId());
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoTaskFormId = counterLocalService.increment();
 
@@ -58,8 +58,9 @@ public class KaleoTaskFormLocalServiceImpl
 		kaleoTaskForm.setCompanyId(user.getCompanyId());
 		kaleoTaskForm.setUserId(user.getUserId());
 		kaleoTaskForm.setUserName(user.getFullName());
-		kaleoTaskForm.setCreateDate(now);
-		kaleoTaskForm.setModifiedDate(now);
+		kaleoTaskForm.setCreateDate(date);
+		kaleoTaskForm.setModifiedDate(date);
+		kaleoTaskForm.setKaleoDefinitionId(kaleoDefinitionId);
 		kaleoTaskForm.setKaleoDefinitionVersionId(kaleoDefinitionVersionId);
 		kaleoTaskForm.setKaleoNodeId(kaleoNodeId);
 		kaleoTaskForm.setKaleoTaskId(kaleoTask.getKaleoTaskId());

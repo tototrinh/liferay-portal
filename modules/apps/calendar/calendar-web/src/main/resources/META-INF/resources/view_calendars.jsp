@@ -20,34 +20,30 @@
 String redirect = ParamUtil.getString(request, "redirect");
 
 CalendarResource calendarResource = (CalendarResource)request.getAttribute(CalendarWebKeys.CALENDAR_RESOURCE);
-
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/view_calendars.jsp");
-portletURL.setParameter("redirect", redirect);
-portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.getCalendarResourceId()));
 %>
 
-<liferay-ui:header
-	backURL="<%= redirect %>"
-	localizeTitle="<%= false %>"
-	title='<%= LanguageUtil.format(request, "x-calendars", calendarResource.getName(locale), false) %>'
-/>
+<clay:container-fluid>
+	<liferay-ui:header
+		backURL="<%= redirect %>"
+		localizeTitle="<%= false %>"
+		title='<%= LanguageUtil.format(request, "x-calendars", calendarResource.getName(locale), false) %>'
+	/>
 
-<c:if test="<%= CalendarResourcePermission.contains(permissionChecker, calendarResource, CalendarActionKeys.ADD_CALENDAR) %>">
-	<aui:button-row>
-		<liferay-portlet:renderURL var="editCalendarURL">
-			<liferay-portlet:param name="mvcPath" value="/edit_calendar.jsp" />
-			<liferay-portlet:param name="redirect" value="<%= currentURL %>" />
-			<liferay-portlet:param name="backURL" value="<%= currentURL %>" />
-			<liferay-portlet:param name="calendarResourceId" value="<%= String.valueOf(calendarResource.getCalendarResourceId()) %>" />
-		</liferay-portlet:renderURL>
+	<c:if test="<%= CalendarResourcePermission.contains(permissionChecker, calendarResource, CalendarActionKeys.ADD_CALENDAR) %>">
+		<aui:button-row>
+			<liferay-portlet:renderURL var="editCalendarURL">
+				<liferay-portlet:param name="mvcPath" value="/edit_calendar.jsp" />
+				<liferay-portlet:param name="redirect" value="<%= currentURL %>" />
+				<liferay-portlet:param name="backURL" value="<%= currentURL %>" />
+				<liferay-portlet:param name="calendarResourceId" value="<%= String.valueOf(calendarResource.getCalendarResourceId()) %>" />
+			</liferay-portlet:renderURL>
 
-		<aui:button href="<%= editCalendarURL %>" primary="<%= true %>" value="add-calendar" />
-	</aui:button-row>
-</c:if>
+			<aui:button href="<%= editCalendarURL %>" primary="<%= true %>" value="add-calendar" />
+		</aui:button-row>
+	</c:if>
+</clay:container-fluid>
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<liferay-ui:search-container
 		emptyResultsMessage="there-are-no-calendars-for-the-selected-resource"
 		iteratorURL="<%= renderResponse.createRenderURL() %>"
@@ -103,7 +99,7 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>
 
 <div class="calendar-portlet-import-container hide" id="<portlet:namespace />importCalendarContainer">
 	<div class="hide portlet-msg-error" id="<portlet:namespace />portletErrorMessage"></div>
@@ -127,7 +123,7 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 	Liferay.provide(
 		window,
 		'<portlet:namespace />importCalendar',
-		function(url) {
+		(url) => {
 			var A = AUI();
 
 			if (!<portlet:namespace />importDialog) {
@@ -139,19 +135,19 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 					{
 						label: '<liferay-ui:message key="import" />',
 						on: {
-							click: function() {
+							click: function () {
 								var form = document.getElementById(
 									'<portlet:namespace />importFm'
 								);
 
 								Liferay.Util.fetch(url, {
 									body: new FormData(form),
-									method: 'POST'
+									method: 'POST',
 								})
-									.then(function(response) {
+									.then((response) => {
 										return response.text();
 									})
-									.then(function(data) {
+									.then((data) => {
 										var responseData = {};
 
 										try {
@@ -181,9 +177,9 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 											portletSuccessMessage.show();
 										}
 									});
-							}
-						}
-					}
+							},
+						},
+					},
 				];
 
 				var buttonClose = [
@@ -191,12 +187,12 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 						cssClass: 'close',
 						label: '\u00D7',
 						on: {
-							click: function() {
+							click: function () {
 								<portlet:namespace />importDialog.hide();
-							}
+							},
 						},
-						render: true
-					}
+						render: true,
+					},
 				];
 
 				<portlet:namespace />importDialog = Liferay.Util.Window.getWindow({
@@ -204,7 +200,7 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 						bodyContent: importCalendarContainer.html(),
 						modal: true,
 						on: {
-							visibleChange: function(event) {
+							visibleChange: function (event) {
 								A.one('#<portlet:namespace />importFm').reset();
 								A.one(
 									'#<portlet:namespace />portletErrorMessage'
@@ -212,14 +208,14 @@ portletURL.setParameter("calendarResourceId", String.valueOf(calendarResource.ge
 								A.one(
 									'#<portlet:namespace />portletSuccessMessage'
 								).hide();
-							}
+							},
 						},
 						toolbars: {
 							footer: buttons,
-							header: buttonClose
-						}
+							header: buttonClose,
+						},
 					},
-					title: '<liferay-ui:message key="import" />'
+					title: '<liferay-ui:message key="import" />',
 				}).render();
 			}
 

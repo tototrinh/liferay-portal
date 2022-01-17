@@ -9,100 +9,104 @@
  * distribution rights of the Software.
  */
 
+import ClayLayout from '@clayui/layout';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
+import PanelHeaderWithOptions from '../../../shared/components/panel-header-with-options/PanelHeaderWithOptions.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
-import {useFetch} from '../../../shared/hooks/useFetch.es';
 import {useFilter} from '../../../shared/hooks/useFilter.es';
+import {usePost} from '../../../shared/hooks/usePost.es';
 import ProcessStepFilter from '../../filter/ProcessStepFilter.es';
 import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
-import {isValidDate} from '../../filter/util/timeRangeUtil.es';
+import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import {Body, Footer} from './PerformanceByAssigneeCardBody.es';
 
-const Header = ({disableFilters, prefixKey, processId}) => {
+function Header({disableFilters, prefixKey, processId}) {
 	return (
-		<Panel.HeaderWithOptions
+		<PanelHeaderWithOptions
+			className="tabs-panel-header"
 			description={Liferay.Language.get(
 				'performance-by-assignee-description'
 			)}
-			elementClasses="dashboard-panel-header"
 			title={Liferay.Language.get('performance-by-assignee')}
 		>
-			<div className="autofit-col m-0 management-bar management-bar-light navbar">
-				<ul className="navbar-nav">
+			<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
+				<div className="navbar-nav">
 					<ProcessStepFilter
 						disabled={disableFilters}
 						options={{
 							hideControl: true,
 							multiple: false,
-							position: 'right',
 							withAllSteps: true,
-							withSelectionTitle: true
+							withSelectionTitle: true,
 						}}
 						prefixKey={prefixKey}
 						processId={processId}
 					/>
 
 					<TimeRangeFilter
-						className={'pl-3'}
+						className="pl-3"
 						disabled={disableFilters}
-						options={{position: 'right'}}
 						prefixKey={prefixKey}
 					/>
-				</ul>
-			</div>
-		</Panel.HeaderWithOptions>
+				</div>
+			</ClayLayout.ContentCol>
+		</PanelHeaderWithOptions>
 	);
-};
+}
 
-const PerformanceByAssigneeCard = ({routeParams}) => {
+function PerformanceByAssigneeCard({routeParams}) {
 	const {processId} = routeParams;
-
 	const filterKeys = ['processStep', 'timeRange'];
 	const prefixKey = 'assignee';
 	const prefixKeys = [prefixKey];
-	const {filterState = {}, filterValues, filtersError} = useFilter({
+
+	const {
+		filterValues: {
+			assigneeDateEnd,
+			assigneeDateStart,
+			assigneeTaskNames: [taskName] = ['allSteps'],
+			assigneeTimeRange: [key] = [],
+		},
+		filtersError,
+	} = useFilter({
 		filterKeys,
-		prefixKeys
+		prefixKeys,
 	});
 
-	const params = {
-		completed: true,
-		page: 1,
-		pageSize: 10,
-		sort: 'durationTaskAvg:desc'
-	};
+	const taskNames = taskName !== 'allSteps' ? [taskName] : undefined;
+	const timeRange = useMemo(
+		() => getTimeRangeParams(assigneeDateStart, assigneeDateEnd),
+		[assigneeDateEnd, assigneeDateStart]
+	);
 
-	const processStep = filterValues.assigneeTaskKeys || [];
-	if (processStep.length && processStep[0] !== 'allSteps') {
-		params.taskKeys = processStep[0];
-	}
-
-	const timeRange = filterState.assigneeTimeRange || [];
-	const timeRangeValues = timeRange.length ? timeRange[0] : {};
-	const {dateEnd, dateStart} = timeRangeValues;
-
-	if (isValidDate(dateEnd) && isValidDate(dateStart)) {
-		params.dateEnd = dateEnd.toISOString();
-		params.dateStart = dateStart.toISOString();
-	}
-
-	const {data, fetchData} = useFetch({
-		params,
-		url: `/processes/${processId}/assignee-users`
+	const {data, postData} = usePost({
+		body: {
+			completed: true,
+			taskNames,
+			...timeRange,
+		},
+		params: {
+			page: 1,
+			pageSize: 10,
+			sort: 'durationTaskAvg:desc',
+		},
+		url: `/processes/${processId}/assignees/metrics`,
 	});
 
 	const promises = useMemo(() => {
-		if (params.dateEnd && params.dateStart) {
-			return [fetchData()];
+		if (timeRange.dateEnd && timeRange.dateStart) {
+			return [postData()];
 		}
 
 		return [new Promise((_, reject) => reject(filtersError))];
-	}, [fetchData, filtersError, params.dateEnd, params.dateStart]);
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [filtersError, routeParams, timeRange.dateEnd, timeRange.dateStart]);
 
 	return (
-		<Panel elementClasses="dashboard-card">
+		<ClayPanel className="mt-4 tabs-card">
 			<PromisesResolver promises={promises}>
 				<PerformanceByAssigneeCard.Header
 					disableFilters={filtersError}
@@ -111,20 +115,20 @@ const PerformanceByAssigneeCard = ({routeParams}) => {
 				/>
 
 				<PerformanceByAssigneeCard.Body
-					data={data}
-					filtered={params.taskKeys}
+					{...data}
+					filtered={!!taskNames}
 				/>
 
 				<PerformanceByAssigneeCard.Footer
-					processStep={params.taskKeys}
-					timeRange={timeRangeValues}
-					totalCount={data.totalCount}
+					processStep={taskName}
+					timeRange={{key, ...timeRange}}
+					totalCount={data?.totalCount}
 					{...routeParams}
 				/>
 			</PromisesResolver>
-		</Panel>
+		</ClayPanel>
 	);
-};
+}
 
 PerformanceByAssigneeCard.Body = Body;
 PerformanceByAssigneeCard.Footer = Footer;

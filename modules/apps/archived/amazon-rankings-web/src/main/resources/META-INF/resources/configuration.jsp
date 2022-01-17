@@ -33,7 +33,7 @@ isbnsString = StringUtil.merge(isbns, StringPool.SPACE);
 	<aui:input name="redirect" type="hidden" value="<%= configurationRenderURL %>" />
 
 	<div class="portlet-configuration-body-content">
-		<div class="container-fluid-1280">
+		<div class="container-fluid container-fluid-max-xl">
 			<liferay-ui:error exception="<%= ValidatorException.class %>">
 
 				<%
@@ -43,10 +43,10 @@ isbnsString = StringUtil.merge(isbns, StringPool.SPACE);
 				<liferay-ui:message key="the-following-are-invalid-isbn-numbers" />
 
 				<%
-				Enumeration enu = ve.getFailedKeys();
+				Enumeration<String> enu = ve.getFailedKeys();
 
 				while (enu.hasMoreElements()) {
-					String isbn = (String)enu.nextElement();
+					String isbn = enu.nextElement();
 				%>
 
 					<strong><%= HtmlUtil.escape(isbn) %></strong><%= enu.hasMoreElements() ? ", " : "." %>

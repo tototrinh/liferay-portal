@@ -50,6 +50,10 @@ public class KaleoLogLocalServiceWrapper
 	/**
 	 * Adds the kaleo log to the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoLogLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoLog the kaleo log
 	 * @return the kaleo log that was added
 	 */
@@ -97,6 +101,33 @@ public class KaleoLogLocalServiceWrapper
 					<com.liferay.portal.workflow.kaleo.model.
 						KaleoTaskAssignmentInstance>
 							previousKaleoTaskAssignmentInstances,
+				com.liferay.portal.workflow.kaleo.model.
+					KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance,
+				com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken
+					kaleoTaskInstanceToken,
+				String comment,
+				java.util.Map<String, java.io.Serializable> workflowContext,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kaleoLogLocalService.addTaskAssignmentKaleoLog(
+			previousKaleoTaskAssignmentInstances, kaleoTaskAssignmentInstance,
+			kaleoTaskInstanceToken, comment, workflowContext, serviceContext);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addTaskAssignmentKaleoLog(List, KaleoTaskAssignmentInstance,
+	 KaleoTaskInstanceToken, String, Map, ServiceContext)}}
+	 */
+	@Deprecated
+	@Override
+	public com.liferay.portal.workflow.kaleo.model.KaleoLog
+			addTaskAssignmentKaleoLog(
+				java.util.List
+					<com.liferay.portal.workflow.kaleo.model.
+						KaleoTaskAssignmentInstance>
+							previousKaleoTaskAssignmentInstances,
 				com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken
 					kaleoTaskInstanceToken,
 				String comment,
@@ -107,6 +138,25 @@ public class KaleoLogLocalServiceWrapper
 		return _kaleoLogLocalService.addTaskAssignmentKaleoLog(
 			previousKaleoTaskAssignmentInstances, kaleoTaskInstanceToken,
 			comment, workflowContext, serviceContext);
+	}
+
+	@Override
+	public java.util.List<com.liferay.portal.workflow.kaleo.model.KaleoLog>
+			addTaskAssignmentKaleoLogs(
+				java.util.List
+					<com.liferay.portal.workflow.kaleo.model.
+						KaleoTaskAssignmentInstance>
+							previousTaskAssignmentInstances,
+				com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken
+					kaleoTaskInstanceToken,
+				String comment,
+				java.util.Map<String, java.io.Serializable> workflowContext,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kaleoLogLocalService.addTaskAssignmentKaleoLogs(
+			previousTaskAssignmentInstances, kaleoTaskInstanceToken, comment,
+			workflowContext, serviceContext);
 	}
 
 	@Override
@@ -206,6 +256,10 @@ public class KaleoLogLocalServiceWrapper
 	/**
 	 * Deletes the kaleo log from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoLogLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoLog the kaleo log
 	 * @return the kaleo log that was removed
 	 */
@@ -218,6 +272,10 @@ public class KaleoLogLocalServiceWrapper
 
 	/**
 	 * Deletes the kaleo log with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoLogLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param kaleoLogId the primary key of the kaleo log
 	 * @return the kaleo log that was removed
@@ -240,6 +298,18 @@ public class KaleoLogLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _kaleoLogLocalService.deletePersistedModel(persistedModel);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _kaleoLogLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _kaleoLogLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -353,25 +423,6 @@ public class KaleoLogLocalServiceWrapper
 		return _kaleoLogLocalService.getIndexableActionableDynamicQuery();
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #getKaleoInstanceKaleoLogs(long, long, List, int, int,
-	 OrderByComparator)}
-	 */
-	@Deprecated
-	@Override
-	public java.util.List<com.liferay.portal.workflow.kaleo.model.KaleoLog>
-		getKaleoInstanceKaleoLogs(
-			long kaleoInstanceId, java.util.List<Integer> logTypes, int start,
-			int end,
-			com.liferay.portal.kernel.util.OrderByComparator
-				<com.liferay.portal.workflow.kaleo.model.KaleoLog>
-					orderByComparator) {
-
-		return _kaleoLogLocalService.getKaleoInstanceKaleoLogs(
-			kaleoInstanceId, logTypes, start, end, orderByComparator);
-	}
-
 	@Override
 	public java.util.List<com.liferay.portal.workflow.kaleo.model.KaleoLog>
 		getKaleoInstanceKaleoLogs(
@@ -384,19 +435,6 @@ public class KaleoLogLocalServiceWrapper
 		return _kaleoLogLocalService.getKaleoInstanceKaleoLogs(
 			companyId, kaleoInstanceId, logTypes, start, end,
 			orderByComparator);
-	}
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #getKaleoInstanceKaleoLogsCount(long, long, List)}
-	 */
-	@Deprecated
-	@Override
-	public int getKaleoInstanceKaleoLogsCount(
-		long kaleoInstanceId, java.util.List<Integer> logTypes) {
-
-		return _kaleoLogLocalService.getKaleoInstanceKaleoLogsCount(
-			kaleoInstanceId, logTypes);
 	}
 
 	@Override
@@ -451,25 +489,6 @@ public class KaleoLogLocalServiceWrapper
 		return _kaleoLogLocalService.getKaleoLogsCount();
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #getKaleoTaskInstanceTokenKaleoLogs(long, long, List, int,
-	 int, OrderByComparator)}
-	 */
-	@Deprecated
-	@Override
-	public java.util.List<com.liferay.portal.workflow.kaleo.model.KaleoLog>
-		getKaleoTaskInstanceTokenKaleoLogs(
-			long kaleoTaskInstanceTokenId, java.util.List<Integer> logTypes,
-			int start, int end,
-			com.liferay.portal.kernel.util.OrderByComparator
-				<com.liferay.portal.workflow.kaleo.model.KaleoLog>
-					orderByComparator) {
-
-		return _kaleoLogLocalService.getKaleoTaskInstanceTokenKaleoLogs(
-			kaleoTaskInstanceTokenId, logTypes, start, end, orderByComparator);
-	}
-
 	@Override
 	public java.util.List<com.liferay.portal.workflow.kaleo.model.KaleoLog>
 		getKaleoTaskInstanceTokenKaleoLogs(
@@ -482,19 +501,6 @@ public class KaleoLogLocalServiceWrapper
 		return _kaleoLogLocalService.getKaleoTaskInstanceTokenKaleoLogs(
 			companyId, kaleoTaskInstanceTokenId, logTypes, start, end,
 			orderByComparator);
-	}
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #getKaleoTaskInstanceTokenKaleoLogsCount(long, long, List)}
-	 */
-	@Deprecated
-	@Override
-	public int getKaleoTaskInstanceTokenKaleoLogsCount(
-		long kaleoTaskInstanceTokenId, java.util.List<Integer> logTypes) {
-
-		return _kaleoLogLocalService.getKaleoTaskInstanceTokenKaleoLogsCount(
-			kaleoTaskInstanceTokenId, logTypes);
 	}
 
 	@Override
@@ -529,6 +535,10 @@ public class KaleoLogLocalServiceWrapper
 
 	/**
 	 * Updates the kaleo log in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoLogLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param kaleoLog the kaleo log
 	 * @return the kaleo log that was updated

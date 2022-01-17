@@ -17,6 +17,8 @@ package com.liferay.headless.admin.taxonomy.client.dto.v1_0;
 import com.liferay.headless.admin.taxonomy.client.function.UnsafeSupplier;
 import com.liferay.headless.admin.taxonomy.client.serdes.v1_0.TaxonomyCategorySerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -28,37 +30,10 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class TaxonomyCategory implements Cloneable {
+public class TaxonomyCategory implements Cloneable, Serializable {
 
-	public static enum ViewableBy {
-
-		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
-
-		public static ViewableBy create(String value) {
-			for (ViewableBy viewableBy : values()) {
-				if (Objects.equals(viewableBy.getValue(), value)) {
-					return viewableBy;
-				}
-			}
-
-			return null;
-		}
-
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ViewableBy(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static TaxonomyCategory toDTO(String json) {
+		return TaxonomyCategorySerDes.toDTO(json);
 	}
 
 	public Map<String, Map<String, String>> getActions() {
@@ -365,6 +340,98 @@ public class TaxonomyCategory implements Cloneable {
 
 	protected ParentTaxonomyVocabulary parentTaxonomyVocabulary;
 
+	public Long getSiteId() {
+		return siteId;
+	}
+
+	public void setSiteId(Long siteId) {
+		this.siteId = siteId;
+	}
+
+	public void setSiteId(
+		UnsafeSupplier<Long, Exception> siteIdUnsafeSupplier) {
+
+		try {
+			siteId = siteIdUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Long siteId;
+
+	public TaxonomyCategoryProperty[] getTaxonomyCategoryProperties() {
+		return taxonomyCategoryProperties;
+	}
+
+	public void setTaxonomyCategoryProperties(
+		TaxonomyCategoryProperty[] taxonomyCategoryProperties) {
+
+		this.taxonomyCategoryProperties = taxonomyCategoryProperties;
+	}
+
+	public void setTaxonomyCategoryProperties(
+		UnsafeSupplier<TaxonomyCategoryProperty[], Exception>
+			taxonomyCategoryPropertiesUnsafeSupplier) {
+
+		try {
+			taxonomyCategoryProperties =
+				taxonomyCategoryPropertiesUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected TaxonomyCategoryProperty[] taxonomyCategoryProperties;
+
+	public Integer getTaxonomyCategoryUsageCount() {
+		return taxonomyCategoryUsageCount;
+	}
+
+	public void setTaxonomyCategoryUsageCount(
+		Integer taxonomyCategoryUsageCount) {
+
+		this.taxonomyCategoryUsageCount = taxonomyCategoryUsageCount;
+	}
+
+	public void setTaxonomyCategoryUsageCount(
+		UnsafeSupplier<Integer, Exception>
+			taxonomyCategoryUsageCountUnsafeSupplier) {
+
+		try {
+			taxonomyCategoryUsageCount =
+				taxonomyCategoryUsageCountUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Integer taxonomyCategoryUsageCount;
+
+	public Long getTaxonomyVocabularyId() {
+		return taxonomyVocabularyId;
+	}
+
+	public void setTaxonomyVocabularyId(Long taxonomyVocabularyId) {
+		this.taxonomyVocabularyId = taxonomyVocabularyId;
+	}
+
+	public void setTaxonomyVocabularyId(
+		UnsafeSupplier<Long, Exception> taxonomyVocabularyIdUnsafeSupplier) {
+
+		try {
+			taxonomyVocabularyId = taxonomyVocabularyIdUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Long taxonomyVocabularyId;
+
 	public ViewableBy getViewableBy() {
 		return viewableBy;
 	}
@@ -423,6 +490,39 @@ public class TaxonomyCategory implements Cloneable {
 
 	public String toString() {
 		return TaxonomyCategorySerDes.toJSON(this);
+	}
+
+	public static enum ViewableBy {
+
+		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
+
+		public static ViewableBy create(String value) {
+			for (ViewableBy viewableBy : values()) {
+				if (Objects.equals(viewableBy.getValue(), value) ||
+					Objects.equals(viewableBy.name(), value)) {
+
+					return viewableBy;
+				}
+			}
+
+			return null;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ViewableBy(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
 	}
 
 }

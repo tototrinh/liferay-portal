@@ -67,31 +67,16 @@ public class SybaseDB extends BaseDB {
 
 	@Override
 	public String getPopulateSQL(String databaseName, String sqlContent) {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append("use ");
-		sb.append(databaseName);
-		sb.append("\n\n");
-		sb.append(sqlContent);
-
-		return sb.toString();
+		return StringBundler.concat("use ", databaseName, "\n\n", sqlContent);
 	}
 
 	@Override
 	public String getRecreateSQL(String databaseName) {
-		StringBundler sb = new StringBundler(9);
-
-		sb.append("use master\n");
-		sb.append("exec sp_dboption '");
-		sb.append(databaseName);
-		sb.append("', 'allow nulls by default' , true\n");
-		sb.append("go\n\n");
-		sb.append("exec sp_dboption '");
-		sb.append(databaseName);
-		sb.append("', 'select into/bulkcopy/pllsort' , true\n");
-		sb.append("go\n\n");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"use master\n", "exec sp_dboption '", databaseName,
+			"', 'allow nulls by default' , true\n", "go\n\n",
+			"exec sp_dboption '", databaseName,
+			"', 'select into/bulkcopy/pllsort' , true\n", "go\n\n");
 	}
 
 	@Override
@@ -172,8 +157,11 @@ public class SybaseDB extends BaseDB {
 					String[] template = buildColumnTypeTokens(line);
 
 					line = StringUtil.replace(
-						"alter table @table@ modify @old-column@ @type@;",
+						"alter table @table@ modify @old-column@ @type@ " +
+							"@nullable@;",
 						REWORD_TEMPLATE, template);
+
+					line = StringUtil.replace(line, " ;", ";");
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);

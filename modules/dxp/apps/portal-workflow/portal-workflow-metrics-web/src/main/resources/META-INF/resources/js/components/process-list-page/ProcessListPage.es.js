@@ -12,21 +12,20 @@
 import ClayManagementToolbar from '@clayui/management-toolbar';
 import React, {useMemo} from 'react';
 
+import HeaderKebab from '../../shared/components/header/HeaderKebab.es';
 import PromisesResolver from '../../shared/components/promises-resolver/PromisesResolver.es';
 import ResultsBar from '../../shared/components/results-bar/ResultsBar.es';
 import {parse} from '../../shared/components/router/queryString.es';
 import SearchField from '../../shared/components/search-field/SearchField.es';
 import {useFetch} from '../../shared/hooks/useFetch.es';
 import {usePageTitle} from '../../shared/hooks/usePageTitle.es';
-import {Body} from './ProcessListPageBody.es';
+import Body from './ProcessListPageBody.es';
 
 const Header = ({page, pageSize, search, sort, totalCount}) => {
 	return (
 		<>
 			<ClayManagementToolbar className="mb-0">
-				<div className="navbar-form-autofit">
-					<SearchField disabled={!search && totalCount === 0} />
-				</div>
+				<SearchField disabled={!search && totalCount === 0} />
 			</ClayManagementToolbar>
 
 			{search && (
@@ -47,24 +46,22 @@ const Header = ({page, pageSize, search, sort, totalCount}) => {
 	);
 };
 
-const ProcessListPage = ({history, query, routeParams}) => {
+function ProcessListPage({history, query, routeParams}) {
 	if (history.location.pathname === '/') {
-		history.replace(
-			`/processes/20/1/${encodeURIComponent('overdueInstanceCount:desc')}`
-		);
+		history.replace(`/processes/20/1/overdueInstanceCount:desc`);
 	}
 
 	usePageTitle(Liferay.Language.get('metrics'));
 
 	const {page, pageSize, sort} = routeParams;
-	const {search = null} = parse(query);
+	const {search = ''} = parse(query);
 
 	const {data, fetchData} = useFetch({
 		params: {
 			title: search,
-			...routeParams
+			...routeParams,
 		},
-		url: '/processes'
+		url: '/processes/metrics',
 	});
 
 	const promises = useMemo(() => {
@@ -73,20 +70,31 @@ const ProcessListPage = ({history, query, routeParams}) => {
 		}
 
 		return [new Promise(() => {})];
-	}, [fetchData, page, pageSize, sort]);
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [page, pageSize, sort]);
 
 	return (
 		<PromisesResolver promises={promises}>
+			<HeaderKebab
+				kebabItems={[
+					{
+						label: Liferay.Language.get('settings'),
+						link: `/settings/indexes`,
+					},
+				]}
+			/>
+
 			<ProcessListPage.Header
 				search={search}
-				totalCount={data.totalCount}
+				totalCount={data?.totalCount}
 				{...routeParams}
 			/>
 
-			<ProcessListPage.Body data={data} search={search} />
+			<ProcessListPage.Body {...data} filtered={search} />
 		</PromisesResolver>
 	);
-};
+}
 
 ProcessListPage.Body = Body;
 ProcessListPage.Header = Header;

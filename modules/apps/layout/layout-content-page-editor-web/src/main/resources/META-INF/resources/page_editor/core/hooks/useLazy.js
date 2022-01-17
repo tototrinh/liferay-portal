@@ -25,15 +25,15 @@ const {lazy, useCallback, useRef} = React;
  * promise resolves, and should return something to be rendered.
  */
 export default function useLazy(callback) {
-	const components = useRef(new Map());
+	const componentsRef = useRef(new Map());
 
 	return useCallback(
 		({getInstance, pluginId}) => {
-			if (!components.current.has(pluginId)) {
+			if (!componentsRef.current.has(pluginId)) {
 				const plugin = getInstance(pluginId);
 
 				const Component = lazy(() => {
-					return plugin.then(instance => {
+					return plugin.then((instance) => {
 						return {
 							default: () => {
 								if (instance) {
@@ -42,14 +42,14 @@ export default function useLazy(callback) {
 								else {
 									return null;
 								}
-							}
+							},
 						};
 					});
 				});
 
-				components.current.set(pluginId, Component);
+				componentsRef.current.set(pluginId, Component);
 			}
-			const Component = components.current.get(pluginId);
+			const Component = componentsRef.current.get(pluginId);
 
 			return <Component />;
 		},

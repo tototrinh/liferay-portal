@@ -14,16 +14,21 @@
 
 package com.liferay.headless.delivery.dto.v1_0;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -45,12 +50,56 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("NavigationMenu")
+@GraphQLName(
+	description = "Represents a navigation menu.", value = "NavigationMenu"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "NavigationMenu")
-public class NavigationMenu {
+public class NavigationMenu implements Serializable {
 
-	@Schema
+	public static NavigationMenu toDTO(String json) {
+		return ObjectMapperUtil.readValue(NavigationMenu.class, json);
+	}
+
+	public static NavigationMenu unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(NavigationMenu.class, json);
+	}
+
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
+	@Valid
+	public Map<String, Map<String, String>> getActions() {
+		return actions;
+	}
+
+	public void setActions(Map<String, Map<String, String>> actions) {
+		this.actions = actions;
+	}
+
+	@JsonIgnore
+	public void setActions(
+		UnsafeSupplier<Map<String, Map<String, String>>, Exception>
+			actionsUnsafeSupplier) {
+
+		try {
+			actions = actionsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Map<String, Map<String, String>> actions;
+
+	@Schema(description = "The navigation menu's creator.")
 	@Valid
 	public Creator getCreator() {
 		return creator;
@@ -75,11 +124,11 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The navigation menu's creator.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(description = "The navigation menu's creation date.")
 	public Date getDateCreated() {
 		return dateCreated;
 	}
@@ -103,11 +152,11 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The navigation menu's creation date.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateCreated;
 
-	@Schema
+	@Schema(description = "The last time the navigation menu changed.")
 	public Date getDateModified() {
 		return dateModified;
 	}
@@ -131,11 +180,11 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The last time the navigation menu changed.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateModified;
 
-	@Schema
+	@Schema(description = "The navigation menu's ID.")
 	public Long getId() {
 		return id;
 	}
@@ -157,11 +206,11 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The navigation menu's ID.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long id;
 
-	@Schema
+	@Schema(description = "The navigation menu's name.")
 	public String getName() {
 		return name;
 	}
@@ -183,11 +232,13 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@GraphQLField(description = "The navigation menu's name.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
-	@Schema
+	@Schema(
+		description = "The list of navigation menu items this navigation menu has."
+	)
 	@Valid
 	public NavigationMenuItem[] getNavigationMenuItems() {
 		return navigationMenuItems;
@@ -215,11 +266,58 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The list of navigation menu items this navigation menu has."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected NavigationMenuItem[] navigationMenuItems;
 
-	@Schema
+	@Schema(
+		description = "The navigation menu's type (primary, secondary, social)."
+	)
+	@Valid
+	public NavigationType getNavigationType() {
+		return navigationType;
+	}
+
+	@JsonIgnore
+	public String getNavigationTypeAsString() {
+		if (navigationType == null) {
+			return null;
+		}
+
+		return navigationType.toString();
+	}
+
+	public void setNavigationType(NavigationType navigationType) {
+		this.navigationType = navigationType;
+	}
+
+	@JsonIgnore
+	public void setNavigationType(
+		UnsafeSupplier<NavigationType, Exception>
+			navigationTypeUnsafeSupplier) {
+
+		try {
+			navigationType = navigationTypeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The navigation menu's type (primary, secondary, social)."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected NavigationType navigationType;
+
+	@Schema(
+		description = "The ID of the site to which this navigation menu is scoped."
+	)
 	public Long getSiteId() {
 		return siteId;
 	}
@@ -243,7 +341,9 @@ public class NavigationMenu {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The ID of the site to which this navigation menu is scoped."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long siteId;
 
@@ -276,6 +376,16 @@ public class NavigationMenu {
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+		if (actions != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"actions\": ");
+
+			sb.append(_toJSON(actions));
+		}
 
 		if (creator != null) {
 			if (sb.length() > 1) {
@@ -359,6 +469,20 @@ public class NavigationMenu {
 			sb.append("]");
 		}
 
+		if (navigationType != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"navigationType\": ");
+
+			sb.append("\"");
+
+			sb.append(navigationType);
+
+			sb.append("\"");
+		}
+
 		if (siteId != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -375,15 +499,64 @@ public class NavigationMenu {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.NavigationMenu",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
+	@GraphQLName("NavigationType")
+	public static enum NavigationType {
+
+		PRIMARY("Primary"), SECONDARY("Secondary"), SOCIAL("Social");
+
+		@JsonCreator
+		public static NavigationType create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (NavigationType navigationType : values()) {
+				if (Objects.equals(navigationType.getValue(), value)) {
+					return navigationType;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private NavigationType(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 	private static String _escape(Object object) {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -400,13 +573,46 @@ public class NavigationMenu {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

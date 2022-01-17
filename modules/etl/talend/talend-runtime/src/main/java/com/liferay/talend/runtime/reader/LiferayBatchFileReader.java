@@ -47,33 +47,17 @@ public class LiferayBatchFileReader implements Reader<IndexedRecord> {
 
 	@Override
 	public boolean advance() throws IOException {
-		_batchSegmentFile = new File(
-			_batchFile.getParent() + "/batch_segment.jsonl");
-
-		FileWriter fileWriter = new FileWriter(_batchSegmentFile);
-
-		String line = _bufferedReader.readLine();
-
-		while ((line != null) && (++_current < _batchSize)) {
-			fileWriter.write(line);
-			fileWriter.write(System.lineSeparator());
-
-			line = _bufferedReader.readLine();
-		}
-
-		try {
-			if (_current > 0) {
-				_currentTimestamp = Instant.now();
-
-				return true;
-			}
-
+		if (!_updateBatchSegmentFile()) {
 			return false;
 		}
-		finally {
-			fileWriter.flush();
-			fileWriter.close();
+
+		if (_current > 0) {
+			_currentTimestamp = Instant.now();
+
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override
@@ -125,9 +109,37 @@ public class LiferayBatchFileReader implements Reader<IndexedRecord> {
 		return false;
 	}
 
+	private boolean _updateBatchSegmentFile() throws IOException {
+		if (!_bufferedReader.ready()) {
+			return false;
+		}
+
+		_batchSegmentFile = new File(
+			_batchFile.getParent() + "/batch_segment.jsonl");
+
+		try (FileWriter fileWriter = new FileWriter(_batchSegmentFile)) {
+			String line = _bufferedReader.readLine();
+
+			while ((line != null) && ((++_current % _BATCH_SIZE) != 0)) {
+				fileWriter.write(line);
+				fileWriter.write(System.lineSeparator());
+
+				line = _bufferedReader.readLine();
+			}
+
+			fileWriter.flush();
+
+			return true;
+		}
+		catch (IOException ioException) {
+			return false;
+		}
+	}
+
+	private static final int _BATCH_SIZE = 100;
+
 	private File _batchFile;
 	private File _batchSegmentFile;
-	private int _batchSize = 10;
 	private BufferedReader _bufferedReader;
 	private int _current;
 	private Instant _currentTimestamp = Instant.now();

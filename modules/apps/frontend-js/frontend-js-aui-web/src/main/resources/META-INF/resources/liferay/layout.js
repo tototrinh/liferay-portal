@@ -14,10 +14,8 @@
 
 AUI.add(
 	'liferay-layout',
-	A => {
+	(A) => {
 		var Util = Liferay.Util;
-
-		var BODY = A.getBody();
 
 		var CSS_DRAGGABLE = 'portlet-draggable';
 
@@ -32,7 +30,7 @@ AUI.add(
 				}
 			},
 
-			_getPortletTitle: A.cached(id => {
+			_getPortletTitle: A.cached((id) => {
 				var portletBoundary = A.one('#' + id);
 
 				var portletTitle = portletBoundary.one('.portlet-title');
@@ -120,18 +118,18 @@ AUI.add(
 					cfg: {
 						horizontal: false,
 						scrollDelay: 30,
-						vertical: true
+						vertical: true,
 					},
-					fn: A.Plugin.DDWinScroll
+					fn: A.Plugin.DDWinScroll,
 				});
 			},
 
 			closeNestedPortlets(portlet) {
 				var nestedPortlets = portlet.all('.portlet-boundary');
 
-				nestedPortlets.each(portlet => {
+				nestedPortlets.each((portlet) => {
 					Liferay.Portlet.close(portlet, true, {
-						nestedPortlet: true
+						nestedPortlet: true,
 					});
 				});
 			},
@@ -156,18 +154,18 @@ AUI.add(
 					var firstPortletStatic = firstPortlet.isStatic;
 					var lastStatic = null;
 
-					if (!firstPortletStatic || firstPortletStatic == 'end') {
+					if (!firstPortletStatic || firstPortletStatic === 'end') {
 						referencePortlet = firstPortlet;
 					}
 					else {
-						portlets.each(item => {
+						portlets.each((item) => {
 							var isStatic = item.isStatic;
 
 							if (
 								!isStatic ||
 								(lastStatic &&
 									isStatic &&
-									isStatic != lastStatic)
+									isStatic !== lastStatic)
 							) {
 								referencePortlet = item;
 							}
@@ -208,7 +206,7 @@ AUI.add(
 
 				var dropNodes = [];
 
-				A.all(options.dropContainer).each(dropContainer => {
+				A.all(options.dropContainer).each((dropContainer) => {
 					if (
 						!dropContainer.hasClass(
 							options.disabledDropContainerClass
@@ -244,8 +242,8 @@ AUI.add(
 					var currentParent = dragNode.get('parentNode');
 
 					if (
-						curPortletInfo.originalParent != currentParent ||
-						curPortletInfo.originalIndex != currentIndex
+						curPortletInfo.originalParent !== currentParent ||
+						curPortletInfo.originalIndex !== currentIndex
 					) {
 						moved = true;
 					}
@@ -295,14 +293,14 @@ AUI.add(
 					Liferay.fire('portletMoved', {
 						portlet: portletNode,
 						portletId,
-						position
+						position,
 					});
 
 					Layout.saveLayout({
 						cmd: 'move',
 						p_p_col_id: currentColumnId,
 						p_p_col_pos: position,
-						p_p_id: portletId
+						p_p_id: portletId,
 					});
 				}
 			},
@@ -373,14 +371,16 @@ AUI.add(
 					node: dragNode,
 					originalIndex: Layout.findIndex(dragNode),
 					originalParent: dragNode.get('parentNode'),
-					siblingsPortlets: dragNode.siblings(options.portletBoundary)
+					siblingsPortlets: dragNode.siblings(
+						options.portletBoundary
+					),
 				};
 			},
 
 			updateEmptyColumnsInfo() {
 				var options = Layout.options;
 
-				A.all(options.dropNodes).each(item => {
+				A.all(options.dropNodes).each((item) => {
 					var columnId = item.get('id');
 
 					Layout.EMPTY_COLUMNS[columnId] = !Layout.hasPortlets(item);
@@ -393,13 +393,13 @@ AUI.add(
 
 				var layoutHandler = Layout.getLayoutHandler();
 
-				portletDropNodes.each(item => {
+				portletDropNodes.each((item) => {
 					layoutHandler.addDropNode(item);
 				});
-			}
+			},
 		};
 
-		Layout.init = function(options) {
+		Layout.init = function (options) {
 			options = options || Layout.options;
 
 			options.handles = A.Array(options.handles);
@@ -416,10 +416,10 @@ AUI.add(
 					container: layoutContainer,
 					dragConfig: {
 						clickPixelThresh: 0,
-						clickTimeThresh: 250
+						clickTimeThresh: 250,
 					},
 					handles: options.handles,
-					invalid: options.invalid
+					invalid: options.invalid,
 				},
 				dragNodes: options.dragNodes,
 				dropContainer(dropNode) {
@@ -428,33 +428,11 @@ AUI.add(
 				dropNodes: Layout.getActiveDropNodes(),
 				lazyStart: true,
 				proxy: {
-					resizeFrame: false
-				}
+					resizeFrame: false,
+				},
 			};
 
 			var eventHandles = [];
-
-			if (A.UA.ie || A.UA.edge) {
-				eventHandles.push(
-					BODY.delegate(
-						'mouseenter',
-						event => {
-							event.currentTarget.addClass('focus');
-						},
-						'.portlet'
-					)
-				);
-
-				eventHandles.push(
-					BODY.delegate(
-						'mouseleave',
-						event => {
-							event.currentTarget.removeClass('focus');
-						},
-						'.portlet'
-					)
-				);
-			}
 
 			A.use('liferay-layout-column', () => {
 				Layout.ColumnLayout.register();
@@ -481,11 +459,11 @@ AUI.add(
 		Liferay.provide(
 			Layout,
 			'saveLayout',
-			options => {
+			(options) => {
 				var data = {
 					doAsUserId: themeDisplay.getDoAsUserIdEncoded(),
 					p_auth: Liferay.authToken,
-					p_l_id: themeDisplay.getPlid()
+					p_l_id: themeDisplay.getPlid(),
 				};
 
 				A.mix(data, options);
@@ -494,9 +472,9 @@ AUI.add(
 					themeDisplay.getPathMain() + '/portal/update_layout',
 					{
 						body: Liferay.Util.objectToFormData(data),
-						method: 'POST'
+						method: 'POST',
 					}
-				).then(response => {
+				).then((response) => {
 					if (response.ok) {
 						Liferay.fire('updatedLayout');
 					}
@@ -531,7 +509,7 @@ AUI.add(
 			});
 
 			if (layoutContainer) {
-				if (!A.UA.touch) {
+				if (!A.UA.touchEnabled) {
 					layoutContainer.once('mousemove', () => {
 						Liferay.fire('initLayout');
 					});
@@ -546,6 +524,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: []
+		requires: [],
 	}
 );

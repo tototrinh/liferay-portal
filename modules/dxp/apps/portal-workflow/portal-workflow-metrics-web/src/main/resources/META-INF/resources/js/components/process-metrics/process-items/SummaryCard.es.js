@@ -9,146 +9,103 @@
  * distribution rights of the Software.
  */
 
-import React from 'react';
+import ClayIcon from '@clayui/icon';
+import React, {useContext, useState} from 'react';
 
-import Icon from '../../../shared/components/Icon.es';
 import filterConstants from '../../../shared/components/filter/util/filterConstants.es';
-import {ChildLink} from '../../../shared/components/router/routerWrapper.es';
+import ChildLink from '../../../shared/components/router/ChildLink.es';
 import {formatNumber} from '../../../shared/util/numeral.es';
 import {getPercentage} from '../../../shared/util/util.es';
 import {AppContext} from '../../AppContext.es';
 import {processStatusConstants} from '../../filter/ProcessStatusFilter.es';
-import {formatQueryDate} from '../../filter/util/timeRangeUtil.es';
 
-class SummaryCard extends React.Component {
-	constructor(props) {
-		super(props);
+const SummaryCard = ({
+	completed,
+	getTitle,
+	iconColor,
+	iconName,
+	processId,
+	slaStatusFilter,
+	timeRange,
+	total,
+	totalValue,
+	value,
+}) => {
+	const [hovered, setHovered] = useState(false);
+	const {defaultDelta} = useContext(AppContext);
+	const disabled = !total && value === undefined;
+	const formattedPercentage = !total
+		? formatNumber(getPercentage(value, totalValue), '0[.]00%')
+		: null;
+	const formattedValue = formatNumber(value, '0[,0][.]0a');
 
-		this.state = {
-			hovered: false
-		};
+	const filterParams = {
+		[filterConstants.processStatus.key]: [
+			completed
+				? processStatusConstants.completed
+				: processStatusConstants.pending,
+		],
+		[filterConstants.slaStatus.key]: [slaStatusFilter],
+	};
+
+	if (timeRange) {
+		const {dateEnd, dateStart, key} = timeRange;
+
+		filterParams.dateEnd = dateEnd;
+		filterParams.dateStart = dateStart;
+		filterParams.timeRange = [key];
 	}
 
-	get formattedPercentage() {
-		const {total, totalValue, value} = this.props;
-
-		if (!total) {
-			const percentage = getPercentage(value, totalValue);
-
-			return formatNumber(percentage, '0[.]00%');
-		}
-
-		return null;
-	}
-
-	get formattedValue() {
-		return formatNumber(this.props.value, '0[,0][.]0a');
-	}
-
-	getFiltersQuery() {
-		const {completed, slaStatusFilter, timeRange} = this.props;
-
-		const filterParams = {
-			[filterConstants.processStatus.key]: [
-				completed
-					? processStatusConstants.completed
-					: processStatusConstants.pending
-			],
-			[filterConstants.slaStatus.key]: [slaStatusFilter]
-		};
-
-		if (timeRange) {
-			const {dateEnd, dateStart, key} = timeRange;
-			filterParams.dateEnd = formatQueryDate(dateEnd);
-			filterParams.dateStart = formatQueryDate(dateStart);
-			filterParams.timeRange = [key];
-		}
-
-		return filterParams;
-	}
-
-	handleMouseOver(evt, callback) {
-		this.setState({hovered: true}, callback);
-	}
-
-	handleMouseOut(evt, callback) {
-		this.setState({hovered: false}, callback);
-	}
-
-	render() {
-		const {
-			completed,
-			getTitle,
-			iconColor,
-			iconName,
-			processId,
-			slaStatusFilter,
-			total,
-			value
-		} = this.props;
-		const {defaultDelta} = this.context;
-		const {hovered} = this.state;
-
-		const disabled = !total && value === undefined;
-
-		const disabledClassName = disabled ? 'disabled' : '';
-		const disableRender = Component => !disabled && Component;
-
-		const hoveredClassName = hovered ? 'highlight-hover' : '';
-		const hoverRender = (Component, HoveredComponent) => (
-			<span className={`${hoveredClassName} xsmall`}>
-				{(hovered && HoveredComponent) || Component}
-			</span>
-		);
-
-		const instancesListPath = `/instance/${processId}/${defaultDelta}/1`;
-		const title = getTitle(completed);
-
-		return (
-			<ChildLink
-				className={`${disabledClassName} process-dashboard-summary-card`}
-				onMouseOut={this.handleMouseOut.bind(this)}
-				onMouseOver={this.handleMouseOver.bind(this)}
-				query={{filters: this.getFiltersQuery(slaStatusFilter)}}
-				to={instancesListPath}
-			>
-				<div>
-					<div className={'header'}>
-						{iconName && (
-							<span
-								className={`bg-${iconColor}-light mr-3 sticker sticker-circle`}
-							>
-								<span className="inline-item">
-									<Icon
-										elementClasses={`text-${iconColor}`}
-										iconName={iconName}
-									/>
-								</span>
+	return (
+		<ChildLink
+			className={`${
+				disabled ? 'disabled' : ''
+			} process-tabs-summary-card`}
+			onMouseOut={() => setHovered(false)}
+			onMouseOver={() => setHovered(true)}
+			query={{filters: filterParams}}
+			to={`/instance/${processId}/${defaultDelta}/1/dateOverdue:asc`}
+		>
+			<div>
+				<div className="header">
+					{iconName && (
+						<span
+							className={`bg-${iconColor}-light mr-3 sticker sticker-circle`}
+						>
+							<span className="inline-item">
+								<ClayIcon
+									className={`text-${iconColor}`}
+									symbol={iconName}
+								/>
 							</span>
-						)}
-
-						<span>{title}</span>
-					</div>
-
-					{disableRender(
-						<div className="body" title={value}>
-							{this.formattedValue}
-						</div>
+						</span>
 					)}
 
-					{disableRender(
-						<div className="footer">
-							{hoverRender(
-								this.formattedPercentage,
-								Liferay.Language.get('see-items')
-							)}
-						</div>
-					)}
+					<span>{getTitle(completed)}</span>
 				</div>
-			</ChildLink>
-		);
-	}
-}
 
-SummaryCard.contextType = AppContext;
+				{!disabled && (
+					<>
+						<div className="body" title={value}>
+							{formattedValue}
+						</div>
+
+						<div className="footer">
+							<span
+								className={`${
+									hovered ? 'highlight-hover' : ''
+								} xsmall`}
+							>
+								{hovered
+									? Liferay.Language.get('see-items')
+									: formattedPercentage}
+							</span>
+						</div>
+					</>
+				)}
+			</div>
+		</ChildLink>
+	);
+};
+
 export default SummaryCard;

@@ -18,13 +18,13 @@ import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.ModelListener;
 import com.liferay.portal.kernel.model.ModelListenerRegistrationUtil;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Leon Chi
@@ -37,12 +37,12 @@ public class ModelListenerRegistrationUtilTest {
 			new BaseModelListener<Contact>() {
 			};
 
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
-		Registry registry = RegistryUtil.getRegistry();
-
-		ServiceRegistration<ModelListener> serviceRegistration =
-			registry.registerService(ModelListener.class, baseModelListener);
+		ServiceRegistration<ModelListener<?>> serviceRegistration =
+			bundleContext.registerService(
+				(Class<ModelListener<?>>)(Class<?>)ModelListener.class,
+				baseModelListener, null);
 
 		try {
 			Assert.assertArrayEquals(

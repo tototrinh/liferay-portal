@@ -15,8 +15,10 @@
 package com.liferay.portal.service.persistence.impl;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.change.tracking.CTColumnResolutionType;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
@@ -27,17 +29,35 @@ import com.liferay.portal.kernel.exception.NoSuchImageException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Image;
+import com.liferay.portal.kernel.model.ImageTable;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.ImagePersistence;
+import com.liferay.portal.kernel.service.persistence.ImageUtil;
+import com.liferay.portal.kernel.service.persistence.change.tracking.helper.CTPersistenceHelperUtil;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.model.impl.ImageImpl;
 import com.liferay.portal.model.impl.ImageModelImpl;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -143,6 +163,9 @@ public class ImagePersistenceImpl
 		int size, int start, int end,
 		OrderByComparator<Image> orderByComparator, boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			Image.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
@@ -151,9 +174,9 @@ public class ImagePersistenceImpl
 
 		List<Image> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<Image>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (Image image : list) {
@@ -207,15 +230,11 @@ public class ImagePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -507,12 +526,21 @@ public class ImagePersistenceImpl
 	 */
 	@Override
 	public int countByLtSize(int size) {
-		FinderPath finderPath = _finderPathWithPaginationCountByLtSize;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			Image.class);
 
-		Object[] finderArgs = new Object[] {size};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathWithPaginationCountByLtSize;
+
+			finderArgs = new Object[] {size};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -536,11 +564,11 @@ public class ImagePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -554,18 +582,19 @@ public class ImagePersistenceImpl
 	private static final String _FINDER_COLUMN_LTSIZE_SIZE_2 = "image.size < ?";
 
 	public ImagePersistenceImpl() {
-		setModelClass(Image.class);
-
-		setModelImplClass(ImageImpl.class);
-		setModelPKClass(long.class);
-		setEntityCacheEnabled(ImageModelImpl.ENTITY_CACHE_ENABLED);
-
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
 		dbColumnNames.put("type", "type_");
 		dbColumnNames.put("size", "size_");
 
 		setDBColumnNames(dbColumnNames);
+
+		setModelClass(Image.class);
+
+		setModelImplClass(ImageImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(ImageTable.INSTANCE);
 	}
 
 	/**
@@ -575,12 +604,15 @@ public class ImagePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(Image image) {
-		EntityCacheUtil.putResult(
-			ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-			image.getPrimaryKey(), image);
+		if (image.getCtCollectionId() != 0) {
+			return;
+		}
 
-		image.resetOriginalValues();
+		EntityCacheUtil.putResult(
+			ImageImpl.class, image.getPrimaryKey(), image);
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the images in the entity cache if it is enabled.
@@ -589,15 +621,22 @@ public class ImagePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<Image> images) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (images.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (Image image : images) {
+			if (image.getCtCollectionId() != 0) {
+				continue;
+			}
+
 			if (EntityCacheUtil.getResult(
-					ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-					image.getPrimaryKey()) == null) {
+					ImageImpl.class, image.getPrimaryKey()) == null) {
 
 				cacheResult(image);
-			}
-			else {
-				image.resetOriginalValues();
 			}
 		}
 	}
@@ -606,57 +645,41 @@ public class ImagePersistenceImpl
 	 * Clears the cache for all images.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
 		EntityCacheUtil.clearCache(ImageImpl.class);
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(ImageImpl.class);
 	}
 
 	/**
 	 * Clears the cache for the image.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(Image image) {
-		EntityCacheUtil.removeResult(
-			ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-			image.getPrimaryKey());
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		EntityCacheUtil.removeResult(ImageImpl.class, image);
 	}
 
 	@Override
 	public void clearCache(List<Image> images) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (Image image : images) {
-			EntityCacheUtil.removeResult(
-				ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-				image.getPrimaryKey());
+			EntityCacheUtil.removeResult(ImageImpl.class, image);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(ImageImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
-			EntityCacheUtil.removeResult(
-				ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-				primaryKey);
+			EntityCacheUtil.removeResult(ImageImpl.class, primaryKey);
 		}
 	}
 
@@ -740,7 +763,7 @@ public class ImagePersistenceImpl
 					ImageImpl.class, image.getPrimaryKeyObj());
 			}
 
-			if (image != null) {
+			if ((image != null) && CTPersistenceHelperUtil.isRemove(image)) {
 				session.delete(image);
 			}
 		}
@@ -762,15 +785,49 @@ public class ImagePersistenceImpl
 	public Image updateImpl(Image image) {
 		boolean isNew = image.isNew();
 
+		if (!(image instanceof ImageModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(image.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(image);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in image proxy " +
+						invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom Image implementation " +
+					image.getClass());
+		}
+
+		ImageModelImpl imageModelImpl = (ImageModelImpl)image;
+
+		if (!imageModelImpl.hasSetModifiedDate()) {
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
+			Date date = new Date();
+
+			if (serviceContext == null) {
+				image.setModifiedDate(date);
+			}
+			else {
+				image.setModifiedDate(serviceContext.getModifiedDate(date));
+			}
+		}
+
 		Session session = null;
 
 		try {
 			session = openSession();
 
-			if (image.isNew()) {
-				session.save(image);
+			if (CTPersistenceHelperUtil.isInsert(image)) {
+				if (!isNew) {
+					session.evict(ImageImpl.class, image.getPrimaryKeyObj());
+				}
 
-				image.setNew(false);
+				session.save(image);
 			}
 			else {
 				image = (Image)session.merge(image);
@@ -783,22 +840,21 @@ public class ImagePersistenceImpl
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		if (image.getCtCollectionId() != 0) {
+			if (isNew) {
+				image.setNew(false);
+			}
 
-		if (!ImageModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(
-				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			FinderCacheUtil.removeResult(
-				_finderPathCountAll, FINDER_ARGS_EMPTY);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
+			image.resetOriginalValues();
+
+			return image;
 		}
 
-		EntityCacheUtil.putResult(
-			ImageModelImpl.ENTITY_CACHE_ENABLED, ImageImpl.class,
-			image.getPrimaryKey(), image, false);
+		EntityCacheUtil.putResult(ImageImpl.class, image, false, true);
+
+		if (isNew) {
+			image.setNew(false);
+		}
 
 		image.resetOriginalValues();
 
@@ -845,12 +901,137 @@ public class ImagePersistenceImpl
 	/**
 	 * Returns the image with the primary key or returns <code>null</code> if it could not be found.
 	 *
+	 * @param primaryKey the primary key of the image
+	 * @return the image, or <code>null</code> if a image with the primary key could not be found
+	 */
+	@Override
+	public Image fetchByPrimaryKey(Serializable primaryKey) {
+		if (CTPersistenceHelperUtil.isProductionMode(Image.class)) {
+			return super.fetchByPrimaryKey(primaryKey);
+		}
+
+		Image image = null;
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			image = (Image)session.get(ImageImpl.class, primaryKey);
+
+			if (image != null) {
+				cacheResult(image);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return image;
+	}
+
+	/**
+	 * Returns the image with the primary key or returns <code>null</code> if it could not be found.
+	 *
 	 * @param imageId the primary key of the image
 	 * @return the image, or <code>null</code> if a image with the primary key could not be found
 	 */
 	@Override
 	public Image fetchByPrimaryKey(long imageId) {
 		return fetchByPrimaryKey((Serializable)imageId);
+	}
+
+	@Override
+	public Map<Serializable, Image> fetchByPrimaryKeys(
+		Set<Serializable> primaryKeys) {
+
+		if (CTPersistenceHelperUtil.isProductionMode(Image.class)) {
+			return super.fetchByPrimaryKeys(primaryKeys);
+		}
+
+		if (primaryKeys.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Map<Serializable, Image> map = new HashMap<Serializable, Image>();
+
+		if (primaryKeys.size() == 1) {
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			Serializable primaryKey = iterator.next();
+
+			Image image = fetchByPrimaryKey(primaryKey);
+
+			if (image != null) {
+				map.put(primaryKey, image);
+			}
+
+			return map;
+		}
+
+		if ((databaseInMaxParameters > 0) &&
+			(primaryKeys.size() > databaseInMaxParameters)) {
+
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			while (iterator.hasNext()) {
+				Set<Serializable> page = new HashSet<>();
+
+				for (int i = 0;
+					 (i < databaseInMaxParameters) && iterator.hasNext(); i++) {
+
+					page.add(iterator.next());
+				}
+
+				map.putAll(fetchByPrimaryKeys(page));
+			}
+
+			return map;
+		}
+
+		StringBundler sb = new StringBundler((primaryKeys.size() * 2) + 1);
+
+		sb.append(getSelectSQL());
+		sb.append(" WHERE ");
+		sb.append(getPKDBName());
+		sb.append(" IN (");
+
+		for (Serializable primaryKey : primaryKeys) {
+			sb.append((long)primaryKey);
+
+			sb.append(",");
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		sb.append(")");
+
+		String sql = sb.toString();
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			Query query = session.createQuery(sql);
+
+			for (Image image : (List<Image>)query.list()) {
+				map.put(image.getPrimaryKeyObj(), image);
+
+				cacheResult(image);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return map;
 	}
 
 	/**
@@ -916,27 +1097,30 @@ public class ImagePersistenceImpl
 		int start, int end, OrderByComparator<Image> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			Image.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindAll;
 				finderArgs = FINDER_ARGS_EMPTY;
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] {start, end, orderByComparator};
 		}
 
 		List<Image> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<Image>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -972,15 +1156,11 @@ public class ImagePersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1009,8 +1189,15 @@ public class ImagePersistenceImpl
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			Image.class);
+
+		Long count = null;
+
+		if (productionMode) {
+			count = (Long)FinderCacheUtil.getResult(
+				_finderPathCountAll, FINDER_ARGS_EMPTY);
+		}
 
 		if (count == null) {
 			Session session = null;
@@ -1022,13 +1209,12 @@ public class ImagePersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(
+						_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1060,52 +1246,117 @@ public class ImagePersistenceImpl
 	}
 
 	@Override
-	protected Map<String, Integer> getTableColumnsMap() {
+	public Set<String> getCTColumnNames(
+		CTColumnResolutionType ctColumnResolutionType) {
+
+		return _ctColumnNamesMap.getOrDefault(
+			ctColumnResolutionType, Collections.emptySet());
+	}
+
+	@Override
+	public List<String> getMappingTableNames() {
+		return _mappingTableNames;
+	}
+
+	@Override
+	public Map<String, Integer> getTableColumnsMap() {
 		return ImageModelImpl.TABLE_COLUMNS_MAP;
+	}
+
+	@Override
+	public String getTableName() {
+		return "Image";
+	}
+
+	@Override
+	public List<String[]> getUniqueIndexColumnNames() {
+		return _uniqueIndexColumnNames;
+	}
+
+	private static final Map<CTColumnResolutionType, Set<String>>
+		_ctColumnNamesMap = new EnumMap<CTColumnResolutionType, Set<String>>(
+			CTColumnResolutionType.class);
+	private static final List<String> _mappingTableNames =
+		new ArrayList<String>();
+	private static final List<String[]> _uniqueIndexColumnNames =
+		new ArrayList<String[]>();
+
+	static {
+		Set<String> ctControlColumnNames = new HashSet<String>();
+		Set<String> ctIgnoreColumnNames = new HashSet<String>();
+		Set<String> ctStrictColumnNames = new HashSet<String>();
+
+		ctControlColumnNames.add("mvccVersion");
+		ctControlColumnNames.add("ctCollectionId");
+		ctStrictColumnNames.add("companyId");
+		ctIgnoreColumnNames.add("modifiedDate");
+		ctStrictColumnNames.add("type_");
+		ctStrictColumnNames.add("height");
+		ctStrictColumnNames.add("width");
+		ctStrictColumnNames.add("size_");
+
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.CONTROL, ctControlColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.PK, Collections.singleton("imageId"));
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.STRICT, ctStrictColumnNames);
 	}
 
 	/**
 	 * Initializes the image persistence.
 	 */
 	public void afterPropertiesSet() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			ImageModelImpl.ENTITY_CACHE_ENABLED,
-			ImageModelImpl.FINDER_CACHE_ENABLED, ImageImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			ImageModelImpl.ENTITY_CACHE_ENABLED,
-			ImageModelImpl.FINDER_CACHE_ENABLED, ImageImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			ImageModelImpl.ENTITY_CACHE_ENABLED,
-			ImageModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByLtSize = new FinderPath(
-			ImageModelImpl.ENTITY_CACHE_ENABLED,
-			ImageModelImpl.FINDER_CACHE_ENABLED, ImageImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByLtSize",
 			new String[] {
 				Integer.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"size_"}, true);
 
 		_finderPathWithPaginationCountByLtSize = new FinderPath(
-			ImageModelImpl.ENTITY_CACHE_ENABLED,
-			ImageModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByLtSize",
-			new String[] {Integer.class.getName()});
+			new String[] {Integer.class.getName()}, new String[] {"size_"},
+			false);
+
+		_setImageUtilPersistence(this);
 	}
 
 	public void destroy() {
+		_setImageUtilPersistence(null);
+
 		EntityCacheUtil.removeCache(ImageImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+	}
+
+	private void _setImageUtilPersistence(ImagePersistence imagePersistence) {
+		try {
+			Field field = ImageUtil.class.getDeclaredField("_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, imagePersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	private static final String _SQL_SELECT_IMAGE =
@@ -1133,5 +1384,10 @@ public class ImagePersistenceImpl
 
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
 		new String[] {"type", "size"});
+
+	@Override
+	protected FinderCache getFinderCache() {
+		return FinderCacheUtil.getFinderCache();
+	}
 
 }

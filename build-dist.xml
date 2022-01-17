@@ -8,16 +8,12 @@
 			<if>
 				<equals arg1="${tomcat.keep.app.server.properties}" arg2="true" />
 				<then>
-					<antcall inheritAll="false" target="update-sdk-properties" />
-
 					<antcall inheritAll="false" target="unzip-tomcat" />
 				</then>
 				<else>
 					<app-server-properties-update>
 						app.server.type=tomcat
 					</app-server-properties-update>
-
-					<antcall inheritAll="false" target="update-sdk-properties" />
 
 					<antcall target="unzip-tomcat" />
 				</else>
@@ -42,6 +38,42 @@
 				file="@{file}"
 			>
 				<replace-elements />
+			</replace>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="set-weblogic-log-levels">
+		<sequential>
+			<replace
+				file="${app.server.weblogic.instance.dir}/config/config.xml"
+			>
+				<replacetoken><![CDATA[<name>AdminServer</name>]]></replacetoken>
+				<replacevalue><![CDATA[<name>AdminServer</name>
+	<log>
+		<date-format-pattern>MMM d, yyyy h:mm:ss,SSS a z</date-format-pattern>
+		<file-name>logs/AdminServer.log</file-name>
+		<rotation-type>bySize</rotation-type>
+		<number-of-files-limited>true</number-of-files-limited>
+		<file-count>7</file-count>
+		<file-min-size>500</file-min-size>
+		<rotate-log-on-startup>true</rotate-log-on-startup>
+		<buffer-size-kb>8</buffer-size-kb>
+		<logger-severity>Warning</logger-severity>
+		<log-file-severity>Trace</log-file-severity>
+		<stdout-severity>Error</stdout-severity>
+		<stdout-format>standard</stdout-format>
+		<stdout-log-stack>true</stdout-log-stack>
+		<stacktrace-depth>5</stacktrace-depth>
+		<domain-log-broadcast-severity>Notice</domain-log-broadcast-severity>
+		<redirect-stdout-to-server-log-enabled>false</redirect-stdout-to-server-log-enabled>
+		<redirect-stderr-to-server-log-enabled>true</redirect-stderr-to-server-log-enabled>
+		<domain-log-broadcaster-buffer-size>1</domain-log-broadcaster-buffer-size>
+		<log-monitoring-enabled>true</log-monitoring-enabled>
+		<log-monitoring-interval-secs>30</log-monitoring-interval-secs>
+		<log-monitoring-throttle-threshold>1500</log-monitoring-throttle-threshold>
+		<log-monitoring-throttle-message-length>50</log-monitoring-throttle-message-length>
+		<log-monitoring-max-throttle-message-signature-count>1000</log-monitoring-max-throttle-message-signature-count>
+	</log>]]></replacevalue>
 			</replace>
 		</sequential>
 	</macrodef>
@@ -103,24 +135,10 @@
 		</sequential>
 	</macrodef>
 
-	<macrodef name="update-websphere-lcs-property">
-		<sequential>
-			<replace
-				file="${app.server.websphere.instance.dir}/config/cells/liferay-cell/nodes/liferay-node/servers/server1/server.xml"
-			>
-				<replacetoken><![CDATA[<systemProperties xmi:id="Property_2" name="com.ibm.security.krb5.Krb5Debug" value="off" required="false"/>]]></replacetoken>
-				<replacevalue><![CDATA[<systemProperties name="com.ibm.security.krb5.Krb5Debug" required="false" value="off" xmi:id="Property_2" />
-      <systemProperties name="com.ibm.crypto.provider.DoRSATypeChecking" required="false" value="false" xmi:id="Property_1234" />]]></replacevalue>
-			</replace>
-		</sequential>
-	</macrodef>
-
 	<target name="build-dist-jboss">
 		<app-server-properties-update>
 			app.server.type=jboss
 		</app-server-properties-update>
-
-		<antcall inheritAll="false" target="update-sdk-properties" />
 
 		<antcall inheritAll="false" target="unzip-jboss" />
 
@@ -150,7 +168,7 @@
 		</exec>
 
 		<echo file="${lp.plugins.dir}/hooks/liferay-language-${locale.current}-hook/docroot/WEB-INF/liferay-hook.xml"><![CDATA[<?xml version="1.0"?>
-<!DOCTYPE hook PUBLIC "-//Liferay//DTD Hook 6.1.0//EN" "http://www.liferay.com/dtd/liferay-hook_6_1_0.dtd">
+<!DOCTYPE hook PUBLIC "-//Liferay//DTD Hook 7.4.0//EN" "http://www.liferay.com/dtd/liferay-hook_7_4_0.dtd">
 
 <hook>
 	<language-properties>content/Language-ext_${locale.current}.properties</language-properties>
@@ -244,8 +262,6 @@
 			app.server.type=tcserver
 		</app-server-properties-update>
 
-		<antcall inheritAll="false" target="update-sdk-properties" />
-
 		<antcall target="unzip-tcserver" />
 
 		<delete dir="${project.dir}/portal-web/classes" />
@@ -291,8 +307,6 @@
 			app.server.type=weblogic
 		</app-server-properties-update>
 
-		<antcall inheritAll="false" target="update-sdk-properties" />
-
 		<if>
 			<equals arg1="${app.server.weblogic.version}" arg2="12.2.1" />
 			<then>
@@ -321,8 +335,6 @@
 			app.server.type=websphere
 		</app-server-properties-update>
 
-		<antcall inheritAll="false" target="update-sdk-properties" />
-
 		<antcall inheritAll="false" target="unzip-websphere" />
 
 		<delete dir="${project.dir}/portal-web/classes" />
@@ -342,8 +354,6 @@
 		<app-server-properties-update>
 			app.server.type=wildfly
 		</app-server-properties-update>
-
-		<antcall inheritAll="false" target="update-sdk-properties" />
 
 		<antcall target="unzip-wildfly" />
 
@@ -573,21 +583,6 @@
 		<antcall target="doc" />
 
 		<remake-dir dir="dist" />
-
-		<remake-dir dir="tools/zip_tmpl/license" />
-
-		<copy
-			file="copyright.txt"
-			todir="tools/zip_tmpl/license"
-		/>
-		<copy
-			file="lib/versions.html"
-			todir="tools/zip_tmpl/license"
-		/>
-		<copy
-			file="readme.markdown"
-			todir="tools/zip_tmpl"
-		/>
 
 		<antcall target="zip-portal-war" />
 
@@ -1021,7 +1016,7 @@ this task.
 			file="${app.server.tcserver.conf.dir}/catalina.properties"
 		>
 			<replacetoken><![CDATA[common.loader=${catalina.base}/lib,${catalina.base}/lib/*.jar,${catalina.home}/lib,${catalina.home}/lib/*.jar]]></replacetoken>
-			<replacevalue><![CDATA[common.loader=${catalina.base}/lib,${catalina.base}/lib/*.jar,${catalina.home}/lib,${catalina.home}/lib/*.jar,${catalina.home}/lib/ext,${catalina.home}/lib/ext/*.jar]]></replacevalue>
+			<replacevalue><![CDATA[common.loader=${catalina.base}/lib,${catalina.base}/lib/*.jar,${catalina.home}/lib,${catalina.home}/lib/*.jar,${catalina.home}/webapps/ROOT/WEB-INF/lib/support-tomcat.jar]]></replacevalue>
 		</replace>
 
 		<replace
@@ -1073,24 +1068,6 @@ wrapper.java.additional.11="-Dfile.encoding=UTF-8"]]></replacevalue>
 	</target>
 
 	<target name="unzip-tomcat">
-		<if>
-			<equals arg1="${app.server.tomcat.legacy.cleanup.enabled}" arg2="true" />
-			<then>
-				<for list="${app.server.tomcat.legacy.versions}" param="app.server.tomcat.legacy.version">
-					<sequential>
-						<var name="app.server.tomcat.legacy.dir" value="${app.server.parent.dir}/tomcat-@{app.server.tomcat.legacy.version}" />
-
-						<if>
-							<available file="${app.server.tomcat.legacy.dir}" type="dir" />
-							<then>
-								<delete dir="${app.server.tomcat.legacy.dir}" />
-							</then>
-						</if>
-					</sequential>
-				</for>
-			</then>
-		</if>
-
 		<delete dir="${app.server.tomcat.dir}" />
 
 		<if>
@@ -1130,8 +1107,14 @@ wrapper.java.additional.11="-Dfile.encoding=UTF-8"]]></replacevalue>
 			file="${app.server.tomcat.dir}/conf/catalina.properties"
 		>
 			<replacetoken><![CDATA[common.loader="${catalina.base}/lib","${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"]]></replacetoken>
-			<replacevalue><![CDATA[common.loader="${catalina.home}/lib/ext","${catalina.home}/lib/ext/*.jar","${catalina.base}/lib","${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"]]></replacevalue>
+			<replacevalue><![CDATA[common.loader="${catalina.home}/webapps/ROOT/WEB-INF/lib/support-tomcat.jar","${catalina.base}/lib","${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"]]></replacevalue>
 		</replace>
+
+		<echo append="true" file="${app.server.tomcat.dir}/conf/catalina.properties">
+			<![CDATA[
+tomcat.util.scan.StandardJarScanFilter.jarsToSkip=*
+tomcat.util.scan.StandardJarScanFilter.jarsToScan=]]>
+		</echo>
 
 		<echo append="true" file="${app.server.tomcat.dir}/conf/logging.properties">
 			<![CDATA[
@@ -1174,33 +1157,6 @@ org.apache.level=WARNING]]>
 		>
 			<replacetoken><![CDATA[<web-app]]></replacetoken>
 			<replacevalue><![CDATA[<web-app metadata-complete="true"]]></replacevalue>
-		</replace>
-
-		<replace
-			file="${app.server.tomcat.dir}/conf/web.xml"
-		>
-			<replacetoken><![CDATA[<load-on-startup>3</load-on-startup>]]></replacetoken>
-			<replacevalue>
-				<![CDATA[
-					<init-param>
-						<param-name>compilerSourceVM</param-name>
-						<param-value>1.8</param-value>
-					</init-param>
-					<init-param>
-						<param-name>compilerTargetVM</param-name>
-						<param-value>1.8</param-value>
-					</init-param>
-					<init-param>
-						<param-name>enablePooling</param-name>
-						<param-value>false</param-value>
-					</init-param>
-					<init-param>
-						<param-name>tagpoolClassName</param-name>
-						<param-value>com.liferay.support.tomcat.jasper.runtime.TagHandlerPool</param-value>
-					</init-param>
-					<load-on-startup>3</load-on-startup>
-				]]>
-			</replacevalue>
 		</replace>
 
 		<copy
@@ -1629,6 +1585,8 @@ closeTemplate()
 			</else>
 		</if>
 
+		<set-weblogic-log-levels />
+
 		<delete dir="${tstamp.value}" />
 	</target>
 
@@ -1768,6 +1726,8 @@ this task.
 				</then>
 			</elseif>
 		</if>
+
+		<set-weblogic-log-levels />
 	</target>
 
 	<target name="unzip-websphere">
@@ -2111,7 +2071,7 @@ and put it in ${app.server.parent.dir}. Then rerun this task.
 			file="${app.server.websphere.instance.dir}/config/cells/liferay-cell/nodes/liferay-node/servers/server1/server.xml"
 		>
 			<replacetoken><![CDATA[genericJvmArguments="-Xquickstart"]]></replacetoken>
-			<replacevalue><![CDATA[genericJvmArguments="-Xquickstart ${app.server.websphere.jvm.args}"]]></replacevalue>
+			<replacevalue expandProperties="true"><![CDATA[genericJvmArguments="-Xquickstart ${app.server.websphere.jvm.args}"]]></replacevalue>
 		</replace>
 
 		<echo>Installing fix pack. This may take a few minutes.</echo>
@@ -2287,8 +2247,6 @@ and put it in ${app.server.parent.dir}. Then rerun this task.
 		</replace>
 
 		<update-websphere-java-opts />
-
-		<update-websphere-lcs-property />
 	</target>
 
 	<target name="unzip-websphere-custom">
@@ -2374,8 +2332,6 @@ this task.
 		</if>
 
 		<update-websphere-java-opts />
-
-		<update-websphere-lcs-property />
 	</target>
 
 	<target name="unzip-wildfly">
@@ -2424,20 +2380,6 @@ this task.
 				]]>
 			</replacevalue>
 		</replace>
-
-		<replace
-			file="${app.server.wildfly.dir}/standalone/configuration/standalone.xml"
-		>
-			<replacetoken><![CDATA[<extension module="org.jboss.as.weld"/>]]></replacetoken>
-			<replacevalue></replacevalue>
-		</replace>
-
-		<replaceregexp
-			file="${app.server.wildfly.dir}/standalone/configuration/standalone.xml"
-			flags="g"
-			match="&lt;subsystem xmlns=&quot;urn:jboss:domain:weld:\d\.\d&quot;\/&gt;"
-			replace=""
-		/>
 
 		<replace
 			file="${app.server.wildfly.dir}/standalone/configuration/standalone.xml"
@@ -2621,6 +2563,21 @@ plugins.includes=</echo>
 					/>
 				</copy>
 
+				<remake-dir dir="tools/zip_tmpl/license" />
+
+				<copy
+					file="copyright.txt"
+					todir="tools/zip_tmpl/license"
+				/>
+				<copy
+					file="lib/versions.html"
+					todir="tools/zip_tmpl/license"
+				/>
+				<copy
+					file="README.markdown"
+					todir="tools/zip_tmpl"
+				/>
+
 				<copy
 					preservelastmodified="true"
 					todir="dist/${tstamp.value}/liferay-portal-${lp.version}"
@@ -2656,6 +2613,20 @@ plugins.includes=</echo>
 						>
 							<fileset
 								dir="${zip.executable.dir}/../deploy"
+							/>
+						</copy>
+					</then>
+				</if>
+
+				<if>
+					<available file="${zip.executable.dir}/../elasticsearch-sidecar" />
+					<then>
+						<copy
+							preservelastmodified="true"
+							todir="dist/${tstamp.value}/liferay-portal-${lp.version}/elasticsearch-sidecar"
+						>
+							<fileset
+								dir="${zip.executable.dir}/../elasticsearch-sidecar"
 							/>
 						</copy>
 					</then>
@@ -2785,7 +2756,7 @@ plugins.includes=</echo>
 
 				<execute dir="dist/${tstamp.value}">
 					<![CDATA[
-						7z a -md1024m ${project.dir}/dist/${zip.executable.file}-${lp.version}.7z liferay-portal-${lp.version}
+						7z a ${project.dir}/dist/${zip.executable.file}-${lp.version}.7z liferay-portal-${lp.version}
 					]]>
 				</execute>
 
@@ -2896,32 +2867,39 @@ plugins.includes=</echo>
 		<zip
 			destfile="dist/liferay-portal-dependencies-${lp.version}.zip"
 		>
-			<mappedresources>
-				<fileset
-					dir="tools/sdk/dist"
-					includes="com.liferay.registry.api-*.jar"
-				/>
-				<globmapper
-					from="*"
-					to="liferay-portal-dependencies-${lp.version}/com.liferay.registry.api.jar"
-				/>
-			</mappedresources>
 			<zipfileset
 				dir="lib/development"
 				includes="hsql.jar"
 				prefix="liferay-portal-dependencies-${lp.version}"
 			/>
-			<zipfileset
-				dir="lib/global"
-				includes="*.jar"
-				prefix="liferay-portal-dependencies-${lp.version}"
+		</zip>
+	</target>
+
+	<target name="zip-portal-elasticsearch">
+		<tstamp>
+			<format pattern="yyyyMMddkkmmssSSS" property="tstamp.value" />
+		</tstamp>
+
+		<mkdir dir="${tstamp.value}" />
+
+		<copy
+			todir="${tstamp.value}"
+		>
+			<fileset
+				dir="${liferay.home}/elasticsearch-sidecar"
 			/>
+		</copy>
+
+		<zip
+			destfile="dist/liferay-portal-elasticsearch-${lp.version}.zip"
+		>
 			<zipfileset
-				dir="portal-kernel"
-				includes="portal-kernel.jar"
-				prefix="liferay-portal-dependencies-${lp.version}"
+				dir="${tstamp.value}"
+				prefix="liferay-portal-elasticsearch-${lp.version}/elasticsearch-sidecar"
 			/>
 		</zip>
+
+		<delete dir="${tstamp.value}" />
 	</target>
 
 	<target name="zip-portal-tools">
@@ -3003,7 +2981,11 @@ plugins.includes=</echo>
 		>
 			<fileset
 				dir="${app.server.lib.global.dir}"
-				includes="annotations.jar,portal-kernel.jar,portlet.jar"
+				includes="annotations.jar"
+			/>
+			<fileset
+				dir="${app.server.lib.portal.dir}"
+				includes="portlet.jar"
 			/>
 		</copy>
 
@@ -3031,31 +3013,6 @@ plugins.includes=</echo>
 			basedir="${app.server.portal.dir}"
 			destfile="dist/liferay-portal-${lp.version}.war"
 		/>
-
-		<tstamp>
-			<format pattern="yyyyMMddkkmmssSSS" property="tstamp.value" />
-		</tstamp>
-
-		<!--
-		LPS-3408
-		-->
-
-		<copy
-			todir="${tstamp.value}/WEB-INF/lib"
-		>
-			<fileset
-				dir="lib/portal"
-				includes="ccpp.jar"
-			/>
-		</copy>
-
-		<zip
-			basedir="${tstamp.value}"
-			destfile="dist/liferay-portal-${lp.version}.war"
-			update="yes"
-		/>
-
-		<delete dir="${tstamp.value}" />
 	</target>
 
 	<target name="zip-portal-war-2.4-with-dependencies">
@@ -3068,7 +3025,11 @@ plugins.includes=</echo>
 		>
 			<fileset
 				dir="${app.server.lib.global.dir}"
-				includes="annotations.jar,portal-kernel.jar,portlet.jar"
+				includes="annotations.jar"
+			/>
+			<fileset
+				dir="${app.server.lib.portal.dir}"
+				includes="portlet.jar"
 			/>
 		</copy>
 

@@ -19,6 +19,8 @@ import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -42,6 +44,7 @@ public class LayoutSetWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("layoutSetId", getLayoutSetId());
 		attributes.put("groupId", getGroupId());
 		attributes.put("companyId", getCompanyId());
@@ -66,6 +69,12 @@ public class LayoutSetWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
 		}
 
 		Long layoutSetId = (Long)attributes.get("layoutSetId");
@@ -149,6 +158,11 @@ public class LayoutSetWrapper
 		}
 	}
 
+	@Override
+	public LayoutSet cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
 	/**
 	 * Returns the layout set's color scheme.
 	 *
@@ -208,6 +222,16 @@ public class LayoutSetWrapper
 	@Override
 	public String getCss() {
 		return model.getCss();
+	}
+
+	/**
+	 * Returns the ct collection ID of this layout set.
+	 *
+	 * @return the ct collection ID of this layout set
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
 	}
 
 	/**
@@ -391,7 +415,7 @@ public class LayoutSetWrapper
 	 * Returns the name of the layout set's default virtual host.
 	 *
 	 * <p>
-	 * When accessing a layout set that has a the virtual host, the URL elements
+	 * When accessing a layout set that has a virtual host, the URL elements
 	 * "/web/sitename" or "/group/sitename" can be omitted.
 	 * </p>
 	 *
@@ -410,12 +434,15 @@ public class LayoutSetWrapper
 	 * Returns the names of the layout set's virtual hosts.
 	 *
 	 * <p>
-	 * When accessing a layout set that has a the virtual host, the URL elements
+	 * When accessing a layout set that has a virtual host, the URL elements
 	 * "/web/sitename" or "/group/sitename" can be omitted.
 	 * </p>
 	 *
-	 * @return the layout set's virtual host names, or an empty string if the
-	 layout set has no virtual hosts configured
+	 * @return a map from the layout set's virtual host names to the language
+	 ids configured for them. If the virtual host is configured
+	 for the default language, it will map to the empty string instead
+	 of a language id. If the layout set has no virtual hosts
+	 configured, the returned map will be empty.
 	 */
 	@Override
 	public java.util.TreeMap<String, String> getVirtualHostnames() {
@@ -507,6 +534,16 @@ public class LayoutSetWrapper
 	@Override
 	public void setCss(String css) {
 		model.setCss(css);
+	}
+
+	/**
+	 * Sets the ct collection ID of this layout set.
+	 *
+	 * @param ctCollectionId the ct collection ID of this layout set
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
 	}
 
 	/**
@@ -613,9 +650,10 @@ public class LayoutSetWrapper
 
 	@Override
 	public void setSettingsProperties(
-		com.liferay.portal.kernel.util.UnicodeProperties settingsProperties) {
+		com.liferay.portal.kernel.util.UnicodeProperties
+			settingsUnicodeProperties) {
 
-		model.setSettingsProperties(settingsProperties);
+		model.setSettingsProperties(settingsUnicodeProperties);
 	}
 
 	/**
@@ -650,8 +688,24 @@ public class LayoutSetWrapper
 	 * @see #getVirtualHostnames()
 	 */
 	@Override
-	public void setVirtualHostnames(java.util.TreeMap virtualHostnames) {
+	public void setVirtualHostnames(
+		java.util.TreeMap<String, String> virtualHostnames) {
+
 		model.setVirtualHostnames(virtualHostnames);
+	}
+
+	@Override
+	public Map<String, Function<LayoutSet, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<LayoutSet, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

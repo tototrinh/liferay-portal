@@ -14,6 +14,8 @@
 
 package com.liferay.source.formatter.parser;
 
+import java.util.List;
+
 /**
  * @author Hugo Huijser
  */
@@ -36,19 +38,29 @@ public interface JavaTerm {
 
 	public String getContent();
 
+	public List<String> getImportNames();
+
 	public int getLineNumber();
 
 	public int getLineNumber(int pos);
 
 	public String getName();
 
+	public String getPackageName();
+
 	public JavaClass getParentJavaClass();
 
 	public JavaSignature getSignature();
 
+	public boolean hasAnnotation();
+
 	public boolean hasAnnotation(String... annotations);
 
 	public boolean isAbstract();
+
+	public boolean isDefault();
+
+	public boolean isFinal();
 
 	public boolean isJavaClass();
 
@@ -59,6 +71,12 @@ public interface JavaTerm {
 	public boolean isJavaStaticBlock();
 
 	public boolean isJavaVariable();
+
+	public boolean isPrivate();
+
+	public boolean isProtected();
+
+	public boolean isPublic();
 
 	public boolean isStatic();
 

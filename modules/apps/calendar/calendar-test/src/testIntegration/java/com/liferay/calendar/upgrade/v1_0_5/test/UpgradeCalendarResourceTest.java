@@ -17,8 +17,8 @@ package com.liferay.calendar.upgrade.v1_0_5.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
-import com.liferay.calendar.service.CalendarLocalServiceUtil;
-import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
+import com.liferay.calendar.service.CalendarLocalService;
+import com.liferay.calendar.service.CalendarResourceLocalService;
 import com.liferay.calendar.test.util.CalendarUpgradeTestUtil;
 import com.liferay.calendar.util.CalendarResourceUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -27,13 +27,15 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
-import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.service.UserLocalServiceUtil;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,6 +52,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Adam Brandizzi
  */
+@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class UpgradeCalendarResourceTest {
 
@@ -100,20 +103,20 @@ public class UpgradeCalendarResourceTest {
 	protected void assertUserIsAdministrator(long userId)
 		throws PortalException {
 
-		User user = UserLocalServiceUtil.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		Assert.assertFalse(user.isDefaultUser());
 
-		Role administratorRole = RoleLocalServiceUtil.getRole(
+		Role administratorRole = _roleLocalService.getRole(
 			_group.getCompanyId(), RoleConstants.ADMINISTRATOR);
 
 		Assert.assertTrue(
-			RoleLocalServiceUtil.hasUserRole(
+			_roleLocalService.hasUserRole(
 				user.getUserId(), administratorRole.getRoleId()));
 	}
 
 	protected void assertUserIsDefault(long userId) throws PortalException {
-		User user = UserLocalServiceUtil.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		Assert.assertTrue(user.isDefaultUser());
 	}
@@ -121,67 +124,82 @@ public class UpgradeCalendarResourceTest {
 	protected long getCalendarResourceUserId(CalendarResource calendarResource)
 		throws SQLException {
 
-		try (Connection con = DataAccess.getConnection()) {
-			PreparedStatement ps = con.prepareStatement(
+		try (Connection connection = DataAccess.getConnection()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select userId from CalendarResource where " +
 					"calendarResourceId = ?");
 
-			ps.setLong(1, calendarResource.getCalendarResourceId());
+			preparedStatement.setLong(
+				1, calendarResource.getCalendarResourceId());
 
-			ResultSet rs = ps.executeQuery();
+			ResultSet resultSet = preparedStatement.executeQuery();
 
-			rs.next();
+			resultSet.next();
 
-			return rs.getLong(1);
+			return resultSet.getLong(1);
 		}
 	}
 
 	protected long getCalendarUserId(Calendar calendar) throws SQLException {
-		try (Connection con = DataAccess.getConnection()) {
-			PreparedStatement ps = con.prepareStatement(
+		try (Connection connection = DataAccess.getConnection()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select userId from Calendar where calendarId = ?");
 
-			ps.setLong(1, calendar.getCalendarId());
+			preparedStatement.setLong(1, calendar.getCalendarId());
 
-			ResultSet rs = ps.executeQuery();
+			ResultSet resultSet = preparedStatement.executeQuery();
 
-			rs.next();
+			resultSet.next();
 
-			return rs.getLong(1);
+			return resultSet.getLong(1);
 		}
 	}
 
 	protected CalendarResource getDefaultUserCalendarResource()
 		throws PortalException {
 
-		ServiceContext serviceContext = new ServiceContext();
-
 		CalendarResource calendarResource =
 			CalendarResourceUtil.getGroupCalendarResource(
-				_group.getGroupId(), serviceContext);
+				_group.getGroupId(), new ServiceContext());
 
 		Calendar calendar = calendarResource.getDefaultCalendar();
 
-		long defaultUserId = UserLocalServiceUtil.getDefaultUserId(
+		long defaultUserId = _userLocalService.getDefaultUserId(
 			_group.getCompanyId());
 
 		calendar.setUserId(defaultUserId);
 		calendarResource.setUserId(defaultUserId);
 
-		CalendarLocalServiceUtil.updateCalendar(calendar);
+		_calendarLocalService.updateCalendar(calendar);
 
-		return CalendarResourceLocalServiceUtil.updateCalendarResource(
+		return _calendarResourceLocalService.updateCalendarResource(
 			calendarResource);
 	}
 
 	protected void setUpUpgradeCalendarResource() {
-		_upgradeProcess = CalendarUpgradeTestUtil.getServiceUpgradeStep(
-			"v1_0_5.UpgradeCalendarResource");
+		_upgradeProcess = CalendarUpgradeTestUtil.getUpgradeStep(
+			_upgradeStepRegistrator, "v1_0_5.CalendarResourceUpgradeProcess");
 	}
 
-	@DeleteAfterTestRun
+	@Inject
+	private CalendarLocalService _calendarLocalService;
+
+	@Inject
+	private CalendarResourceLocalService _calendarResourceLocalService;
+
 	private Group _group;
 
+	@Inject
+	private RoleLocalService _roleLocalService;
+
 	private UpgradeProcess _upgradeProcess;
+
+	@Inject(
+		filter = "component.name=com.liferay.calendar.internal.upgrade.CalendarServiceUpgrade"
+	)
+	private UpgradeStepRegistrator _upgradeStepRegistrator;
+
+	@Inject
+	private UserLocalService _userLocalService;
 
 }

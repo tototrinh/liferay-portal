@@ -35,7 +35,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
 import com.liferay.portal.kernel.workflow.permission.WorkflowPermission;
@@ -62,12 +62,14 @@ public class DLFileEntryModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", DLFileEntry.class.getName());
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", DLFileEntry.class.getName()
+			).build();
 
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<DLFileEntry>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				DLFileEntry.class, DLFileEntry::getFileEntryId,
 				_dlFileEntryLocalService::getDLFileEntry,
@@ -170,7 +172,8 @@ public class DLFileEntryModelResourcePermissionRegistrar {
 	@Reference(target = "(resource.name=" + DLConstants.RESOURCE_NAME + ")")
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<DLFileEntry>>
+		_serviceRegistration;
 
 	@Reference(
 		cardinality = ReferenceCardinality.OPTIONAL,

@@ -26,7 +26,7 @@ WorkflowTask workflowTask = workflowTaskDisplayContext.getWorkflowTask();
 boolean hasAssignableUsers = workflowTaskDisplayContext.hasAssignableUsers(workflowTask);
 %>
 
-<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="assignWorkflowTask" var="assignURL" />
+<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/portal_workflow_task/assign_task" var="assignURL" />
 
 <div class="task-action">
 	<aui:form action="<%= assignURL %>" method="post" name="assignFm">
@@ -44,7 +44,7 @@ boolean hasAssignableUsers = workflowTaskDisplayContext.hasAssignableUsers(workf
 						for (User assignableUser : workflowTaskDisplayContext.getAssignableUsers(workflowTask)) {
 						%>
 
-							<aui:option label="<%= HtmlUtil.escape(assignableUser.getFullName()) %>" selected="<%= workflowTask.getAssigneeUserId() == assignableUser.getUserId() %>" value="<%= String.valueOf(assignableUser.getUserId()) %>" />
+							<aui:option label="<%= HtmlUtil.escape(assignableUser.getScreenName()) + StringPool.SPACE + StringPool.OPEN_PARENTHESIS + HtmlUtil.escape(assignableUser.getFullName()) + StringPool.CLOSE_PARENTHESIS %>" selected="<%= workflowTask.getAssigneeUserId() == assignableUser.getUserId() %>" value="<%= String.valueOf(assignableUser.getUserId()) %>" />
 
 						<%
 						}
@@ -58,13 +58,15 @@ boolean hasAssignableUsers = workflowTaskDisplayContext.hasAssignableUsers(workf
 		</div>
 
 		<div class="modal-footer">
-			<div class="btn-group">
-				<div class="btn-group-item">
-					<aui:button name="close" type="cancel" />
-				</div>
+			<div class="modal-item-last">
+				<div class="btn-group">
+					<div class="btn-group-item">
+						<aui:button name="close" type="cancel" />
+					</div>
 
-				<div class="btn-group-item">
-					<aui:button disabled="<%= !hasAssignableUsers && (assigneeUserId <= 0) %>" name="done" primary="<%= true %>" value="done" />
+					<div class="btn-group-item">
+						<aui:button disabled="<%= !hasAssignableUsers && (assigneeUserId <= 0) %>" name="done" primary="<%= true %>" value="done" />
+					</div>
 				</div>
 			</div>
 		</div>
@@ -75,17 +77,17 @@ boolean hasAssignableUsers = workflowTaskDisplayContext.hasAssignableUsers(workf
 	var done = A.one('#<portlet:namespace />done');
 
 	if (done) {
-		done.on('click', function(event) {
+		done.on('click', (event) => {
 			var data = new FormData(
 				document.querySelector('#<portlet:namespace />assignFm')
 			);
 
 			Liferay.Util.fetch('<%= assignURL.toString() %>', {
 				body: data,
-				method: 'POST'
-			}).then(function() {
+				method: 'POST',
+			}).then(() => {
 				Liferay.Util.getOpener().<portlet:namespace />refreshPortlet(
-					'<%= redirect.toString() %>'
+					'<%= PortalUtil.escapeRedirect(redirect.toString()) %>'
 				);
 				Liferay.Util.getWindow(
 					'<portlet:namespace />assignToDialog'

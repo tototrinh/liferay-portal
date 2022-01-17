@@ -26,9 +26,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionLogic;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
-import com.liferay.portal.kernel.util.HashMapDictionary;
-
-import java.util.Dictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -45,19 +43,18 @@ public class CalendarModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", Calendar.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<Calendar>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				Calendar.class, Calendar::getCalendarId,
 				_calendarLocalService::getCalendar, _portletResourcePermission,
 				(modelResourcePermission, consumer) -> consumer.accept(
 					new StagingModelResourcePermissionLogic(
 						_stagingPermission))),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", Calendar.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -73,7 +70,8 @@ public class CalendarModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<Calendar>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;
@@ -94,7 +92,7 @@ public class CalendarModelResourcePermissionRegistrar {
 			return _stagingPermission.hasPermission(
 				permissionChecker, calendar.getGroupId(),
 				Calendar.class.getName(), calendar.getCalendarId(),
-				CalendarPortletKeys.CALENDAR, actionId);
+				CalendarPortletKeys.CALENDAR_ADMIN, actionId);
 		}
 
 		private StagingModelResourcePermissionLogic(

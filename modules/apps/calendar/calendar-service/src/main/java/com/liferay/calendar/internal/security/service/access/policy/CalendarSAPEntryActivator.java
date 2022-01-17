@@ -25,8 +25,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.security.service.access.policy.model.SAPEntry;
@@ -63,25 +61,13 @@ public class CalendarSAPEntryActivator {
 			return;
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(CalendarBookingService.class.getName());
-		sb.append("#search");
-		sb.append(StringPool.NEW_LINE);
-		sb.append(CalendarBookingService.class.getName());
-		sb.append("#searchCount");
-
-		String allowedServiceSignatures = sb.toString();
-
-		ResourceBundleLoader resourceBundleLoader =
-			new AggregateResourceBundleLoader(
-				ResourceBundleUtil.getResourceBundleLoader(
-					"content.Language",
-					CalendarSAPEntryActivator.class.getClassLoader()),
-				LanguageResources.RESOURCE_BUNDLE_LOADER);
+		String allowedServiceSignatures = StringBundler.concat(
+			CalendarBookingService.class.getName(), "#search",
+			StringPool.NEW_LINE, CalendarBookingService.class.getName(),
+			"#searchCount");
 
 		Map<Locale, String> titleMap = ResourceBundleUtil.getLocalizationMap(
-			resourceBundleLoader,
+			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
 			"service-access-policy-entry-default-calendar-title");
 
 		_sapEntryLocalService.addSAPEntry(

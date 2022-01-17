@@ -15,9 +15,11 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.radio;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.radio.helper.RadioDDMFormFieldContextHelper;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.util.DDMFormFieldTypeUtil;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
-import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
@@ -39,7 +41,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=radio",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.RADIO,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		RadioDDMFormFieldTemplateContextContributor.class
@@ -53,26 +56,24 @@ public class RadioDDMFormFieldTemplateContextContributor
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
-		Map<String, Object> parameters = HashMapBuilder.<String, Object>put(
+		return HashMapBuilder.<String, Object>put(
 			"inline", GetterUtil.getBoolean(ddmFormField.getProperty("inline"))
 		).put(
 			"options", getOptions(ddmFormField, ddmFormFieldRenderingContext)
-		).build();
-
-		String predefinedValue = getPredefinedValue(
-			ddmFormField, ddmFormFieldRenderingContext);
-
-		if (predefinedValue != null) {
-			parameters.put("predefinedValue", predefinedValue);
-		}
-
-		parameters.put(
+		).put(
+			"predefinedValue",
+			getValue(
+				GetterUtil.getString(
+					DDMFormFieldTypeUtil.getPropertyValue(
+						ddmFormField, ddmFormFieldRenderingContext.getLocale(),
+						"predefinedValue"),
+					"[]"))
+		).put(
 			"value",
 			getValue(
 				GetterUtil.getString(
-					ddmFormFieldRenderingContext.getValue(), "[]")));
-
-		return parameters;
+					ddmFormFieldRenderingContext.getValue(), "[]"))
+		).build();
 	}
 
 	protected DDMFormFieldOptions getDDMFormFieldOptions(
@@ -95,6 +96,8 @@ public class RadioDDMFormFieldTemplateContextContributor
 					keyValuePair.get("value"),
 					ddmFormFieldRenderingContext.getLocale(),
 					keyValuePair.get("label"));
+				ddmFormFieldOptions.addOptionReference(
+					keyValuePair.get("value"), keyValuePair.get("reference"));
 			}
 		}
 
@@ -113,23 +116,6 @@ public class RadioDDMFormFieldTemplateContextContributor
 
 		return radioDDMFormFieldContextHelper.getOptions(
 			ddmFormFieldRenderingContext);
-	}
-
-	protected String getPredefinedValue(
-		DDMFormField ddmFormField,
-		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
-
-		LocalizedValue predefinedValue = ddmFormField.getPredefinedValue();
-
-		if (predefinedValue == null) {
-			return null;
-		}
-
-		String predefinedValueString = GetterUtil.getString(
-			predefinedValue.getString(ddmFormFieldRenderingContext.getLocale()),
-			"[]");
-
-		return getValue(predefinedValueString);
 	}
 
 	protected String getValue(String valueString) {

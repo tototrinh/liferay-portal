@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -30,6 +29,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.test.util.FieldValuesAssert;
 import com.liferay.portal.search.test.util.IndexedFieldsFixture;
 import com.liferay.portal.search.test.util.IndexerFixture;
+import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -89,6 +89,9 @@ public class ExportImportIndexedFieldsTest {
 			searchTerm);
 	}
 
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
+
 	protected void setUpExportImportFixture() {
 		exportImportFixture = new ExportImportFixture(_group);
 
@@ -103,7 +106,7 @@ public class ExportImportIndexedFieldsTest {
 
 	protected void setUpIndexedFieldsFixture() {
 		indexedFieldsFixture = new IndexedFieldsFixture(
-			resourcePermissionLocalService, searchEngineHelper);
+			resourcePermissionLocalService);
 	}
 
 	protected void setUpUserSearchFixture() throws Exception {
@@ -125,9 +128,6 @@ public class ExportImportIndexedFieldsTest {
 
 	@Inject
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
-
-	@Inject
-	protected SearchEngineHelper searchEngineHelper;
 
 	protected UserSearchFixture userSearchFixture;
 

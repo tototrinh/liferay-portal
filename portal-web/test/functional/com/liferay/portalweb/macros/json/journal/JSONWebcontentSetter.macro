@@ -3,12 +3,15 @@ definition {
 	macro setArticleId {
 		Variables.assertDefined(parameterList = "${groupName},${title}");
 
-		var groupId = JSONWebcontentSetter.setGroupId(groupName = "${groupName}");
+		var groupId = JSONWebcontentSetter.setGroupId(
+			site = "${site}",
+			groupName = "${groupName}");
 
 		var urlTitle = StringUtil.replace("${title}", " ", "-");
 		var urlTitle = StringUtil.lowerCase("${urlTitle}");
 
 		var articleId = JSONWebcontentAPI._getArticleIdByURLTitle(
+			site = "${site}",
 			groupName = "${groupName}",
 			urlTitle = "${urlTitle}");
 
@@ -25,7 +28,9 @@ definition {
 			var contentXML = JSONWebcontentUtil._localizedConvertToXML(contentMap = "${contentMap}");
 		}
 		else {
-			var contentXML = JSONWebcontentUtil._convertToXML(content = "${content}");
+			var contentXML = JSONWebcontentUtil._convertToXML(
+				content = "${content}",
+				source = "${source}");
 		}
 
 		return "${contentXML}";
@@ -33,7 +38,7 @@ definition {
 
 	macro setDescriptionMap {
 		if (isSet(description)) {
-			var descriptionMap = '''{"en_US":"${description}"}''';
+			var descriptionMap = '''{"en_US":"%3Cp%3E${description}%3C%2Fp%3E"}''';
 		}
 		else {
 			var descriptionMap = "{}";
@@ -60,7 +65,11 @@ definition {
 	macro setGroupId {
 		Variables.assertDefined(parameterList = "${groupName}");
 
-		var groupId = JSONGroupAPI._getSiteIdByGroupKey(groupName = "${groupName}");
+		if (!(isSet(site))) {
+			var site = "true";
+		}
+
+		var groupId = JSONGroupAPI._getGroupIdByName(groupName = "${groupName}", site = "${site}");
 
 		return "${groupId}";
 	}
@@ -68,6 +77,7 @@ definition {
 	macro setServiceContext {
 		if (!(isSet(serviceContext))) {
 			var serviceContext = JSONServiceContextUtil.setServiceContext(
+				addGroupPermissions = "true",
 				addGuestPermissions = "true",
 				assetCategoryIds = "${assetCategoryIds}",
 				assetTagNames = "${assetTagNames}",
@@ -75,6 +85,24 @@ definition {
 		}
 
 		return "${serviceContext}";
+	}
+
+	macro setStatus {
+		Variables.assertDefined(parameterList = "${statusKey}");
+
+		if ("${statusKey}" == "APPROVE") {
+			var status = "0";
+		}
+
+		if ("${statusKey}" == "DRAFT") {
+			var status = "2";
+		}
+
+		if ("${statusKey}" == "EXPIRE") {
+			var status = "3";
+		}
+
+		return "${status}";
 	}
 
 	macro setTitleMap {

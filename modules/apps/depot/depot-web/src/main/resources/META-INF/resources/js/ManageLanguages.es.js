@@ -28,7 +28,7 @@ const ManageLanguages = ({
 	customLocales,
 	observer,
 	onModalClose = noop,
-	onModalDone = noop
+	onModalDone = noop,
 }) => {
 	const [selectedLocales, setSelectedLocales] = useState(customLocales);
 
@@ -41,14 +41,14 @@ const ManageLanguages = ({
 			setSelectedLocales(
 				selectedLocales.concat({
 					displayName,
-					localeId: selectedLocaleId
+					localeId: selectedLocaleId,
 				})
 			);
 		}
 		else {
 			setSelectedLocales(
 				selectedLocales.filter(
-					({localeId}) => localeId != selectedLocaleId
+					({localeId}) => localeId !== selectedLocaleId
 				)
 			);
 		}
@@ -59,7 +59,7 @@ const ManageLanguages = ({
 	}, [selectedLocales]);
 
 	const Language = ({displayName, isDefault, localeId}) => {
-		const checked = selectedLocalesIds.indexOf(localeId) != -1;
+		const checked = selectedLocalesIds.indexOf(localeId) !== -1;
 
 		return (
 			<ClayTable.Row>
@@ -92,7 +92,7 @@ const ManageLanguages = ({
 			<ClayModal.Body scrollable>
 				<ClayTable borderless headVerticalAlignment="middle">
 					<ClayTable.Body>
-						{availableLocales.map(locale => {
+						{availableLocales.map((locale) => {
 							return (
 								<Language
 									{...locale}
@@ -135,21 +135,21 @@ ManageLanguages.propTypes = {
 	availableLocales: PropTypes.arrayOf(
 		PropTypes.shape({
 			displayName: PropTypes.string,
-			localeId: PropTypes.string
+			localeId: PropTypes.string,
 		})
 	).isRequired,
 	customDefaultLocaleId: PropTypes.string.isRequired,
 	customLocales: PropTypes.arrayOf(
 		PropTypes.shape({
 			displayName: PropTypes.string,
-			localeId: PropTypes.string
+			localeId: PropTypes.string,
 		})
 	).isRequired,
 	observer: PropTypes.object.isRequired,
 	onModalClose: PropTypes.func,
-	onModalDone: PropTypes.func
+	onModalDone: PropTypes.func,
 };
 
-export default function(props) {
+export default function (props) {
 	return <ManageLanguages {...props} />;
 }

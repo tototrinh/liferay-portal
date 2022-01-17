@@ -29,10 +29,10 @@ portletDisplay.setURLBack(redirect);
 renderResponse.setTitle(LanguageUtil.format(request, "copy-x", ddmStructure.getName(locale), false));
 %>
 
-<portlet:actionURL name="/document_library/ddm/copy_ddm_structure" var="copyDDMStructureURL" />
+<portlet:actionURL name="/document_library/copy_data_definition" var="copyDataDefinitionURL" />
 
 <liferay-frontend:edit-form
-	action="<%= copyDDMStructureURL %>"
+	action="<%= copyDataDefinitionURL %>"
 	method="post"
 	name="fm"
 >

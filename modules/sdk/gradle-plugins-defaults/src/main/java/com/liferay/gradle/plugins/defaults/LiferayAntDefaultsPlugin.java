@@ -142,7 +142,7 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 
 	private Upload _addTaskInstall(Project project) {
 		Upload upload = GradleUtil.addTask(
-			project, MavenPlugin.INSTALL_TASK_NAME, Upload.class, true);
+			project, MavenPlugin.INSTALL_TASK_NAME, Upload.class);
 
 		Configuration configuration = GradleUtil.getConfiguration(
 			project, Dependency.ARCHIVES_CONFIGURATION);
@@ -156,7 +156,7 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SuppressWarnings("serial")
-	private ReplaceRegexTask _addTaskUpdateVersion(final Project project) {
+	private ReplaceRegexTask _addTaskUpdateVersion(Project project) {
 		ReplaceRegexTask replaceRegexTask = GradleUtil.addTask(
 			project, LiferayRelengPlugin.UPDATE_VERSION_TASK_NAME,
 			ReplaceRegexTask.class);

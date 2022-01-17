@@ -14,22 +14,30 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.logging;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.IndexWriter;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.search.elasticsearch7.internal.ElasticsearchIndexWriter;
 import com.liferay.portal.search.elasticsearch7.internal.LiferayElasticsearchIndexingFixtureFactory;
 import com.liferay.portal.search.test.util.indexing.BaseIndexingTestCase;
 import com.liferay.portal.search.test.util.indexing.DocumentCreationHelpers;
 import com.liferay.portal.search.test.util.indexing.IndexingFixture;
+import com.liferay.portal.search.test.util.logging.ExpectedLog;
+import com.liferay.portal.search.test.util.logging.ExpectedLogMethodTestRule;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.elasticsearch.ElasticsearchStatusException;
 
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -39,6 +47,12 @@ import org.junit.rules.ExpectedException;
  */
 public class ElasticsearchIndexWriterExceptionsTest
 	extends BaseIndexingTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			ExpectedLogMethodTestRule.INSTANCE, LiferayUnitTestRule.INSTANCE);
 
 	@Test
 	public void testAddDocument() {
@@ -71,6 +85,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.addDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -90,15 +107,18 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.commit(searchContext);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.INFO, expectedLog = "no such index"
+	)
 	@Test
 	public void testDeleteDocument() {
-		expectedException.expect(ElasticsearchStatusException.class);
-		expectedException.expectMessage(
-			"type=index_not_found_exception, reason=no such index");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -109,6 +129,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.deleteDocument(searchContext, "1");
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -131,6 +154,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.deleteDocuments(searchContext, uids);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -150,6 +176,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.deleteEntityDocuments(searchContext, "test");
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -170,6 +199,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 				createSearchContext(), document);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -193,6 +225,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 				createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -212,6 +247,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.updateDocument(createSearchContext(), document);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -235,6 +273,9 @@ public class ElasticsearchIndexWriterExceptionsTest
 			indexWriter.updateDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
@@ -245,5 +286,8 @@ public class ElasticsearchIndexWriterExceptionsTest
 	protected IndexingFixture createIndexingFixture() {
 		return LiferayElasticsearchIndexingFixtureFactory.getInstance();
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ElasticsearchIndexWriterExceptionsTest.class);
 
 }

@@ -24,25 +24,36 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.account.service.http.AccountEntryServiceSoap}.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class AccountEntrySoap implements Serializable {
 
 	public static AccountEntrySoap toSoapModel(AccountEntry model) {
 		AccountEntrySoap soapModel = new AccountEntrySoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setExternalReferenceCode(model.getExternalReferenceCode());
 		soapModel.setAccountEntryId(model.getAccountEntryId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
 		soapModel.setUserName(model.getUserName());
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
+		soapModel.setDefaultBillingAddressId(
+			model.getDefaultBillingAddressId());
+		soapModel.setDefaultShippingAddressId(
+			model.getDefaultShippingAddressId());
 		soapModel.setParentAccountEntryId(model.getParentAccountEntryId());
-		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
 		soapModel.setDomains(model.getDomains());
+		soapModel.setEmailAddress(model.getEmailAddress());
 		soapModel.setLogoId(model.getLogoId());
+		soapModel.setName(model.getName());
+		soapModel.setTaxExemptionCode(model.getTaxExemptionCode());
+		soapModel.setTaxIdNumber(model.getTaxIdNumber());
+		soapModel.setType(model.getType());
 		soapModel.setStatus(model.getStatus());
 
 		return soapModel;
@@ -105,6 +116,14 @@ public class AccountEntrySoap implements Serializable {
 		_mvccVersion = mvccVersion;
 	}
 
+	public String getExternalReferenceCode() {
+		return _externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		_externalReferenceCode = externalReferenceCode;
+	}
+
 	public long getAccountEntryId() {
 		return _accountEntryId;
 	}
@@ -153,20 +172,28 @@ public class AccountEntrySoap implements Serializable {
 		_modifiedDate = modifiedDate;
 	}
 
+	public long getDefaultBillingAddressId() {
+		return _defaultBillingAddressId;
+	}
+
+	public void setDefaultBillingAddressId(long defaultBillingAddressId) {
+		_defaultBillingAddressId = defaultBillingAddressId;
+	}
+
+	public long getDefaultShippingAddressId() {
+		return _defaultShippingAddressId;
+	}
+
+	public void setDefaultShippingAddressId(long defaultShippingAddressId) {
+		_defaultShippingAddressId = defaultShippingAddressId;
+	}
+
 	public long getParentAccountEntryId() {
 		return _parentAccountEntryId;
 	}
 
 	public void setParentAccountEntryId(long parentAccountEntryId) {
 		_parentAccountEntryId = parentAccountEntryId;
-	}
-
-	public String getName() {
-		return _name;
-	}
-
-	public void setName(String name) {
-		_name = name;
 	}
 
 	public String getDescription() {
@@ -185,12 +212,52 @@ public class AccountEntrySoap implements Serializable {
 		_domains = domains;
 	}
 
+	public String getEmailAddress() {
+		return _emailAddress;
+	}
+
+	public void setEmailAddress(String emailAddress) {
+		_emailAddress = emailAddress;
+	}
+
 	public long getLogoId() {
 		return _logoId;
 	}
 
 	public void setLogoId(long logoId) {
 		_logoId = logoId;
+	}
+
+	public String getName() {
+		return _name;
+	}
+
+	public void setName(String name) {
+		_name = name;
+	}
+
+	public String getTaxExemptionCode() {
+		return _taxExemptionCode;
+	}
+
+	public void setTaxExemptionCode(String taxExemptionCode) {
+		_taxExemptionCode = taxExemptionCode;
+	}
+
+	public String getTaxIdNumber() {
+		return _taxIdNumber;
+	}
+
+	public void setTaxIdNumber(String taxIdNumber) {
+		_taxIdNumber = taxIdNumber;
+	}
+
+	public String getType() {
+		return _type;
+	}
+
+	public void setType(String type) {
+		_type = type;
 	}
 
 	public int getStatus() {
@@ -202,17 +269,24 @@ public class AccountEntrySoap implements Serializable {
 	}
 
 	private long _mvccVersion;
+	private String _externalReferenceCode;
 	private long _accountEntryId;
 	private long _companyId;
 	private long _userId;
 	private String _userName;
 	private Date _createDate;
 	private Date _modifiedDate;
+	private long _defaultBillingAddressId;
+	private long _defaultShippingAddressId;
 	private long _parentAccountEntryId;
-	private String _name;
 	private String _description;
 	private String _domains;
+	private String _emailAddress;
 	private long _logoId;
+	private String _name;
+	private String _taxExemptionCode;
+	private String _taxIdNumber;
+	private String _type;
 	private int _status;
 
 }

@@ -16,6 +16,8 @@ package com.liferay.product.navigation.control.menu.web.internal.servlet.taglib.
 
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
@@ -28,7 +30,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 public class AssetRendererVerticalCard implements VerticalCard {
 
 	public AssetRendererVerticalCard(
-		AssetRenderer assetRenderer,
+		AssetRenderer<?> assetRenderer,
 		LiferayPortletRequest liferayPortletRequest) {
 
 		_assetRenderer = assetRenderer;
@@ -49,6 +51,9 @@ public class AssetRendererVerticalCard implements VerticalCard {
 			return _assetRenderer.getIconCssClass();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -61,6 +66,9 @@ public class AssetRendererVerticalCard implements VerticalCard {
 				_assetRenderer.getThumbnailPath(_liferayPortletRequest));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -68,9 +76,14 @@ public class AssetRendererVerticalCard implements VerticalCard {
 
 	@Override
 	public String getTitle() {
-		String title = _assetRenderer.getTitle(_themeDisplay.getLocale());
+		return HtmlUtil.escape(
+			StringUtil.shorten(
+				_assetRenderer.getTitle(_themeDisplay.getLocale()), 60));
+	}
 
-		return HtmlUtil.escape(StringUtil.shorten(title, 60));
+	@Override
+	public Boolean isFlushHorizontal() {
+		return true;
 	}
 
 	@Override
@@ -78,7 +91,10 @@ public class AssetRendererVerticalCard implements VerticalCard {
 		return false;
 	}
 
-	private final AssetRenderer _assetRenderer;
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssetRendererVerticalCard.class);
+
+	private final AssetRenderer<?> _assetRenderer;
 	private final LiferayPortletRequest _liferayPortletRequest;
 	private final ThemeDisplay _themeDisplay;
 

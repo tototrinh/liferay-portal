@@ -2,15 +2,22 @@
 <head>
 <title>Message</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Message</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ALERT_DISMISSIBLE</td>
 	<td>//div[contains(@class,'alert-dismissible')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ASSET_INFO</td>
+	<td>//*[contains(@class,'sheet-title')][.//*[normalize-space(text())='${assetTitle}']]/parent::div//*[contains(@class,'mb-2') or contains(@class,'mr-2')][normalize-space()='${info}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -20,17 +27,32 @@
 </tr>
 <tr>
 	<td>CHECKOUT_SUCCESS</td>
-	<td>//div[contains(@class,'content')]/div[contains(@class,'alert-success')]</td>
+	<td>//div[contains(@class,'content')]//div[contains(@class,'alert-info')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONVERSION_ALERT_MESSAGE</td>
+	<td>//div[contains(@class,'conversion-messages')]/div[contains(@class,'alert-${key_type}')][contains(.,'${key_alertMessage}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>CUSTOMIZED_PAGE_INFO</td>
-	<td>//div[contains(@class,'layout')]/span[contains(@class,'message-info')]</td>
+	<td>//div[contains(@class,'popover')]//p[contains(@class,'message-info')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>DANGER_INFO</td>
+	<td>//*[contains(@class,'danger-info')][contains(.,'${key_dangerInfo}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>DRAFT_AUTO_SAVE</td>
 	<td>//div/small[contains(@id,'saveStatus') and contains(.,'Draft Saved at')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EMPTY_DEPOT_ROLE</td>
+	<td>//div[contains(@id,'depotRoles')]/p[contains(@class,'text-muted')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -44,8 +66,18 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ROLE_EMPTY_MUTED_INFO</td>
+	<td>//div[h3[*[*[contains(text(),'${key_RoleType}')]]]]//div[*[contains(@class,'text-muted')]or contains(@class,'text-muted')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EMPTY_INFO_DEPOT</td>
 	<td>//p[contains(@class,'text-muted')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EMPTY_INFO_DEPOT_HIDE</td>
+	<td>//div[not(contains(@class,'hide'))]//p[contains(@class,'text-muted')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -65,7 +97,7 @@
 </tr>
 <tr>
 	<td>ERROR</td>
-	<td>//div[contains(@class,'alert') and (contains(@class,'alert-error') or contains(@class,'alert-danger'))]</td>
+	<td>//div[contains(@class,'alert') and (contains(@class,'alert-error') or contains(@class,'alert-danger'))][not(contains(@style,'display: none'))]</td>
 	<td></td>
 </tr>
 <tr>
@@ -144,6 +176,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ERROR_ENTER_A_VALID_VALUE</td>
+	<td>//div[@role='alert' and contains(.,'${key_alertMessage}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ERROR_ENTER_A_UNIQUE_FOLDER</td>
 	<td>//div[contains(@class,'alert-danger') and contains(.,'Please enter a unique folder name')]</td>
 	<td></td>
@@ -155,7 +192,7 @@
 </tr>
 <tr>
 	<td>ERROR_FIELD_REQUIRED</td>
-	<td>//div[@role='alert' and contains(.,'This field is required')] | //span[contains(@id,'title')]//div[contains(.,'This field is required.')]</td>
+	<td>//label[contains(.,'${key_fieldFieldLabel}')]/..//div[@role='alert' and contains(.,'This field is required')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -169,13 +206,43 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ERROR_IMPORT_TRANSLATIONS</td>
+	<td>//h4[contains(@class,'text-danger')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_IMPORT_TRANSLATIONS_ITEM_MESSAGE</td>
+	<td>//li[contains(@class,'list-group-item')]//div[contains(@class,'text-danger')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_IMPORT_TRANSLATIONS_ITEM</td>
+	<td>//div[contains(@class,'text-danger')]/preceding-sibling::div</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_INVALID_FACEBOOK_VIDEO</td>
+	<td>//div[contains(@class,'pluginSkinLight')]//div</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_INVALID_VIMEO_VIDEO</td>
+	<td>//div[contains(@id,'sun')]//p</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ERROR_INVALID_YOUTUBE_VIDEO</td>
+	<td>//div[contains(@class,'ytp-error-content-wrap')]//span</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ERROR_PUBLISH_UNSUCCESSFUL_EXTENSION</td>
 	<td>//div[contains(@class,'alert-danger') and contains(.,'The source file does not have the same extension as the original file')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>ERROR_REQUEST_FAILED</td>
-	<td>//div[contains(@class,'alert-danger')][contains(@class,'alert-dismissible')][contains(@class,'show')]</td>
+	<td>//div[contains(@class,'alert-danger')][contains(@class,'alert-dismissible')][contains(.,'Your request failed to complete.')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -206,6 +273,11 @@
 <tr>
 	<td>INFO</td>
 	<td>//div[contains(@class,'alert alert-info') and not(contains(@class,'hide'))]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>INFO_EXTERNAL_VIDEO_PREVIEW</td>
+	<td>//div[contains(@class,'video-preview-placeholder-text')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -249,6 +321,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>INFO_MAIN_CONTENT</td>
+	<td>//*[@id="main-content"]//div[contains(@class,'alert alert-info') and not(contains(@class,'hide'))]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>LOGIN_URL_SUCCESS</td>
 	<td>//tr[contains(.,'Login URL')]/td//span[contains(@class,'lfr-status-success')]</td>
 	<td></td>
@@ -256,11 +333,6 @@
 <tr>
 	<td>LOGOUT_URL_SUCCESS</td>
 	<td>//tr[contains(.,'Logout URL')]/td//span[contains(@class,'lfr-status-success')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>MAX_FILESIZE_ALERT</td>
-	<td>//div[(@class='maxFileSize') and (@role='alert')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -324,8 +396,28 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SUCCESS_IMPORT_TRANSLATIONS</td>
+	<td>//h4[contains(@class,'text-success')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SUCCESS_IMPORT_TRANSLATIONS_ITEM</td>
+	<td>//div[contains(@class,'text-success')]/preceding-sibling::div</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SUCCESS_IMPORT_TRANSLATIONS_ITEM_2</td>
+	<td>xpath=(//div[contains(@class,'text-success')]/preceding-sibling::div)[2]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SUCCESS_RESTORE_LOCATION</td>
 	<td>//div[@class='portlet-body']/div/em[2]/a[contains(.,'${key_assetRestoreLocation}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SUCCESS_SPECIFIC_FORM_FIELD_REQUIRED</td>
+	<td>//div[@class='form-group' and contains(.,'${key_fieldName}')]//div[contains(@class,'form-feedback-item')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -346,6 +438,16 @@
 <tr>
 	<td>USER_BLOCKED</td>
 	<td>//div[contains(@class,'alert-block')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>WARNING_FEEDBACK</td>
+	<td>//div[contains(@class,'form-feedback-item')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>WARNING_INFO</td>
+	<td>//*[contains(@class,'warning-info')][contains(.,'${key_warningInfo}')]</td>
 	<td></td>
 </tr>
 <tr>

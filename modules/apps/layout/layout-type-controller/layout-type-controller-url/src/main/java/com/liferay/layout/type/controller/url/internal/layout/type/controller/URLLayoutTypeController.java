@@ -15,13 +15,13 @@
 package com.liferay.layout.type.controller.url.internal.layout.type.controller;
 
 import com.liferay.layout.type.controller.BaseLayoutTypeControllerImpl;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypeController;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletResponse;
@@ -86,6 +86,22 @@ public class URLLayoutTypeController extends BaseLayoutTypeControllerImpl {
 	protected ServletResponse createServletResponse(
 		HttpServletResponse httpServletResponse,
 		UnsyncStringWriter unsyncStringWriter) {
+
+		return new PipingServletResponse(
+			httpServletResponse, unsyncStringWriter);
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #createServletResponse(HttpServletResponse,
+	 *             UnsyncStringWriter)}
+	 */
+	@Deprecated
+	@Override
+	protected ServletResponse createServletResponse(
+		HttpServletResponse httpServletResponse,
+		com.liferay.portal.kernel.io.unsync.UnsyncStringWriter
+			unsyncStringWriter) {
 
 		return new PipingServletResponse(
 			httpServletResponse, unsyncStringWriter);

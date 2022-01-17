@@ -62,18 +62,16 @@ public class ItemSelectorCriterionSerializerTest {
 
 	@Test
 	public void testSerializationAndDeserializationWithProvidedSupportedReturnTypes() {
-		TestItemSelectorView testItemSelectorView = new TestItemSelectorView();
-
-		ServiceRegistration<ItemSelectorView>
+		ServiceRegistration<ItemSelectorView<?>>
 			itemSelectorViewServiceRegistration = registerItemSelectorView(
-				testItemSelectorView, "test-view");
+				new TestItemSelectorView(), "test-view");
 
 		ServiceRegistration<ItemSelectorViewReturnTypeProvider>
 			itemSelectorViewReturnTypeProviderServiceRegistration =
 				registerItemSelectorViewProvider(
 					new TestItemSelectorViewReturnTypeProvider(), "test-view");
 
-		List serviceRegistrations = new ArrayList<>();
+		List<ServiceRegistration<?>> serviceRegistrations = new ArrayList<>();
 
 		serviceRegistrations.add(itemSelectorViewServiceRegistration);
 		serviceRegistrations.add(
@@ -124,15 +122,16 @@ public class ItemSelectorCriterionSerializerTest {
 		}
 	}
 
-	protected ServiceRegistration<ItemSelectorView> registerItemSelectorView(
-		ItemSelectorView itemSelectorView, String itemSelectorViewKey) {
+	protected ServiceRegistration<ItemSelectorView<?>> registerItemSelectorView(
+		ItemSelectorView<?> itemSelectorView, String itemSelectorViewKey) {
 
 		Dictionary<String, Object> properties = new Hashtable<>();
 
 		properties.put("item.selector.view.key", itemSelectorViewKey);
 
 		return _bundleContext.registerService(
-			ItemSelectorView.class, itemSelectorView, properties);
+			(Class<ItemSelectorView<?>>)(Class<?>)ItemSelectorView.class,
+			itemSelectorView, properties);
 	}
 
 	protected ServiceRegistration<ItemSelectorViewReturnTypeProvider>
@@ -150,7 +149,9 @@ public class ItemSelectorCriterionSerializerTest {
 			itemSelectorViewReturnTypeProvider, properties);
 	}
 
-	private void _unregister(List<ServiceRegistration> serviceRegistrations) {
+	private void _unregister(
+		List<ServiceRegistration<?>> serviceRegistrations) {
+
 		serviceRegistrations.forEach(ServiceRegistration::unregister);
 	}
 

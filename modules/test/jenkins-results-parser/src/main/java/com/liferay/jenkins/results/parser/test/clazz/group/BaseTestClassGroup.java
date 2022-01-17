@@ -14,8 +14,15 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.BuildDatabase;
+import com.liferay.jenkins.results.parser.BuildDatabaseUtil;
+import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+
+import java.io.File;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * @author Peter Yoo
@@ -28,8 +35,8 @@ public abstract class BaseTestClassGroup implements TestClassGroup {
 	}
 
 	@Override
-	public List<TestClass.TestClassFile> getTestClassFiles() {
-		List<TestClass.TestClassFile> testClassFiles = new ArrayList<>();
+	public List<File> getTestClassFiles() {
+		List<File> testClassFiles = new ArrayList<>();
 
 		for (TestClassGroup.TestClass testClass : testClasses) {
 			testClassFiles.add(testClass.getTestClassFile());
@@ -51,7 +58,7 @@ public abstract class BaseTestClassGroup implements TestClassGroup {
 		}
 
 		@Override
-		public TestClassFile getTestClassFile() {
+		public File getTestClassFile() {
 			return _testClassFile;
 		}
 
@@ -62,7 +69,12 @@ public abstract class BaseTestClassGroup implements TestClassGroup {
 			return _testClassMethods;
 		}
 
-		protected BaseTestClass(TestClassFile testClassFile) {
+		@Override
+		public boolean isIgnored() {
+			return false;
+		}
+
+		protected BaseTestClass(File testClassFile) {
 			_testClassFile = testClassFile;
 		}
 
@@ -83,7 +95,7 @@ public abstract class BaseTestClassGroup implements TestClassGroup {
 			_testClassMethods.add(testClassMethod);
 		}
 
-		private final TestClassFile _testClassFile;
+		private final File _testClassFile;
 		private final List<TestClassMethod> _testClassMethods =
 			new ArrayList<>();
 
@@ -91,6 +103,20 @@ public abstract class BaseTestClassGroup implements TestClassGroup {
 
 	protected void addTestClass(TestClassGroup.TestClass testClass) {
 		testClasses.add(testClass);
+	}
+
+	protected String getBuildStartProperty(String propertyName) {
+		BuildDatabase buildDatabase = BuildDatabaseUtil.getBuildDatabase();
+
+		if (buildDatabase.hasProperties("start.properties")) {
+			Properties startProperties = buildDatabase.getProperties(
+				"start.properties");
+
+			return JenkinsResultsParserUtil.getProperty(
+				startProperties, propertyName);
+		}
+
+		return null;
 	}
 
 	protected final List<TestClassGroup.TestClass> testClasses =

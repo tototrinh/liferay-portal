@@ -19,6 +19,8 @@ import aQute.bnd.version.Version;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
@@ -30,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,8 +57,10 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 		List<String> implementedClassNames =
 			javaClass.getImplementedClassNames();
 
+		String content = javaClass.getContent();
+
 		if (!implementedClassNames.contains("UpgradeStepRegistrator")) {
-			return javaClass.getContent();
+			return content;
 		}
 
 		for (JavaTerm childJavaTerm : javaClass.getChildJavaTerms()) {
@@ -65,14 +70,19 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 
 			String name = childJavaTerm.getName();
 
-			if (name.equals("register")) {
-				_checkLatestUpgradeVersion(
-					fileName, absolutePath, childJavaTerm,
-					javaClass.getImports(), javaClass.getPackageName());
+			if (!name.equals("register")) {
+				continue;
 			}
+
+			String latestUpgradeVersion = _checkLatestUpgradeVersion(
+				fileName, absolutePath, childJavaTerm,
+				javaClass.getImportNames(), javaClass.getPackageName());
+
+			content = _fixDummyUpgradeStepVersion(
+				content, childJavaTerm, latestUpgradeVersion);
 		}
 
-		return javaClass.getContent();
+		return content;
 	}
 
 	@Override
@@ -163,7 +173,7 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 		return incrementType;
 	}
 
-	private void _checkLatestUpgradeVersion(
+	private String _checkLatestUpgradeVersion(
 			String fileName, String absolutePath, JavaTerm javaTerm,
 			List<String> imports, String upgradePackageName)
 		throws IOException {
@@ -173,7 +183,7 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 		int x = content.lastIndexOf("registry.register(");
 
 		if (x == -1) {
-			return;
+			return null;
 		}
 
 		List<String> parameterList = JavaSourceUtil.getParameterList(
@@ -187,7 +197,7 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 					_JAVA_UPGRADE_PROCESS_EXCLUDES, absolutePath,
 					toSchemaVersion.toString())) {
 
-				return;
+				return null;
 			}
 
 			Version fromSchemaVersion = new Version(
@@ -205,9 +215,62 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 					fileName,
 					"Expected new schema version: " + expectedSchemaVersion,
 					javaTerm.getLineNumber(x));
+
+				return null;
 			}
+
+			return toSchemaVersion.toString();
 		}
 		catch (IllegalArgumentException illegalArgumentException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(illegalArgumentException, illegalArgumentException);
+			}
+
+			return null;
+		}
+	}
+
+	private String _fixDummyUpgradeStepVersion(
+		String content, JavaTerm javaTerm, String latestUpgradeVersion) {
+
+		if (latestUpgradeVersion == null) {
+			return content;
+		}
+
+		String methodContent = javaTerm.getContent();
+
+		int x = 0;
+
+		while (true) {
+			x = methodContent.indexOf("registry.register(", x + 1);
+
+			if (x == -1) {
+				return content;
+			}
+
+			List<String> parameterList = JavaSourceUtil.getParameterList(
+				methodContent.substring(x));
+
+			if ((parameterList.size() != 3) ||
+				!Objects.equals(parameterList.get(0), "\"0.0.0\"") ||
+				!Objects.equals(
+					parameterList.get(2), "new DummyUpgradeStep()") ||
+				!Objects.equals(
+					parameterList.get(2), "new DummyUpgradeProcess()")) {
+
+				return content;
+			}
+
+			String toVersion = StringUtil.removeChar(
+				parameterList.get(1), CharPool.QUOTE);
+
+			if (!toVersion.equals(latestUpgradeVersion)) {
+				String newMethodContent = StringUtil.replaceFirst(
+					methodContent, toVersion, latestUpgradeVersion, x);
+
+				return StringUtil.replaceFirst(
+					content, methodContent, newMethodContent);
+			}
 		}
 	}
 
@@ -480,7 +543,8 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 			tablesSQLContent, tableName, columnName);
 
 		if ((oldType == null) || oldType.equals(newType) ||
-			(oldType.startsWith("VARCHAR") && newType.equals("TEXT"))) {
+			((oldType.startsWith("STRING") || oldType.startsWith("VARCHAR")) &&
+			 newType.equals("TEXT"))) {
 
 			return false;
 		}
@@ -505,6 +569,9 @@ public class JavaUpgradeVersionCheck extends BaseJavaTermCheck {
 
 	private static final String _JAVA_UPGRADE_PROCESS_EXCLUDES =
 		"java.upgrade.process.excludes";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JavaUpgradeVersionCheck.class);
 
 	private static final Pattern _addColumnPattern = Pattern.compile(
 		"alter table \\w+ add ");

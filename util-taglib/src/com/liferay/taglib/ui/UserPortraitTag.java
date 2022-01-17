@@ -61,7 +61,7 @@ public class UserPortraitTag extends IncludeTag {
 			sb.append("<svg class=\"lexicon-icon\">");
 			sb.append("<use href=\"");
 			sb.append(themeDisplay.getPathThemeImages());
-			sb.append("/lexicon/icons.svg#user\" /></svg>");
+			sb.append("/clay/icons.svg#user\" /></svg>");
 			sb.append("</span></span>");
 
 			return sb.toString();
@@ -136,8 +136,6 @@ public class UserPortraitTag extends IncludeTag {
 	public int processEndTag() throws Exception {
 		JspWriter jspWriter = pageContext.getOut();
 
-		User user = getUser();
-
 		HttpServletRequest httpServletRequest = getRequest();
 
 		ThemeDisplay themeDisplay =
@@ -145,7 +143,7 @@ public class UserPortraitTag extends IncludeTag {
 				WebKeys.THEME_DISPLAY);
 
 		String userPortraitHTML = getUserPortraitHTML(
-			_cssClass, _size, user, themeDisplay);
+			_cssClass, _size, getUser(), themeDisplay);
 
 		jspWriter.write(userPortraitHTML);
 

@@ -1,5 +1,13 @@
 definition {
 
+	macro _goToRoleAssigneeType {
+		LexiconEntry.gotoEntry(rowEntry = "${roleTitle}");
+
+		Navigator.gotoNavItem(navItem = "Assignees");
+
+		Navigator.gotoNavItem(navItem = "${assigneeType}");
+	}
+
 	macro add {
 		if ((!(isSet(roleKey))) && (!(isSet(roleTitle)))) {
 			fail("Please declear the roleKey or roleTitle when refering this macro.");
@@ -32,8 +40,14 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
-	macro addAssignees {
+	macro addAssignee {
+		Role._goToRoleAssigneeType(
+			assigneeType = "${assigneeType}",
+			roleTitle = "${roleTitle}");
+
 		LexiconEntry.gotoAdd();
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
 
 		SelectFrame(locator1 = "IFrame#SELECT_ASSIGNEES");
 
@@ -49,57 +63,14 @@ definition {
 
 		SelectFrameTop(value1 = "relative=top");
 
-		AssertClick(
-			locator1 = "Button#ADD",
-			value1 = "Add");
+		Button.clickAdd();
 
 		Alert.viewSuccessMessage();
-	}
-
-	macro assignRegRoleCP {
-		Search.searchCP(searchTerm = "${roleTitle}");
-
-		var key_itemName = "${roleTitle}";
-
-		AssertClick(
-			locator1 = "ListGroupItem#ITEM_NAME_LINK",
-			value1 = "${roleTitle}");
-
-		Navigator.gotoNavItem(navItem = "Assignees");
-
-		LexiconEntry.gotoAdd();
-
-		SelectFrame(locator1 = "IFrame#SELECT_ASSIGNEES");
-
-		Pause(locator1 = "3000");
-
-		var key_userScreenName = "${userScreenName}";
-
-		Search.searchCP(searchTerm = "${userScreenName}");
-
-		AssertTextPresent(value1 = "Results for ${userScreenName}");
-
-		AssertTextEquals(
-			locator1 = "RolesAssignMembers#USER_TABLE_SCREEN_NAME",
-			value1 = "${userScreenName}");
-
-		Check(locator1 = "RolesAssignMembers#USER_TABLE_CHECKBOX");
-
-		SelectFrameTop(value1 = "relative=top");
-
-		AssertClick(
-			locator1 = "Button#ADD",
-			value1 = "Add");
-
-		Alert.viewSuccessMessage();
-
-		AssertTextEquals(
-			locator1 = "RolesAssignMembers#USER_TABLE_SCREEN_NAME",
-			value1 = "${userScreenName}");
 	}
 
 	macro definePermissionCmdCP {
 		Role.editPermissionCmdCP(
+			assetLibrariesScope = "${assetLibrariesScope}",
 			define = "true",
 			permissionDefinitionKey = "${permissionDefinitionKey}",
 			permissionDefinitionKeyChange = "${permissionDefinitionKeyChange}",
@@ -108,7 +79,9 @@ definition {
 			permissionNavigationKey = "${permissionNavigationKey}",
 			permissionNavigationValue = "${permissionNavigationValue}",
 			remove = "${remove}",
+			removeSiteScope = "${removeSiteScope}",
 			roleTitle = "${roleTitle}",
+			roleTitleEdit = "${roleTitleEdit}",
 			roleType = "${roleType}",
 			roleUser = "${roleUser}",
 			siteNameScope = "${siteNameScope}");
@@ -116,8 +89,10 @@ definition {
 
 	macro definePermissionCP {
 		Role.definePermissionCmdCP(
+			assetLibrariesScope = "${assetLibrariesScope}",
 			permissionDefinitionKey = "${permissionDefinitionKey}",
 			roleTitle = "${roleTitle}",
+			roleTitleEdit = "${roleTitleEdit}",
 			roleType = "${roleType}",
 			roleUser = "${roleUser}",
 			siteNameScope = "${siteNameScope}");
@@ -126,16 +101,17 @@ definition {
 			permissionDefinitionKey = "${permissionDefinitionKey}",
 			permissionDefinitionValue = "${permissionDefinitionValue}",
 			permissionNavigationValue = "${permissionNavigationValue}",
-			remove = "${remove}");
+			remove = "${remove}",
+			siteNameScope = "${siteNameScope}");
 	}
 
 	macro definePermissionPG {
 		var key_roleTitle = StringUtil.replace("${roleTitle}", " ", "-");
 		var key_roleTitle = StringUtil.lowerCase("${key_roleTitle}");
 
-		if (IsElementPresent.isElementPresentAfterWait(locator1 = "IFrame#DIALOG")) {
-			SelectFrame(locator1 = "IFrame#DIALOG");
-		}
+		SelectFrameTop(value1 = "relative=top");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		if (isSet(permissionsList)) {
 			for (var permissionDefinitionKey : list "${permissionsList}") {
@@ -172,7 +148,7 @@ definition {
 	macro editPermissionCmdCP {
 		var key_roleTitle = "${roleTitle}";
 
-		if (contains("Organization,Site", "${roleType}")) {
+		if (contains("Asset Library,Organization,Site", "${roleType}")) {
 			Navigator.gotoNavItem(navItem = "${roleType} Roles");
 		}
 		else {
@@ -194,6 +170,14 @@ definition {
 			AssertClick(
 				locator1 = "ListGroupItem#ITEM_NAME_LINK",
 				value1 = "${roleTitle}");
+		}
+
+		if (isSet(roleTitleEdit)) {
+			PortletEntry.inputTitle(title = "${roleTitleEdit}");
+
+			AssertClick(
+				locator1 = "Button#SUBMIT",
+				value1 = "Save");
 		}
 
 		Navigator.gotoNavItem(navItem = "Define Permissions");
@@ -249,6 +233,10 @@ definition {
 				var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_CATEGORIES_NAVIGATION";
 				var permissionNavigationValue = "Categories Navigation";
 			}
+			else if (contains("${permissionDefinitionKey}", "CONTROL_PANEL_CUSTOM_OBJECTS_PERMISSIONS")) {
+				var permissionNavigationKey = "CONTROL_PANEL_CUSTOM_OBJECTS_PERMISSIONS";
+				var permissionNavigationValue = "Custom Objects";
+			}
 			else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA")) {
 				var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA";
 				var permissionNavigationValue = "Documents and Media";
@@ -264,6 +252,14 @@ definition {
 			else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_APPLICATIONS_WEB_CONTENT_DISPLAY")) {
 				var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_WEB_CONTENT_DISPLAY";
 				var permissionNavigationValue = "Web Content Display";
+			}
+			else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_BUILDER_COLLECTIONS")) {
+				var permissionNavigationKey = "SITE_ADMIN_BUILDER_COLLECTIONS";
+				var permissionNavigationValue = "Collections";
+			}
+			else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_CONFIGURATION_REDIRECTION")) {
+				var permissionNavigationKey = "SITE_ADMIN_CONFIGURATION_REDIRECTION";
+				var permissionNavigationValue = "Redirection";
 			}
 			else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_CONFIGURATION_SITE_SETTINGS")) {
 				var permissionNavigationKey = "SITE_ADMIN_CONFIGURATION_SITE_SETTINGS";
@@ -358,9 +354,22 @@ definition {
 
 				SelectFrame(locator1 = "RolesPermissionsSelectSite#SELECT_SITE_IFRAME");
 
-				AssertClick.assertPartialTextClickAt(
-					locator1 = "LexiconCard#CARD_TITLE",
-					value1 = "${siteNameScope}");
+				AssertClick(
+					locator1 = "NavBar#RECENT",
+					value1 = "Recent");
+
+				if ("${assetLibrariesScope}" == "true") {
+					AssertClick(
+						locator1 = "NavBar#ASSET_LIBRARIES",
+						value1 = "Asset Libraries");
+				}
+				else {
+					AssertClick(
+						locator1 = "NavBar#MY_SITES",
+						value1 = "My Sites");
+				}
+
+				Click(locator1 = "Card#CARD_TITLE");
 
 				var key_siteNameScope = "${siteNameScope}";
 				var permissionDefinitionKeySiteScope = StringUtil.replace("${permissionDefinitionKey}", "CHECKBOX", "SITE_SCOPE");
@@ -370,6 +379,12 @@ definition {
 				AssertTextEquals.assertPartialText(
 					locator1 = "RolesPermissions#${permissionDefinitionKeySiteScope}",
 					value1 = "${siteNameScope}");
+			}
+			else if (isSet(removeSiteScope)) {
+				var key_removeSiteScope = "${removeSiteScope}";
+				var permissionDefinitionKeyRemoveSiteScope = StringUtil.replace("${permissionDefinitionKey}", "CHECKBOX", "REMOVE_SITE_SCOPE");
+
+				Click(locator1 = "RolesPermissions#${permissionDefinitionKeyRemoveSiteScope}");
 			}
 		}
 
@@ -383,14 +398,14 @@ definition {
 	}
 
 	macro removeAssignee {
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
 
-		RoleNavigator.gotoAssignees(roleTitle = "${roleTitle}");
-
-		RoleNavigator.gotoAssigneeType(assigneeType = "${assigneeType}");
+		Role._goToRoleAssigneeType(
+			assigneeType = "${assigneeType}",
+			roleTitle = "${roleTitle}");
 
 		Search.searchCP(searchTerm = "${assigneeName}");
 
@@ -424,9 +439,9 @@ definition {
 		var key_roleTitle = StringUtil.replace("${roleTitle}", " ", "-");
 		var key_roleTitle = StringUtil.lowerCase("${key_roleTitle}");
 
-		if (IsElementPresent.isElementPresentAfterWait(locator1 = "IFrame#DIALOG")) {
-			SelectFrame(locator1 = "IFrame#DIALOG");
-		}
+		SelectFrameTop(value1 = "relative=top");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Uncheck(locator1 = "Permissions#${permissionDefinitionKey}");
 
@@ -439,35 +454,18 @@ definition {
 		AssertNotChecked(locator1 = "Permissions#${permissionDefinitionKey}");
 	}
 
-	macro removeStagingAdminRole {
-		var roleTitle = "Staging Admin";
-
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Roles");
-
-		RoleNavigator.gotoRoleType(roleType = "Site");
-
-		Search.searchCP(searchTerm = "${roleTitle}");
-
-		var key_itemName = "${roleTitle}";
-
-		if (IsElementPresent.pauseIsElementPresent(locator1 = "ListGroupItem#ITEM_NAME")) {
-			LexiconEntry.delete(rowEntry = "${roleTitle}");
-		}
-	}
-
 	macro tearDownCP {
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
 
 		Search.searchCP(searchTerm = "Name");
 
-		while (IsElementPresent.pauseIsElementPresent(locator1 = "ListGroupItem#ITEM_ACTIONS_DEFAULT")) {
-			Click(locator1 = "ListGroupItem#ITEM_ACTIONS_DEFAULT");
+		WaitForVisible(locator1 = "Search#SEARCH_INFO");
+
+		while (IsElementPresent(locator1 = "Icon#VERTICAL_ELLIPSIS")) {
+			Click(locator1 = "Icon#VERTICAL_ELLIPSIS");
 
 			MenuItem.clickNoError(menuItem = "Delete");
 
@@ -476,15 +474,15 @@ definition {
 	}
 
 	macro viewAssignee {
-		RoleNavigator.gotoAssignees(roleTitle = "${roleTitle}");
-
-		RoleNavigator.gotoAssigneeType(assigneeType = "${assigneeType}");
+		Role._goToRoleAssigneeType(
+			assigneeType = "${assigneeType}",
+			roleTitle = "${roleTitle}");
 
 		LexiconEntry.viewEntryName(rowEntry = "${assigneeName}");
 	}
 
 	macro viewCP {
-		if (contains("Organization,Site", "${roleType}")) {
+		if (contains("Asset Library,Organization,Site", "${roleType}")) {
 			Navigator.gotoNavItem(navItem = "${roleType} Roles");
 		}
 		else {
@@ -576,6 +574,10 @@ definition {
 			var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_CALENDAR";
 			var permissionNavigationValue = "Calendar";
 		}
+		else if (contains("${permissionDefinitionKey}", "CONTROL_PANEL_CUSTOM_OBJECTS_PERMISSIONS")) {
+			var permissionNavigationKey = "CONTROL_PANEL_CUSTOM_OBJECTS_PERMISSIONS";
+			var permissionNavigationValue = "Custom Objects";
+		}
 		else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA")) {
 			var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA";
 			var permissionNavigationValue = "Documents and Media";
@@ -591,6 +593,14 @@ definition {
 		else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_APPLICATIONS_WEB_CONTENT_DISPLAY")) {
 			var permissionNavigationKey = "SITE_ADMIN_APPLICATIONS_WEB_CONTENT_DISPLAY";
 			var permissionNavigationValue = "Web Content Display";
+		}
+		else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_BUILDER_COLLECTIONS")) {
+			var permissionNavigationKey = "SITE_ADMIN_BUILDER_COLLECTIONS";
+			var permissionNavigationValue = "Collections";
+		}
+		else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_CONFIGURATION_REDIRECTION")) {
+			var permissionNavigationKey = "SITE_ADMIN_CONFIGURATION_REDIRECTION";
+			var permissionNavigationValue = "Redirection";
 		}
 		else if (contains("${permissionDefinitionKey}", "SITE_ADMIN_CONTENT_BLOGS")) {
 			var permissionNavigationKey = "SITE_ADMIN_CONTENT_BLOGS";
@@ -642,9 +652,7 @@ definition {
 		}
 		else {
 			while (IsElementNotPresent(locator1 = "Roles#PERMISSION_TABLE_PERMISSIONS")) {
-				AssertClick(
-					locator1 = "Pagination#NEXT_LINK",
-					value1 = "Next");
+				Click(locator1 = "Pagination#NEXT_LINK");
 			}
 
 			AssertTextEquals.assertPartialText(
@@ -654,6 +662,21 @@ definition {
 			AssertTextEquals(
 				locator1 = "RolesPermissionsSummary#PERMISSION_TABLE_REMOVE",
 				value1 = "Remove");
+
+			if (isSet(siteNameScope)) {
+				AssertTextEquals(
+					key_siteNameScope = "${siteNameScope}",
+					locator1 = "RolesPermissionsSummary#PERMISSION_TABLE_SCOPE",
+					value1 = "${siteNameScope}");
+			}
+		}
+
+		if (isSet(assigneeName)) {
+			Navigator.gotoNavItem(navItem = "Assignees");
+
+			Navigator.gotoNavItem(navItem = "${assigneeType}");
+
+			LexiconEntry.viewEntryName(rowEntry = "${assigneeName}");
 		}
 	}
 

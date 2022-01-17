@@ -15,9 +15,12 @@
 package com.liferay.portal.dao.db;
 
 import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
@@ -67,7 +70,8 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void addIndexes(
-			Connection con, String indexesSQL, Set<String> validIndexNames)
+			Connection connection, String indexesSQL,
+			Set<String> validIndexNames)
 		throws IOException {
 
 		if (_log.isInfoEnabled()) {
@@ -99,7 +103,7 @@ public abstract class BaseDB implements DB {
 				}
 
 				try {
-					runSQL(con, sql);
+					runSQL(connection, sql);
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
@@ -130,7 +134,8 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
-	public abstract String buildSQL(String template) throws IOException;
+	public abstract String buildSQL(String template)
+		throws IOException, SQLException;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
@@ -147,28 +152,29 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
-	public List<Index> getIndexes(Connection con) throws SQLException {
+	public List<Index> getIndexes(Connection connection) throws SQLException {
 		Set<Index> indexes = new HashSet<>();
 
-		DatabaseMetaData databaseMetaData = con.getMetaData();
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(con);
+		DBInspector dbInspector = new DBInspector(connection);
 
 		String catalog = dbInspector.getCatalog();
 		String schema = dbInspector.getSchema();
 
-		try (ResultSet tableRS = databaseMetaData.getTables(
+		try (ResultSet tableResultSet = databaseMetaData.getTables(
 				catalog, schema, null, new String[] {"TABLE"})) {
 
-			while (tableRS.next()) {
+			while (tableResultSet.next()) {
 				String tableName = dbInspector.normalizeName(
-					tableRS.getString("TABLE_NAME"));
+					tableResultSet.getString("TABLE_NAME"));
 
-				try (ResultSet indexRS = databaseMetaData.getIndexInfo(
+				try (ResultSet indexResultSet = databaseMetaData.getIndexInfo(
 						catalog, schema, tableName, false, false)) {
 
-					while (indexRS.next()) {
-						String indexName = indexRS.getString("INDEX_NAME");
+					while (indexResultSet.next()) {
+						String indexName = indexResultSet.getString(
+							"INDEX_NAME");
 
 						if (indexName == null) {
 							continue;
@@ -183,7 +189,8 @@ public abstract class BaseDB implements DB {
 							continue;
 						}
 
-						boolean unique = !indexRS.getBoolean("NON_UNIQUE");
+						boolean unique = !indexResultSet.getBoolean(
+							"NON_UNIQUE");
 
 						indexes.add(new Index(indexName, tableName, unique));
 					}
@@ -204,6 +211,7 @@ public abstract class BaseDB implements DB {
 		return _minorVersion;
 	}
 
+	@Override
 	public Integer getSQLType(String templateType) {
 		return _sqlTypes.get(templateType);
 	}
@@ -294,21 +302,24 @@ public abstract class BaseDB implements DB {
 	}
 
 	@Override
-	public void runSQL(Connection con, String sql)
-		throws IOException, SQLException {
+	public void process(UnsafeConsumer<Long, Exception> unsafeConsumer)
+		throws Exception {
 
-		runSQL(con, new String[] {sql});
+		DBPartitionUtil.forEachCompanyId(unsafeConsumer);
 	}
 
 	@Override
-	public void runSQL(Connection con, String[] sqls)
+	public void runSQL(Connection connection, String sql)
 		throws IOException, SQLException {
 
-		Statement s = null;
+		runSQL(connection, new String[] {sql});
+	}
 
-		try {
-			s = con.createStatement();
+	@Override
+	public void runSQL(Connection connection, String[] sqls)
+		throws IOException, SQLException {
 
+		try (Statement s = connection.createStatement()) {
 			for (String sql : sqls) {
 				sql = buildSQL(sql);
 
@@ -339,28 +350,19 @@ public abstract class BaseDB implements DB {
 				}
 				catch (SQLException sqlException) {
 					if (_log.isDebugEnabled()) {
-						StringBundler sb = new StringBundler(10);
-
-						sb.append("SQL: ");
-						sb.append(sql);
-						sb.append("\nSQL state: ");
-						sb.append(sqlException.getSQLState());
-						sb.append("\nVendor: ");
-						sb.append(getDBType());
-						sb.append("\nVendor error code: ");
-						sb.append(sqlException.getErrorCode());
-						sb.append("\nVendor error message: ");
-						sb.append(sqlException.getMessage());
-
-						_log.debug(sb.toString());
+						_log.debug(
+							StringBundler.concat(
+								"SQL: ", sql, "\nSQL state: ",
+								sqlException.getSQLState(), "\nVendor: ",
+								getDBType(), "\nVendor error code: ",
+								sqlException.getErrorCode(),
+								"\nVendor error message: ",
+								sqlException.getMessage()));
 					}
 
 					throw sqlException;
 				}
 			}
-		}
-		finally {
-			DataAccess.cleanUp(s);
 		}
 	}
 
@@ -371,13 +373,8 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void runSQL(String[] sqls) throws IOException, SQLException {
-		Connection con = DataAccess.getConnection();
-
-		try {
-			runSQL(con, sqls);
-		}
-		finally {
-			DataAccess.cleanUp(con);
+		try (Connection connection = DataAccess.getConnection()) {
+			runSQL(connection, sqls);
 		}
 	}
 
@@ -406,14 +403,14 @@ public abstract class BaseDB implements DB {
 
 		ClassLoader classLoader = currentThread.getContextClassLoader();
 
-		InputStream is = classLoader.getResourceAsStream(
+		InputStream inputStream = classLoader.getResourceAsStream(
 			"com/liferay/portal/tools/sql/dependencies/" + path);
 
-		if (is == null) {
-			is = classLoader.getResourceAsStream(path);
+		if (inputStream == null) {
+			inputStream = classLoader.getResourceAsStream(path);
 		}
 
-		if (is == null) {
+		if (inputStream == null) {
 			_log.error("Invalid path " + path);
 
 			if (failOnError) {
@@ -423,7 +420,7 @@ public abstract class BaseDB implements DB {
 			return;
 		}
 
-		String template = StringUtil.read(is);
+		String template = StringUtil.read(inputStream);
 
 		runSQLTemplateString(template, failOnError);
 	}
@@ -470,15 +467,16 @@ public abstract class BaseDB implements DB {
 
 					String includeFileName = line.substring(pos + 1, end);
 
-					InputStream is = classLoader.getResourceAsStream(
+					InputStream inputStream = classLoader.getResourceAsStream(
 						"com/liferay/portal/tools/sql/dependencies/" +
 							includeFileName);
 
-					if (is == null) {
-						is = classLoader.getResourceAsStream(includeFileName);
+					if (inputStream == null) {
+						inputStream = classLoader.getResourceAsStream(
+							includeFileName);
 					}
 
-					String include = StringUtil.read(is);
+					String include = StringUtil.read(inputStream);
 
 					include = replaceTemplate(include);
 
@@ -602,30 +600,41 @@ public abstract class BaseDB implements DB {
 
 	@Override
 	public void updateIndexes(
-			Connection con, String tablesSQL, String indexesSQL,
+			Connection connection, String tablesSQL, String indexesSQL,
 			boolean dropIndexes)
-		throws IOException, SQLException {
+		throws Exception {
 
-		List<Index> indexes = getIndexes(con);
+		process(
+			companyId -> {
+				if (Validator.isNotNull(companyId) && _log.isInfoEnabled()) {
+					_log.info(
+						"Updating database indexes for company " + companyId);
+				}
 
-		Set<String> validIndexNames = null;
+				List<Index> indexes = getIndexes(connection);
 
-		if (dropIndexes) {
-			validIndexNames = dropIndexes(con, tablesSQL, indexesSQL, indexes);
-		}
-		else {
-			validIndexNames = new HashSet<>();
+				Set<String> validIndexNames = null;
 
-			for (Index index : indexes) {
-				String indexName = StringUtil.toUpperCase(index.getIndexName());
+				if (dropIndexes) {
+					validIndexNames = dropIndexes(
+						connection, tablesSQL, indexesSQL, indexes);
+				}
+				else {
+					validIndexNames = new HashSet<>();
 
-				validIndexNames.add(indexName);
-			}
-		}
+					for (Index index : indexes) {
+						String indexName = StringUtil.toUpperCase(
+							index.getIndexName());
 
-		indexesSQL = _applyMaxStringIndexLengthLimitation(indexesSQL);
+						validIndexNames.add(indexName);
+					}
+				}
 
-		addIndexes(con, indexesSQL, validIndexNames);
+				addIndexes(
+					connection,
+					_applyMaxStringIndexLengthLimitation(indexesSQL),
+					validIndexNames);
+			});
 	}
 
 	protected BaseDB(DBType dbType, int majorVersion, int minorVersion) {
@@ -647,7 +656,7 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected String[] buildColumnNameTokens(String line) {
-		String[] words = StringUtil.split(line, ' ');
+		String[] words = StringUtil.split(line, CharPool.SPACE);
 
 		String nullable = "";
 
@@ -659,19 +668,17 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected String[] buildColumnTypeTokens(String line) {
-		String[] words = StringUtil.split(line, ' ');
+		String[] words = StringUtil.split(line, CharPool.SPACE);
 
 		String nullable = "";
 
 		if (words.length == 6) {
-			nullable = "not null;";
+			nullable = "not null";
 		}
 		else if (words.length == 5) {
-			nullable = words[4];
+			nullable = "null";
 		}
 		else if (words.length == 4) {
-			nullable = "not null;";
-
 			if (words[3].endsWith(";")) {
 				words[3] = words[3].substring(0, words[3].length() - 1);
 			}
@@ -681,13 +688,13 @@ public abstract class BaseDB implements DB {
 	}
 
 	protected String[] buildTableNameTokens(String line) {
-		String[] words = StringUtil.split(line, StringPool.SPACE);
+		String[] words = StringUtil.split(line, CharPool.SPACE);
 
 		return new String[] {words[1], words[2]};
 	}
 
 	protected Set<String> dropIndexes(
-			Connection con, String tablesSQL, String indexesSQL,
+			Connection connection, String tablesSQL, String indexesSQL,
 			List<Index> indexes)
 		throws IOException, SQLException {
 
@@ -765,7 +772,7 @@ public abstract class BaseDB implements DB {
 				_log.info(sql);
 			}
 
-			runSQL(con, sql);
+			runSQL(connection, sql);
 		}
 
 		return validIndexNames;
@@ -774,6 +781,10 @@ public abstract class BaseDB implements DB {
 	protected abstract int[] getSQLTypes();
 
 	protected abstract String[] getTemplate();
+
+	protected String limitColumnLength(String column, int length) {
+		return StringBundler.concat(column, "\\(", length, "\\)");
+	}
 
 	protected String replaceTemplate(String template) {
 		if (Validator.isNull(template)) {
@@ -813,7 +824,8 @@ public abstract class BaseDB implements DB {
 		return _applyMaxStringIndexLengthLimitation(sb.toString());
 	}
 
-	protected abstract String reword(String data) throws IOException;
+	protected abstract String reword(String data)
+		throws IOException, SQLException;
 
 	protected static final String ALTER_COLUMN_NAME = "alter_column_name ";
 
@@ -857,21 +869,21 @@ public abstract class BaseDB implements DB {
 		Matcher matcher = _columnLengthPattern.matcher(template);
 
 		if (stringIndexMaxLength < 0) {
-			return matcher.replaceAll(StringPool.BLANK);
+			return matcher.replaceAll("$1");
 		}
 
 		StringBuffer sb = new StringBuffer();
 
-		String replacement = "\\(" + stringIndexMaxLength + "\\)";
-
 		while (matcher.find()) {
-			int length = Integer.valueOf(matcher.group(1));
+			int length = Integer.valueOf(matcher.group(2));
 
 			if (length > stringIndexMaxLength) {
-				matcher.appendReplacement(sb, replacement);
+				matcher.appendReplacement(
+					sb,
+					limitColumnLength(matcher.group(1), stringIndexMaxLength));
 			}
 			else {
-				matcher.appendReplacement(sb, StringPool.BLANK);
+				matcher.appendReplacement(sb, matcher.group(1));
 			}
 		}
 
@@ -895,11 +907,11 @@ public abstract class BaseDB implements DB {
 	private static final Log _log = LogFactoryUtil.getLog(BaseDB.class);
 
 	private static final Pattern _columnLengthPattern = Pattern.compile(
-		"\\[\\$COLUMN_LENGTH:(\\d+)\\$\\]");
+		"([^,(\\s]+)\\[\\$COLUMN_LENGTH:(\\d+)\\$\\]");
 	private static final Pattern _templatePattern;
 
 	static {
-		StringBundler sb = new StringBundler(TEMPLATE.length * 5 - 6);
+		StringBundler sb = new StringBundler((TEMPLATE.length * 5) - 6);
 
 		for (int i = 0; i < TEMPLATE.length; i++) {
 			String variable = TEMPLATE[i];

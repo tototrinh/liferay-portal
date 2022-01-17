@@ -9,20 +9,6 @@
  * distribution rights of the Software.
  */
 
-/**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- */
-
 const fs = require('fs');
 const path = require('path');
 
@@ -37,7 +23,7 @@ function filter(name) {
 }
 
 function walk(dir, callback) {
-	fs.readdirSync(dir, {withFileTypes: true}).forEach(entry => {
+	fs.readdirSync(dir, {withFileTypes: true}).forEach((entry) => {
 		const entryPath = path.join(dir, entry.name);
 
 		if (entry.isDirectory()) {
@@ -56,7 +42,7 @@ beforeEach(() => {
 
 	const _YUI = YUI();
 
-	global.AUI = function() {
+	global.AUI = function () {
 		return _YUI;
 	};
 
@@ -69,20 +55,20 @@ beforeEach(() => {
 		'..'
 	);
 
-	// eslint-disable-next-line liferay/no-dynamic-require
-	walk(build, source => require(source));
+	// eslint-disable-next-line @liferay/no-dynamic-require
+	walk(build, (source) => require(source));
 
 	global.Liferay = {
 		Language: {
 			get(key) {
 				return key;
-			}
+			},
 		},
 
 		namespace(name) {
 			Liferay[name] = {};
 
 			return Liferay[name];
-		}
+		},
 	};
 });

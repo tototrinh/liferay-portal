@@ -16,17 +16,20 @@ package com.liferay.depot.web.internal.display.context;
 
 import com.liferay.depot.constants.DepotActionKeys;
 import com.liferay.depot.model.DepotEntry;
-import com.liferay.depot.web.internal.resource.DepotEntryPermission;
-import com.liferay.depot.web.internal.resource.DepotPermission;
+import com.liferay.depot.web.internal.roles.admin.group.type.contributor.DepotEntryPermission;
+import com.liferay.depot.web.internal.security.permission.resource.DepotPermission;
 import com.liferay.depot.web.internal.util.DepotEntryURLUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -39,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -62,6 +64,9 @@ public class DepotAdminManagementToolbarDisplayContext
 			depotAdminDisplayContext.searchContainer());
 
 		_depotAdminDisplayContext = depotAdminDisplayContext;
+
+		_themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 	}
 
 	@Override
@@ -70,36 +75,36 @@ public class DepotAdminManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData("action", "deleteSelectedDepotEntries");
 				dropdownItem.setIcon("times-circle");
-				dropdownItem.setLabel(LanguageUtil.get(request, "delete"));
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "delete"));
 				dropdownItem.setQuickAction(true);
 			}
 		).build();
 	}
 
 	@Override
-	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-		clearResultsURL.setParameter("orderByCol", getOrderByCol());
-		clearResultsURL.setParameter("orderByType", getOrderByType());
-
-		return clearResultsURL.toString();
-	}
-
-	public Map<String, Object> getComponentContext() throws PortalException {
+	public Map<String, Object> getAdditionalProps() {
 		return HashMapBuilder.<String, Object>put(
 			"deleteDepotEntriesURL",
-			() -> {
-				PortletURL deleteDepotEntries =
-					liferayPortletResponse.createActionURL();
-
-				deleteDepotEntries.setParameter(
-					ActionRequest.ACTION_NAME, "/depot_entry/delete");
-
-				return deleteDepotEntries.toString();
-			}
+			() -> PortletURLBuilder.createActionURL(
+				liferayPortletResponse
+			).setActionName(
+				"/depot/delete_depot_entry"
+			).buildString()
 		).build();
+	}
+
+	@Override
+	public String getClearResultsURL() {
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildString();
 	}
 
 	@Override
@@ -114,31 +119,26 @@ public class DepotAdminManagementToolbarDisplayContext
 				dropdownItem -> {
 					dropdownItem.putData("action", "addDepotEntry");
 
-					ThemeDisplay themeDisplay =
-						(ThemeDisplay)request.getAttribute(
-							WebKeys.THEME_DISPLAY);
-
 					PortletURL addDepotEntryURL =
 						DepotEntryURLUtil.getAddDepotEntryActionURL(
-							themeDisplay.getURLCurrent(),
+							_themeDisplay.getURLCurrent(),
 							liferayPortletResponse);
 
 					dropdownItem.putData(
 						"addDepotEntryURL", addDepotEntryURL.toString());
 
-					dropdownItem.setLabel(LanguageUtil.get(request, "add"));
+					dropdownItem.setLabel(
+						LanguageUtil.get(httpServletRequest, "add"));
 				}
 			).build();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		return "depotAdminManagementToolbarDefaultEventHandler";
 	}
 
 	public Map<String, Object> getRowData(DepotEntry depotEntry)
@@ -151,27 +151,30 @@ public class DepotAdminManagementToolbarDisplayContext
 
 	@Override
 	public String getSearchActionURL() {
-		PortletURL searchTagURL = getPortletURL();
-
-		searchTagURL.setParameter("orderByCol", getOrderByCol());
-		searchTagURL.setParameter("orderByType", getOrderByType());
-
-		return searchTagURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildString();
 	}
 
 	@Override
 	public Boolean isShowCreationMenu() {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		return DepotPermission.contains(
-			themeDisplay.getPermissionChecker(), themeDisplay.getScopeGroupId(),
-			DepotActionKeys.ADD_DEPOT_ENTRY);
+			_themeDisplay.getPermissionChecker(),
+			_themeDisplay.getScopeGroupId(), DepotActionKeys.ADD_DEPOT_ENTRY);
 	}
 
 	@Override
 	protected String getDefaultDisplayStyle() {
 		return _depotAdminDisplayContext.getDefaultDisplayStyle();
+	}
+
+	@Override
+	protected String getDisplayStyle() {
+		return _depotAdminDisplayContext.getDisplayStyle();
 	}
 
 	@Override
@@ -204,11 +207,8 @@ public class DepotAdminManagementToolbarDisplayContext
 	private boolean _hasDeleteDepotEntryPermission(DepotEntry depotEntry)
 		throws PortalException {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		if (!DepotEntryPermission.contains(
-				themeDisplay.getPermissionChecker(),
+				_themeDisplay.getPermissionChecker(),
 				depotEntry.getDepotEntryId(), ActionKeys.DELETE)) {
 
 			return false;
@@ -217,6 +217,10 @@ public class DepotAdminManagementToolbarDisplayContext
 		return true;
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		DepotAdminManagementToolbarDisplayContext.class);
+
 	private final DepotAdminDisplayContext _depotAdminDisplayContext;
+	private final ThemeDisplay _themeDisplay;
 
 }

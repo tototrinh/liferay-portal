@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-asset-categories-selector',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var LString = Lang.String;
@@ -43,11 +43,11 @@ AUI.add(
 
 		var TPL_INPUT =
 			'<label title="{titleCurrentValue}">' +
-			'<span class="lfr-categories-selector-category-name" title="{titleCurrentValue}">' +
+			'<span class="lfr-categories-selector-category-name text-truncate" title="{titleCurrentValue}">' +
 			'<input data-categoryId="{categoryId}" data-vocabularyid="{vocabularyId}" name="{inputName}" type="{type}" value="{titleCurrentValue}" {checked} />' +
 			'{titleCurrentValue}' +
 			'</span>' +
-			'<span class="lfr-categories-selector-search-results-path" title="{path}">{path}</span>' +
+			'<span class="lfr-categories-selector-search-results-path text-truncate" title="{path}">{path}</span>' +
 			'</label>';
 
 		var TPL_MESSAGE = '<div class="lfr-categories-message">{0}</div>';
@@ -85,7 +85,7 @@ AUI.add(
 
 						return value;
 					},
-					value: []
+					value: [],
 				},
 
 				curEntryIds: {
@@ -96,39 +96,39 @@ AUI.add(
 
 						return value;
 					},
-					value: []
+					value: [],
 				},
 
 				label: {
 					validator: '_isValidString',
-					value: Liferay.Language.get('select')
+					value: Liferay.Language.get('select'),
 				},
 
 				labelNode: {
 					setter(value) {
 						return A.one(value) || A.Attribute.INVALID_VALUE;
 					},
-					value: null
+					value: null,
 				},
 
 				maxEntries: {
 					validator: Lang.isNumber,
-					value: -1
+					value: -1,
 				},
 
 				moreResultsLabel: {
 					validator: '_isValidString',
-					value: Liferay.Language.get('load-more-results')
+					value: Liferay.Language.get('load-more-results'),
 				},
 
 				singleSelect: {
 					validator: Lang.isBoolean,
-					value: false
+					value: false,
 				},
 
 				title: {
 					validator: '_isValidString',
-					value: Liferay.Language.get('select-categories')
+					value: Liferay.Language.get('select-categories'),
 				},
 
 				vocabularyGroupIds: {
@@ -139,7 +139,7 @@ AUI.add(
 
 						return value;
 					},
-					value: []
+					value: [],
 				},
 
 				vocabularyIds: {
@@ -150,8 +150,8 @@ AUI.add(
 
 						return value;
 					},
-					value: []
-				}
+					value: [],
+				},
 			},
 
 			EXTENDS: Liferay.AssetTagsSelector,
@@ -195,7 +195,7 @@ AUI.add(
 						type = 'radio';
 					}
 
-					json.forEach(item => {
+					json.forEach((item) => {
 						var checked = false;
 						var treeId = 'category' + item.categoryId;
 
@@ -213,14 +213,14 @@ AUI.add(
 								checkedChange: A.bind(
 									'_onCheckedChange',
 									instance
-								)
+								),
 							},
 							checked,
 							id: treeId,
 							label: LString.escapeHTML(item.titleCurrentValue),
 							leaf: !item.hasChildren,
 							paginator: instance._getPaginatorConfig(item),
-							type
+							type,
 						};
 
 						output.push(newTreeNode);
@@ -241,7 +241,7 @@ AUI.add(
 					var assetType = instance._getTreeNodeAssetType(treeNode);
 
 					if (Lang.isValue(assetId)) {
-						if (assetType == 'category') {
+						if (assetType === 'category') {
 							data.categoryId = assetId;
 
 							if (parentVocabularyId) {
@@ -274,13 +274,13 @@ AUI.add(
 									'$childrenCount = /assetcategory/get-vocabulary-root-categories-count': {
 										'@groupId': '$vocabularies.groupId',
 										'@vocabularyId':
-											'$vocabularies.vocabularyId'
+											'$vocabularies.vocabularyId',
 									},
 									'$group[descriptiveName] = /group/get-group': {
-										'@groupId': '$vocabularies.groupId'
+										'@groupId': '$vocabularies.groupId',
 									},
-									vocabularyIds
-								}
+									vocabularyIds,
+								},
 							},
 							callback
 						);
@@ -288,7 +288,7 @@ AUI.add(
 					else {
 						if (
 							!portalModelResource &&
-							themeDisplay.getSiteGroupId() !=
+							themeDisplay.getSiteGroupId() !==
 								themeDisplay.getCompanyGroupId()
 						) {
 							groupIds.push(themeDisplay.getSiteGroupId());
@@ -302,14 +302,14 @@ AUI.add(
 									'$childrenCount = /assetcategory/get-vocabulary-root-categories-count': {
 										'@vocabularyId':
 											'$vocabularies.vocabularyId',
-										groupId: '$vocabularies.groupId'
+										'groupId': '$vocabularies.groupId',
 									},
 									'$group[descriptiveName] = /group/get-group': {
-										'@groupId': '$vocabularies.groupId'
+										'@groupId': '$vocabularies.groupId',
 									},
 									className,
-									groupIds
-								}
+									groupIds,
+								},
 							},
 							callback
 						);
@@ -320,7 +320,7 @@ AUI.add(
 					var instance = this;
 
 					var paginatorConfig = {
-						offsetParam: STR_START
+						offsetParam: STR_START,
 					};
 
 					var maxEntries = instance.get(STR_MAX_ENTRIES);
@@ -385,7 +385,7 @@ AUI.add(
 							instance
 						);
 
-						popup.searchField.on('keyup', event => {
+						popup.searchField.on('keyup', (event) => {
 							if (!event.isNavKey()) {
 								searchCategoriesTask(
 									event,
@@ -444,7 +444,7 @@ AUI.add(
 					var matchKey = instance.get('matchKey');
 
 					var entry = {
-						categoryId: assetId
+						categoryId: assetId,
 					};
 
 					entry[matchKey] = entryMatchKey;
@@ -524,7 +524,7 @@ AUI.add(
 
 						var inputName = A.guid();
 
-						categories.forEach(item => {
+						categories.forEach((item) => {
 							item.checked =
 								instance.entries.findIndexBy(
 									'categoryId',
@@ -541,7 +541,7 @@ AUI.add(
 					}
 					else {
 						var message = Lang.sub(TPL_MESSAGE, [
-							Liferay.Language.get('no-categories-were-found')
+							Liferay.Language.get('no-categories-were-found'),
 						]);
 
 						buffer.push(message);
@@ -562,11 +562,11 @@ AUI.add(
 							{
 								label: instance.get('label'),
 								on: {
-									click: A.bind('_showSelectPopup', instance)
+									click: A.bind('_showSelectPopup', instance),
 								},
-								title: instance.get('title')
-							}
-						]
+								title: instance.get('title'),
+							},
+						],
 					}).render(contentBox);
 
 					var iconsBoundingBox = instance.icons.get(BOUNDING_BOX);
@@ -597,14 +597,14 @@ AUI.add(
 								'$display = /assetcategory/search-categories-display': {
 									'categories.$path = /assetcategory/get-category-path': {
 										'@categoryId':
-											'$display.categories.categoryId'
+											'$display.categories.categoryId',
 									},
-									end: -1,
-									groupIds: vocabularyGroupIds,
-									start: -1,
-									title: searchValue,
-									vocabularyIds
-								}
+									'end': -1,
+									'groupIds': vocabularyGroupIds,
+									'start': -1,
+									'title': searchValue,
+									vocabularyIds,
+								},
 							},
 							callback
 						);
@@ -614,7 +614,7 @@ AUI.add(
 
 					var treeViews = instance.TREEVIEWS;
 
-					AObject.each(treeViews, item => {
+					AObject.each(treeViews, (item) => {
 						item.toggle(!searchValue);
 					});
 				},
@@ -622,9 +622,7 @@ AUI.add(
 				_showPopup() {
 					var instance = this;
 
-					Liferay.Util.getTop()
-						.AUI()
-						.use('aui-tree');
+					Liferay.Util.getTop().AUI().use('aui-tree');
 
 					AssetCategoriesSelector.superclass._showPopup.apply(
 						instance,
@@ -645,7 +643,7 @@ AUI.add(
 
 					var className = instance.get('className');
 
-					instance._getEntries(className, entries => {
+					instance._getEntries(className, (entries) => {
 						var searchResults = instance._searchResultsNode;
 						var searchValue = instance._searchValue;
 
@@ -664,7 +662,7 @@ AUI.add(
 							instance
 						);
 
-						A.each(instance.TREEVIEWS, item => {
+						A.each(instance.TREEVIEWS, (item) => {
 							item.toggle(!searchValue);
 
 							item.expandAll();
@@ -691,7 +689,7 @@ AUI.add(
 						item.titleCurrentValue
 					);
 
-					if (item.groupId == themeDisplay.getCompanyGroupId()) {
+					if (item.groupId === themeDisplay.getCompanyGroupId()) {
 						vocabularyTitle +=
 							' (' + Liferay.Language.get('global') + ')';
 					}
@@ -708,7 +706,7 @@ AUI.add(
 						label: vocabularyTitle,
 						leaf: false,
 						paginator: instance._getPaginatorConfig(item),
-						type: 'io'
+						type: 'io',
 					};
 
 					instance.TREEVIEWS[vocabularyId] = new A.TreeView({
@@ -738,14 +736,14 @@ AUI.add(
 
 											delete treeViews[vocabularyId];
 										}
-									}
-								}
+									},
+								},
 							},
 							formatter: A.bind('_formatJSONResult', instance),
 							url:
 								themeDisplay.getPathMain() +
-								'/asset/get_categories'
-						}
+								'/asset/get_categories',
+						},
 					}).render(popup.entriesNode);
 				},
 
@@ -786,8 +784,8 @@ AUI.add(
 
 					var matchKey = instance.get('matchKey');
 
-					instance.entries.getKey = function(obj) {
-						return obj.categoryId;
+					instance.entries.getKey = function (object) {
+						return object.categoryId;
 					};
 
 					var curEntries = instance.get('curEntries');
@@ -795,7 +793,7 @@ AUI.add(
 
 					curEntryIds.forEach((item, index) => {
 						var entry = {
-							categoryId: item
+							categoryId: item,
 						};
 
 						entry[matchKey] = curEntries[index];
@@ -804,14 +802,14 @@ AUI.add(
 
 						instance.entries.add(entry);
 					});
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.AssetCategoriesSelector = AssetCategoriesSelector;
 	},
 	'',
 	{
-		requires: ['aui-tree', 'liferay-asset-tags-selector']
+		requires: ['aui-tree', 'liferay-asset-tags-selector'],
 	}
 );

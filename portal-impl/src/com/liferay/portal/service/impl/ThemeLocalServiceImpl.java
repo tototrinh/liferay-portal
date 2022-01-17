@@ -16,6 +16,7 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.image.SpriteProcessor;
 import com.liferay.portal.kernel.image.SpriteProcessorUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -27,6 +28,8 @@ import com.liferay.portal.kernel.model.PortletDecorator;
 import com.liferay.portal.kernel.model.Theme;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.plugin.Version;
+import com.liferay.portal.kernel.service.LayoutTemplateLocalService;
+import com.liferay.portal.kernel.service.PluginSettingLocalService;
 import com.liferay.portal.kernel.servlet.ServletContextUtil;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.theme.PortletDecoratorFactoryUtil;
@@ -159,13 +162,13 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		themes = PluginUtil.restrictPlugins(themes, companyId, userId);
 
-		Iterator<Theme> itr = themes.iterator();
+		Iterator<Theme> iterator = themes.iterator();
 
-		while (itr.hasNext()) {
-			Theme theme = itr.next();
+		while (iterator.hasNext()) {
+			Theme theme = iterator.next();
 
 			if (!theme.isControlPanelTheme()) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -178,15 +181,15 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		List<Theme> themes = getThemes(companyId);
 
-		themes = PluginUtil.restrictPlugins(themes, companyId, userId);
+		themes = PluginUtil.restrictPlugins(themes, companyId, groupId, userId);
 
-		Iterator<Theme> itr = themes.iterator();
+		Iterator<Theme> iterator = themes.iterator();
 
-		while (itr.hasNext()) {
-			Theme theme = itr.next();
+		while (iterator.hasNext()) {
+			Theme theme = iterator.next();
 
 			if (!theme.isPageTheme() || !theme.isGroupAvailable(groupId)) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -269,9 +272,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 	@Override
 	public List<Theme> getThemes(long companyId) {
-		Map<String, Theme> themes = _getThemes(companyId);
-
-		List<Theme> themesList = ListUtil.fromMapValues(themes);
+		List<Theme> themesList = ListUtil.fromMapValues(_getThemes(companyId));
 
 		return ListUtil.sort(themesList);
 	}
@@ -280,13 +281,13 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 	public List<Theme> getWARThemes() {
 		List<Theme> themes = ListUtil.fromMapValues(_themes);
 
-		Iterator<Theme> itr = themes.iterator();
+		Iterator<Theme> iterator = themes.iterator();
 
-		while (itr.hasNext()) {
-			Theme theme = itr.next();
+		while (iterator.hasNext()) {
+			Theme theme = iterator.next();
 
 			if (!theme.isWARFile()) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -336,7 +337,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 			_themes.remove(themeId);
 
-			layoutTemplateLocalService.uninstallLayoutTemplates(themeId);
+			_layoutTemplateLocalService.uninstallLayoutTemplates(themeId);
 		}
 
 		_themesPool.clear();
@@ -581,13 +582,13 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		Element rootElement = document.getRootElement();
 
-		Version portalVersion = _getVersion(ReleaseInfo.getVersion());
-
 		boolean compatible = false;
 
 		Element compatibilityElement = rootElement.element("compatibility");
 
 		if (compatibilityElement != null) {
+			Version portalVersion = _getVersion(ReleaseInfo.getVersion());
+
 			List<Element> versionElements = compatibilityElement.elements(
 				"version");
 
@@ -706,7 +707,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			theme.setTimestamp(timestamp);
 
 			PluginSetting pluginSetting =
-				pluginSettingLocalService.getDefaultPluginSetting();
+				_pluginSettingLocalService.getDefaultPluginSetting();
 
 			theme.setPluginPackage(pluginPackage);
 			theme.setDefaultPluginSetting(pluginSetting);
@@ -833,7 +834,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 					"standard");
 
 				if (standardElement != null) {
-					layoutTemplateLocalService.readLayoutTemplate(
+					_layoutTemplateLocalService.readLayoutTemplate(
 						servletContextName, servletContext, null,
 						standardElement, true, themeId, pluginPackage);
 				}
@@ -842,7 +843,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 					"custom");
 
 				if (customElement != null) {
-					layoutTemplateLocalService.readLayoutTemplate(
+					_layoutTemplateLocalService.readLayoutTemplate(
 						servletContextName, servletContext, null, customElement,
 						false, themeId, pluginPackage);
 				}
@@ -918,13 +919,9 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			return;
 		}
 
-		String contextPath = servletContext.getContextPath();
-
-		spriteFileName = contextPath.concat(
-			SpriteProcessor.PATH
-		).concat(
-			spriteFileName
-		);
+		spriteFileName = StringBundler.concat(
+			servletContext.getContextPath(), SpriteProcessor.PATH,
+			spriteFileName);
 
 		theme.setSpriteImages(spriteFileName, spriteProperties);
 	}
@@ -935,5 +932,11 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 	private static final Map<String, Theme> _themes = new ConcurrentHashMap<>();
 	private static final Map<Long, Map<String, Theme>> _themesPool =
 		new ConcurrentHashMap<>();
+
+	@BeanReference(type = LayoutTemplateLocalService.class)
+	private LayoutTemplateLocalService _layoutTemplateLocalService;
+
+	@BeanReference(type = PluginSettingLocalService.class)
+	private PluginSettingLocalService _pluginSettingLocalService;
 
 }

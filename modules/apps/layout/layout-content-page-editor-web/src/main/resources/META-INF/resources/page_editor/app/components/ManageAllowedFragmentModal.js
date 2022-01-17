@@ -17,7 +17,8 @@ import ClayModal from '@clayui/modal';
 import PropTypes from 'prop-types';
 import React, {useCallback, useState} from 'react';
 
-import {useDispatch} from '../store/index';
+import {config} from '../config/index';
+import {useDispatch} from '../contexts/StoreContext';
 import updateItemConfig from '../thunks/updateItemConfig';
 import AllowedFragmentSelector from './AllowedFragmentSelector';
 
@@ -37,10 +38,10 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 			updateItemConfig({
 				itemConfig: {
 					allowNewFragmentEntries,
-					fragmentEntryKeys: [...selectedFragments]
+					fragmentEntryKeys: [...selectedFragments],
 				},
 				itemId: item.itemId,
-				segmentsExperienceId: 0
+				segmentsExperienceId: config.defaultSegmentsExperienceId,
 			})
 		).then(() => {
 			setLoading(false);
@@ -59,6 +60,7 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 	return (
 		<ClayModal
 			className="page-editor__allowed-fragment__modal"
+			containerProps={{className: 'cadmin'}}
 			observer={observer}
 			size="md"
 		>
@@ -72,6 +74,7 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 						'specify-which-fragments-a-page-author-is-allowed-to-use-within-the-drop-zone-when-creating-a-page-from-this-master'
 					)}
 				</p>
+
 				<AllowedFragmentSelector
 					dropZoneConfig={item.config}
 					onSelectedFragment={onSelectedFragment}
@@ -97,6 +100,7 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 									></span>
 								</span>
 							)}
+
 							{Liferay.Language.get('save')}
 						</ClayButton>
 					</ClayButton.Group>
@@ -109,10 +113,10 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 ManageAllowedFragmentModal.propTypes = {
 	item: PropTypes.shape({
 		config: PropTypes.object.isRequired,
-		itemId: PropTypes.string.isRequired
+		itemId: PropTypes.string.isRequired,
 	}).isRequired,
 	observer: PropTypes.object.isRequired,
-	onClose: PropTypes.func.isRequired
+	onClose: PropTypes.func.isRequired,
 };
 
 export default ManageAllowedFragmentModal;

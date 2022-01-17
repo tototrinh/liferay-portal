@@ -162,9 +162,7 @@ public class GetFileSetTask extends Task {
 							Path path, BasicFileAttributes basicFileAttributes)
 						throws IOException {
 
-						Path fileNamePath = path.getFileName();
-
-						String fileName = fileNamePath.toString();
+						String fileName = String.valueOf(path.getFileName());
 
 						Path parentDir = path.getParent();
 
@@ -180,9 +178,7 @@ public class GetFileSetTask extends Task {
 							Path path, BasicFileAttributes basicFileAttributes)
 						throws IOException {
 
-						Path fileNamePath = path.getFileName();
-
-						String fileName = fileNamePath.toString();
+						String fileName = String.valueOf(path.getFileName());
 
 						for (String className : classNames) {
 							if (_isClass(className, fileName)) {
@@ -226,12 +222,9 @@ public class GetFileSetTask extends Task {
 	}
 
 	private boolean _isClass(String className, String fileName) {
-		if (fileName.equals(className.concat(".class"))) {
-			return true;
-		}
-
-		if (fileName.startsWith(className.concat("$")) &&
-			fileName.endsWith(".class")) {
+		if (fileName.equals(className.concat(".class")) ||
+			(fileName.startsWith(className.concat("$")) &&
+			 fileName.endsWith(".class"))) {
 
 			return true;
 		}

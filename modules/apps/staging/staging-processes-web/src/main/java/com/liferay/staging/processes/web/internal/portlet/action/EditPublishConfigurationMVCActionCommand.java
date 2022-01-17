@@ -14,9 +14,9 @@
 
 package com.liferay.staging.processes.web.internal.portlet.action;
 
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationFactory;
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationHelper;
+import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationUtil;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.exception.RemoteExportException;
 import com.liferay.exportimport.kernel.lar.ExportImportHelper;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
@@ -24,8 +24,8 @@ import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalSer
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationService;
 import com.liferay.exportimport.kernel.staging.Staging;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
+import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -41,17 +41,16 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.SessionTreeJSClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.staging.constants.StagingProcessesPortletKeys;
-import com.liferay.taglib.ui.util.SessionTreeJSClicks;
 import com.liferay.trash.service.TrashEntryService;
 
 import java.net.ConnectException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -68,7 +67,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + StagingProcessesPortletKeys.STAGING_PROCESSES,
-		"mvc.command.name=editPublishConfiguration"
+		"mvc.command.name=/staging_processes/edit_publish_configuration"
 	},
 	service = MVCActionCommand.class
 )
@@ -117,11 +116,11 @@ public class EditPublishConfigurationMVCActionCommand
 		}
 
 		if (moveToTrash && !trashedModels.isEmpty()) {
-			Map<String, Object> data = HashMapBuilder.<String, Object>put(
-				"trashedModels", trashedModels
-			).build();
-
-			addDeleteSuccessData(actionRequest, data);
+			addDeleteSuccessData(
+				actionRequest,
+				HashMapBuilder.<String, Object>put(
+					"trashedModels", trashedModels
+				).build());
 		}
 	}
 
@@ -290,22 +289,22 @@ public class EditPublishConfigurationMVCActionCommand
 
 		if (group.isStagedRemotely()) {
 			if (exportImportConfigurationId > 0) {
-				return ExportImportConfigurationHelper.
+				return ExportImportConfigurationUtil.
 					updatePublishLayoutRemoteExportImportConfiguration(
 						actionRequest);
 			}
 
-			return ExportImportConfigurationHelper.
+			return ExportImportConfigurationUtil.
 				addPublishLayoutRemoteExportImportConfiguration(actionRequest);
 		}
 
 		if (exportImportConfigurationId > 0) {
-			return ExportImportConfigurationHelper.
+			return ExportImportConfigurationUtil.
 				updatePublishLayoutLocalExportImportConfiguration(
 					actionRequest);
 		}
 
-		return ExportImportConfigurationHelper.
+		return ExportImportConfigurationUtil.
 			addPublishLayoutLocalExportImportConfiguration(actionRequest);
 	}
 

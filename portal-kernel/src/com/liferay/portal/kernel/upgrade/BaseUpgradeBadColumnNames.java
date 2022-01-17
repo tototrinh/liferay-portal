@@ -35,8 +35,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Tina Tian
+ * @author     Tina Tian
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             BaseBadColumnNamesUpgradeProcess}
  */
+@Deprecated
 public abstract class BaseUpgradeBadColumnNames extends UpgradeProcess {
 
 	protected void upgradeBadColumnNames(
@@ -106,7 +109,7 @@ public abstract class BaseUpgradeBadColumnNames extends UpgradeProcess {
 	}
 
 	private Map<String, String> _getTableColumnSQLs(Class<?> tableClass)
-		throws ReflectiveOperationException {
+		throws Exception {
 
 		Field tableSQLCreateField = tableClass.getField("TABLE_SQL_CREATE");
 

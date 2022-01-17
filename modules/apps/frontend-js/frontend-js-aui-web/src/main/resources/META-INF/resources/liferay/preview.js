@@ -15,13 +15,13 @@
 /**
  * The Preview Component.
  *
- * @deprecated since 7.2, unused
+ * @deprecated As of Mueller (7.2.x), with no direct replacement
  * @module liferay-preview
  */
 
 AUI.add(
 	'liferay-preview',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var ATTR_DATA_IMAGE_INDEX = 'data-imageIndex';
@@ -67,40 +67,40 @@ AUI.add(
 			'<span class="lfr-preview-file-image-overlay-controls"></span>';
 
 		var MAP_EVENT_SCROLLER = {
-			src: STR_SCROLLER
+			src: STR_SCROLLER,
 		};
 
 		var Preview = A.Component.create({
 			ATTRS: {
 				actionContent: {
-					setter: A.one
+					setter: A.one,
 				},
 				activeThumb: {
-					value: null
+					value: null,
 				},
 				baseImageURL: {
-					value: null
+					value: null,
 				},
 				currentIndex: {
 					setter: '_setCurrentIndex',
-					value: 0
+					value: 0,
 				},
 				currentPreviewImage: {
-					setter: A.one
+					setter: A.one,
 				},
 				imageListContent: {
-					setter: A.one
+					setter: A.one,
 				},
 				maxIndex: {
 					validator: Lang.isNumber,
-					value: 0
+					value: 0,
 				},
 				previewFileIndexNode: {
-					setter: A.one
+					setter: A.one,
 				},
 				toolbar: {
-					setter: A.one
-				}
+					setter: A.one,
+				},
 			},
 
 			NAME: 'liferaypreview',
@@ -138,7 +138,7 @@ AUI.add(
 					if (!loadingIndicator) {
 						loadingIndicator = A.Node.create(
 							A.Lang.sub(TPL_LOADING_INDICATOR, [
-								Liferay.Language.get('loading')
+								Liferay.Language.get('loading'),
 							])
 						);
 
@@ -163,7 +163,7 @@ AUI.add(
 
 					if (!maxOverlay) {
 						var maxOverlayMask = instance._getMaxOverlayMask();
-
+						// eslint-disable-next-line @liferay/aui/no-modal
 						maxOverlay = new A.Modal({
 							after: {
 								render() {
@@ -171,13 +171,13 @@ AUI.add(
 								},
 								visibleChange(event) {
 									maxOverlayMask.set('visible', event.newVal);
-								}
+								},
 							},
 							centered: true,
 							cssClass: 'lfr-preview-file-image-overlay',
 							height: '90vh',
 							plugins: [Liferay.WidgetZIndex],
-							width: '85vw'
+							width: '85vw',
 						}).render();
 
 						maxOverlay
@@ -201,7 +201,7 @@ AUI.add(
 
 					if (!maxOverlayMask) {
 						maxOverlayMask = new A.OverlayMask({
-							visible: true
+							visible: true,
 						});
 
 						instance._maxOverlayMask = maxOverlayMask;
@@ -281,7 +281,7 @@ AUI.add(
 					var imageIndex = previewImage.attr(ATTR_DATA_IMAGE_INDEX);
 
 					instance.set(STR_CURRENT_INDEX, imageIndex, {
-						src: 'scroller'
+						src: 'scroller',
 					});
 				},
 
@@ -385,7 +385,7 @@ AUI.add(
 
 						MAP_IMAGE_DATA.displayedIndex = displayedIndex;
 						MAP_IMAGE_DATA.selectedCssClass =
-							previewFileCountDown == currentIndex
+							previewFileCountDown === currentIndex
 								? CSS_IMAGE_SELECTED
 								: '';
 						MAP_IMAGE_DATA.index = previewFileCountDown;
@@ -433,8 +433,8 @@ AUI.add(
 											'_updateIndex',
 											instance,
 											-1
-										)
-									}
+										),
+									},
 								},
 								{
 									icon: 'icon-zoom-in',
@@ -442,8 +442,8 @@ AUI.add(
 										click: A.bind(
 											'_maximizePreview',
 											instance
-										)
-									}
+										),
+									},
 								},
 								{
 									icon: 'icon-circle-arrow-right',
@@ -452,11 +452,11 @@ AUI.add(
 											'_updateIndex',
 											instance,
 											1
-										)
-									}
-								}
-							]
-						]
+										),
+									},
+								},
+							],
+						],
 					}).render();
 				},
 
@@ -497,7 +497,7 @@ AUI.add(
 						prevItem.removeClass(CSS_IMAGE_SELECTED);
 					}
 
-					if (src != STR_SCROLLER) {
+					if (src !== STR_SCROLLER) {
 						var newItem = nodeList.item(value);
 
 						if (newItem) {
@@ -578,8 +578,8 @@ AUI.add(
 					instance._renderImages();
 
 					instance._actionContent.show();
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Preview = Preview;
@@ -591,7 +591,7 @@ AUI.add(
 			'aui-modal',
 			'aui-overlay-mask-deprecated',
 			'aui-toolbar',
-			'liferay-widget-zindex'
-		]
+			'liferay-widget-zindex',
+		],
 	}
 );

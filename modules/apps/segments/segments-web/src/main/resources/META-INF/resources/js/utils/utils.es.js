@@ -13,7 +13,6 @@
  */
 
 import dateFns from 'date-fns';
-import {getUid} from 'metal';
 
 import {CONJUNCTIONS} from './constants.es';
 
@@ -26,18 +25,22 @@ const SPLIT_REGEX = /({\d+})/g;
  * @param {Array} items The items to add to the new group.
  * @return {Object} The new group object.
  */
-export const createNewGroup = items => ({
-	conjunctionName: CONJUNCTIONS.AND,
-	groupId: generateGroupId(),
-	items
-});
+export function createNewGroup(items) {
+	return {
+		conjunctionName: CONJUNCTIONS.AND,
+		groupId: generateGroupId(),
+		items,
+	};
+}
+
+let uniqueIdCounter_ = 1;
 
 /**
  * Generates a unique group id.
  * @return {string} The unique id.
  */
 export function generateGroupId() {
-	return `${GROUP_ID_NAMESPACE}${getUid()}`;
+	return `${GROUP_ID_NAMESPACE}${uniqueIdCounter_++}`;
 }
 
 /**
@@ -85,7 +88,7 @@ export function getChildGroupIds(criteria) {
  * @param {string} type The type to get the supported operators for.
  */
 export function getSupportedOperatorsFromType(operators, propertyTypes, type) {
-	return operators.filter(operator => {
+	return operators.filter((operator) => {
 		const validOperators = propertyTypes[type];
 
 		return validOperators && validOperators.includes(operator.name);
@@ -111,7 +114,7 @@ export function insertAtIndex(item, list, index) {
 export function objectToFormData(dataObject) {
 	const formData = new FormData();
 
-	Object.keys(dataObject).forEach(key => {
+	Object.keys(dataObject).forEach((key) => {
 		formData.set(key, dataObject[key]);
 	});
 
@@ -137,7 +140,7 @@ export function removeAtIndex(list, index) {
  */
 export function replaceAtIndex(item, list, index) {
 	return Object.assign(list, {
-		[index]: item
+		[index]: item,
 	});
 }
 
@@ -157,7 +160,9 @@ export function replaceAtIndex(item, list, index) {
  * @return {(string|Array)}
  */
 export function sub(langKey, args, join = true) {
-	const keyArray = langKey.split(SPLIT_REGEX).filter(val => val.length !== 0);
+	const keyArray = langKey
+		.split(SPLIT_REGEX)
+		.filter((val) => val.length !== 0);
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -185,7 +190,7 @@ export function dateToInternationalHuman(
 	const options = {
 		day: 'numeric',
 		month: 'long',
-		year: 'numeric'
+		year: 'numeric',
 	};
 
 	const intl = new Intl.DateTimeFormat(localeKey, options);

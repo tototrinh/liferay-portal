@@ -19,51 +19,63 @@ import com.liferay.blogs.service.BlogsEntryLocalService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.SynchronousMailTestRule;
 import com.liferay.portal.workflow.kaleo.definition.Action;
+import com.liferay.portal.workflow.kaleo.definition.Assignment;
 import com.liferay.portal.workflow.kaleo.definition.Task;
 import com.liferay.portal.workflow.kaleo.model.KaleoAction;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
+import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 import com.liferay.portal.workflow.kaleo.model.KaleoInstance;
 import com.liferay.portal.workflow.kaleo.model.KaleoInstanceToken;
 import com.liferay.portal.workflow.kaleo.model.KaleoLog;
 import com.liferay.portal.workflow.kaleo.model.KaleoNode;
+import com.liferay.portal.workflow.kaleo.model.KaleoTask;
+import com.liferay.portal.workflow.kaleo.model.KaleoTaskAssignment;
+import com.liferay.portal.workflow.kaleo.model.KaleoTaskAssignmentInstance;
 import com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken;
 import com.liferay.portal.workflow.kaleo.runtime.util.WorkflowContextUtil;
 import com.liferay.portal.workflow.kaleo.service.KaleoActionLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionLocalService;
+import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionVersionLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoInstanceLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoInstanceTokenLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoLogLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoNodeLocalService;
+import com.liferay.portal.workflow.kaleo.service.KaleoTaskAssignmentInstanceLocalService;
+import com.liferay.portal.workflow.kaleo.service.KaleoTaskAssignmentLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoTaskInstanceTokenLocalService;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Level;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Inácio Nery
  */
 public abstract class BaseKaleoLocalServiceTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), SynchronousMailTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -74,28 +86,34 @@ public abstract class BaseKaleoLocalServiceTestCase {
 			KaleoInstance kaleoInstance, KaleoNode kaleoNode)
 		throws Exception {
 
-		KaleoAction kaleoAction = kaleoActionLocalService.addKaleoAction(
+		return kaleoActionLocalService.addKaleoAction(
 			KaleoNode.class.getName(), kaleoNode.getKaleoNodeId(),
+			kaleoInstance.getKaleoDefinitionId(),
 			kaleoInstance.getKaleoDefinitionVersionId(), kaleoNode.getName(),
 			new Action(
 				StringUtil.randomString(), StringUtil.randomString(),
 				"onAssignment", StringPool.BLANK, "groovy", StringPool.BLANK,
 				0),
 			serviceContext);
-
-		_kaleoActions.add(kaleoAction);
-
-		return kaleoAction;
 	}
 
 	protected KaleoDefinition addKaleoDefinition()
 		throws IOException, PortalException {
 
+		return addKaleoDefinition(
+			StringUtil.randomString(), StringUtil.randomString(),
+			StringUtil.randomString());
+	}
+
+	protected KaleoDefinition addKaleoDefinition(
+			String name, String title, String description)
+		throws IOException, PortalException {
+
 		KaleoDefinition kaleoDefinition =
 			_kaleoDefinitionLocalService.addKaleoDefinition(
-				StringUtil.randomString(), StringUtil.randomString(),
-				StringUtil.randomString(),
-				_read("legal-marketing-definition.xml"), 1, serviceContext);
+				name, title, description,
+				_read("legal-marketing-workflow-definition.xml"),
+				StringPool.BLANK, 1, serviceContext);
 
 		_kaleoDefinitionLocalService.activateKaleoDefinition(
 			kaleoDefinition.getKaleoDefinitionId(), serviceContext);
@@ -104,39 +122,65 @@ public abstract class BaseKaleoLocalServiceTestCase {
 	}
 
 	protected KaleoInstance addKaleoInstance() throws Exception {
-		Map<String, Serializable> workflowContext =
+		return _kaleoInstanceLocalService.addKaleoInstance(
+			1, 1, "Test", 1,
 			HashMapBuilder.<String, Serializable>put(
 				WorkflowConstants.CONTEXT_ENTRY_CLASS_NAME,
 				(Serializable)BlogsEntry.class.getName()
 			).put(
 				WorkflowConstants.CONTEXT_ENTRY_CLASS_PK,
 				String.valueOf(_addBlogsEntry().getEntryId())
-			).build();
-
-		return _kaleoInstanceLocalService.addKaleoInstance(
-			1, "Test", 1, workflowContext, serviceContext);
+			).put(
+				WorkflowConstants.CONTEXT_SERVICE_CONTEXT,
+				(Serializable)serviceContext
+			).build(),
+			serviceContext);
 	}
 
 	protected KaleoInstanceToken addKaleoInstanceToken(
 			KaleoInstance kaleoInstance)
 		throws Exception {
 
-		KaleoNode kaleoNode = addKaleoNode(kaleoInstance);
+		KaleoNode kaleoNode = addKaleoNode(
+			kaleoInstance, new Task("task", StringPool.BLANK));
 
 		return _kaleoInstanceTokenLocalService.addKaleoInstanceToken(
-			kaleoNode.getKaleoNodeId(),
+			kaleoNode.getKaleoNodeId(), kaleoInstance.getKaleoDefinitionId(),
 			kaleoInstance.getKaleoDefinitionVersionId(),
 			kaleoInstance.getKaleoInstanceId(), 0,
 			WorkflowContextUtil.convert(kaleoInstance.getWorkflowContext()),
 			serviceContext);
 	}
 
-	protected KaleoNode addKaleoNode(KaleoInstance kaleoInstance)
+	protected KaleoNode addKaleoNode(KaleoInstance kaleoInstance, Task task)
 		throws Exception {
 
 		return _kaleoNodeLocalService.addKaleoNode(
-			kaleoInstance.getKaleoDefinitionVersionId(),
-			new Task("task", StringPool.BLANK), serviceContext);
+			kaleoInstance.getKaleoDefinitionId(),
+			kaleoInstance.getKaleoDefinitionVersionId(), task, serviceContext);
+	}
+
+	protected KaleoTaskAssignment addKaleoTaskAssignment(
+			KaleoNode kaleoNode, Assignment assignment, long kaleoClassPK)
+		throws Exception {
+
+		return _kaleoTaskAssignmentLocalService.addKaleoTaskAssignment(
+			KaleoTask.class.getName(), kaleoClassPK,
+			kaleoNode.getKaleoDefinitionId(),
+			kaleoNode.getKaleoDefinitionVersionId(), assignment,
+			serviceContext);
+	}
+
+	protected KaleoTaskAssignmentInstance addKaleoTaskAssignmentInstance(
+			KaleoTaskInstanceToken kaleoTaskInstanceToken,
+			KaleoTaskAssignment kaleoTaskAssignment)
+		throws PortalException {
+
+		return _kaleoTaskAssignmentInstanceLocalService.
+			addKaleoTaskAssignmentInstance(
+				kaleoTaskInstanceToken.getGroupId(), kaleoTaskInstanceToken,
+				kaleoTaskAssignment.getAssigneeClassName(),
+				kaleoTaskAssignment.getAssigneeClassPK(), serviceContext);
 	}
 
 	protected KaleoTaskInstanceToken addKaleoTaskInstanceToken(
@@ -154,13 +198,9 @@ public abstract class BaseKaleoLocalServiceTestCase {
 			KaleoInstanceToken kaleoInstanceToken)
 		throws PortalException {
 
-		KaleoLog kaleoLog = kaleoLogLocalService.addNodeExitKaleoLog(
+		return kaleoLogLocalService.addNodeExitKaleoLog(
 			kaleoInstanceToken, kaleoInstanceToken.getCurrentKaleoNode(),
 			serviceContext);
-
-		_kaleoLogs.add(kaleoLog);
-
-		return kaleoLog;
 	}
 
 	protected KaleoLog addTaskAssignmentKaleoLog(
@@ -168,14 +208,22 @@ public abstract class BaseKaleoLocalServiceTestCase {
 			KaleoTaskInstanceToken kaleoTaskInstanceToken)
 		throws PortalException {
 
-		KaleoLog kaleoLog = kaleoLogLocalService.addTaskAssignmentKaleoLog(
+		return kaleoLogLocalService.addTaskAssignmentKaleoLog(
+			Collections.emptyList(), null, kaleoTaskInstanceToken,
+			StringPool.BLANK,
+			WorkflowContextUtil.convert(kaleoInstance.getWorkflowContext()),
+			serviceContext);
+	}
+
+	protected List<KaleoLog> addTaskAssignmentKaleoLogs(
+			KaleoInstance kaleoInstance,
+			KaleoTaskInstanceToken kaleoTaskInstanceToken)
+		throws PortalException {
+
+		return kaleoLogLocalService.addTaskAssignmentKaleoLogs(
 			Collections.emptyList(), kaleoTaskInstanceToken, StringPool.BLANK,
 			WorkflowContextUtil.convert(kaleoInstance.getWorkflowContext()),
 			serviceContext);
-
-		_kaleoLogs.add(kaleoLog);
-
-		return kaleoLog;
 	}
 
 	protected KaleoLog addTaskCompletionKaleoLog(
@@ -183,26 +231,18 @@ public abstract class BaseKaleoLocalServiceTestCase {
 			KaleoTaskInstanceToken kaleoTaskInstanceToken)
 		throws PortalException {
 
-		KaleoLog kaleoLog = kaleoLogLocalService.addTaskCompletionKaleoLog(
+		return kaleoLogLocalService.addTaskCompletionKaleoLog(
 			kaleoTaskInstanceToken, StringPool.BLANK,
 			WorkflowContextUtil.convert(kaleoInstance.getWorkflowContext()),
 			serviceContext);
-
-		_kaleoLogs.add(kaleoLog);
-
-		return kaleoLog;
 	}
 
 	protected KaleoLog addWorkflowInstanceEndKaleoLog(
 			KaleoInstance kaleoInstance)
 		throws Exception, PortalException {
 
-		KaleoLog kaleoLog = kaleoLogLocalService.addWorkflowInstanceEndKaleoLog(
+		return kaleoLogLocalService.addWorkflowInstanceEndKaleoLog(
 			addKaleoInstanceToken(kaleoInstance), serviceContext);
-
-		_kaleoLogs.add(kaleoLog);
-
-		return kaleoLog;
 	}
 
 	protected void deactivateKaleoDefinition(KaleoDefinition kaleoDefinition)
@@ -218,6 +258,15 @@ public abstract class BaseKaleoLocalServiceTestCase {
 
 		_kaleoDefinitionLocalService.deleteKaleoDefinition(
 			kaleoDefinition.getName(), serviceContext);
+	}
+
+	protected KaleoDefinitionVersion getLatestKaleoDefinitionVersion(
+			KaleoDefinition kaleoDefinition)
+		throws IOException, PortalException {
+
+		return _kaleoDefinitionVersionLocalService.
+			getLatestKaleoDefinitionVersion(
+				kaleoDefinition.getCompanyId(), kaleoDefinition.getName());
 	}
 
 	protected KaleoDefinition updateKaleoDefinition(
@@ -247,20 +296,11 @@ public abstract class BaseKaleoLocalServiceTestCase {
 
 	protected ServiceContext serviceContext;
 
-	private BlogsEntry _addBlogsEntry() throws PortalException {
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"com.liferay.petra.mail.MailEngine", Level.OFF)) {
-
-			BlogsEntry blogsEntry = _blogsEntryLocalService.addEntry(
-				TestPropsValues.getUserId(), StringUtil.randomString(),
-				StringUtil.randomString(), new Date(),
-				ServiceContextTestUtil.getServiceContext());
-
-			_blogsEntries.add(blogsEntry);
-
-			return blogsEntry;
-		}
+	private BlogsEntry _addBlogsEntry() throws Exception {
+		return _blogsEntryLocalService.addEntry(
+			TestPropsValues.getUserId(), StringUtil.randomString(),
+			StringUtil.randomString(), new Date(),
+			ServiceContextTestUtil.getServiceContext());
 	}
 
 	private String _read(String name) throws IOException {
@@ -274,23 +314,22 @@ public abstract class BaseKaleoLocalServiceTestCase {
 		}
 	}
 
-	private void _setUpServiceContext() throws PortalException {
+	private void _setUpServiceContext() throws Exception {
 		serviceContext = new ServiceContext();
 
 		serviceContext.setCompanyId(TestPropsValues.getCompanyId());
 		serviceContext.setUserId(TestPropsValues.getUserId());
 	}
 
-	private final List<BlogsEntry> _blogsEntries = new ArrayList<>();
-
 	@Inject
 	private BlogsEntryLocalService _blogsEntryLocalService;
 
-	@DeleteAfterTestRun
-	private final List<KaleoAction> _kaleoActions = new ArrayList<>();
-
 	@Inject
 	private KaleoDefinitionLocalService _kaleoDefinitionLocalService;
+
+	@Inject
+	private KaleoDefinitionVersionLocalService
+		_kaleoDefinitionVersionLocalService;
 
 	@Inject
 	private KaleoInstanceLocalService _kaleoInstanceLocalService;
@@ -298,10 +337,14 @@ public abstract class BaseKaleoLocalServiceTestCase {
 	@Inject
 	private KaleoInstanceTokenLocalService _kaleoInstanceTokenLocalService;
 
-	@DeleteAfterTestRun
-	private final List<KaleoLog> _kaleoLogs = new ArrayList<>();
-
 	@Inject
 	private KaleoNodeLocalService _kaleoNodeLocalService;
+
+	@Inject
+	private KaleoTaskAssignmentInstanceLocalService
+		_kaleoTaskAssignmentInstanceLocalService;
+
+	@Inject
+	private KaleoTaskAssignmentLocalService _kaleoTaskAssignmentLocalService;
 
 }

@@ -14,9 +14,9 @@
 
 package com.liferay.depot.web.internal.display.context;
 
+import com.liferay.item.selector.ItemSelector;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -26,12 +26,15 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -40,6 +43,11 @@ import org.mockito.Mockito;
  * @author Cristina González
  */
 public class DepotAdminMembershipsDisplayContextTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -74,6 +82,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().withPermissionChecker(
 							getPermissionCheckerWithCompanyAdmin()
@@ -101,6 +110,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().withPermissionChecker(
 							getPermissionCheckerWithNoCompanyAdminAndAssignMember()
@@ -128,6 +138,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().withPermissionChecker(
 							getPermissionCheckerWithNoCompanyAdminAndNoAssignMember()
@@ -153,6 +164,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().build()),
 					null);
@@ -178,6 +190,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().withPermissionChecker(
 							getPermissionCheckerWithCompanyAdmin()
@@ -199,6 +212,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 		DepotAdminMembershipsDisplayContext
 			depotAdminMembershipsDisplayContext =
 				new DepotAdminMembershipsDisplayContext(
+					Mockito.mock(ItemSelector.class),
 					_getLiferayPortletRequest(
 						new ThemeDisplayBuilder().withPermissionChecker(
 							getPermissionCheckerWithCompanyAdmin()
@@ -219,9 +233,9 @@ public class DepotAdminMembershipsDisplayContextTest {
 		);
 
 		Mockito.when(
-			group.getType()
+			group.isDepot()
 		).thenReturn(
-			GroupConstants.TYPE_DEPOT
+			true
 		);
 
 		return group;
@@ -319,10 +333,6 @@ public class DepotAdminMembershipsDisplayContextTest {
 
 	private static class ThemeDisplayBuilder {
 
-		public ThemeDisplayBuilder() {
-			_themeDisplay = new ThemeDisplay();
-		}
-
 		public ThemeDisplay build() {
 			return _themeDisplay;
 		}
@@ -335,7 +345,7 @@ public class DepotAdminMembershipsDisplayContextTest {
 			return this;
 		}
 
-		private final ThemeDisplay _themeDisplay;
+		private final ThemeDisplay _themeDisplay = new ThemeDisplay();
 
 	}
 

@@ -31,6 +31,7 @@ import com.liferay.portal.search.engine.adapter.document.GetDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.GetDocumentResponse;
 import com.liferay.portal.search.engine.adapter.document.IndexDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.UpdateDocumentRequest;
+import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -68,7 +69,7 @@ public class SearchEngineAdapterTest {
 		Assert.assertEquals(
 			document.toString(), "charlie", document.getString("field2"));
 
-		_updateDocument(uid, "delta", "echo");
+		_updateDocument(uid, "delta", "echo", false);
 
 		document = _getDocument(uid);
 
@@ -89,6 +90,23 @@ public class SearchEngineAdapterTest {
 		document = _getDocument(uid);
 
 		Assert.assertNull(document);
+
+		_updateDocument(uid, "delta", "echo", true);
+
+		document = _getDocument(uid);
+
+		Assert.assertEquals(
+			document.toString(), uid, document.getString("uid"));
+
+		Assert.assertEquals(
+			document.toString(), "delta", document.getString("field2"));
+
+		Assert.assertEquals(
+			document.toString(), "echo", document.getString("field3"));
+
+		_deleteDocument(uid);
+
+		Assert.assertNull(_getDocument(uid));
 	}
 
 	@Test
@@ -155,13 +173,7 @@ public class SearchEngineAdapterTest {
 
 			String message = runtimeException.getMessage();
 
-			if (isSearchEngine("Solr")) {
-				Assert.assertTrue(
-					message,
-					message.contains(
-						"<p>Problem accessing /solr/" + index + "/update"));
-			}
-			else if (isSearchEngine("Elasticsearch7")) {
+			if (isSearchEngine("Elasticsearch7")) {
 				Assert.assertTrue(
 					message,
 					message.contains("reason=no such index [" + index + "]"));
@@ -176,6 +188,9 @@ public class SearchEngineAdapterTest {
 		}
 	}
 
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
+
 	protected void assertClientSideSafeToLoad(Throwable throwable) {
 		if (throwable == null) {
 			return;
@@ -185,9 +200,7 @@ public class SearchEngineAdapterTest {
 
 		String name = clazz.getName();
 
-		if (name.startsWith("org.elasticsearch") ||
-			name.startsWith("org.apache.solr")) {
-
+		if (name.startsWith("org.elasticsearch")) {
 			throw _getTestFrameworkSafeToLoadException(
 				name, throwable.getMessage(), throwable.getStackTrace());
 		}
@@ -196,10 +209,6 @@ public class SearchEngineAdapterTest {
 	}
 
 	protected String getIndexName() throws Exception {
-		if (isSearchEngine("Solr")) {
-			return "liferay";
-		}
-
 		return "liferay-" + TestPropsValues.getCompanyId();
 	}
 
@@ -288,7 +297,7 @@ public class SearchEngineAdapterTest {
 	}
 
 	private void _updateDocument(
-			String uid, String field2Value, String field3value)
+			String uid, String field2Value, String field3value, boolean upsert)
 		throws Exception {
 
 		DocumentBuilder documentBuilder = _documentBuilderFactory.builder();
@@ -302,6 +311,7 @@ public class SearchEngineAdapterTest {
 
 		updateDocumentRequest.setRefresh(true);
 		updateDocumentRequest.setType("LiferayDocumentType");
+		updateDocumentRequest.setUpsert(upsert);
 
 		_searchEngineAdapter.execute(updateDocumentRequest);
 	}

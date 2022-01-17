@@ -53,7 +53,7 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 	<portlet:param name="mvcPath" value="/edit_entry.jsp" />
 </portlet:actionURL>
 
-<aui:form action="<%= updateSAPEntryURL %>" cssClass="container-fluid-1280">
+<aui:form action="<%= updateSAPEntryURL %>" cssClass="container-fluid container-fluid-max-xl">
 	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 	<aui:input name="sapEntryId" type="hidden" value="<%= sapEntryId %>" />
 
@@ -80,9 +80,9 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 				</aui:validator>
 			</aui:input>
 
-			<aui:input name="enabled" type="toggle-switch" value="<%= (sapEntry != null) ? sapEntry.isEnabled() : false %>" />
+			<aui:input inlineLabel="right" labelCssClass="simple-toggle-switch" name="enabled" type="toggle-switch" value="<%= (sapEntry != null) ? sapEntry.isEnabled() : false %>" />
 
-			<aui:input disabled="<%= systemSAPEntry %>" helpMessage="default-sap-entry-help" label="default" name="defaultSAPEntry" type="toggle-switch" value="<%= (sapEntry != null) ? sapEntry.isDefaultSAPEntry() : false %>" />
+			<aui:input disabled="<%= systemSAPEntry %>" helpMessage="default-sap-entry-help" inlineLabel="right" label="default" labelCssClass="simple-toggle-switch" name="defaultSAPEntry" type="toggle-switch" value="<%= (sapEntry != null) ? sapEntry.isDefaultSAPEntry() : false %>" />
 
 			<aui:input name="title" required="<%= true %>" />
 
@@ -108,13 +108,17 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 
 					<div class="lfr-form-row">
 						<div class="row-fields">
-							<aui:col md="6">
+							<clay:col
+								md="6"
+							>
 								<aui:input cssClass="service-class-name" data-service-class-name="<%= serviceClassName %>" id='<%= "serviceClassName" + i %>' label="service-class" name="serviceClassName" type="text" value="<%= serviceClassName %>" />
-							</aui:col>
+							</clay:col>
 
-							<aui:col md="6">
+							<clay:col
+								md="6"
+							>
 								<aui:input cssClass="action-method-name" id='<%= "actionMethodName" + i %>' label="method-name" name="actionMethodName" type="text" value="<%= actionMethodName %>" />
-							</aui:col>
+							</clay:col>
 						</div>
 					</div>
 
@@ -135,18 +139,20 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 	</aui:button-row>
 </aui:form>
 
-<aui:script require="metal-dom/src/dom as dom">
+<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
 	var alternatingElements = document.querySelectorAll(
 		'#<portlet:namespace />advancedMode, #<portlet:namespace />friendlyMode, #<portlet:namespace />allowedServiceSignatures, #<portlet:namespace />allowedServiceSignaturesFriendlyContentBox'
 	);
 
-	dom.delegate(
+	var delegate = delegateModule.default;
+
+	delegate(
 		document.<portlet:namespace />fm,
 		'click',
 		'#<portlet:namespace />advancedMode, #<portlet:namespace />friendlyMode',
-		function(event) {
-			Array.prototype.forEach.call(alternatingElements, function(element) {
-				dom.toggleClasses(element, 'hide');
+		(event) => {
+			Array.prototype.forEach.call(alternatingElements, (element) => {
+				element.classList.toggle('hide');
 			});
 		}
 	);
@@ -167,7 +173,7 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 
 	var serviceClassNamesToContextNames = <%= request.getAttribute(SAPWebKeys.SERVICE_CLASS_NAMES_TO_CONTEXT_NAMES) %>;
 
-	var getActionMethodNames = function(contextName, serviceClassName, callback) {
+	var getActionMethodNames = function (contextName, serviceClassName, callback) {
 		if (contextName && serviceClassName && callback) {
 			var namespace =
 				contextName.replace(REGEX_DOT, '_') +
@@ -190,10 +196,10 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 				);
 
 				Liferay.Util.fetch(getActionMethodNamesURL.toString())
-					.then(function(response) {
+					.then((response) => {
 						return response.json();
 					})
-					.then(function(data) {
+					.then((data) => {
 						methodObj.actionMethodNames = data;
 						callback(actionMethodNames);
 					});
@@ -204,10 +210,10 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 		}
 	};
 
-	var getContextName = function(serviceClassName) {
+	var getContextName = function (serviceClassName) {
 		var serviceClassNameToContextName = A.Array.find(
 			serviceClassNamesToContextNames,
-			function(item, index) {
+			(item, index) => {
 				return item.serviceClassName === serviceClassName;
 			}
 		);
@@ -219,14 +225,14 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 		);
 	};
 
-	var initAutoCompleteRow = function(rowNode) {
+	var initAutoCompleteRow = function (rowNode) {
 		var actionMethodNameInput = rowNode.one('.action-method-name');
 		var serviceClassNameInput = rowNode.one('.service-class-name');
 
 		new A.AutoComplete({
 			inputNode: serviceClassNameInput,
 			on: {
-				select: function(event) {
+				select: function (event) {
 					var result = event.result.raw;
 
 					serviceClassNameInput.attr(
@@ -239,18 +245,18 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 					);
 
 					actionMethodNameInput.attr('disabled', false);
-				}
+				},
 			},
 			resultFilters: 'phraseMatch',
 			resultTextLocator: 'serviceClassName',
-			source: serviceClassNamesToContextNames
+			source: serviceClassNamesToContextNames,
 		}).render();
 
 		new A.AutoComplete({
 			inputNode: actionMethodNameInput,
 			resultFilters: 'phraseMatch',
 			resultTextLocator: 'actionMethodName',
-			source: function(query, callback) {
+			source: function (query, callback) {
 				var contextName = serviceClassNameInput.attr('data-context-name');
 				var serviceClassName = serviceClassNameInput.attr(
 					'data-service-class-name'
@@ -263,16 +269,16 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 				}
 
 				getActionMethodNames(contextName, serviceClassName, callback);
-			}
+			},
 		}).render();
 	};
 
-	var updateAdvancedModeTextarea = function() {
+	var updateAdvancedModeTextarea = function () {
 		var updatedInput = '';
 
 		A.all(
 			'#<portlet:namespace />allowedServiceSignaturesFriendlyContentBox .lfr-form-row:not(.hide)'
-		).each(function(item, index) {
+		).each((item, index) => {
 			var actionMethodName = item.one('.action-method-name').val();
 			var serviceClassName = item.one('.service-class-name').val();
 
@@ -288,7 +294,7 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 		A.one('#<portlet:namespace />allowedServiceSignatures').val(updatedInput);
 	};
 
-	var updateFriendlyModeInputs = function() {
+	var updateFriendlyModeInputs = function () {
 		var contentBox = A.one(
 			'#<portlet:namespace />allowedServiceSignaturesFriendlyContentBox'
 		);
@@ -303,7 +309,7 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 
 		entries = A.Array.dedupe(entries);
 
-		entries.forEach(function(item, index) {
+		entries.forEach((item, index) => {
 			var row = rowTemplate.clone();
 
 			var actionMethodNameInput = row.one('.action-method-name');
@@ -334,7 +340,7 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 			'#<portlet:namespace />allowedServiceSignaturesFriendlyContentBox',
 		namespace: '<portlet:namespace />',
 		on: {
-			clone: function(event) {
+			clone: function (event) {
 				var rowNode = event.row;
 
 				var actionMethodNameInput = rowNode.one('.action-method-name');
@@ -344,13 +350,13 @@ renderResponse.setTitle((sapEntry == null) ? LanguageUtil.get(request, "new-serv
 
 				serviceClassNameInput.attr({
 					'data-context-name': '',
-					'data-service-class-name': ''
+					'data-service-class-name': '',
 				});
 
 				initAutoCompleteRow(rowNode);
 			},
-			delete: updateAdvancedModeTextarea
-		}
+			delete: updateAdvancedModeTextarea,
+		},
 	}).render();
 
 	var rows = A.all(

@@ -14,12 +14,12 @@
 
 Liferay = window.Liferay || {};
 
-(function($, Liferay) {
-	var isFunction = function(val) {
+(function () {
+	var isFunction = function (val) {
 		return typeof val === 'function';
 	};
 
-	var isNode = function(node) {
+	var isNode = function (node) {
 		return node && (node._node || node.jquery || node.nodeType);
 	};
 
@@ -27,25 +27,25 @@ Liferay = window.Liferay || {};
 
 	var STR_MULTIPART = 'multipart/form-data';
 
-	Liferay.namespace = function namespace(obj, path) {
+	Liferay.namespace = function namespace(object, path) {
 		if (path === undefined) {
-			path = obj;
+			path = object;
 
-			obj = this;
+			object = this;
 		}
 
 		var parts = path.split('.');
 
 		for (var part; parts.length && (part = parts.shift()); ) {
-			if (obj[part] && obj[part] !== Object.prototype[part]) {
-				obj = obj[part];
+			if (object[part] && object[part] !== Object.prototype[part]) {
+				object = object[part];
 			}
 			else {
-				obj = obj[part] = {};
+				object = object[part] = {};
 			}
 		}
 
-		return obj;
+		return object;
 	};
 
 	/**
@@ -60,7 +60,7 @@ Liferay = window.Liferay || {};
 	 * exceptionCallback {function}: A function to execute when the response from the server contains a service exception. It receives a the exception message as it's first parameter.
 	 */
 
-	var Service = function() {
+	var Service = function () {
 		var args = Service.parseInvokeArgs(
 			Array.prototype.slice.call(arguments, 0)
 		);
@@ -70,17 +70,17 @@ Liferay = window.Liferay || {};
 
 	Service.URL_INVOKE = themeDisplay.getPathContext() + '/api/jsonws/invoke';
 
-	Service.bind = function() {
+	Service.bind = function () {
 		var args = Array.prototype.slice.call(arguments, 0);
 
-		return function() {
+		return function () {
 			var newArgs = Array.prototype.slice.call(arguments, 0);
 
 			return Service.apply(Service, args.concat(newArgs));
 		};
 	};
 
-	Service.parseInvokeArgs = function(args) {
+	Service.parseInvokeArgs = function (args) {
 		var instance = this;
 
 		var payload = args[0];
@@ -102,7 +102,7 @@ Liferay = window.Liferay || {};
 		return [payload, ioConfig];
 	};
 
-	Service.parseIOConfig = function(args) {
+	Service.parseIOConfig = function (args) {
 		var payload = args[0];
 
 		var ioConfig = payload.io || {};
@@ -121,7 +121,7 @@ Liferay = window.Liferay || {};
 
 			ioConfig.error = callbackException;
 
-			ioConfig.complete = function(response) {
+			ioConfig.complete = function (response) {
 				if (
 					response !== null &&
 					!Object.prototype.hasOwnProperty.call(response, 'exception')
@@ -147,18 +147,14 @@ Liferay = window.Liferay || {};
 			ioConfig.cache = false;
 		}
 
-		if (Liferay.PropsValues.NTLM_AUTH_ENABLED && Liferay.Browser.isIe()) {
-			ioConfig.type = 'GET';
-		}
-
 		return ioConfig;
 	};
 
-	Service.parseIOFormConfig = function(ioConfig, args) {
+	Service.parseIOFormConfig = function (ioConfig, args) {
 		var form = args[1];
 
 		if (isNode(form)) {
-			if (form.enctype == STR_MULTIPART) {
+			if (form.enctype === STR_MULTIPART) {
 				ioConfig.contentType = 'multipart/form-data';
 			}
 
@@ -166,7 +162,7 @@ Liferay = window.Liferay || {};
 		}
 	};
 
-	Service.parseStringPayload = function(args) {
+	Service.parseStringPayload = function (args) {
 		var params = {};
 		var payload = {};
 
@@ -181,7 +177,7 @@ Liferay = window.Liferay || {};
 		return payload;
 	};
 
-	Service.invoke = function(payload, ioConfig) {
+	Service.invoke = function (payload, ioConfig) {
 		var instance = this;
 
 		var cmd = JSON.stringify(payload);
@@ -196,17 +192,17 @@ Liferay = window.Liferay || {};
 		return Liferay.Util.fetch(instance.URL_INVOKE, {
 			body: data,
 			headers: {
-				contentType: ioConfig.contentType
+				contentType: ioConfig.contentType,
 			},
-			method: 'POST'
+			method: 'POST',
 		})
-			.then(response => response.json())
+			.then((response) => response.json())
 			.then(ioConfig.complete)
 			.catch(ioConfig.error);
 	};
 
 	function getHttpMethodFunction(httpMethodName) {
-		return function() {
+		return function () {
 			var args = Array.prototype.slice.call(arguments, 0);
 
 			var method = {method: httpMethodName};
@@ -227,6 +223,6 @@ Liferay = window.Liferay || {};
 
 	Liferay.Template = {
 		PORTLET:
-			'<div class="portlet"><div class="portlet-topper"><div class="portlet-title"></div></div><div class="portlet-content"></div><div class="forbidden-action"></div></div>'
+			'<div class="portlet"><div class="portlet-topper"><div class="portlet-title"></div></div><div class="portlet-content"></div><div class="forbidden-action"></div></div>',
 	};
-})(AUI.$, Liferay);
+})();

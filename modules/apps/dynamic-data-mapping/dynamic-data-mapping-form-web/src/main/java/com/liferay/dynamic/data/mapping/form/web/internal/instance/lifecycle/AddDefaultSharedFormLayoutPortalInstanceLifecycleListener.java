@@ -41,9 +41,6 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
-import java.util.Locale;
-import java.util.Map;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -60,20 +57,10 @@ import org.osgi.service.component.annotations.Reference;
 public class AddDefaultSharedFormLayoutPortalInstanceLifecycleListener
 	extends BasePortalInstanceLifecycleListener {
 
-	public String getFormLayoutURL(
-		ThemeDisplay themeDisplay, boolean privateLayout) {
-
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(themeDisplay.getPortalURL());
-
-		Group group = themeDisplay.getSiteGroup();
-
-		sb.append(group.getPathFriendlyURL(privateLayout, themeDisplay));
-
-		sb.append("/forms/shared/-/form/");
-
-		return sb.toString();
+	public String getFormLayoutURL(ThemeDisplay themeDisplay) {
+		return StringBundler.concat(
+			themeDisplay.getPortalURL(),
+			themeDisplay.getPathFriendlyURLPublic(), "/forms/shared/-/form/");
 	}
 
 	public boolean isSharedLayout(ThemeDisplay themeDisplay) {
@@ -115,16 +102,14 @@ public class AddDefaultSharedFormLayoutPortalInstanceLifecycleListener
 	}
 
 	protected Group addFormsGroup(long companyId) throws PortalException {
-		long defaultUserId = _userLocalService.getDefaultUserId(companyId);
-
-		Map<Locale, String> nameMap = HashMapBuilder.put(
-			LocaleUtil.getDefault(), GroupConstants.FORMS
-		).build();
-
 		return _groupLocalService.addGroup(
-			defaultUserId, GroupConstants.DEFAULT_PARENT_GROUP_ID, null, 0,
-			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap, null,
-			GroupConstants.TYPE_SITE_PRIVATE, true,
+			_userLocalService.getDefaultUserId(companyId),
+			GroupConstants.DEFAULT_PARENT_GROUP_ID, null, 0,
+			GroupConstants.DEFAULT_LIVE_GROUP_ID,
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), GroupConstants.FORMS
+			).build(),
+			null, GroupConstants.TYPE_SITE_PRIVATE, true,
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION,
 			GroupConstants.FORMS_FRIENDLY_URL, false, false, true, null);
 	}
@@ -134,8 +119,8 @@ public class AddDefaultSharedFormLayoutPortalInstanceLifecycleListener
 
 		ServiceContext serviceContext = new ServiceContext();
 
-		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAddGroupPermissions(true);
+		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAttribute(
 			"layout.instanceable.allowed", Boolean.TRUE);
 		serviceContext.setAttribute("layoutUpdateable", Boolean.FALSE);
@@ -163,8 +148,8 @@ public class AddDefaultSharedFormLayoutPortalInstanceLifecycleListener
 
 		ServiceContext serviceContext = new ServiceContext();
 
-		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAddGroupPermissions(true);
+		serviceContext.setAddGuestPermissions(true);
 		serviceContext.setAttribute(
 			"layout.instanceable.allowed", Boolean.TRUE);
 		serviceContext.setAttribute("layoutUpdateable", Boolean.FALSE);

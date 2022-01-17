@@ -144,6 +144,20 @@ public interface CTPreferencesModel
 	public void setCtCollectionId(long ctCollectionId);
 
 	/**
+	 * Returns the previous ct collection ID of this ct preferences.
+	 *
+	 * @return the previous ct collection ID of this ct preferences
+	 */
+	public long getPreviousCtCollectionId();
+
+	/**
+	 * Sets the previous ct collection ID of this ct preferences.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID of this ct preferences
+	 */
+	public void setPreviousCtCollectionId(long previousCtCollectionId);
+
+	/**
 	 * Returns the confirmation enabled of this ct preferences.
 	 *
 	 * @return the confirmation enabled of this ct preferences
@@ -163,5 +177,8 @@ public interface CTPreferencesModel
 	 * @param confirmationEnabled the confirmation enabled of this ct preferences
 	 */
 	public void setConfirmationEnabled(boolean confirmationEnabled);
+
+	@Override
+	public CTPreferences cloneWithOriginalValues();
 
 }

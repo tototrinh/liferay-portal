@@ -15,7 +15,7 @@
 package com.liferay.frontend.editor.alloyeditor.web.internal.editor.configuration;
 
 import com.liferay.frontend.editor.embed.EditorEmbedProvider;
-import com.liferay.frontend.editor.embed.EditorEmbedProviderTypeConstants;
+import com.liferay.frontend.editor.embed.constants.EditorEmbedProviderTypeConstants;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.editor.configuration.BaseEditorConfigContributor;
@@ -80,25 +80,27 @@ public class AlloyEditorEmbedConfigContributor
 		String editorEmbedProviderType,
 		EditorEmbedProvider editorEmbedProvider) {
 
-		JSONObject jsonObject = JSONUtil.put(
+		return JSONUtil.put(
 			"id", editorEmbedProvider.getId()
 		).put(
 			"tpl", editorEmbedProvider.getTpl()
 		).put(
 			"type", editorEmbedProviderType
+		).put(
+			"urlSchemes",
+			() -> {
+				JSONArray urlSchemesJSONArray =
+					JSONFactoryUtil.createJSONArray();
+
+				String[] urlSchemes = editorEmbedProvider.getURLSchemes();
+
+				for (String urlScheme : urlSchemes) {
+					urlSchemesJSONArray.put(urlScheme);
+				}
+
+				return urlSchemesJSONArray;
+			}
 		);
-
-		JSONArray urlSchemesJSONArray = JSONFactoryUtil.createJSONArray();
-
-		jsonObject.put("urlSchemes", urlSchemesJSONArray);
-
-		String[] urlSchemes = editorEmbedProvider.getURLSchemes();
-
-		for (String urlScheme : urlSchemes) {
-			urlSchemesJSONArray.put(urlScheme);
-		}
-
-		return jsonObject;
 	}
 
 	protected JSONArray getEditorEmbedProvidersJSONArray() {

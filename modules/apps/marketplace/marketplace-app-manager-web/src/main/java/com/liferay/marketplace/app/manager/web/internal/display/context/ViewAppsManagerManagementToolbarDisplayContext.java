@@ -17,12 +17,13 @@ package com.liferay.marketplace.app.manager.web.internal.display.context;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.marketplace.app.manager.web.internal.constants.BundleStateConstants;
 import com.liferay.marketplace.app.manager.web.internal.util.AppDisplay;
 import com.liferay.marketplace.app.manager.web.internal.util.AppDisplayFactoryUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.BundleManagerUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.comparator.AppDisplayComparator;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -30,6 +31,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.util.ListUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.portlet.PortletURL;
@@ -53,13 +55,15 @@ public class ViewAppsManagerManagementToolbarDisplayContext
 		_searchContainer = _createSearchContainer(liferayPortletRequest);
 	}
 
+	@Override
 	public String getClearResultsURL() {
-		PortletURL removeLabelURL = getPortletURL();
-
-		removeLabelURL.setParameter("category", (String)null);
-		removeLabelURL.setParameter("state", (String)null);
-
-		return removeLabelURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"category", (String)null
+		).setParameter(
+			"state", (String)null
+		).buildString();
 	}
 
 	@Override
@@ -68,71 +72,67 @@ public class ViewAppsManagerManagementToolbarDisplayContext
 			dropdownGroupItem -> {
 				dropdownGroupItem.setDropdownItems(getCategoryDropdownItems());
 				dropdownGroupItem.setLabel(
-					LanguageUtil.get(request, "categories"));
+					LanguageUtil.get(httpServletRequest, "categories"));
 			}
 		).addGroup(
 			dropdownGroupItem -> {
 				dropdownGroupItem.setDropdownItems(getStatusDropdownItems());
-				dropdownGroupItem.setLabel(LanguageUtil.get(request, "status"));
+				dropdownGroupItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "status"));
 			}
 		).addGroup(
 			dropdownGroupItem -> {
 				dropdownGroupItem.setDropdownItems(getOrderByDropdownItems());
 				dropdownGroupItem.setLabel(
-					LanguageUtil.get(request, "order-by"));
+					LanguageUtil.get(httpServletRequest, "order-by"));
 			}
 		).build();
 	}
 
+	@Override
 	public List<LabelItem> getFilterLabelItems() {
-		return new LabelItemList() {
-			{
-				String category = getCategory();
+		String category = getCategory();
+		String state = getState();
 
-				if (!category.equals("all-categories")) {
-					add(
-						labelItem -> {
-							PortletURL removeLabelURL = getPortletURL();
+		return LabelItemListBuilder.add(
+			() -> !category.equals("all-categories"),
+			labelItem -> {
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						getPortletURL()
+					).setParameter(
+						"category", (String)null
+					).buildString());
 
-							removeLabelURL.setParameter(
-								"category", (String)null);
+				labelItem.setCloseable(true);
 
-							labelItem.putData(
-								"removeLabelURL", removeLabelURL.toString());
+				String label = String.format(
+					"%s: %s", LanguageUtil.get(httpServletRequest, "category"),
+					LanguageUtil.get(httpServletRequest, category));
 
-							labelItem.setCloseable(true);
-
-							String label = String.format(
-								"%s: %s", LanguageUtil.get(request, "category"),
-								LanguageUtil.get(request, category));
-
-							labelItem.setLabel(label);
-						});
-				}
-
-				String state = getState();
-
-				if (!state.equals("all-statuses")) {
-					add(
-						labelItem -> {
-							PortletURL removeLabelURL = getPortletURL();
-
-							removeLabelURL.setParameter("state", (String)null);
-
-							labelItem.putData(
-								"removeLabelURL", removeLabelURL.toString());
-
-							labelItem.setCloseable(true);
-
-							String label = String.format(
-								"%s: %s", LanguageUtil.get(request, "state"),
-								LanguageUtil.get(request, state));
-
-							labelItem.setLabel(label);
-						});
-				}
+				labelItem.setLabel(label);
 			}
-		};
+		).add(
+			() -> !state.equals("all-statuses"),
+			labelItem -> {
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						getPortletURL()
+					).setParameter(
+						"state", (String)null
+					).buildString());
+
+				labelItem.setCloseable(true);
+
+				String label = String.format(
+					"%s: %s", LanguageUtil.get(httpServletRequest, "state"),
+					LanguageUtil.get(httpServletRequest, state));
+
+				labelItem.setLabel(label);
+			}
+		).build();
 	}
 
 	@Override
@@ -142,11 +142,15 @@ public class ViewAppsManagerManagementToolbarDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("category", getCategory());
-		portletURL.setParameter("state", getState());
-		portletURL.setParameter("orderByType", getOrderByType());
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setParameter(
+			"category", getCategory()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"state", getState()
+		).buildPortletURL();
 
 		if (_searchContainer != null) {
 			portletURL.setParameter(
@@ -161,14 +165,14 @@ public class ViewAppsManagerManagementToolbarDisplayContext
 	}
 
 	@Override
-	public SearchContainer getSearchContainer() {
+	public SearchContainer<Object> getSearchContainer() {
 		return _searchContainer;
 	}
 
-	private SearchContainer _createSearchContainer(
+	private SearchContainer<Object> _createSearchContainer(
 		LiferayPortletRequest liferayPortletRequest) {
 
-		SearchContainer searchContainer = new SearchContainer(
+		SearchContainer<Object> searchContainer = new SearchContainer(
 			liferayPortletRequest, getPortletURL(), null, "no-apps-were-found");
 
 		searchContainer.setOrderByCol(getOrderByCol());
@@ -194,14 +198,16 @@ public class ViewAppsManagerManagementToolbarDisplayContext
 			end = appDisplays.size();
 		}
 
+		List<Object> results = new ArrayList<>(appDisplays);
+
 		searchContainer.setResults(
-			appDisplays.subList(searchContainer.getStart(), end));
+			results.subList(searchContainer.getStart(), end));
 
 		searchContainer.setTotal(appDisplays.size());
 
 		return searchContainer;
 	}
 
-	private final SearchContainer _searchContainer;
+	private final SearchContainer<Object> _searchContainer;
 
 }

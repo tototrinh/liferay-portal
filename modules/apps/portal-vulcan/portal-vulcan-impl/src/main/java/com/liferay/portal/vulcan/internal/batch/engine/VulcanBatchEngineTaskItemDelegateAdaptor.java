@@ -17,12 +17,15 @@ package com.liferay.portal.vulcan.internal.batch.engine;
 import com.liferay.batch.engine.BatchEngineTaskItemDelegate;
 import com.liferay.batch.engine.pagination.Page;
 import com.liferay.batch.engine.pagination.Pagination;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
+import com.liferay.portal.vulcan.util.GroupUtil;
 
 import java.io.Serializable;
 
@@ -30,6 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,9 +44,13 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 	implements BatchEngineTaskItemDelegate<T> {
 
 	public VulcanBatchEngineTaskItemDelegateAdaptor(
+		DepotEntryLocalService depotEntryLocalService,
+		GroupLocalService groupLocalService,
 		VulcanBatchEngineTaskItemDelegate<T>
 			vulcanBatchEngineTaskItemDelegate) {
 
+		_depotEntryLocalService = depotEntryLocalService;
+		_groupLocalService = groupLocalService;
 		_vulcanBatchEngineTaskItemDelegate = vulcanBatchEngineTaskItemDelegate;
 	}
 
@@ -51,7 +59,8 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 			Collection<T> items, Map<String, Serializable> parameters)
 		throws Exception {
 
-		_vulcanBatchEngineTaskItemDelegate.create(items, parameters);
+		_vulcanBatchEngineTaskItemDelegate.create(
+			items, _applyParamConverters(parameters));
 	}
 
 	@Override
@@ -59,7 +68,8 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 			Collection<T> items, Map<String, Serializable> parameters)
 		throws Exception {
 
-		_vulcanBatchEngineTaskItemDelegate.delete(items, parameters);
+		_vulcanBatchEngineTaskItemDelegate.delete(
+			items, _applyParamConverters(parameters));
 	}
 
 	@Override
@@ -75,10 +85,17 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 		Class<? extends VulcanBatchEngineTaskItemDelegate> clazz =
 			_vulcanBatchEngineTaskItemDelegate.getClass();
 
-		Class<?> superclass = clazz.getSuperclass();
+		Class<T> itemClass = _getItemClassFromGenericInterfaces(
+			clazz.getGenericInterfaces());
 
-		return _getItemClassFromGenericInterfaces(
-			superclass.getGenericInterfaces());
+		if (itemClass == null) {
+			Class<?> superclass = clazz.getSuperclass();
+
+			itemClass = _getItemClassFromGenericInterfaces(
+				superclass.getGenericInterfaces());
+		}
+
+		return itemClass;
 	}
 
 	@Override
@@ -92,13 +109,14 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 				filter,
 				com.liferay.portal.vulcan.pagination.Pagination.of(
 					pagination.getPage(), pagination.getPageSize()),
-				sorts, parameters, search);
+				sorts, _applyParamConverters(parameters), search);
 
 		return Page.of(page.getItems(), pagination, page.getTotalCount());
 	}
 
 	@Override
 	public void setContextCompany(Company contextCompany) {
+		_company = contextCompany;
 		_vulcanBatchEngineTaskItemDelegate.setContextCompany(contextCompany);
 	}
 
@@ -117,7 +135,38 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 			Collection<T> items, Map<String, Serializable> parameters)
 		throws Exception {
 
-		_vulcanBatchEngineTaskItemDelegate.update(items, parameters);
+		_vulcanBatchEngineTaskItemDelegate.update(
+			items, _applyParamConverters(parameters));
+	}
+
+	private Map<String, Serializable> _applyParamConverters(
+		Map<String, Serializable> parameters) {
+
+		if (parameters == null) {
+			return new HashMap<>();
+		}
+
+		for (Map.Entry<String, Serializable> entry : parameters.entrySet()) {
+			String key = entry.getKey();
+			Serializable value = entry.getValue();
+
+			if (key.equals("assetLibraryId") && (value != null)) {
+				parameters.put(
+					key,
+					GroupUtil.getDepotGroupId(
+						String.valueOf(value), _company.getCompanyId(),
+						_depotEntryLocalService, _groupLocalService));
+			}
+			else if (key.equals("siteId") && (value != null)) {
+				parameters.put(
+					key,
+					GroupUtil.getGroupId(
+						_company.getCompanyId(), String.valueOf(value),
+						_groupLocalService));
+			}
+		}
+
+		return parameters;
 	}
 
 	private Class<T> _getItemClassFromGenericInterfaces(
@@ -144,6 +193,9 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 		return null;
 	}
 
+	private Company _company;
+	private final DepotEntryLocalService _depotEntryLocalService;
+	private final GroupLocalService _groupLocalService;
 	private final VulcanBatchEngineTaskItemDelegate<T>
 		_vulcanBatchEngineTaskItemDelegate;
 

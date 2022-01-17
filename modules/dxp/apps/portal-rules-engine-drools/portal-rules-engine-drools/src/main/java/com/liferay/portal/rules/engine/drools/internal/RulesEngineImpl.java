@@ -18,17 +18,17 @@ import com.liferay.portal.kernel.messaging.MessageBus;
 import com.liferay.portal.kernel.messaging.proxy.ProxyMessageListener;
 import com.liferay.portal.kernel.resource.ResourceRetriever;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.rules.engine.Fact;
 import com.liferay.portal.rules.engine.Query;
 import com.liferay.portal.rules.engine.QueryType;
 import com.liferay.portal.rules.engine.RulesEngine;
-import com.liferay.portal.rules.engine.RulesEngineConstants;
 import com.liferay.portal.rules.engine.RulesEngineException;
 import com.liferay.portal.rules.engine.RulesLanguage;
 import com.liferay.portal.rules.engine.RulesResourceRetriever;
+import com.liferay.portal.rules.engine.constants.RulesEngineConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -209,10 +209,9 @@ public class RulesEngineImpl implements RulesEngine {
 		proxyMessageListener.setMessageBus(_messageBus);
 
 		Dictionary<String, Object> proxyMessageListenerProperties =
-			new HashMapDictionary<>();
-
-		proxyMessageListenerProperties.put(
-			"destination.name", RulesEngineConstants.DESTINATION_NAME);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"destination.name", RulesEngineConstants.DESTINATION_NAME
+			).build();
 
 		BundleContext bundleContext = componentContext.getBundleContext();
 
@@ -242,14 +241,8 @@ public class RulesEngineImpl implements RulesEngine {
 		throws RulesEngineException {
 
 		try {
-			KnowledgeBaseConfiguration knowledgeBaseConfiguration =
-				KnowledgeBaseFactory.newKnowledgeBaseConfiguration();
-
 			KnowledgeBuilderConfiguration knowledgeBuilderConfiguration =
 				KnowledgeBuilderFactory.newKnowledgeBuilderConfiguration();
-
-			KnowledgeBase knowledgeBase = KnowledgeBaseFactory.newKnowledgeBase(
-				knowledgeBaseConfiguration);
 
 			KnowledgeBuilder knowledgeBuilder =
 				KnowledgeBuilderFactory.newKnowledgeBuilder(
@@ -275,6 +268,12 @@ public class RulesEngineImpl implements RulesEngine {
 				throw new RulesEngineException(
 					knowledgeBuilderErrors.toString());
 			}
+
+			KnowledgeBaseConfiguration knowledgeBaseConfiguration =
+				KnowledgeBaseFactory.newKnowledgeBaseConfiguration();
+
+			KnowledgeBase knowledgeBase = KnowledgeBaseFactory.newKnowledgeBase(
+				knowledgeBaseConfiguration);
 
 			knowledgeBase.addKnowledgePackages(
 				knowledgeBuilder.getKnowledgePackages());
@@ -357,10 +356,10 @@ public class RulesEngineImpl implements RulesEngine {
 
 		Map<String, String> rulesLanguageMap = new HashMap<>();
 
-		Enumeration<String> keys = properties.keys();
+		Enumeration<String> enumeration = properties.keys();
 
-		while (keys.hasMoreElements()) {
-			String key = keys.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String key = enumeration.nextElement();
 
 			if (!key.startsWith("rules.engine.language.mapping")) {
 				continue;

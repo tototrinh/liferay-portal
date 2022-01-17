@@ -15,23 +15,26 @@
 package com.liferay.account.service.impl;
 
 import com.liferay.account.constants.AccountActionKeys;
-import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.service.base.AccountEntryServiceBaseImpl;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
-import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.permission.OrganizationPermission;
+import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Brian Wing Shun Chan
@@ -46,23 +49,121 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
 public class AccountEntryServiceImpl extends AccountEntryServiceBaseImpl {
 
 	@Override
-	public AccountEntry addAccountEntry(
-			long userId, long parentAccountEntryId, String name,
-			String description, String[] domains, byte[] logoBytes, int status)
+	public void activateAccountEntries(long[] accountEntryIds)
 		throws PortalException {
 
-		_portletResourcePermission.check(
-			getPermissionChecker(), null, AccountActionKeys.ADD_ACCOUNT_ENTRY);
+		for (long accountEntryId : accountEntryIds) {
+			activateAccountEntry(accountEntryId);
+		}
+	}
+
+	@Override
+	public AccountEntry activateAccountEntry(long accountEntryId)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.UPDATE);
+
+		return accountEntryLocalService.activateAccountEntry(accountEntryId);
+	}
+
+	@Override
+	public AccountEntry addAccountEntry(
+			long userId, long parentAccountEntryId, String name,
+			String description, String[] domains, String email,
+			byte[] logoBytes, String taxIdNumber, String type, int status,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		PortalPermissionUtil.check(
+			getPermissionChecker(), AccountActionKeys.ADD_ACCOUNT_ENTRY);
 
 		return accountEntryLocalService.addAccountEntry(
-			userId, parentAccountEntryId, name, description, domains, logoBytes,
-			status);
+			userId, parentAccountEntryId, name, description, domains, email,
+			logoBytes, taxIdNumber, type, status, serviceContext);
+	}
+
+	@Override
+	public AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
+			String taxIdNumber, String type, int status,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		PermissionChecker permissionChecker = getPermissionChecker();
+
+		AccountEntry accountEntry =
+			accountEntryLocalService.fetchAccountEntryByExternalReferenceCode(
+				permissionChecker.getCompanyId(), externalReferenceCode);
+
+		if (accountEntry == null) {
+			PortalPermissionUtil.check(
+				permissionChecker, AccountActionKeys.ADD_ACCOUNT_ENTRY);
+		}
+		else {
+			_accountEntryModelResourcePermission.check(
+				permissionChecker, permissionChecker.getCompanyId(),
+				ActionKeys.UPDATE);
+		}
+
+		return accountEntryLocalService.addOrUpdateAccountEntry(
+			externalReferenceCode, userId, parentAccountEntryId, name,
+			description, domains, emailAddress, logoBytes, taxIdNumber, type,
+			status, serviceContext);
+	}
+
+	@Override
+	public void deactivateAccountEntries(long[] accountEntryIds)
+		throws PortalException {
+
+		for (long accountEntryId : accountEntryIds) {
+			deactivateAccountEntry(accountEntryId);
+		}
+	}
+
+	@Override
+	public AccountEntry deactivateAccountEntry(long accountEntryId)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.DELETE);
+
+		return accountEntryLocalService.deactivateAccountEntry(accountEntryId);
+	}
+
+	@Override
+	public void deleteAccountEntries(long[] accountEntryIds)
+		throws PortalException {
+
+		for (long accountEntryId : accountEntryIds) {
+			deleteAccountEntry(accountEntryId);
+		}
+	}
+
+	@Override
+	public void deleteAccountEntry(long accountEntryId) throws PortalException {
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.DELETE);
+
+		accountEntryLocalService.deleteAccountEntry(accountEntryId);
+	}
+
+	@Override
+	public AccountEntry fetchAccountEntry(long accountEntryId)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.VIEW);
+
+		return accountEntryLocalService.fetchAccountEntry(accountEntryId);
 	}
 
 	@Override
 	public List<AccountEntry> getAccountEntries(
 			long companyId, int status, int start, int end,
-			OrderByComparator<AccountEntry> obc)
+			OrderByComparator<AccountEntry> orderByComparator)
 		throws PortalException {
 
 		PermissionChecker permissionChecker = getPermissionChecker();
@@ -77,14 +178,90 @@ public class AccountEntryServiceImpl extends AccountEntryServiceBaseImpl {
 		}
 
 		return accountEntryLocalService.getAccountEntries(
-			companyId, status, start, end, obc);
+			companyId, status, start, end, orderByComparator);
+	}
+
+	@Override
+	public AccountEntry getAccountEntry(long accountEntryId)
+		throws PortalException {
+
+		AccountEntry accountEntry = accountEntryLocalService.getAccountEntry(
+			accountEntryId);
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.VIEW);
+
+		return accountEntry;
+	}
+
+	@Override
+	public BaseModelSearchResult<AccountEntry> searchAccountEntries(
+			String keywords, LinkedHashMap<String, Object> params, int cur,
+			int delta, String orderByField, boolean reverse)
+		throws PortalException {
+
+		PermissionChecker permissionChecker = getPermissionChecker();
+
+		if (params == null) {
+			params = new LinkedHashMap<>();
+		}
+
+		params.put("permissionUserId", permissionChecker.getUserId());
+
+		return accountEntryLocalService.searchAccountEntries(
+			permissionChecker.getCompanyId(), keywords, params, cur, delta,
+			orderByField, reverse);
+	}
+
+	@Override
+	public AccountEntry updateAccountEntry(AccountEntry accountEntry)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntry, ActionKeys.UPDATE);
+
+		return accountEntryLocalService.updateAccountEntry(accountEntry);
+	}
+
+	@Override
+	public AccountEntry updateAccountEntry(
+			long accountEntryId, long parentAccountEntryId, String name,
+			String description, boolean deleteLogo, String[] domains,
+			String emailAddress, byte[] logoBytes, String taxIdNumber,
+			int status, ServiceContext serviceContext)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.UPDATE);
+
+		return accountEntryLocalService.updateAccountEntry(
+			accountEntryId, parentAccountEntryId, name, description, deleteLogo,
+			domains, emailAddress, logoBytes, taxIdNumber, status,
+			serviceContext);
+	}
+
+	@Override
+	public AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws PortalException {
+
+		_accountEntryModelResourcePermission.check(
+			getPermissionChecker(), accountEntryId, ActionKeys.UPDATE);
+
+		return accountEntryLocalService.updateExternalReferenceCode(
+			accountEntryId, externalReferenceCode);
 	}
 
 	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(resource.name=" + AccountConstants.RESOURCE_NAME + ")"
+		target = "(model.class.name=com.liferay.account.model.AccountEntry)"
 	)
-	private volatile PortletResourcePermission _portletResourcePermission;
+	private ModelResourcePermission<AccountEntry>
+		_accountEntryModelResourcePermission;
+
+	@Reference
+	private OrganizationPermission _organizationPermission;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

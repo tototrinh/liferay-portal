@@ -21,10 +21,12 @@ import com.liferay.multi.factor.authentication.email.otp.service.base.MFAEmailOT
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.UserLocalService;
 
 import java.util.Date;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Arthur Chan
@@ -36,6 +38,7 @@ import org.osgi.service.component.annotations.Component;
 public class MFAEmailOTPEntryLocalServiceImpl
 	extends MFAEmailOTPEntryLocalServiceBaseImpl {
 
+	@Override
 	public MFAEmailOTPEntry addMFAEmailOTPEntry(long userId)
 		throws PortalException {
 
@@ -49,7 +52,7 @@ public class MFAEmailOTPEntryLocalServiceImpl
 		mfaEmailOTPEntry = mfaEmailOTPEntryPersistence.create(
 			counterLocalService.increment());
 
-		User user = userLocalService.getUserById(userId);
+		User user = _userLocalService.getUserById(userId);
 
 		mfaEmailOTPEntry.setCompanyId(user.getCompanyId());
 		mfaEmailOTPEntry.setUserId(user.getUserId());
@@ -61,10 +64,12 @@ public class MFAEmailOTPEntryLocalServiceImpl
 		return mfaEmailOTPEntryPersistence.update(mfaEmailOTPEntry);
 	}
 
+	@Override
 	public MFAEmailOTPEntry fetchMFAEmailOTPEntryByUserId(long userId) {
 		return mfaEmailOTPEntryPersistence.fetchByUserId(userId);
 	}
 
+	@Override
 	public MFAEmailOTPEntry resetFailedAttempts(long userId)
 		throws PortalException {
 
@@ -82,6 +87,7 @@ public class MFAEmailOTPEntryLocalServiceImpl
 		return mfaEmailOTPEntryPersistence.update(mfaEmailOTPEntry);
 	}
 
+	@Override
 	public MFAEmailOTPEntry updateAttempts(
 			long userId, String ip, boolean success)
 		throws PortalException {
@@ -109,5 +115,8 @@ public class MFAEmailOTPEntryLocalServiceImpl
 
 		return mfaEmailOTPEntryPersistence.update(mfaEmailOTPEntry);
 	}
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

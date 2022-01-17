@@ -203,6 +203,20 @@ public interface KaleoInstanceModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo instance.
+	 *
+	 * @return the kaleo definition ID of this kaleo instance
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo instance.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo instance
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo instance.
 	 *
 	 * @return the kaleo definition version ID of this kaleo instance
@@ -337,5 +351,8 @@ public interface KaleoInstanceModel
 	 * @param workflowContext the workflow context of this kaleo instance
 	 */
 	public void setWorkflowContext(String workflowContext);
+
+	@Override
+	public KaleoInstance cloneWithOriginalValues();
 
 }

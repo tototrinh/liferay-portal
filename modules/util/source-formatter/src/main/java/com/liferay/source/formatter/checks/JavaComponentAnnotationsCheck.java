@@ -50,13 +50,14 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 			String fileContent)
 		throws IOException {
 
-		return formatAnnotations(fileName, absolutePath, (JavaClass)javaTerm);
+		return formatAnnotations(
+			fileName, absolutePath, (JavaClass)javaTerm, fileContent);
 	}
 
 	@Override
 	protected String formatAnnotation(
 		String fileName, String absolutePath, JavaClass javaClass,
-		String annotation, String indent) {
+		String fileContent, String annotation, String indent) {
 
 		String trimmedAnnotation = StringUtil.trim(annotation);
 
@@ -66,7 +67,7 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 			return annotation;
 		}
 
-		List<String> importNames = javaClass.getImports();
+		List<String> importNames = javaClass.getImportNames();
 
 		if (!importNames.contains(
 				"org.osgi.service.component.annotations.Component")) {
@@ -77,6 +78,7 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 		annotation = _formatAnnotationParameterProperties(annotation);
 		annotation = _formatConfigurationAttributes(
 			fileName, absolutePath, javaClass, annotation);
+		annotation = _formatEnabledAttribute(absolutePath, annotation);
 		annotation = _formatServiceAttribute(
 			fileName, absolutePath, javaClass.getName(), annotation,
 			javaClass.getImplementedClassNames());
@@ -239,7 +241,7 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 			return annotation;
 		}
 
-		List<String> imports = javaClass.getImports();
+		List<String> imports = javaClass.getImportNames();
 
 		if (imports.contains(
 				"org.osgi.service.component.annotations.Modified") ||
@@ -264,6 +266,40 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 
 		return _addAttribute(
 			annotation, "configurationPolicy", "ConfigurationPolicy.IGNORE");
+	}
+
+	private String _formatEnabledAttribute(
+		String absolutePath, String annotation) {
+
+		if (absolutePath.contains("-test/") ||
+			absolutePath.contains("-test-util/")) {
+
+			return annotation;
+		}
+
+		List<String> enterpriseAppModulePathNames = getAttributeValues(
+			_ENTERPRISE_APP_MODULE_PATH_NAMES_KEY, absolutePath);
+
+		if (enterpriseAppModulePathNames.isEmpty()) {
+			return annotation;
+		}
+
+		for (String enterpriseAppModulePathName :
+				enterpriseAppModulePathNames) {
+
+			if (!absolutePath.contains(enterpriseAppModulePathName)) {
+				continue;
+			}
+
+			String enabledAttributeValue = _getAttributeValue(
+				annotation, "enabled");
+
+			if (enabledAttributeValue == null) {
+				return _addAttribute(annotation, "enabled", "false");
+			}
+		}
+
+		return annotation;
 	}
 
 	private String _formatMVCPortletProperties(String annotation) {
@@ -404,7 +440,7 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 		}
 
 		StringBundler sb = new StringBundler(
-			implementedClassNames.size() * 3 + 1);
+			(implementedClassNames.size() * 3) + 1);
 
 		sb.append("{");
 
@@ -451,6 +487,9 @@ public class JavaComponentAnnotationsCheck extends JavaAnnotationsCheck {
 
 	private static final String _CHECK_SELF_REGISTRATION_KEY =
 		"checkSelfRegistration";
+
+	private static final String _ENTERPRISE_APP_MODULE_PATH_NAMES_KEY =
+		"enterpriseAppModulePathNames";
 
 	private static final Pattern _annotationParameterPropertyPattern =
 		Pattern.compile("\\s(\\w+) = \\{");

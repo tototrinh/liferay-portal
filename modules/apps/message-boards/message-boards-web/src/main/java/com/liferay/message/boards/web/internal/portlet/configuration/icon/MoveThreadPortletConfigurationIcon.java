@@ -19,12 +19,15 @@ import com.liferay.message.boards.constants.MBPortletKeys;
 import com.liferay.message.boards.model.MBCategory;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.message.boards.web.internal.portlet.action.ActionUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -60,14 +63,15 @@ public class MoveThreadPortletConfigurationIcon
 	public String getURL(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, MBPortletKeys.MESSAGE_BOARDS_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/message_boards/move_thread");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(portletRequest));
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				portletRequest, MBPortletKeys.MESSAGE_BOARDS_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/message_boards/move_thread"
+		).setRedirect(
+			_portal.getCurrentURL(portletRequest)
+		).buildPortletURL();
 
 		try {
 			portletURL.setParameter(
@@ -81,6 +85,10 @@ public class MoveThreadPortletConfigurationIcon
 				"threadId", String.valueOf(message.getThreadId()));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 
@@ -101,7 +109,7 @@ public class MoveThreadPortletConfigurationIcon
 				(ThemeDisplay)portletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			if (ModelResourcePermissionHelper.contains(
+			if (ModelResourcePermissionUtil.contains(
 					_categoryModelResourcePermission,
 					themeDisplay.getPermissionChecker(),
 					themeDisplay.getScopeGroupId(), getCategoryId(category),
@@ -111,6 +119,9 @@ public class MoveThreadPortletConfigurationIcon
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return false;
@@ -125,6 +136,9 @@ public class MoveThreadPortletConfigurationIcon
 
 		return categoryId;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		MoveThreadPortletConfigurationIcon.class);
 
 	@Reference(
 		target = "(model.class.name=com.liferay.message.boards.model.MBCategory)"

@@ -134,6 +134,11 @@ public class LayoutSetPrototypeWrapper
 		}
 	}
 
+	@Override
+	public LayoutSetPrototype cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
 	/**
 	 * Returns the active of this layout set prototype.
 	 *
@@ -696,9 +701,10 @@ public class LayoutSetPrototypeWrapper
 
 	@Override
 	public void setSettingsProperties(
-		com.liferay.portal.kernel.util.UnicodeProperties settingsProperties) {
+		com.liferay.portal.kernel.util.UnicodeProperties
+			settingsUnicodeProperties) {
 
-		model.setSettingsProperties(settingsProperties);
+		model.setSettingsProperties(settingsUnicodeProperties);
 	}
 
 	/**

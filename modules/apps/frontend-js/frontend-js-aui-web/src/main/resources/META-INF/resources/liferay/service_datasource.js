@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-service-datasource',
-	A => {
+	(A) => {
 		var ServiceDataSource = A.Component.create({
 			EXTENDS: A.DataSource.Local,
 			NAME: 'servicedatasource',
@@ -30,26 +30,26 @@ AUI.add(
 					);
 				},
 
-				_serviceCallbackFn(obj, xHR, event) {
+				_serviceCallbackFn(object, xHR, event) {
 					var instance = this;
 
 					instance.fire(
 						'data',
 						A.mix(
 							{
-								data: obj
+								data: object,
 							},
 							event
 						)
 					);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Service.DataSource = ServiceDataSource;
 	},
 	'',
 	{
-		requires: ['aui-base', 'datasource-local']
+		requires: ['aui-base', 'datasource-local'],
 	}
 );

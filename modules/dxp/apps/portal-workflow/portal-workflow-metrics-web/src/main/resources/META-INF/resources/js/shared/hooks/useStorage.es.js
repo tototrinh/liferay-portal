@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {useEventListener} from 'frontend-js-react-web';
+import {useEventListener} from '@liferay/frontend-js-react-web';
 import {useCallback, useState} from 'react';
 
 import {jsonStorage} from '../util/storage.es';
@@ -42,10 +42,10 @@ const useStorage = (storageType, key) => {
 		);
 	};
 
-	return [value, newValue => updater(newValue), () => updater({}, true)];
+	return [value, (newValue) => updater(newValue), () => updater({}, true)];
 };
 
-const setStorage = storage => key => useStorage(storage, key);
+const setStorage = (storage) => (key) => useStorage(storage, key);
 
 const useLocalStorage = setStorage(localStorage);
 const useSessionStorage = setStorage(sessionStorage);

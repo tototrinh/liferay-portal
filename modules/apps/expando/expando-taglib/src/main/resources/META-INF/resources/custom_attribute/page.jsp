@@ -19,6 +19,7 @@
 <%
 String randomNamespace = PortalUtil.generateRandomKey(request, "taglib_ui_custom_attribute_page") + StringPool.UNDERLINE;
 
+Set<Locale> availableLocales = (Set<Locale>)request.getAttribute("liferay-expando:custom-attribute:availableLocales");
 String className = (String)request.getAttribute("liferay-expando:custom-attribute:className");
 long classPK = GetterUtil.getLong((String)request.getAttribute("liferay-expando:custom-attribute:classPK"));
 boolean editable = GetterUtil.getBoolean((String)request.getAttribute("liferay-expando:custom-attribute:editable"));
@@ -299,7 +300,7 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 						</c:when>
 						<c:when test="<%= type == ExpandoColumnConstants.GEOLOCATION %>">
 							<div id="<portlet:namespace />CoordinatesContainer">
-								<div class="glyphicon glyphicon-map-marker" id="<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + name + "--Location" %>">
+								<div class="glyphicon glyphicon-map-marker" id="<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + HtmlUtil.escapeAttribute(name) + "--Location" %>">
 								</div>
 
 								<%
@@ -315,49 +316,19 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 								/>
 							</div>
 
-							<aui:script require="map-common/js/MapBase.es as MapBase">
-								var geolocationField = {
-									init: function() {
-										Liferay.MapBase.get(
-											'<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + mapDisplayName + "--" %>',
-											function(map) {
-												map.on(
-													'positionChange',
-													geolocationField.onPositionChange,
-													geolocationField
-												);
-											}
-										);
-									},
-									onPositionChange: function(event) {
-										var inputName =
-											'<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + HtmlUtil.escapeJS(name) + "--" %>';
-										var inputNode = document.querySelector('[name="' + inputName + '"]');
+							<liferay-frontend:component
+								componentId="GeoLocationField"
+								context='<%=
+									HashMapBuilder.<String, Object>put(
+										"inputName", portletDisplay.getNamespace() + "ExpandoAttribute--" + HtmlUtil.escapeJS(name) + "--"
+									).put(
+										"mapName", portletDisplay.getNamespace() + "ExpandoAttribute--" + mapDisplayName + "--"
+									).build()
+								%>'
+								module="js/GeoLocationField"
+							/>
 
-										var location = event.newVal.location;
-
-										if (inputNode) {
-											inputNode.setAttribute(
-												'value',
-												JSON.stringify({
-													latitude: location.lat,
-													longitude: location.lng
-												})
-											);
-										}
-
-										var locationNode = document.getElementById(inputName + 'Location');
-
-										if (locationNode) {
-											locationNode.innerHTML = event.newVal.address;
-										}
-									}
-								};
-
-								geolocationField.init();
-							</aui:script>
-
-							<aui:input name='<%= "ExpandoAttribute--" + name + "--" %>' type="hidden" value="<%= HtmlUtil.escape(value.toString()) %>" />
+							<aui:input name='<%= "ExpandoAttribute--" + HtmlUtil.escapeJS(name) + "--" %>' type="hidden" value="<%= HtmlUtil.escape(value.toString()) %>" />
 						</c:when>
 						<c:when test="<%= type == ExpandoColumnConstants.INTEGER_ARRAY %>">
 
@@ -633,19 +604,19 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 
 								</c:when>
 								<c:when test="<%= propertyDisplayType.equals(ExpandoColumnConstants.PROPERTY_DISPLAY_TYPE_SELECTION_LIST) %>">
-									<select class="form-control" id="<portlet:namespace /><%= randomNamespace %><%= HtmlUtil.getAUICompatibleId(name) %>" name="<portlet:namespace />ExpandoAttribute--<%= HtmlUtil.escapeAttribute(name) %>--">
+									<aui:select id="<%= randomNamespace + HtmlUtil.escapeAttribute(name) %>" label="" name='<%= "ExpandoAttribute--" + HtmlUtil.escapeAttribute(name) + "--" %>'>
 
 										<%
 										for (String curDefaultValue : (String[])defaultValue) {
 										%>
 
-											<option <%= ((curValue.length > 0) && ArrayUtil.contains(curValue, curDefaultValue)) ? "selected" : "" %> value="<%= HtmlUtil.escape(curDefaultValue) %>"><%= HtmlUtil.escape(curDefaultValue) %></option>
+											<aui:option label="<%= HtmlUtil.escape(curDefaultValue) %>" selected="<%= (curValue.length > 0) && ArrayUtil.contains(curValue, curDefaultValue) %>" value="<%= HtmlUtil.escape(curDefaultValue) %>" />
 
 										<%
 										}
 										%>
 
-									</select>
+									</aui:select>
 								</c:when>
 								<c:when test="<%= propertyDisplayType.equals(ExpandoColumnConstants.PROPERTY_DISPLAY_TYPE_TEXT_BOX) %>">
 
@@ -674,6 +645,7 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 							%>
 
 							<liferay-ui:input-localized
+								availableLocales="<%= availableLocales %>"
 								cssClass="lfr-input-text"
 								id="<%= randomNamespace + name %>"
 								name='<%= "ExpandoAttribute--" + name + "--" %>'
@@ -813,7 +785,7 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 
 				<c:if test="<%= (type == ExpandoColumnConstants.GEOLOCATION) && (editable || Validator.isNotNull(sb.toString())) %>">
 					<div id="<portlet:namespace />CoordinatesContainer">
-						<div class="glyphicon glyphicon-map-marker" id="<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + name + "--Location" %>">
+						<div class="glyphicon glyphicon-map-marker" id="<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + HtmlUtil.escapeAttribute(name) + "--Location" %>">
 						</div>
 
 						<%
@@ -828,23 +800,17 @@ ExpandoBridge expandoBridge = ExpandoBridgeFactoryUtil.getExpandoBridge(company.
 							name='<%= "ExpandoAttribute--" + mapDisplayName +"--" %>'
 						/>
 
-						<aui:script require="map-common/js/MapBase.es as MapBase">
-							Liferay.MapBase.get(
-								'<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + mapDisplayName + "--" %>',
-								function(map) {
-									map.once('positionChange', function(event) {
-										var inputName =
-											'<%= portletDisplay.getNamespace()+"ExpandoAttribute--" + HtmlUtil.escapeJS(name) + "--" %>';
-
-										var locationNode = document.getElementById(inputName + 'Location');
-
-										if (locationNode) {
-											locationNode.innerHTML = event.newVal.address;
-										}
-									});
-								}
-							);
-						</aui:script>
+						<liferay-frontend:component
+							componentId="GeoLocationField"
+							context='<%=
+								HashMapBuilder.<String, Object>put(
+									"inputName", portletDisplay.getNamespace() + "ExpandoAttribute--" + HtmlUtil.escapeJS(name) + "--"
+								).put(
+									"mapName", portletDisplay.getNamespace() + "ExpandoAttribute--" + mapDisplayName + "--"
+								).build()
+							%>'
+							module="js/GeoLocationField"
+						/>
 					</div>
 				</c:if>
 			</c:otherwise>

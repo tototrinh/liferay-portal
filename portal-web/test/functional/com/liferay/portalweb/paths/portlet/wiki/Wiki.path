@@ -2,11 +2,13 @@
 <head>
 <title>Wiki</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">Wiki</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ADD_PAGE_FORMAT_DROPDOWN</td>
@@ -19,13 +21,18 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ENTRY_TITLE</td>
+	<td>//input[contains(@id,'title')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>FRONTPAGE_DEFAULT_MESSAGE</td>
 	<td>//div[@class='wiki-body']/div/a</td>
 	<td></td>
 </tr>
 <tr>
 	<td>NODE_NAME</td>
-	<td>//span[@class='nav-item-label' and contains(.,'${key_wikiNodeName}')]</td>
+	<td>//span[@class='navbar-text-truncate' and contains(.,'${key_wikiNodeName}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -78,7 +85,7 @@
 <!--CHILD_PAGE-->
 <tr>
 	<td>CHILD_PAGE_HEADER</td>
-	<td>//div[@class='sidenav-content']/h4</td>
+	<td>//div[@class='sidenav-content']//h4</td>
 	<td></td>
 </tr>
 <tr>
@@ -208,7 +215,7 @@
 </tr>
 <tr>
 	<td>COMPARE_VERSIONS_IFRAME</td>
-	<td>//iframe[contains(@id,'compareVersions')]</td>
+	<td>//div[contains(@class,'modal-body')]/iframe[contains(@id,'selectVersionFm')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -223,7 +230,7 @@
 </tr>
 <tr>
 	<td>COMPARE_VERSIONS_VERSION_ACTIONS</td>
-	<td>//li[@class='list-group-item']/div[contains(.,'${key_wikiPageVersion}')]/..//div//a[span/*[name()='svg'][contains(@class,'icon-ellipsis')]]</td>
+	<td>//li[contains(@class,'list-group-item')]/div[contains(.,'${key_wikiPageVersion}')]/..//div//a[span/*[name()='svg'][contains(@class,'icon-ellipsis')]]</td>
 	<td></td>
 </tr>
 <tr>

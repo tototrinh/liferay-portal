@@ -14,11 +14,13 @@
 
 package com.liferay.journal.web.internal.display.context;
 
+import com.liferay.depot.util.SiteConnectedGroupGroupProviderUtil;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLinkLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.service.DDMStructureServiceUtil;
 import com.liferay.dynamic.data.mapping.util.DDMUtil;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -61,7 +63,9 @@ public class JournalSelectDDMStructureDisplayContext {
 		return _classPK;
 	}
 
-	public SearchContainer getDDMStructureSearch() throws Exception {
+	public SearchContainer<DDMStructure> getDDMStructureSearch()
+		throws Exception {
+
 		if (_ddmStructureSearch != null) {
 			return _ddmStructureSearch;
 		}
@@ -70,7 +74,7 @@ public class JournalSelectDDMStructureDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer ddmStructureSearch = new SearchContainer(
+		SearchContainer<DDMStructure> ddmStructureSearch = new SearchContainer(
 			_renderRequest, _getPortletURL(), null, "there-are-no-structures");
 
 		if (Validator.isNotNull(_getKeywords())) {
@@ -89,8 +93,10 @@ public class JournalSelectDDMStructureDisplayContext {
 		ddmStructureSearch.setOrderByComparator(orderByComparator);
 		ddmStructureSearch.setOrderByType(orderByType);
 
-		long[] groupIds = PortalUtil.getCurrentAndAncestorSiteGroupIds(
-			themeDisplay.getScopeGroupId());
+		long[] groupIds =
+			SiteConnectedGroupGroupProviderUtil.
+				getCurrentAndAncestorSiteAndDepotGroupIds(
+					themeDisplay.getScopeGroupId(), true);
 
 		int total = 0;
 
@@ -166,19 +172,18 @@ public class JournalSelectDDMStructureDisplayContext {
 		}
 
 		_orderByType = ParamUtil.getString(
-			_renderRequest, "orderByType", "asc");
+			_renderRequest, "orderByType", "desc");
 
 		return _orderByType;
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = _getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public boolean isSearch() {
@@ -200,35 +205,54 @@ public class JournalSelectDDMStructureDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/select_ddm_structure.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		portletURL.setParameter("mvcPath", "/select_ddm_structure.jsp");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		long classPK = getClassPK();
+				return null;
+			}
+		).setParameter(
+			"classPK",
+			() -> {
+				long classPK = getClassPK();
 
-		if (classPK != 0) {
-			portletURL.setParameter("classPK", String.valueOf(classPK));
-		}
+				if (classPK != 0) {
+					return classPK;
+				}
 
-		String keywords = _getKeywords();
+				return null;
+			}
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private long _getSearchRestrictionClassNameId() {
@@ -265,7 +289,7 @@ public class JournalSelectDDMStructureDisplayContext {
 	}
 
 	private Long _classPK;
-	private SearchContainer _ddmStructureSearch;
+	private SearchContainer<DDMStructure> _ddmStructureSearch;
 	private final HttpServletRequest _httpServletRequest;
 	private String _keywords;
 	private String _orderByCol;

@@ -71,6 +71,32 @@ public class WorkflowInstanceSerDes {
 			sb.append(workflowInstance.getCompleted());
 		}
 
+		if (workflowInstance.getCurrentNodeNames() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"currentNodeNames\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < workflowInstance.getCurrentNodeNames().length;
+				 i++) {
+
+				sb.append("\"");
+
+				sb.append(_escape(workflowInstance.getCurrentNodeNames()[i]));
+
+				sb.append("\"");
+
+				if ((i + 1) < workflowInstance.getCurrentNodeNames().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (workflowInstance.getDateCompletion() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -181,14 +207,34 @@ public class WorkflowInstanceSerDes {
 				"completed", String.valueOf(workflowInstance.getCompleted()));
 		}
 
-		map.put(
-			"dateCompletion",
-			liferayToJSONDateFormat.format(
-				workflowInstance.getDateCompletion()));
+		if (workflowInstance.getCurrentNodeNames() == null) {
+			map.put("currentNodeNames", null);
+		}
+		else {
+			map.put(
+				"currentNodeNames",
+				String.valueOf(workflowInstance.getCurrentNodeNames()));
+		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(workflowInstance.getDateCreated()));
+		if (workflowInstance.getDateCompletion() == null) {
+			map.put("dateCompletion", null);
+		}
+		else {
+			map.put(
+				"dateCompletion",
+				liferayToJSONDateFormat.format(
+					workflowInstance.getDateCompletion()));
+		}
+
+		if (workflowInstance.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(
+					workflowInstance.getDateCreated()));
+		}
 
 		if (workflowInstance.getId() == null) {
 			map.put("id", null);
@@ -252,6 +298,12 @@ public class WorkflowInstanceSerDes {
 						(Boolean)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "currentNodeNames")) {
+				if (jsonParserFieldValue != null) {
+					workflowInstance.setCurrentNodeNames(
+						toStrings((Object[])jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "dateCompletion")) {
 				if (jsonParserFieldValue != null) {
 					workflowInstance.setDateCompletion(
@@ -293,10 +345,6 @@ public class WorkflowInstanceSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -325,7 +373,7 @@ public class WorkflowInstanceSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -351,14 +399,17 @@ public class WorkflowInstanceSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -24,8 +24,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -51,75 +54,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("ImportTask")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ImportTask")
-public class ImportTask {
+public class ImportTask implements Serializable {
 
-	@GraphQLName("ExecuteStatus")
-	public static enum ExecuteStatus {
-
-		COMPLETED("COMPLETED"), FAILED("FAILED"), INITIAL("INITIAL"),
-		STARTED("STARTED");
-
-		@JsonCreator
-		public static ExecuteStatus create(String value) {
-			for (ExecuteStatus executeStatus : values()) {
-				if (Objects.equals(executeStatus.getValue(), value)) {
-					return executeStatus;
-				}
-			}
-
-			return null;
-		}
-
-		@JsonValue
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ExecuteStatus(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static ImportTask toDTO(String json) {
+		return ObjectMapperUtil.readValue(ImportTask.class, json);
 	}
 
-	@GraphQLName("Operation")
-	public static enum Operation {
-
-		CREATE("CREATE"), DELETE("DELETE"), UPDATE("UPDATE");
-
-		@JsonCreator
-		public static Operation create(String value) {
-			for (Operation operation : values()) {
-				if (Objects.equals(operation.getValue(), value)) {
-					return operation;
-				}
-			}
-
-			return null;
-		}
-
-		@JsonValue
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private Operation(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static ImportTask unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ImportTask.class, json);
 	}
 
 	@Schema(
@@ -345,6 +287,37 @@ public class ImportTask {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Operation operation;
 
+	@DecimalMin("0")
+	@Schema(description = "Number of items processed by import task opeartion.")
+	public Integer getProcessedItemsCount() {
+		return processedItemsCount;
+	}
+
+	public void setProcessedItemsCount(Integer processedItemsCount) {
+		this.processedItemsCount = processedItemsCount;
+	}
+
+	@JsonIgnore
+	public void setProcessedItemsCount(
+		UnsafeSupplier<Integer, Exception> processedItemsCountUnsafeSupplier) {
+
+		try {
+			processedItemsCount = processedItemsCountUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Number of items processed by import task opeartion."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Integer processedItemsCount;
+
 	@Schema(description = "The start time of import task operation.")
 	public Date getStartTime() {
 		return startTime;
@@ -372,6 +345,39 @@ public class ImportTask {
 	@GraphQLField(description = "The start time of import task operation.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Date startTime;
+
+	@DecimalMin("0")
+	@Schema(
+		description = "Total number of items that will be processed by import task operation."
+	)
+	public Integer getTotalItemsCount() {
+		return totalItemsCount;
+	}
+
+	public void setTotalItemsCount(Integer totalItemsCount) {
+		this.totalItemsCount = totalItemsCount;
+	}
+
+	@JsonIgnore
+	public void setTotalItemsCount(
+		UnsafeSupplier<Integer, Exception> totalItemsCountUnsafeSupplier) {
+
+		try {
+			totalItemsCount = totalItemsCountUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Total number of items that will be processed by import task operation."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Integer totalItemsCount;
 
 	@Override
 	public boolean equals(Object object) {
@@ -497,6 +503,16 @@ public class ImportTask {
 			sb.append("\"");
 		}
 
+		if (processedItemsCount != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"processedItemsCount\": ");
+
+			sb.append(processedItemsCount);
+		}
+
 		if (startTime != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -511,21 +527,119 @@ public class ImportTask {
 			sb.append("\"");
 		}
 
+		if (totalItemsCount != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"totalItemsCount\": ");
+
+			sb.append(totalItemsCount);
+		}
+
 		sb.append("}");
 
 		return sb.toString();
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.batch.engine.dto.v1_0.ImportTask",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
+	@GraphQLName("ExecuteStatus")
+	public static enum ExecuteStatus {
+
+		COMPLETED("COMPLETED"), FAILED("FAILED"), INITIAL("INITIAL"),
+		STARTED("STARTED");
+
+		@JsonCreator
+		public static ExecuteStatus create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (ExecuteStatus executeStatus : values()) {
+				if (Objects.equals(executeStatus.getValue(), value)) {
+					return executeStatus;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ExecuteStatus(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
+	@GraphQLName("Operation")
+	public static enum Operation {
+
+		CREATE("CREATE"), DELETE("DELETE"), UPDATE("UPDATE");
+
+		@JsonCreator
+		public static Operation create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (Operation operation : values()) {
+				if (Objects.equals(operation.getValue(), value)) {
+					return operation;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private Operation(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 	private static String _escape(Object object) {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -542,13 +656,46 @@ public class ImportTask {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -21,6 +21,7 @@ import com.liferay.blogs.service.BlogsEntryLocalServiceUtil;
 import com.liferay.blogs.service.BlogsEntryServiceUtil;
 import com.liferay.blogs.web.internal.security.permission.resource.BlogsEntryPermission;
 import com.liferay.blogs.web.internal.util.BlogsUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.dao.search.SearchContainerResults;
@@ -135,17 +136,17 @@ public class BlogEntriesDisplayContext {
 		return displayStyle;
 	}
 
-	public SearchContainer getSearchContainer()
+	public SearchContainer<BlogsEntry> getSearchContainer()
 		throws PortalException, PortletException {
 
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "/blogs/view");
-
-		String entriesNavigation = ParamUtil.getString(
-			_httpServletRequest, "entriesNavigation");
-
-		portletURL.setParameter("entriesNavigation", entriesNavigation);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCRenderCommandName(
+			"/blogs/view"
+		).setParameter(
+			"entriesNavigation",
+			ParamUtil.getString(_httpServletRequest, "entriesNavigation")
+		).buildPortletURL();
 
 		SearchContainer<BlogsEntry> entriesSearchContainer =
 			new SearchContainer<>(
@@ -154,7 +155,7 @@ public class BlogEntriesDisplayContext {
 				"no-entries-were-found");
 
 		String orderByCol = ParamUtil.getString(
-			_httpServletRequest, "orderByCol", "title");
+			_httpServletRequest, "orderByCol", _getDefaultOrderByCol());
 
 		entriesSearchContainer.setOrderByCol(orderByCol);
 
@@ -176,14 +177,25 @@ public class BlogEntriesDisplayContext {
 		return entriesSearchContainer;
 	}
 
-	private void _populateResults(SearchContainer searchContainer)
+	private String _getDefaultOrderByCol() {
+		String mvcRenderCommandName = ParamUtil.getString(
+			_httpServletRequest, "mvcRenderCommandName");
+
+		if (mvcRenderCommandName.equals("/blogs/search")) {
+			return "relevance";
+		}
+
+		return "title";
+	}
+
+	private void _populateResults(SearchContainer<BlogsEntry> searchContainer)
 		throws PortalException {
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		List entriesResults = null;
+		List<BlogsEntry> entriesResults = null;
 
 		long assetCategoryId = ParamUtil.getLong(
 			_httpServletRequest, "categoryId");
@@ -241,7 +253,8 @@ public class BlogEntriesDisplayContext {
 			}
 		}
 		else {
-			Indexer indexer = IndexerRegistryUtil.getIndexer(BlogsEntry.class);
+			Indexer<BlogsEntry> indexer = IndexerRegistryUtil.getIndexer(
+				BlogsEntry.class);
 
 			SearchContext searchContext = SearchContextFactory.getInstance(
 				_httpServletRequest);
@@ -250,6 +263,7 @@ public class BlogEntriesDisplayContext {
 				Field.STATUS, WorkflowConstants.STATUS_ANY);
 			searchContext.setEnd(searchContainer.getEnd());
 			searchContext.setIncludeDiscussions(true);
+			searchContext.setIncludeInternalAssetCategories(true);
 			searchContext.setKeywords(keywords);
 			searchContext.setStart(searchContainer.getStart());
 
@@ -261,7 +275,7 @@ public class BlogEntriesDisplayContext {
 			}
 
 			String orderByCol = ParamUtil.getString(
-				_httpServletRequest, "orderByCol", "title");
+				_httpServletRequest, "orderByCol", "relevance");
 			String orderByType = ParamUtil.getString(
 				_httpServletRequest, "orderByType", "asc");
 
@@ -276,6 +290,9 @@ public class BlogEntriesDisplayContext {
 			if (Objects.equals(orderByCol, "display-date")) {
 				sort = new Sort(
 					Field.DISPLAY_DATE, Sort.LONG_TYPE, !orderByAsc);
+			}
+			else if (Objects.equals(orderByCol, "relevance")) {
+				sort = new Sort(null, Sort.SCORE_TYPE, !orderByAsc);
 			}
 			else {
 				sort = new Sort(orderByCol, !orderByAsc);
@@ -318,7 +335,8 @@ public class BlogEntriesDisplayContext {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Blogs search index is stale and contains entry " +
-						searchResult.getClassPK());
+						searchResult.getClassPK(),
+					exception);
 			}
 
 			return Optional.empty();

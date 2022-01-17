@@ -15,8 +15,11 @@
 package com.liferay.dynamic.data.mapping.model;
 
 /**
- * @author Marcellus Tavares
+ * @author     Marcellus Tavares
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants}
  */
+@Deprecated
 public class DDMFormFieldType {
 
 	public static final String CHECKBOX = "checkbox";
@@ -44,6 +47,8 @@ public class DDMFormFieldType {
 	public static final String JOURNAL_ARTICLE = "ddm-journal-article";
 
 	public static final String LINK_TO_PAGE = "ddm-link-to-page";
+
+	public static final String LOCALIZABLE_TEXT = "localizable_text";
 
 	public static final String NUMBER = "ddm-number";
 

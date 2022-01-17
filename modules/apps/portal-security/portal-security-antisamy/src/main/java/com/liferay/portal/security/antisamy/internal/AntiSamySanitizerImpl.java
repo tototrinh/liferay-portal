@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,8 +46,8 @@ public class AntiSamySanitizerImpl implements Sanitizer {
 	public AntiSamySanitizerImpl(
 		String[] blacklist, URL url, String[] whitelist) {
 
-		try (InputStream inputstream = url.openStream()) {
-			_policy = Policy.getInstance(inputstream);
+		try (InputStream inputStream = url.openStream()) {
+			_policy = Policy.getInstance(inputStream);
 		}
 		catch (Exception exception) {
 			throw new IllegalStateException(
@@ -78,6 +79,22 @@ public class AntiSamySanitizerImpl implements Sanitizer {
 		}
 	}
 
+	public void addPolicy(String className, URL url) {
+		try (InputStream inputStream = url.openStream()) {
+			Policy policy = Policy.getInstance(inputStream);
+
+			_policies.put(className, policy);
+		}
+		catch (Exception exception) {
+			throw new IllegalStateException(
+				"Unable to initialize policy", exception);
+		}
+	}
+
+	public void removePolicy(String className) {
+		_policies.remove(className);
+	}
+
 	@Override
 	public String sanitize(
 			long companyId, long groupId, long userId, String className,
@@ -90,22 +107,31 @@ public class AntiSamySanitizerImpl implements Sanitizer {
 				StringBundler.concat("Sanitizing ", className, "#", classPK));
 		}
 
-		if (Validator.isNull(content)) {
-			return content;
-		}
-
-		if (Validator.isNull(contentType) ||
-			!contentType.equals(ContentTypes.TEXT_HTML)) {
+		if (Validator.isNull(content) || Validator.isNull(contentType) ||
+			!contentType.equals(ContentTypes.TEXT_HTML) ||
+			isWhitelisted(className, classPK)) {
 
 			return content;
 		}
 
-		if (isWhitelisted(className, classPK)) {
-			return content;
-		}
+		Thread currentThread = Thread.currentThread();
+
+		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
+
+		currentThread.setContextClassLoader(
+			AntiSamySanitizerImpl.class.getClassLoader());
 
 		try {
 			AntiSamy antiSamy = new AntiSamy();
+
+			if (isConfigured(className, classPK)) {
+				Policy policy = _policies.get(className);
+
+				CleanResults cleanResults = antiSamy.scan(
+					content, policy, AntiSamy.SAX);
+
+				return cleanResults.getCleanHTML();
+			}
 
 			CleanResults cleanResults = antiSamy.scan(content, _policy);
 
@@ -116,6 +142,21 @@ public class AntiSamySanitizerImpl implements Sanitizer {
 
 			throw new SanitizerException(exception);
 		}
+		finally {
+			currentThread.setContextClassLoader(contextClassLoader);
+		}
+	}
+
+	protected boolean isConfigured(String className, long classPK) {
+		String classNameAndClassPK = className + StringPool.POUND + classPK;
+
+		for (String policyClassName : _policies.keySet()) {
+			if (classNameAndClassPK.startsWith(policyClassName)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	protected boolean isWhitelisted(String className, long classPK) {
@@ -158,6 +199,7 @@ public class AntiSamySanitizerImpl implements Sanitizer {
 		AntiSamySanitizerImpl.class);
 
 	private final List<String> _blacklist = new ArrayList<>();
+	private final Map<String, Policy> _policies = new HashMap<>();
 	private final Policy _policy;
 	private final List<String> _whitelist = new ArrayList<>();
 

@@ -28,11 +28,12 @@ import com.liferay.portal.kernel.search.IndexerPostProcessor;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.search.test.util.TestIndexer;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -282,6 +283,9 @@ public class IndexerPostProcessorRegistryTest {
 		Assert.assertNotNull(contactIndexerPostProcessor);
 	}
 
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
+
 	protected void testQueuedIndexerPostProcessor(
 			Indexer<?> indexer, String indexerClassName)
 		throws Exception {
@@ -302,13 +306,12 @@ public class IndexerPostProcessorRegistryTest {
 		IndexerPostProcessor indexerPostProcessor =
 			new BaseIndexerPostProcessor();
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("indexer.class.name", indexerClassName);
-
 		ServiceRegistration<?> serviceRegistration =
 			bundleContext.registerService(
-				IndexerPostProcessor.class, indexerPostProcessor, properties);
+				IndexerPostProcessor.class, indexerPostProcessor,
+				HashMapDictionaryBuilder.<String, Object>put(
+					"indexer.class.name", indexerClassName
+				).build());
 
 		try {
 			IndexerRegistryUtil.register(indexer);

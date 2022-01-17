@@ -18,12 +18,17 @@ import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetTagLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetTagServiceUtil;
+import com.liferay.asset.tags.constants.AssetTagsAdminPortletKeys;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
@@ -66,6 +71,78 @@ public class AssetTagsDisplayContext {
 			WebKeys.THEME_DISPLAY);
 	}
 
+	public List<DropdownItem> getAssetTagActionDropdownItems(AssetTag tag) {
+		return DropdownItemListBuilder.addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						this::isShowTagsActions,
+						dropdownItem -> {
+							dropdownItem.setHref(
+								PortletURLBuilder.createRenderURL(
+									_renderResponse
+								).setMVCPath(
+									"/edit_tag.jsp"
+								).setParameter(
+									"tagId", tag.getTagId()
+								).buildString());
+
+							dropdownItem.setLabel(
+								LanguageUtil.get(_httpServletRequest, "edit"));
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						this::isShowTagsActions,
+						dropdownItem -> {
+							dropdownItem.setHref(
+								PortletURLBuilder.createRenderURL(
+									_renderResponse
+								).setMVCPath(
+									"/merge_tag.jsp"
+								).setParameter(
+									"mergeTagIds", tag.getTagId()
+								).buildString());
+
+							dropdownItem.setLabel(
+								LanguageUtil.get(_httpServletRequest, "merge"));
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						dropdownItem -> {
+							dropdownItem.putData("action", "deleteTag");
+
+							dropdownItem.putData(
+								"deleteTagURL",
+								PortletURLBuilder.createActionURL(
+									_renderResponse
+								).setActionName(
+									"deleteTag"
+								).setRedirect(
+									_themeDisplay.getURLCurrent()
+								).setParameter(
+									"tagId", tag.getTagId()
+								).buildString());
+
+							dropdownItem.setLabel(
+								LanguageUtil.get(
+									_httpServletRequest, "delete"));
+						}
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).build();
+	}
+
 	public String getAssetTitle() {
 		AssetTag tag = getTag();
 
@@ -81,22 +158,24 @@ public class AssetTagsDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest, AssetTagsAdminPortletKeys.ASSET_TAGS_ADMIN,
+			"list");
 
 		return _displayStyle;
 	}
 
 	public long getFullTagsCount(AssetTag tag) {
-		int[] statuses = {
-			WorkflowConstants.STATUS_APPROVED, WorkflowConstants.STATUS_PENDING,
-			WorkflowConstants.STATUS_SCHEDULED
-		};
-
 		Hits hits = AssetEntryLocalServiceUtil.search(
 			tag.getCompanyId(), new long[] {_themeDisplay.getScopeGroupId()},
 			_themeDisplay.getUserId(), null, 0, null, null, null, null,
-			tag.getName(), true, statuses, false, 0, 1);
+			tag.getName(), true,
+			new int[] {
+				WorkflowConstants.STATUS_APPROVED,
+				WorkflowConstants.STATUS_PENDING,
+				WorkflowConstants.STATUS_SCHEDULED
+			},
+			false, 0, 1);
 
 		return hits.getLength();
 	}
@@ -186,12 +265,14 @@ public class AssetTagsDisplayContext {
 		return _tagId;
 	}
 
-	public SearchContainer getTagsSearchContainer() throws PortalException {
+	public SearchContainer<AssetTag> getTagsSearchContainer()
+		throws PortalException {
+
 		if (_tagsSearchContainer != null) {
 			return _tagsSearchContainer;
 		}
 
-		SearchContainer tagsSearchContainer = new SearchContainer(
+		SearchContainer<AssetTag> tagsSearchContainer = new SearchContainer(
 			_renderRequest, _renderResponse.createRenderURL(), null,
 			"there-are-no-tags");
 
@@ -307,7 +388,7 @@ public class AssetTagsDisplayContext {
 	private Boolean _showTagsActions;
 	private AssetTag _tag;
 	private Long _tagId;
-	private SearchContainer _tagsSearchContainer;
+	private SearchContainer<AssetTag> _tagsSearchContainer;
 	private final ThemeDisplay _themeDisplay;
 
 }

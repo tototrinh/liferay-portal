@@ -15,17 +15,17 @@
 const path = require('path');
 
 /**
- * We use liferay-npm-scripts to perform linting in a controlled way, but we
+ * We use @liferay/npm-scripts to perform linting in a controlled way, but we
  * also try to expose its configuration here so it can be picked up by editors.
  */
 let config = {};
 
 try {
-	config = require('liferay-npm-scripts/src/config/eslint.config');
+	config = require('@liferay/npm-scripts/src/config/eslint.config');
 }
 catch (error) {
 	throw new Error(
-		'liferay-npm-scripts is not installed; please run "ant setup-sdk"'
+		'@liferay/npm-scripts is not installed; please run "ant setup-sdk"'
 	);
 }
 
@@ -33,17 +33,30 @@ config = {
 	...config,
 	globals: {
 		...config.globals,
-		MODULE_PATH: true
+		MODULE_PATH: true,
 	},
 	rules: {
+		'@liferay/aui/no-all': 'off',
+		'@liferay/aui/no-array': 'off',
+		'@liferay/aui/no-each': 'off',
+		'@liferay/aui/no-get-body': 'off',
+		'@liferay/aui/no-io': 'off',
+		'@liferay/aui/no-merge': 'error',
+		'@liferay/aui/no-node': 'off',
+		'@liferay/aui/no-object': 'off',
+		'@liferay/aui/no-one': 'off',
+		'@liferay/no-get-data-attribute': 'off',
 		'no-empty': ['error', {allowEmptyCatch: true}],
 		'notice/notice': [
 			'error',
 			{
-				templateFile: path.join(__dirname, 'copyright.js')
-			}
-		]
-	}
+				nonMatchingTolerance: 0.7,
+				onNonMatchingHeader: 'replace',
+				templateFile: path.join(__dirname, 'copyright.js'),
+			},
+		],
+		'promise/catch-or-return': 'off',
+	},
 };
 
 module.exports = config;

@@ -16,19 +16,25 @@ package com.liferay.data.engine.rest.internal.renderer.v2_0;
 
 import com.liferay.data.engine.renderer.DataLayoutRenderer;
 import com.liferay.data.engine.renderer.DataLayoutRendererContext;
-import com.liferay.data.engine.rest.internal.dto.v2_0.util.DataRecordValuesUtil;
+import com.liferay.data.engine.rest.internal.dto.v2_0.util.MapToDDMFormValuesConverterUtil;
 import com.liferay.dynamic.data.mapping.form.renderer.DDMFormRenderer;
 import com.liferay.dynamic.data.mapping.form.renderer.DDMFormRenderingContext;
 import com.liferay.dynamic.data.mapping.io.DDMFormDeserializer;
-import com.liferay.dynamic.data.mapping.io.DDMFormDeserializerDeserializeRequest;
-import com.liferay.dynamic.data.mapping.io.DDMFormDeserializerDeserializeResponse;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMStructureLayout;
 import com.liferay.dynamic.data.mapping.model.DDMStructureVersion;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLayoutLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureVersionLocalService;
+import com.liferay.portal.kernel.security.auth.GuestOrUserUtil;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Locale;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -54,45 +60,78 @@ public class DataLayoutRendererImpl implements DataLayoutRenderer {
 
 		DDMStructure ddmStructure = ddmStructureVersion.getStructure();
 
-		DDMFormDeserializerDeserializeRequest.Builder builder =
-			DDMFormDeserializerDeserializeRequest.Builder.newBuilder(
-				ddmStructure.getDefinition());
+		_ddmStructureModelResourcePermission.check(
+			GuestOrUserUtil.getPermissionChecker(),
+			ddmStructure.getPrimaryKey(), ActionKeys.VIEW);
 
-		DDMFormDeserializerDeserializeResponse
-			ddmFormDeserializerDeserializeResponse =
-				_ddmFormDeserializer.deserialize(builder.build());
+		DDMForm ddmForm = ddmStructure.getDDMForm();
 
 		return _ddmFormRenderer.render(
-			ddmFormDeserializerDeserializeResponse.getDDMForm(),
-			ddmStructureLayout.getDDMFormLayout(),
+			ddmForm, ddmStructureLayout.getDDMFormLayout(),
 			_toDDMFormRenderingContext(
-				dataLayoutRendererContext,
-				ddmFormDeserializerDeserializeResponse.getDDMForm()));
+				dataLayoutId, dataLayoutRendererContext, ddmForm,
+				ddmStructure.getGroupId()));
 	}
 
 	private DDMFormRenderingContext _toDDMFormRenderingContext(
-		DataLayoutRendererContext dataLayoutRendererContext, DDMForm ddmForm) {
+			Long dataLayoutId,
+			DataLayoutRendererContext dataLayoutRendererContext,
+			DDMForm ddmForm, long groupId)
+		throws Exception {
 
 		DDMFormRenderingContext ddmFormRenderingContext =
 			new DDMFormRenderingContext();
 
+		if (Validator.isNotNull(
+				dataLayoutRendererContext.getDefaultLanguageId())) {
+
+			ddmFormRenderingContext.addProperty(
+				"defaultLanguageId",
+				dataLayoutRendererContext.getDefaultLanguageId());
+		}
+
+		ddmFormRenderingContext.addProperty(
+			"persistDefaultValues",
+			dataLayoutRendererContext.isPersistDefaultValues());
+		ddmFormRenderingContext.addProperty(
+			"persisted", dataLayoutRendererContext.isPersisted());
 		ddmFormRenderingContext.setContainerId(
 			dataLayoutRendererContext.getContainerId());
 		ddmFormRenderingContext.setDDMFormValues(
-			DataRecordValuesUtil.toDDMFormValues(
+			MapToDDMFormValuesConverterUtil.toDDMFormValues(
 				dataLayoutRendererContext.getDataRecordValues(), ddmForm,
-				_portal.getLocale(
-					dataLayoutRendererContext.getHttpServletRequest())));
+				null));
+		ddmFormRenderingContext.setDDMStructureLayoutId(dataLayoutId);
+		ddmFormRenderingContext.setGroupId(groupId);
+		ddmFormRenderingContext.setEditOnlyInDefaultLanguage(true);
 		ddmFormRenderingContext.setHttpServletRequest(
 			dataLayoutRendererContext.getHttpServletRequest());
 		ddmFormRenderingContext.setHttpServletResponse(
 			dataLayoutRendererContext.getHttpServletResponse());
-		ddmFormRenderingContext.setLocale(
-			_portal.getLocale(
-				dataLayoutRendererContext.getHttpServletRequest()));
+
+		Locale locale = null;
+
+		String languageId = ParamUtil.get(
+			dataLayoutRendererContext.getHttpServletRequest(), "languageId",
+			dataLayoutRendererContext.getLanguageId());
+
+		if (Validator.isNull(languageId)) {
+			locale = ddmForm.getDefaultLocale();
+		}
+		else {
+			locale = LocaleUtil.fromLanguageId(languageId);
+		}
+
+		ddmFormRenderingContext.setLocale(locale);
+
 		ddmFormRenderingContext.setPortletNamespace(
 			dataLayoutRendererContext.getPortletNamespace());
+		ddmFormRenderingContext.setReadOnly(
+			dataLayoutRendererContext.isReadOnly());
 		ddmFormRenderingContext.setShowSubmitButton(false);
+		ddmFormRenderingContext.setSubmittable(
+			dataLayoutRendererContext.isSubmittable());
+		ddmFormRenderingContext.setViewMode(true);
 
 		return ddmFormRenderingContext;
 	}
@@ -105,6 +144,12 @@ public class DataLayoutRendererImpl implements DataLayoutRenderer {
 
 	@Reference
 	private DDMStructureLayoutLocalService _ddmStructureLayoutLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.dynamic.data.mapping.model.DDMStructure)"
+	)
+	private ModelResourcePermission<DDMStructure>
+		_ddmStructureModelResourcePermission;
 
 	@Reference
 	private DDMStructureVersionLocalService _ddmStructureVersionLocalService;

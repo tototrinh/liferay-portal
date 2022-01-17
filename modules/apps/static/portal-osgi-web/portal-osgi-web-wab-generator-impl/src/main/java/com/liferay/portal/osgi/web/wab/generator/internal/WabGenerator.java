@@ -14,10 +14,11 @@
 
 package com.liferay.portal.osgi.web.wab.generator.internal;
 
+import com.liferay.portal.file.install.FileInstaller;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.osgi.web.wab.generator.internal.artifact.ArtifactURLUtil;
 import com.liferay.portal.osgi.web.wab.generator.internal.artifact.WarArtifactUrlTransformer;
@@ -37,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -49,8 +49,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.servlet.ServletContext;
-
-import org.apache.felix.fileinstall.ArtifactUrlTransformer;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -214,8 +212,8 @@ public class WabGenerator
 
 	protected void registerArtifactUrlTransformer(BundleContext bundleContext) {
 		_serviceRegistration = bundleContext.registerService(
-			ArtifactUrlTransformer.class,
-			new WarArtifactUrlTransformer(_portalIsReady), null);
+			FileInstaller.class, new WarArtifactUrlTransformer(_portalIsReady),
+			null);
 	}
 
 	protected void registerURLStreamHandlerService(
@@ -227,14 +225,12 @@ public class WabGenerator
 
 		ClassLoader classLoader = clazz.getClassLoader();
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			URLConstants.URL_HANDLER_PROTOCOL, new String[] {"webbundle"});
-
 		bundleContext.registerService(
 			URLStreamHandlerService.class.getName(),
-			new WabURLStreamHandlerService(classLoader, this), properties);
+			new WabURLStreamHandlerService(classLoader, this),
+			HashMapDictionaryBuilder.<String, Object>put(
+				URLConstants.URL_HANDLER_PROTOCOL, new String[] {"webbundle"}
+			).build());
 	}
 
 	/**
@@ -270,6 +266,6 @@ public class WabGenerator
 	private Http _http;
 
 	private final AtomicBoolean _portalIsReady = new AtomicBoolean();
-	private ServiceRegistration<ArtifactUrlTransformer> _serviceRegistration;
+	private ServiceRegistration<FileInstaller> _serviceRegistration;
 
 }

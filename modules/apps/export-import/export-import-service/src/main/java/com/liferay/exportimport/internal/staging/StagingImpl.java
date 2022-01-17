@@ -14,7 +14,6 @@
 
 package com.liferay.exportimport.internal.staging;
 
-import com.liferay.change.tracking.service.CTPreferencesLocalService;
 import com.liferay.changeset.model.ChangesetCollection;
 import com.liferay.changeset.model.ChangesetEntry;
 import com.liferay.changeset.service.ChangesetCollectionLocalService;
@@ -24,12 +23,11 @@ import com.liferay.document.library.kernel.exception.FileExtensionException;
 import com.liferay.document.library.kernel.exception.FileNameException;
 import com.liferay.document.library.kernel.exception.FileSizeException;
 import com.liferay.document.library.kernel.util.DLValidator;
-import com.liferay.exportimport.configuration.ExportImportServiceConfiguration;
 import com.liferay.exportimport.internal.util.StagingGroupServiceTunnelUtil;
 import com.liferay.exportimport.kernel.background.task.BackgroundTaskExecutorNames;
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationParameterMapFactory;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationSettingsMapFactory;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.exception.ExportImportContentProcessorException;
 import com.liferay.exportimport.kernel.exception.ExportImportContentValidationException;
 import com.liferay.exportimport.kernel.exception.ExportImportDocumentException;
@@ -59,8 +57,8 @@ import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalSer
 import com.liferay.exportimport.kernel.service.StagingLocalService;
 import com.liferay.exportimport.kernel.staging.LayoutStagingUtil;
 import com.liferay.exportimport.kernel.staging.Staging;
-import com.liferay.exportimport.kernel.staging.StagingConstants;
 import com.liferay.exportimport.kernel.staging.StagingURLHelper;
+import com.liferay.exportimport.kernel.staging.constants.StagingConstants;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepository;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepositoryHelper;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepositoryRegistryUtil;
@@ -106,6 +104,7 @@ import com.liferay.portal.kernel.model.WorkflowedModel;
 import com.liferay.portal.kernel.model.adapter.StagedTheme;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelperUtil;
+import com.liferay.portal.kernel.scheduler.SchedulerException;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.HttpPrincipal;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -160,6 +159,7 @@ import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.exportimport.service.http.StagingServiceHttp;
 import com.liferay.portlet.exportimport.staging.ProxiedLayoutsThreadLocal;
 import com.liferay.staging.StagingGroupHelper;
+import com.liferay.staging.configuration.StagingConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -218,11 +218,7 @@ public class StagingImpl implements Staging {
 
 		Group group = _groupLocalService.fetchGroup(groupId);
 
-		if (group == null) {
-			return;
-		}
-
-		if (!_stagingGroupHelper.isStagingGroup(group)) {
+		if ((group == null) || !_stagingGroupHelper.isStagingGroup(group)) {
 			return;
 		}
 
@@ -240,7 +236,7 @@ public class StagingImpl implements Staging {
 			String className = ExportImportClassedModelUtil.getClassName(
 				stagedGroupedModel);
 
-			StagedModelDataHandler stagedModelDataHandler =
+			StagedModelDataHandler<?> stagedModelDataHandler =
 				StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
 					className);
 
@@ -463,12 +459,12 @@ public class StagingImpl implements Staging {
 			liveGroup.getGroupId(), privateLayout);
 
 		for (Layout layout : layouts) {
-			UnicodeProperties typeSettingsProperties =
+			UnicodeProperties typeSettingsUnicodeProperties =
 				layout.getTypeSettingsProperties();
 
 			Set<String> keys = new HashSet<>();
 
-			for (String key : typeSettingsProperties.keySet()) {
+			for (String key : typeSettingsUnicodeProperties.keySet()) {
 				if (key.startsWith("last-import-")) {
 					keys.add(key);
 				}
@@ -479,12 +475,12 @@ public class StagingImpl implements Staging {
 			}
 
 			for (String key : keys) {
-				typeSettingsProperties.remove(key);
+				typeSettingsUnicodeProperties.remove(key);
 			}
 
 			_layoutLocalService.updateLayout(
 				layout.getGroupId(), layout.isPrivateLayout(),
-				layout.getLayoutId(), typeSettingsProperties.toString());
+				layout.getLayoutId(), typeSettingsUnicodeProperties.toString());
 		}
 	}
 
@@ -583,7 +579,7 @@ public class StagingImpl implements Staging {
 				errorMessageJSONObject.put(
 					"site",
 					LanguageUtil.format(
-						locale, "in-site-x", missingReference.getGroupId(),
+						locale, "in-environment-x", group.getName(locale),
 						false));
 			}
 
@@ -611,10 +607,11 @@ public class StagingImpl implements Staging {
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			"content.Language", locale, getClass());
 
-		Throwable cause = exception.getCause();
+		Throwable throwable = exception.getCause();
 
 		if (exception.getCause() instanceof ConnectException) {
-			Map settingsMap = exportImportConfiguration.getSettingsMap();
+			Map<String, Serializable> settingsMap =
+				exportImportConfiguration.getSettingsMap();
 
 			String remoteAddress = MapUtil.getString(
 				settingsMap, "remoteAddress");
@@ -674,11 +671,13 @@ public class StagingImpl implements Staging {
 			if (exportImportContentValidationException.getType() ==
 					ExportImportContentValidationException.ARTICLE_NOT_FOUND) {
 
-				if ((cause != null) && (cause.getLocalizedMessage() != null)) {
+				if ((throwable != null) &&
+					(throwable.getLocalizedMessage() != null)) {
+
 					errorMessage = LanguageUtil.format(
 						resourceBundle,
 						"unable-to-validate-referenced-journal-article-x",
-						cause.getLocalizedMessage());
+						throwable.getLocalizedMessage());
 				}
 				else {
 					errorMessage = LanguageUtil.get(
@@ -880,8 +879,8 @@ public class StagingImpl implements Staging {
 			errorType = ServletResponseConstants.SC_FILE_CUSTOM_EXCEPTION;
 		}
 		else if ((exception instanceof ExportImportIOException) ||
-				 ((cause instanceof SystemException) &&
-				  (cause.getCause() instanceof ExportImportIOException))) {
+				 ((throwable instanceof SystemException) &&
+				  (throwable.getCause() instanceof ExportImportIOException))) {
 
 			ExportImportIOException exportImportIOException = null;
 
@@ -890,7 +889,7 @@ public class StagingImpl implements Staging {
 			}
 			else {
 				exportImportIOException =
-					(ExportImportIOException)cause.getCause();
+					(ExportImportIOException)throwable.getCause();
 			}
 
 			if (exportImportIOException.getType() ==
@@ -1185,7 +1184,7 @@ public class StagingImpl implements Staging {
 			errorType = ServletResponseConstants.SC_FILE_CUSTOM_EXCEPTION;
 		}
 		else if ((exception instanceof LayoutImportException) ||
-				 (cause instanceof LayoutImportException)) {
+				 (throwable instanceof LayoutImportException)) {
 
 			LayoutImportException layoutImportException = null;
 
@@ -1193,7 +1192,7 @@ public class StagingImpl implements Staging {
 				layoutImportException = (LayoutImportException)exception;
 			}
 			else {
-				layoutImportException = (LayoutImportException)cause;
+				layoutImportException = (LayoutImportException)throwable;
 			}
 
 			if (layoutImportException.getType() ==
@@ -1240,14 +1239,12 @@ public class StagingImpl implements Staging {
 			LayoutPrototypeException layoutPrototypeException =
 				(LayoutPrototypeException)exception;
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("the-lar-file-could-not-be-imported-because-it-");
-			sb.append("requires-page-templates-or-site-templates-that-could-");
-			sb.append("not-be-found.-please-import-the-following-templates-");
-			sb.append("manually");
-
-			errorMessage = LanguageUtil.get(resourceBundle, sb.toString());
+			errorMessage = LanguageUtil.get(
+				resourceBundle,
+				StringBundler.concat(
+					"the-lar-file-could-not-be-imported-because-it-requires-",
+					"page-templates-or-site-templates-that-could-not-be-",
+					"found.-please-import-the-following-templates-manually"));
 
 			errorMessagesJSONArray = JSONFactoryUtil.createJSONArray();
 
@@ -1255,26 +1252,16 @@ public class StagingImpl implements Staging {
 				layoutPrototypeException.getMissingLayoutPrototypes();
 
 			for (Tuple missingLayoutPrototype : missingLayoutPrototypes) {
-				String layoutPrototypeUuid =
-					(String)missingLayoutPrototype.getObject(1);
-
-				JSONObject errorMessageJSONObject = JSONUtil.put(
-					"info", layoutPrototypeUuid);
-
-				String layoutPrototypeName =
-					(String)missingLayoutPrototype.getObject(2);
-
-				errorMessageJSONObject.put("name", layoutPrototypeName);
-
-				String layoutPrototypeClassName =
-					(String)missingLayoutPrototype.getObject(0);
-
-				errorMessageJSONObject.put(
-					"type",
-					ResourceActionsUtil.getModelResource(
-						locale, layoutPrototypeClassName));
-
-				errorMessagesJSONArray.put(errorMessageJSONObject);
+				errorMessagesJSONArray.put(
+					JSONUtil.put(
+						"info", (String)missingLayoutPrototype.getObject(1)
+					).put(
+						"name", (String)missingLayoutPrototype.getObject(2)
+					).put(
+						"type",
+						ResourceActionsUtil.getModelResource(
+							locale, (String)missingLayoutPrototype.getObject(0))
+					));
 			}
 
 			errorType = ServletResponseConstants.SC_FILE_CUSTOM_EXCEPTION;
@@ -1320,13 +1307,13 @@ public class StagingImpl implements Staging {
 					locale,
 					"there-are-missing-references-that-could-not-be-found-in-" +
 						"the-live-environment-the-following-elements-are-" +
-							"published-from-their-own-site");
+							"published-from-their-own-environment");
 			}
 			else {
 				errorMessage = LanguageUtil.get(
 					locale,
 					"there-are-missing-references-that-could-not-be-found-in-" +
-						"the-current-site");
+						"the-current-environment");
 			}
 
 			MissingReferences missingReferences =
@@ -1767,6 +1754,9 @@ public class StagingImpl implements Staging {
 				}
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -1821,6 +1811,37 @@ public class StagingImpl implements Staging {
 	}
 
 	@Override
+	public Layout getRemoteLayout(long userId, long stagingGroupId, long plid)
+		throws PortalException {
+
+		Group stagingGroup = _groupLocalService.fetchGroup(stagingGroupId);
+		User user = _userLocalService.fetchUser(userId);
+
+		HttpPrincipal httpPrincipal = new HttpPrincipal(
+			_stagingURLHelper.buildRemoteURL(
+				stagingGroup.getTypeSettingsProperties()),
+			user.getLogin(), user.getPassword(), user.isPasswordEncrypted());
+
+		Layout layout = _layoutLocalService.fetchLayout(plid);
+
+		Thread thread = Thread.currentThread();
+
+		ClassLoader threadClassLoader = thread.getContextClassLoader();
+
+		try {
+			thread.setContextClassLoader(
+				PortalClassLoaderUtil.getClassLoader());
+
+			return LayoutServiceHttp.getLayoutByUuidAndGroupId(
+				httpPrincipal, layout.getUuid(),
+				stagingGroup.getRemoteLiveGroupId(), layout.isPrivateLayout());
+		}
+		finally {
+			thread.setContextClassLoader(threadClassLoader);
+		}
+	}
+
+	@Override
 	public long getRemoteLayoutPlid(long userId, long stagingGroupId, long plid)
 		throws PortalException {
 
@@ -1851,15 +1872,15 @@ public class StagingImpl implements Staging {
 			stagingGroup = stagingGroup.getParentGroup();
 		}
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			stagingGroup.getTypeSettingsProperties();
 
 		boolean overrideRemoteSiteURL = GetterUtil.getBoolean(
-			typeSettingsProperties.getProperty("overrideRemoteSiteURL"));
+			typeSettingsUnicodeProperties.getProperty("overrideRemoteSiteURL"));
 
 		if (overrideRemoteSiteURL) {
 			return GetterUtil.getString(
-				typeSettingsProperties.getProperty("remoteSiteURL"));
+				typeSettingsUnicodeProperties.getProperty("remoteSiteURL"));
 		}
 
 		PermissionChecker permissionChecker =
@@ -1868,13 +1889,13 @@ public class StagingImpl implements Staging {
 		User user = permissionChecker.getUser();
 
 		HttpPrincipal httpPrincipal = new HttpPrincipal(
-			_stagingURLHelper.buildRemoteURL(typeSettingsProperties),
+			_stagingURLHelper.buildRemoteURL(typeSettingsUnicodeProperties),
 			user.getLogin(), user.getPassword(), user.isPasswordEncrypted());
 
 		long remoteGroupId = GetterUtil.getLong(
-			typeSettingsProperties.getProperty("remoteGroupId"));
+			typeSettingsUnicodeProperties.getProperty("remoteGroupId"));
 		boolean secureConnection = GetterUtil.getBoolean(
-			typeSettingsProperties.getProperty("secureConnection"));
+			typeSettingsUnicodeProperties.getProperty("secureConnection"));
 
 		String groupDisplayURL =
 			StagingGroupServiceTunnelUtil.getGroupDisplayURL(
@@ -1884,8 +1905,8 @@ public class StagingImpl implements Staging {
 			URL remoteSiteURL = new URL(groupDisplayURL);
 
 			if (!isStagingUseVirtualHostForRemoteSite()) {
-				String remoteAddress = typeSettingsProperties.getProperty(
-					"remoteAddress");
+				String remoteAddress =
+					typeSettingsUnicodeProperties.getProperty("remoteAddress");
 
 				remoteSiteURL = new URL(
 					remoteSiteURL.getProtocol(), remoteAddress,
@@ -1901,11 +1922,7 @@ public class StagingImpl implements Staging {
 
 	@Override
 	public String getSchedulerGroupName(String destinationName, long groupId) {
-		return destinationName.concat(
-			StringPool.SLASH
-		).concat(
-			String.valueOf(groupId)
-		);
+		return StringBundler.concat(destinationName, StringPool.SLASH, groupId);
 	}
 
 	@Override
@@ -1972,31 +1989,36 @@ public class StagingImpl implements Staging {
 
 			MissingReference missingReference = entry.getValue();
 
-			Map<String, String> referrers = missingReference.getReferrers();
-
-			JSONObject errorMessageJSONObject =
-				JSONFactoryUtil.createJSONObject();
-
-			if (Validator.isNotNull(missingReference.getClassName())) {
-				errorMessageJSONObject.put(
+			warningMessagesJSONArray.put(
+				JSONUtil.put(
 					"info",
-					LanguageUtil.format(
-						locale,
-						"the-original-x-does-not-exist-in-the-current-" +
-							"environment",
-						ResourceActionsUtil.getModelResource(
-							locale, missingReference.getClassName()),
-						false));
-			}
+					() -> {
+						if (Validator.isNotNull(
+								missingReference.getClassName())) {
 
-			errorMessageJSONObject.put(
-				"size", referrers.size()
-			).put(
-				"type",
-				ResourceActionsUtil.getModelResource(locale, entry.getKey())
-			);
+							return LanguageUtil.format(
+								locale,
+								"the-original-x-does-not-exist-in-the-" +
+									"current-environment",
+								ResourceActionsUtil.getModelResource(
+									locale, missingReference.getClassName()),
+								false);
+						}
 
-			warningMessagesJSONArray.put(errorMessageJSONObject);
+						return null;
+					}
+				).put(
+					"size",
+					() -> {
+						Map<String, String> referrers =
+							missingReference.getReferrers();
+
+						return referrers.size();
+					}
+				).put(
+					"type",
+					ResourceActionsUtil.getModelResource(locale, entry.getKey())
+				));
 		}
 
 		return warningMessagesJSONArray;
@@ -2028,6 +2050,25 @@ public class StagingImpl implements Staging {
 		}
 
 		return null;
+	}
+
+	@Override
+	public boolean hasRemoteLayout(long userId, long stagingGroupId, long plid)
+		throws PortalException {
+
+		Group stagingGroup = _groupLocalService.fetchGroup(stagingGroupId);
+		User user = _userLocalService.fetchUser(userId);
+
+		HttpPrincipal httpPrincipal = new HttpPrincipal(
+			_stagingURLHelper.buildRemoteURL(
+				stagingGroup.getTypeSettingsProperties()),
+			user.getLogin(), user.getPassword(), user.isPasswordEncrypted());
+
+		Layout layout = _layoutLocalService.fetchLayout(plid);
+
+		return LayoutServiceHttp.hasLayout(
+			httpPrincipal, layout.getUuid(),
+			stagingGroup.getRemoteLiveGroupId(), layout.isPrivateLayout());
 	}
 
 	@Override
@@ -2278,6 +2319,8 @@ public class StagingImpl implements Staging {
 			long userId, ExportImportConfiguration exportImportConfiguration)
 		throws PortalException {
 
+		_checkPermission(exportImportConfiguration);
+
 		Map<String, Serializable> settingsMap =
 			exportImportConfiguration.getSettingsMap();
 
@@ -2287,22 +2330,20 @@ public class StagingImpl implements Staging {
 		String backgroundTaskName = MapUtil.getString(
 			parameterMap, "name", exportImportConfiguration.getName());
 
-		Map<String, Serializable> taskContextMap =
-			HashMapBuilder.<String, Serializable>put(
-				"exportImportConfigurationId",
-				exportImportConfiguration.getExportImportConfigurationId()
-			).put(
-				"privateLayout",
-				MapUtil.getBoolean(settingsMap, "privateLayout")
-			).build();
-
 		BackgroundTask backgroundTask =
 			_backgroundTaskManager.addBackgroundTask(
 				userId, exportImportConfiguration.getGroupId(),
 				backgroundTaskName,
 				BackgroundTaskExecutorNames.
 					LAYOUT_STAGING_BACKGROUND_TASK_EXECUTOR,
-				taskContextMap, new ServiceContext());
+				HashMapBuilder.<String, Serializable>put(
+					"exportImportConfigurationId",
+					exportImportConfiguration.getExportImportConfigurationId()
+				).put(
+					"privateLayout",
+					MapUtil.getBoolean(settingsMap, "privateLayout")
+				).build(),
+				new ServiceContext());
 
 		return backgroundTask.getBackgroundTaskId();
 	}
@@ -2417,23 +2458,24 @@ public class StagingImpl implements Staging {
 
 			Group sourceGroup = _groupLocalService.getGroup(sourceGroupId);
 
-			UnicodeProperties typeSettingsProperties =
+			UnicodeProperties typeSettingsUnicodeProperties =
 				sourceGroup.getTypeSettingsProperties();
 
 			String remoteAddress = MapUtil.getString(
 				parameterMap, "remoteAddress",
-				typeSettingsProperties.getProperty("remoteAddress"));
+				typeSettingsUnicodeProperties.getProperty("remoteAddress"));
 			int remotePort = MapUtil.getInteger(
 				parameterMap, "remotePort",
 				GetterUtil.getInteger(
-					typeSettingsProperties.getProperty("remotePort")));
+					typeSettingsUnicodeProperties.getProperty("remotePort")));
 			String remotePathContext = MapUtil.getString(
 				parameterMap, "remotePathContext",
-				typeSettingsProperties.getProperty("remotePathContext"));
+				typeSettingsUnicodeProperties.getProperty("remotePathContext"));
 			boolean secureConnection = MapUtil.getBoolean(
 				parameterMap, "secureConnection",
 				GetterUtil.getBoolean(
-					typeSettingsProperties.getProperty("secureConnection")));
+					typeSettingsUnicodeProperties.getProperty(
+						"secureConnection")));
 
 			_groupLocalService.validateRemote(
 				sourceGroupId, remoteAddress, remotePort, remotePathContext,
@@ -2643,13 +2685,14 @@ public class StagingImpl implements Staging {
 
 		Group group = _groupLocalService.getGroup(groupId);
 
-		UnicodeProperties groupTypeSettingsProperties =
+		UnicodeProperties groupTypeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
 		long remoteGroupId = ParamUtil.getLong(
 			portletRequest, "remoteGroupId",
 			GetterUtil.getLong(
-				groupTypeSettingsProperties.getProperty("remoteGroupId")));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remoteGroupId")));
 
 		Map<String, Serializable> publishLayoutRemoteSettingsMap = null;
 		String remoteAddress = null;
@@ -2701,18 +2744,21 @@ public class StagingImpl implements Staging {
 					portletRequest);
 			remoteAddress = ParamUtil.getString(
 				portletRequest, "remoteAddress",
-				groupTypeSettingsProperties.getProperty("remoteAddress"));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remoteAddress"));
 			remotePort = ParamUtil.getInteger(
 				portletRequest, "remotePort",
 				GetterUtil.getInteger(
-					groupTypeSettingsProperties.getProperty("remotePort")));
+					groupTypeSettingsUnicodeProperties.getProperty(
+						"remotePort")));
 			remotePathContext = ParamUtil.getString(
 				portletRequest, "remotePathContext",
-				groupTypeSettingsProperties.getProperty("remotePathContext"));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remotePathContext"));
 			secureConnection = ParamUtil.getBoolean(
 				portletRequest, "secureConnection",
 				GetterUtil.getBoolean(
-					groupTypeSettingsProperties.getProperty(
+					groupTypeSettingsUnicodeProperties.getProperty(
 						"secureConnection")));
 			remotePrivateLayout = ParamUtil.getBoolean(
 				portletRequest, "remotePrivateLayout");
@@ -2900,7 +2946,7 @@ public class StagingImpl implements Staging {
 
 		Group group = _groupLocalService.getGroup(groupId);
 
-		UnicodeProperties groupTypeSettingsProperties =
+		UnicodeProperties groupTypeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
 		boolean privateLayout = false;
@@ -2913,7 +2959,8 @@ public class StagingImpl implements Staging {
 		long remoteGroupId = ParamUtil.getLong(
 			portletRequest, "remoteGroupId",
 			GetterUtil.getLong(
-				groupTypeSettingsProperties.getProperty("remoteGroupId")));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remoteGroupId")));
 		boolean remotePrivateLayout = false;
 
 		long exportImportConfigurationId = ParamUtil.getLong(
@@ -2958,18 +3005,21 @@ public class StagingImpl implements Staging {
 					portletRequest);
 			remoteAddress = ParamUtil.getString(
 				portletRequest, "remoteAddress",
-				groupTypeSettingsProperties.getProperty("remoteAddress"));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remoteAddress"));
 			remotePort = ParamUtil.getInteger(
 				portletRequest, "remotePort",
 				GetterUtil.getInteger(
-					groupTypeSettingsProperties.getProperty("remotePort")));
+					groupTypeSettingsUnicodeProperties.getProperty(
+						"remotePort")));
 			remotePathContext = ParamUtil.getString(
 				portletRequest, "remotePathContext",
-				groupTypeSettingsProperties.getProperty("remotePathContext"));
+				groupTypeSettingsUnicodeProperties.getProperty(
+					"remotePathContext"));
 			secureConnection = ParamUtil.getBoolean(
 				portletRequest, "secureConnection",
 				GetterUtil.getBoolean(
-					groupTypeSettingsProperties.getProperty(
+					groupTypeSettingsUnicodeProperties.getProperty(
 						"secureConnection")));
 			remotePrivateLayout = ParamUtil.getBoolean(
 				portletRequest, "remotePrivateLayout");
@@ -3065,23 +3115,24 @@ public class StagingImpl implements Staging {
 			String remoteSiteURL)
 		throws PortalException {
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			stagingGroup.getTypeSettingsProperties();
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"overrideRemoteSiteURL", String.valueOf(overrideRemoteSiteURL));
 
 		if (overrideRemoteSiteURL) {
-			typeSettingsProperties.setProperty(
+			typeSettingsUnicodeProperties.setProperty(
 				"remoteSiteURL", String.valueOf(remoteSiteURL));
 		}
 		else {
-			typeSettingsProperties.setProperty(
+			typeSettingsUnicodeProperties.setProperty(
 				"remoteSiteURL", StringPool.BLANK);
 		}
 
 		_groupLocalService.updateGroup(
-			stagingGroup.getGroupId(), typeSettingsProperties.toString());
+			stagingGroup.getGroupId(),
+			typeSettingsUnicodeProperties.toString());
 	}
 
 	@Override
@@ -3198,60 +3249,62 @@ public class StagingImpl implements Staging {
 		String cmd = MapUtil.getString(parameterMap, Constants.CMD);
 
 		if (!cmd.equals(Constants.PUBLISH_TO_LIVE) &&
-			!cmd.equals("schedule_publish_to_live")) {
+			!cmd.equals(Constants.PUBLISH_TO_REMOTE) &&
+			!cmd.equals("schedule_publish_to_live") &&
+			!cmd.equals("schedule_publish_to_remote")) {
 
 			return;
 		}
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			layout.getTypeSettingsProperties();
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-date", String.valueOf(System.currentTimeMillis()));
 
 		String layoutRevisionId = GetterUtil.getString(
 			layoutElement.attributeValue("layout-revision-id"));
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-layout-revision-id", layoutRevisionId);
 
 		String layoutSetBranchId = MapUtil.getString(
 			parameterMap, "layoutSetBranchId");
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-layout-set-branch-id", layoutSetBranchId);
 
 		String layoutSetBranchName = MapUtil.getString(
 			parameterMap, "layoutSetBranchName");
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-layout-set-branch-name", layoutSetBranchName);
 
 		String lastImportUserName = MapUtil.getString(
 			parameterMap, "lastImportUserName");
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-user-name", lastImportUserName);
 
 		String lastImportUserUuid = MapUtil.getString(
 			parameterMap, "lastImportUserUuid");
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-user-uuid", lastImportUserUuid);
 
 		String layoutBranchId = GetterUtil.getString(
 			layoutElement.attributeValue("layout-branch-id"));
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-layout-branch-id", layoutBranchId);
 
 		String layoutBranchName = GetterUtil.getString(
 			layoutElement.attributeValue("layout-branch-name"));
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"last-import-layout-branch-name", layoutBranchName);
 
-		layout.setTypeSettingsProperties(typeSettingsProperties);
+		layout.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 	}
 
 	@Override
@@ -3313,11 +3366,11 @@ public class StagingImpl implements Staging {
 				remoteGroup = GroupServiceHttp.getGroup(
 					httpPrincipal, remoteGroupId);
 
-				UnicodeProperties remoteTypeSettingsProperties =
+				UnicodeProperties remoteTypeSettingsUnicodeProperties =
 					remoteGroup.getTypeSettingsProperties();
 
 				String remoteValidationTimestamp = GetterUtil.getString(
-					remoteTypeSettingsProperties.getProperty(
+					remoteTypeSettingsUnicodeProperties.getProperty(
 						"validationTimestamp"));
 
 				if (validationTimestamp.equals(remoteValidationTimestamp)) {
@@ -3403,6 +3456,8 @@ public class StagingImpl implements Staging {
 			boolean secureConnection, boolean remotePrivateLayout)
 		throws PortalException {
 
+		_checkPermission(exportImportConfiguration);
+
 		Map<String, Serializable> settingsMap =
 			exportImportConfiguration.getSettingsMap();
 
@@ -3417,29 +3472,27 @@ public class StagingImpl implements Staging {
 
 		User user = permissionChecker.getUser();
 
-		Map<String, Serializable> taskContextMap =
-			HashMapBuilder.<String, Serializable>put(
-				"exportImportConfigurationId",
-				exportImportConfiguration.getExportImportConfigurationId()
-			).put(
-				"httpPrincipal",
-				new HttpPrincipal(
-					_stagingURLHelper.buildRemoteURL(
-						remoteAddress, remotePort, remotePathContext,
-						secureConnection),
-					user.getLogin(), user.getPassword(),
-					user.isPasswordEncrypted())
-			).put(
-				"privateLayout", remotePrivateLayout
-			).build();
-
 		BackgroundTask backgroundTask =
 			_backgroundTaskManager.addBackgroundTask(
 				user.getUserId(), exportImportConfiguration.getGroupId(),
 				backgroundTaskName,
 				BackgroundTaskExecutorNames.
 					LAYOUT_REMOTE_STAGING_BACKGROUND_TASK_EXECUTOR,
-				taskContextMap, new ServiceContext());
+				HashMapBuilder.<String, Serializable>put(
+					"exportImportConfigurationId",
+					exportImportConfiguration.getExportImportConfigurationId()
+				).put(
+					"httpPrincipal",
+					new HttpPrincipal(
+						_stagingURLHelper.buildRemoteURL(
+							remoteAddress, remotePort, remotePathContext,
+							secureConnection),
+						user.getLogin(), user.getPassword(),
+						user.isPasswordEncrypted())
+				).put(
+					"privateLayout", remotePrivateLayout
+				).build(),
+				new ServiceContext());
 
 		return backgroundTask.getBackgroundTaskId();
 	}
@@ -3532,16 +3585,24 @@ public class StagingImpl implements Staging {
 			return 0;
 		}
 
+		long layoutBranchId = getRecentLayoutBranchId(
+			userId, layoutSetBranchId, plid);
+
 		RecentLayoutRevision recentLayoutRevision =
 			_recentLayoutRevisionLocalService.fetchRecentLayoutRevision(
 				userId, layoutSetBranchId, plid);
 
 		if (recentLayoutRevision != null) {
-			return recentLayoutRevision.getLayoutRevisionId();
-		}
+			LayoutRevision layoutRevision =
+				_layoutRevisionLocalService.fetchLayoutRevision(
+					recentLayoutRevision.getLayoutRevisionId());
 
-		long layoutBranchId = getRecentLayoutBranchId(
-			userId, layoutSetBranchId, plid);
+			if ((layoutRevision != null) &&
+				(layoutRevision.getLayoutBranchId() == layoutBranchId)) {
+
+				return layoutRevision.getLayoutRevisionId();
+			}
+		}
 
 		LayoutBranch layoutBranch = _layoutBranchLocalService.fetchLayoutBranch(
 			layoutBranchId);
@@ -3592,15 +3653,28 @@ public class StagingImpl implements Staging {
 	}
 
 	protected ScheduleInformation getScheduleInformation(
-		PortletRequest portletRequest, long targetGroupId, boolean remote) {
+			PortletRequest portletRequest, long targetGroupId, boolean remote)
+		throws SchedulerException {
+
+		Calendar startCalendar = ExportImportDateUtil.getCalendar(
+			portletRequest, "schedulerStartDate", true);
+
+		Calendar currentCalendar = Calendar.getInstance(
+			startCalendar.getTimeZone());
+
+		if (startCalendar.before(currentCalendar)) {
+			SchedulerException schedulerException = new SchedulerException();
+
+			schedulerException.setType(
+				SchedulerException.TYPE_INVALID_START_DATE);
+
+			throw schedulerException;
+		}
 
 		ScheduleInformation scheduleInformation = new ScheduleInformation();
 
 		int recurrenceType = ParamUtil.getInteger(
 			portletRequest, "recurrenceType");
-
-		Calendar startCalendar = ExportImportDateUtil.getCalendar(
-			portletRequest, "schedulerStartDate", true);
 
 		String cronText = SchedulerEngineHelperUtil.getCronText(
 			portletRequest, startCalendar, false, recurrenceType);
@@ -3697,12 +3771,12 @@ public class StagingImpl implements Staging {
 
 	protected boolean isStagingUseVirtualHostForRemoteSite() {
 		try {
-			ExportImportServiceConfiguration configuration =
+			StagingConfiguration stagingConfiguration =
 				_configurationProvider.getCompanyConfiguration(
-					ExportImportServiceConfiguration.class,
+					StagingConfiguration.class,
 					CompanyThreadLocal.getCompanyId());
 
-			return configuration.stagingUseVirtualHostForRemoteSite();
+			return stagingConfiguration.stagingUseVirtualHostForRemoteSite();
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
@@ -3848,7 +3922,9 @@ public class StagingImpl implements Staging {
 			long layoutRevisionId)
 		throws PortalException {
 
-		if (layoutRevisionId <= 0) {
+		if ((layoutRevisionId <= 0) ||
+			ExportImportThreadLocal.isLayoutStagingInProcess()) {
+
 			return;
 		}
 
@@ -3890,10 +3966,9 @@ public class StagingImpl implements Staging {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					StringBundler.concat(
-						"Unable to set recent layout revision ID",
-						"with layout set branch ", layoutSetBranchId,
-						" and PLID ", plid, " and layout branch ",
-						layoutBranchId),
+						"Unable to set recent layout revision ID with layout ",
+						"set branch ", layoutSetBranchId, " and PLID ", plid,
+						" and layout branch ", layoutBranchId),
 					portalException);
 			}
 		}
@@ -3940,6 +4015,15 @@ public class StagingImpl implements Staging {
 		ProxiedLayoutsThreadLocal.clearProxiedLayouts();
 	}
 
+	private void _checkPermission(
+			ExportImportConfiguration exportImportConfiguration)
+		throws PortalException {
+
+		GroupPermissionUtil.check(
+			PermissionThreadLocal.getPermissionChecker(),
+			exportImportConfiguration.getGroupId(), ActionKeys.PUBLISH_STAGING);
+	}
+
 	private void _setGroupTypeSetting(long groupId, String key, String value) {
 		Group group = _groupLocalService.fetchGroup(groupId);
 
@@ -3947,18 +4031,18 @@ public class StagingImpl implements Staging {
 			return;
 		}
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
 		if (Validator.isNotNull(value)) {
-			typeSettingsProperties.setProperty(key, value);
+			typeSettingsUnicodeProperties.setProperty(key, value);
 		}
 		else {
-			typeSettingsProperties.remove(key);
+			typeSettingsUnicodeProperties.remove(key);
 		}
 
-		group.setTypeSettingsProperties(typeSettingsProperties);
-		group.setTypeSettings(typeSettingsProperties.toString());
+		group.setTypeSettingsProperties(typeSettingsUnicodeProperties);
+		group.setTypeSettings(typeSettingsUnicodeProperties.toString());
 
 		_groupLocalService.updateGroup(group);
 	}
@@ -3981,9 +4065,6 @@ public class StagingImpl implements Staging {
 	private CompanyLocalService _companyLocalService;
 
 	private ConfigurationProvider _configurationProvider;
-
-	@Reference
-	private CTPreferencesLocalService _ctPreferencesLocalService;
 
 	@Reference
 	private DLValidator _dlValidator;
@@ -4059,9 +4140,6 @@ public class StagingImpl implements Staging {
 	private WorkflowInstanceLinkLocalService _workflowInstanceLinkLocalService;
 
 	private class ScheduleInformation {
-
-		public ScheduleInformation() {
-		}
 
 		public String getCronText() {
 			return _cronText;

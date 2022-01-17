@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.internal.security.permission.support;
 
 import com.liferay.dynamic.data.mapping.constants.DDMActionKeys;
+import com.liferay.dynamic.data.mapping.internal.security.permission.support.helper.DDMPermissionSupportHelper;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.security.permission.DDMPermissionSupport;
@@ -162,6 +163,11 @@ public class DDMPermissionSupportImpl implements DDMPermissionSupport {
 			structurePermissionSupportServiceWrapper =
 				_ddmPermissionSupportTracker.
 					getDDMStructurePermissionSupportServiceWrapper(className);
+
+		if (structurePermissionSupportServiceWrapper == null) {
+			return ResourceActionsUtil.getCompositeModelName(
+				className, DDMStructure.class.getName());
+		}
 
 		boolean defaultModelResourceName = MapUtil.getBoolean(
 			structurePermissionSupportServiceWrapper.getProperties(),

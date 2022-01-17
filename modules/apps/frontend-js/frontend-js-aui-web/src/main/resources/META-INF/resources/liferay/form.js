@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-form',
-	A => {
+	(A) => {
 		var AArray = A.Array;
 
 		var Lang = A.Lang;
@@ -25,11 +25,30 @@ AUI.add(
 
 		var TABS_SECTION_STR = 'TabsSection';
 
+		var REGEX_CUSTOM_ELEMENT_NAME = /^[a-z]([a-z]|[0-9]|-|\.|_)*-([a-z]|[0-9]|-|\.|_)*/;
+
+		var REGEX_EMAIL = /^[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:\w(?:[\w-]*\w)?\.)+(\w(?:[\w-]*\w))$/;
+
+		var REGEX_FRIENDLY_URL_MAPPING = /[A-Za-z0-9-_]*/;
+
 		var REGEX_NUMBER = /^[+-]?(\d+)([.|,]\d+)*([eE][+-]?\d+)?$/;
 
 		var REGEX_URL = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(https?:\/\/|www.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[\w]*))((.*):(\d*)\/?(.*))?)/;
 
-		var acceptFiles = function(val, node, ruleValue) {
+		var REGEX_URL_ALLOW_RELATIVE = /((([A-Za-z]{3,9}:(?:\/\/)?)|\/(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(https?:\/\/|www.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[\w]*))((.*):(\d*)\/?(.*))?)/;
+
+		var RESERVED_CUSTOM_ELEMENT_NAMES = new Set([
+			'annotation-xml',
+			'color-profile',
+			'font-face',
+			'font-face-format',
+			'font-face-name',
+			'font-face-src',
+			'font-face-uri',
+			'missing-glyph',
+		]);
+
+		var acceptFiles = function (val, node, ruleValue) {
 			if (ruleValue && ruleValue.split(',').includes('*')) {
 				return true;
 			}
@@ -37,7 +56,22 @@ AUI.add(
 			return defaultAcceptFiles(val, node, ruleValue);
 		};
 
-		var maxFileSize = function(_val, node, ruleValue) {
+		var customElementName = function (val, _node, _ruleValue) {
+			return (
+				REGEX_CUSTOM_ELEMENT_NAME.test(val) &&
+				!RESERVED_CUSTOM_ELEMENT_NAMES.has(val)
+			);
+		};
+
+		var email = function (val) {
+			return REGEX_EMAIL.test(val);
+		};
+
+		var friendlyURLMapping = function (val, _node, _ruleValue) {
+			return REGEX_FRIENDLY_URL_MAPPING.test(val);
+		};
+
+		var maxFileSize = function (_val, node, ruleValue) {
 			var nodeType = node.get('type').toLowerCase();
 
 			if (nodeType === 'file') {
@@ -47,21 +81,31 @@ AUI.add(
 			return true;
 		};
 
-		var number = function(val, _node, _ruleValue) {
+		var number = function (val, _node, _ruleValue) {
 			return REGEX_NUMBER && REGEX_NUMBER.test(val);
 		};
 
-		var url = function(val, _node, _ruleValue) {
+		var url = function (val, _node, _ruleValue) {
 			return REGEX_URL && REGEX_URL.test(val);
+		};
+
+		var urlAllowRelative = function (val) {
+			return (
+				REGEX_URL_ALLOW_RELATIVE && REGEX_URL_ALLOW_RELATIVE.test(val)
+			);
 		};
 
 		A.mix(
 			DEFAULTS_FORM_VALIDATOR.RULES,
 			{
 				acceptFiles,
+				customElementName,
+				email,
+				friendlyURLMapping,
 				maxFileSize,
 				number,
-				url
+				url,
+				urlAllowRelative,
 			},
 			true
 		);
@@ -79,6 +123,9 @@ AUI.add(
 				alphanum: Liferay.Language.get(
 					'please-enter-only-alphanumeric-characters'
 				),
+				customElementName: Liferay.Language.get(
+					'please-enter-a-valid-html-element-name'
+				),
 				date: Liferay.Language.get('please-enter-a-valid-date'),
 				digits: Liferay.Language.get('please-enter-only-digits'),
 				email: Liferay.Language.get(
@@ -86,6 +133,9 @@ AUI.add(
 				),
 				equalTo: Liferay.Language.get(
 					'please-enter-the-same-value-again'
+				),
+				friendlyURLMapping: Liferay.Language.get(
+					'please-enter-a-valid-friendly-url-mapping'
 				),
 				max: Liferay.Language.get(
 					'please-enter-a-value-less-than-or-equal-to-x'
@@ -110,7 +160,10 @@ AUI.add(
 					'please-enter-a-value-between-x-and-x-characters-long'
 				),
 				required: Liferay.Language.get('this-field-is-required'),
-				url: Liferay.Language.get('please-enter-a-valid-url')
+				url: Liferay.Language.get('please-enter-a-valid-url'),
+				urlAllowRelative: Liferay.Language.get(
+					'please-enter-a-valid-url'
+				),
 			},
 			true
 		);
@@ -126,7 +179,7 @@ AUI.add(
 						instance._processFieldRules(val);
 
 						return val;
-					}
+					},
 				},
 				id: {},
 				namespace: {},
@@ -135,12 +188,12 @@ AUI.add(
 						var instance = this;
 
 						return instance._onSubmit;
-					}
+					},
 				},
 				validateOnBlur: {
 					validator: Lang.isBoolean,
-					value: true
-				}
+					value: true,
+				},
 			},
 
 			EXTENDS: A.Base,
@@ -240,26 +293,25 @@ AUI.add(
 
 					if (field) {
 						var fieldWrapper = field.ancestor(
-							'form > fieldset > div'
+							'form > fieldset > div, form > div'
 						);
 
 						var formTabs = formNode.one('.lfr-nav');
 
 						if (fieldWrapper && formTabs) {
 							var tabs = formTabs.all('.nav-item');
-							var tabsNamespace = formTabs.getAttribute(
-								'data-tabs-namespace'
-							);
+							var tabsNamespace =
+								formTabs.dataset['tabs-namespace'];
 
-							var tabNames = AArray.map(tabs._nodes, tab => {
-								return tab.getAttribute('data-tab-name');
+							var tabNames = AArray.map(tabs._nodes, (tab) => {
+								return tab.dataset['tab-name'];
 							});
 
 							var fieldWrapperId = fieldWrapper
 								.getAttribute('id')
 								.slice(0, -TABS_SECTION_STR.length);
 
-							var fieldTabId = AArray.find(tabs._nodes, tab => {
+							var fieldTabId = AArray.find(tabs._nodes, (tab) => {
 								return (
 									tab
 										.getAttribute('id')
@@ -270,7 +322,7 @@ AUI.add(
 							Liferay.Portal.Tabs.show(
 								tabsNamespace,
 								tabNames,
-								fieldTabId.getAttribute('data-tab-name')
+								fieldTabId.dataset['tab-name']
 							);
 						}
 					}
@@ -312,12 +364,12 @@ AUI.add(
 						'.panel-collapse'
 					);
 
-					collapsiblePanels.each(panel => {
+					collapsiblePanels.each((panel) => {
 						var errorFields = panel
 							.get('children')
 							.all('.has-error');
 
-						if (errorFields.size() > 0 && !panel.hasClass('in')) {
+						if (errorFields.size() > 0 && !panel.hasClass('show')) {
 							var panelNode = panel.getDOM();
 
 							Liferay.CollapseProvider.show({panel: panelNode});
@@ -456,13 +508,13 @@ AUI.add(
 						validatorName
 					);
 
-					if (ruleIndex == -1) {
+					if (ruleIndex === -1) {
 						fieldRules.push({
 							body: body || '',
 							custom: custom || false,
 							errorMessage: errorMessage || '',
 							fieldName,
-							validatorName
+							validatorName,
 						});
 
 						instance._processFieldRules(fieldRules);
@@ -483,7 +535,9 @@ AUI.add(
 					if (formNode) {
 						var formValidator = new A.FormValidator({
 							boundingBox: formNode,
-							validateOnBlur: instance.get('validateOnBlur')
+							stackErrorContainer:
+								'<div class="form-feedback-item form-validator-stack help-block"></div>',
+							validateOnBlur: instance.get('validateOnBlur'),
 						});
 
 						A.Do.before(
@@ -519,7 +573,7 @@ AUI.add(
 						validatorName
 					);
 
-					if (ruleIndex != -1) {
+					if (ruleIndex !== -1) {
 						var rule = fieldRules[ruleIndex];
 
 						instance.formValidator.resetField(rule.fieldName);
@@ -528,11 +582,11 @@ AUI.add(
 
 						instance._processFieldRules(fieldRules);
 					}
-				}
+				},
 			},
 
 			/*
-			 * @deprecated since 7.2, unused
+			 * @deprecated As of Mueller (7.2.x), with no direct replacement
 			 */
 			register(config) {
 				var instance = this;
@@ -545,17 +599,17 @@ AUI.add(
 
 				Liferay.fire('form:registered', {
 					form,
-					formName
+					formName,
 				});
 
 				return form;
-			}
+			},
 		});
 
 		Liferay.Form = Form;
 	},
 	'',
 	{
-		requires: ['aui-base', 'aui-form-validator']
+		requires: ['aui-base', 'aui-form-validator'],
 	}
 );

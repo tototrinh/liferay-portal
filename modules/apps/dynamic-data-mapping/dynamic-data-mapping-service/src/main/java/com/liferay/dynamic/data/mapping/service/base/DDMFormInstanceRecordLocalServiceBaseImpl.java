@@ -16,16 +16,16 @@ package com.liferay.dynamic.data.mapping.service.base;
 
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecord;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalService;
-import com.liferay.dynamic.data.mapping.service.persistence.DDMFormInstanceFinder;
-import com.liferay.dynamic.data.mapping.service.persistence.DDMFormInstancePersistence;
+import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.service.persistence.DDMFormInstanceRecordFinder;
 import com.liferay.dynamic.data.mapping.service.persistence.DDMFormInstanceRecordPersistence;
-import com.liferay.dynamic.data.mapping.service.persistence.DDMFormInstanceRecordVersionPersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -46,16 +46,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -77,11 +83,15 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DDMFormInstanceRecordLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DDMFormInstanceRecordLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DDMFormInstanceRecordLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the ddm form instance record to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDMFormInstanceRecordLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param ddmFormInstanceRecord the ddm form instance record
 	 * @return the ddm form instance record that was added
@@ -113,6 +123,10 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	/**
 	 * Deletes the ddm form instance record with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDMFormInstanceRecordLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param formInstanceRecordId the primary key of the ddm form instance record
 	 * @return the ddm form instance record that was removed
 	 * @throws PortalException if a ddm form instance record with the primary key could not be found
@@ -129,6 +143,10 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	/**
 	 * Deletes the ddm form instance record from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDMFormInstanceRecordLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ddmFormInstanceRecord the ddm form instance record
 	 * @return the ddm form instance record that was removed
 	 */
@@ -138,6 +156,18 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 		DDMFormInstanceRecord ddmFormInstanceRecord) {
 
 		return ddmFormInstanceRecordPersistence.remove(ddmFormInstanceRecord);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return ddmFormInstanceRecordPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -389,6 +419,7 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -405,6 +436,11 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 
 		return ddmFormInstanceRecordLocalService.deleteDDMFormInstanceRecord(
 			(DDMFormInstanceRecord)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<DDMFormInstanceRecord> getBasePersistence() {
+		return ddmFormInstanceRecordPersistence;
 	}
 
 	/**
@@ -499,6 +535,10 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	/**
 	 * Updates the ddm form instance record in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDMFormInstanceRecordLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ddmFormInstanceRecord the ddm form instance record
 	 * @return the ddm form instance record that was updated
 	 */
@@ -510,11 +550,17 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 		return ddmFormInstanceRecordPersistence.update(ddmFormInstanceRecord);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			DDMFormInstanceRecordLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -522,6 +568,8 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		ddmFormInstanceRecordLocalService =
 			(DDMFormInstanceRecordLocalService)aopProxy;
+
+		_setLocalServiceUtilService(ddmFormInstanceRecordLocalService);
 	}
 
 	/**
@@ -534,8 +582,23 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 		return DDMFormInstanceRecordLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DDMFormInstanceRecord> getCTPersistence() {
+		return ddmFormInstanceRecordPersistence;
+	}
+
+	@Override
+	public Class<DDMFormInstanceRecord> getModelClass() {
 		return DDMFormInstanceRecord.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DDMFormInstanceRecord>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(ddmFormInstanceRecordPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -567,6 +630,23 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		DDMFormInstanceRecordLocalService ddmFormInstanceRecordLocalService) {
+
+		try {
+			Field field =
+				DDMFormInstanceRecordLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, ddmFormInstanceRecordLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected DDMFormInstanceRecordLocalService
 		ddmFormInstanceRecordLocalService;
 
@@ -579,27 +659,5 @@ public abstract class DDMFormInstanceRecordLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected DDMFormInstancePersistence ddmFormInstancePersistence;
-
-	@Reference
-	protected DDMFormInstanceFinder ddmFormInstanceFinder;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService
-		workflowInstanceLinkLocalService;
-
-	@Reference
-	protected com.liferay.asset.kernel.service.AssetEntryLocalService
-		assetEntryLocalService;
-
-	@Reference
-	protected DDMFormInstanceRecordVersionPersistence
-		ddmFormInstanceRecordVersionPersistence;
 
 }

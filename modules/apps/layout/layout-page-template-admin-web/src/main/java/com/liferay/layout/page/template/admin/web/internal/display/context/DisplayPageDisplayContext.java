@@ -18,6 +18,7 @@ import com.liferay.layout.page.template.admin.web.internal.util.LayoutPageTempla
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -51,14 +52,17 @@ public class DisplayPageDisplayContext {
 			WebKeys.THEME_DISPLAY);
 	}
 
-	public SearchContainer getDisplayPagesSearchContainer() {
+	public SearchContainer<LayoutPageTemplateEntry>
+		getDisplayPagesSearchContainer() {
+
 		if (_displayPagesSearchContainer != null) {
 			return _displayPagesSearchContainer;
 		}
 
-		SearchContainer displayPagesSearchContainer = new SearchContainer(
-			_renderRequest, getPortletURL(), null,
-			"there-are-no-display-page-templates");
+		SearchContainer<LayoutPageTemplateEntry> displayPagesSearchContainer =
+			new SearchContainer(
+				_renderRequest, getPortletURL(), null,
+				"there-are-no-display-page-templates");
 
 		displayPagesSearchContainer.setRowChecker(
 			new EmptyOnClickRowChecker(_renderResponse));
@@ -158,31 +162,47 @@ public class DisplayPageDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view_display_pages.jsp"
+		).setRedirect(
+			_themeDisplay.getURLCurrent()
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
 
-		portletURL.setParameter("mvcPath", "/view_display_pages.jsp");
-		portletURL.setParameter("tabs1", "display-page-templates");
-		portletURL.setParameter("redirect", _themeDisplay.getURLCurrent());
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = getKeywords();
+				return null;
+			}
+		).setTabs1(
+			"display-page-templates"
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	public boolean isSearch() {
@@ -193,7 +213,8 @@ public class DisplayPageDisplayContext {
 		return false;
 	}
 
-	private SearchContainer _displayPagesSearchContainer;
+	private SearchContainer<LayoutPageTemplateEntry>
+		_displayPagesSearchContainer;
 	private final HttpServletRequest _httpServletRequest;
 	private String _keywords;
 	private Long _layoutPageTemplateEntryId;

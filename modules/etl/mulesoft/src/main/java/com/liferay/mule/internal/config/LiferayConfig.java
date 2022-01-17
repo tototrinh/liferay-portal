@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-2021 Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,8 @@ package com.liferay.mule.internal.config;
 
 import com.liferay.mule.internal.connection.BasicCachedConnectionProvider;
 import com.liferay.mule.internal.connection.OAuth2CachedConnectionProvider;
-import com.liferay.mule.internal.operation.LiferayOperations;
+import com.liferay.mule.internal.operation.LiferayBatchOperations;
+import com.liferay.mule.internal.operation.LiferayCRUDOperations;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +37,7 @@ import org.mule.runtime.extension.api.annotation.param.display.Summary;
 @ConnectionProviders(
 	{BasicCachedConnectionProvider.class, OAuth2CachedConnectionProvider.class}
 )
-@Operations(LiferayOperations.class)
+@Operations({LiferayBatchOperations.class, LiferayCRUDOperations.class})
 public class LiferayConfig {
 
 	@DisplayName("Connection Timeout")
@@ -44,13 +45,13 @@ public class LiferayConfig {
 	@Parameter
 	@Placement(order = 1, tab = Placement.ADVANCED_TAB)
 	@Summary("Socket connection timeout value")
-	private int _connectionTimeout;
+	private int connectionTimeout;
 
 	@DisplayName("Connection Timeout Unit")
 	@Optional(defaultValue = "SECONDS")
 	@Parameter
 	@Placement(order = 2, tab = Placement.ADVANCED_TAB)
 	@Summary("Time unit to be used in the Timeout configurations")
-	private TimeUnit _connectionTimeoutTimeUnit;
+	private TimeUnit connectionTimeoutTimeUnit;
 
 }

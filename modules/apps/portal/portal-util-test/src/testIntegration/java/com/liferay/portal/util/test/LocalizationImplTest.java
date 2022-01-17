@@ -30,7 +30,7 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.LocalizationImpl;
 import com.liferay.portlet.PortletPreferencesImpl;
-import com.liferay.spring.mock.web.portlet.MockPortletRequest;
+import com.liferay.portletmvc4spring.test.mock.web.portlet.MockPortletRequest;
 
 import java.lang.reflect.Field;
 
@@ -197,6 +197,36 @@ public class LocalizationImplTest {
 		Assert.assertTrue(
 			"Default locale included in XML",
 			xml.contains("default-locale=\"" + LocaleUtil.getDefault() + "\""));
+	}
+
+	@Test
+	public void testGetLocalizationXmlFromPreferences() throws Exception {
+		PortletPreferences preferences = new PortletPreferencesImpl();
+
+		LocalizationUtil.setPreferencesValue(
+			preferences, "test", _ENGLISH_LANGUAGE_ID, "changedValue");
+
+		String xml = LocalizationUtil.getLocalizationXmlFromPreferences(
+			preferences, new MockPortletRequest(), "test", "testValue");
+
+		Assert.assertTrue(
+			"Portlet preferences were not properly applied to XML: " + xml,
+			xml.contains(
+				"<test language-id=\"" + _ENGLISH_LANGUAGE_ID +
+					"\">changedValue</test>"));
+	}
+
+	@Test
+	public void testGetLocalizationXmlFromPreferencesWithEmptyPreferences() {
+		String xml = LocalizationUtil.getLocalizationXmlFromPreferences(
+			new PortletPreferencesImpl(), new MockPortletRequest(), "test",
+			"testValue");
+
+		Assert.assertTrue(
+			"Default values were not included in XML: " + xml,
+			xml.contains(
+				"<test language-id=\"" + LocaleUtil.getDefault() +
+					"\">testValue</test>"));
 	}
 
 	@Test
@@ -417,14 +447,13 @@ public class LocalizationImplTest {
 		String englishValue = "foo&bar";
 		String spanishValue = "bar&foo";
 
-		Map<Locale, String> localizationMap = HashMapBuilder.put(
-			LocaleUtil.SPAIN, spanishValue
-		).put(
-			LocaleUtil.US, englishValue
-		).build();
-
 		String xml = LocalizationUtil.updateLocalization(
-			localizationMap, _xml, "static-content", "en_US");
+			HashMapBuilder.put(
+				LocaleUtil.SPAIN, spanishValue
+			).put(
+				LocaleUtil.US, englishValue
+			).build(),
+			_xml, "static-content", "en_US");
 
 		Assert.assertEquals(
 			spanishValue,

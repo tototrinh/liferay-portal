@@ -14,37 +14,36 @@
 
 /**
  * Returns first webContent element ancestor of given element.
- * @param {object} element The DOM element
- * @return {object} The webContent element
+ * @param {Object} element The DOM element
+ * @returns {Object} The webContent element
  */
 function getClosestAssetElement(element, assetType) {
 	return closest(element, `[data-analytics-asset-type="${assetType}"]`);
 }
 
 function closest(element, selector) {
-	let closest = null;
-
 	if (element.closest) {
-		closest = element.closest(selector);
+		return element.closest(selector);
 	}
 	if (!document.documentElement.contains(element)) {
-		closest = null;
+		return null;
 	}
+
 	do {
 		if (element.matches(selector)) {
-			closest = element;
+			return element;
 		}
 
 		element = element.parentElement || element.parentNode;
 	} while (element !== null && element.nodeType === 1);
 
-	return closest;
+	return null;
 }
 
 /**
  * Return all words from an element
- * @param {object} element
- * @return {number} the total of words
+ * @param {Object} element
+ * @returns {number} the total of words
  */
 function getNumberOfWords({innerText}) {
 	const words = innerText.split(/\s+/).filter(Boolean);
@@ -53,3 +52,10 @@ function getNumberOfWords({innerText}) {
 }
 
 export {closest, getClosestAssetElement, getNumberOfWords};
+
+/**
+ * Polyfill for .matches in IE11
+ */
+if (!Element.prototype.matches) {
+	Element.prototype.matches = Element.prototype.msMatchesSelector;
+}

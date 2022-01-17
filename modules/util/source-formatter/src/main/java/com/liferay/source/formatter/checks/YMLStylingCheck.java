@@ -24,20 +24,25 @@ public class YMLStylingCheck extends BaseFileCheck {
 		String fileName, String absolutePath, String content) {
 
 		content = content.replaceAll(
-			"(\\A|\n)( *.+:) {2,}(.+)(\\Z|\n)", "$1$2 $3$4");
-
-		content = content.replaceAll(
 			"(\\A|\n)( *)(description:) (?!\\|-)(.+)(\\Z|\n)",
 			"$1$2$3\n    $2$4$5");
+
+		content = content.replaceAll("(\\A|\n) *description:\n +\"\"", "");
 
 		content = content.replaceAll(
 			"(\\A|\n)( *#)@? ?(review)(\\Z|\n)", "$1$2 @$3$4");
 
 		content = content.replaceAll(
-			"(\\A|\n)(( *)|(.+: ))'([^']*)'(\\Z|\n)", "$1$2\"$5\"$6");
+			"(\\A|\n)(( *)|(.+: ))'([^'\"]*)'(\\Z|\n)", "$1$2\"$5\"$6");
 
 		content = content.replaceAll(
-			"(\\A|\n)( *)'([^']+)'(:.*)(\\Z|\n)", "$1$2\"$3\"$4$5");
+			"(\\A|\n)( *)'([^'\"]+)'(:.*)(\\Z|\n)", "$1$2\"$3\"$4$5");
+
+		if (fileName.endsWith("/rest-config.yaml")) {
+			content = content.replaceAll(
+				"(\\A|\n)( *baseURI: ((['\"](?!/))|(?!['\"/])))(.*)",
+				"$1$2/$5");
+		}
 
 		return content;
 	}

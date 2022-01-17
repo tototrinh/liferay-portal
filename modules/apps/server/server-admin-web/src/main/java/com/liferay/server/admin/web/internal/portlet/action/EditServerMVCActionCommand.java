@@ -18,6 +18,7 @@ import com.liferay.document.library.kernel.util.DLPreviewableProcessor;
 import com.liferay.mail.kernel.model.Account;
 import com.liferay.mail.kernel.service.MailService;
 import com.liferay.petra.log4j.Log4JUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.convert.ConvertException;
@@ -106,7 +107,6 @@ import com.liferay.portal.util.ShutdownUtil;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.portlet.ActionRequest;
@@ -114,10 +114,9 @@ import javax.portlet.ActionResponse;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletPreferences;
 import javax.portlet.PortletSession;
-import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -309,11 +308,8 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 					Layout layout = _layoutLocalService.getLayout(
 						layoutRevision.getPlid());
 
-					if (!layout.isTypePortlet()) {
-						return;
-					}
-
-					if (_containsPortlet(
+					if (!layout.isTypePortlet() ||
+						_containsPortlet(
 							layout, portletPreferences.getPortletId())) {
 
 						return;
@@ -368,8 +364,7 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 					if ((pref.getOwnerId() !=
 							PortletKeys.PREFS_OWNER_ID_DEFAULT) ||
 						(pref.getOwnerType() !=
-							PortletKeys.PREFS_OWNER_TYPE_LAYOUT) ||
-						Objects.equals("145", pref.getPortletId())) {
+							PortletKeys.PREFS_OWNER_TYPE_LAYOUT)) {
 
 						return;
 					}
@@ -377,19 +372,20 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 					Layout layout = _layoutLocalService.getLayout(
 						pref.getPlid());
 
-					if (layout.isTypeControlPanel()) {
+					if (layout.isTypeContent() || layout.isTypeControlPanel()) {
 						return;
 					}
 
-					UnicodeProperties typeSettingsProperties =
+					UnicodeProperties typeSettingsUnicodeProperties =
 						layout.getTypeSettingsProperties();
 
-					Set<String> keys = typeSettingsProperties.keySet();
+					Set<String> keys = typeSettingsUnicodeProperties.keySet();
 
 					boolean orphan = true;
 
 					for (String key : keys) {
-						String value = typeSettingsProperties.getProperty(key);
+						String value =
+							typeSettingsUnicodeProperties.getProperty(key);
 
 						if (value.contains(pref.getPortletId())) {
 							orphan = false;
@@ -461,12 +457,13 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 			LiferayActionResponse liferayActionResponse =
 				(LiferayActionResponse)actionResponse;
 
-			PortletURL portletURL = liferayActionResponse.createRenderURL();
-
-			portletURL.setParameter("mvcRenderCommandName", path);
-			portletURL.setWindowState(WindowState.MAXIMIZED);
-
-			return portletURL.toString();
+			return PortletURLBuilder.createRenderURL(
+				liferayActionResponse
+			).setMVCRenderCommandName(
+				path
+			).setWindowState(
+				WindowState.MAXIMIZED
+			).buildString();
 		}
 
 		PortletSession portletSession = actionRequest.getPortletSession();
@@ -502,6 +499,7 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		throws Exception {
 
 		String language = ParamUtil.getString(actionRequest, "language");
+		String output = ParamUtil.getString(actionRequest, "output");
 		String script = ParamUtil.getString(actionRequest, "script");
 
 		PortletConfig portletConfig = getPortletConfig(actionRequest);
@@ -522,6 +520,7 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		try {
 			SessionMessages.add(actionRequest, "language", language);
 			SessionMessages.add(actionRequest, "script", script);
+			SessionMessages.add(actionRequest, "output", output);
 
 			_scripting.exec(null, portletObjects, language, script);
 
@@ -594,10 +593,10 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		portletPreferences.setValue(
 			PropsKeys.XUGGLER_ENABLED, String.valueOf(xugglerEnabled));
 
-		Enumeration<String> enu = actionRequest.getParameterNames();
+		Enumeration<String> enumeration = actionRequest.getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			if (name.startsWith("imageMagickLimit")) {
 				String key = StringUtil.toLowerCase(name.substring(16));
@@ -617,10 +616,10 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	protected void updateLogLevels(ActionRequest actionRequest)
 		throws Exception {
 
-		Enumeration<String> enu = actionRequest.getParameterNames();
+		Enumeration<String> enumeration = actionRequest.getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			if (name.startsWith("logLevel")) {
 				String loggerName = name.substring(8);
@@ -650,6 +649,8 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 			actionRequest, "smtpPassword");
 		int smtpPort = ParamUtil.getInteger(actionRequest, "smtpPort");
 		boolean smtpSecure = ParamUtil.getBoolean(actionRequest, "smtpSecure");
+		boolean smtpStartTLSEnable = ParamUtil.getBoolean(
+			actionRequest, "smtpStartTLSEnable");
 		String smtpUser = ParamUtil.getString(actionRequest, "smtpUser");
 
 		String storeProtocol = Account.PROTOCOL_POP;
@@ -690,6 +691,9 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 
 		portletPreferences.setValue(
 			PropsKeys.MAIL_SESSION_MAIL_SMTP_PORT, String.valueOf(smtpPort));
+		portletPreferences.setValue(
+			PropsKeys.MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE,
+			String.valueOf(smtpStartTLSEnable));
 		portletPreferences.setValue(
 			PropsKeys.MAIL_SESSION_MAIL_SMTP_USER, smtpUser);
 		portletPreferences.setValue(

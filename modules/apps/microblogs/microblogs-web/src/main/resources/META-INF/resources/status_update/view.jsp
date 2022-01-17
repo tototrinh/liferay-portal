@@ -45,10 +45,13 @@ Group group = themeDisplay.getScopeGroup();
 
 		request.setAttribute(WebKeys.MICROBLOGS_ENTRIES, microblogsEntries);
 
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/status_update/view.jsp");
-		portletURL.setWindowState(WindowState.NORMAL);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/status_update/view.jsp"
+		).setWindowState(
+			WindowState.NORMAL
+		).buildPortletURL();
 
 		request.setAttribute(WebKeys.MICROBLOGS_ENTRIES_URL, portletURL);
 		%>
@@ -58,10 +61,10 @@ Group group = themeDisplay.getScopeGroup();
 </c:if>
 
 <aui:script use="aui-base">
-	AUI().ready(function() {
+	AUI().ready(function () {
 		Liferay.Microblogs.init({
 			microblogsEntriesURL:
-				'<portlet:renderURL windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcPath" value="/status_update/view.jsp" /></portlet:renderURL>'
+				'<portlet:renderURL windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcPath" value="/status_update/view.jsp" /></portlet:renderURL>',
 		});
 	});
 </aui:script>

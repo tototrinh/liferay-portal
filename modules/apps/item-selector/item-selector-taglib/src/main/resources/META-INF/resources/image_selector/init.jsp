@@ -16,7 +16,4 @@
 
 <%@ include file="/init.jsp" %>
 
-<%@ taglib uri="http://liferay.com/tld/clay" prefix="clay" %>
-
-<%@ page import="com.liferay.document.library.util.DLURLHelperUtil" %><%@
-page import="com.liferay.portal.kernel.servlet.BrowserSnifferUtil" %>
+<%@ page import="com.liferay.portal.kernel.servlet.BrowserSnifferUtil" %>

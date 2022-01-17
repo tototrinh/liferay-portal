@@ -401,9 +401,6 @@ public class PluginsSummaryBuilder {
 
 		int changeLogVersion = 0;
 
-		int moduleIncrementalVersion = GetterUtil.getInteger(
-			pluginPackageProperties.getProperty("module-incremental-version"));
-
 		if (!relengChangeLogFile.exists()) {
 			FileUtil.write(relengChangeLogFile, "TEMP=");
 		}
@@ -542,6 +539,9 @@ public class PluginsSummaryBuilder {
 						pluginPackagePropertiesContent.substring(x);
 		}
 
+		int moduleIncrementalVersion = GetterUtil.getInteger(
+			pluginPackageProperties.getProperty("module-incremental-version"));
+
 		if (moduleIncrementalVersion != changeLogVersion) {
 			pluginPackagePropertiesContent = StringUtil.replace(
 				pluginPackagePropertiesContent,
@@ -557,9 +557,9 @@ public class PluginsSummaryBuilder {
 		File relengChangeLogMD5File = new File(
 			webInfDir, "liferay-releng.changelog.md5");
 
-		String md5Checksum = FileUtil.getMD5Checksum(relengChangeLogFile);
-
-		FileUtil.write(relengChangeLogMD5File, md5Checksum);
+		FileUtil.write(
+			relengChangeLogMD5File,
+			FileUtil.getMD5Checksum(relengChangeLogFile));
 	}
 
 	private String _updateRelengPropertiesFile(

@@ -12,50 +12,74 @@
  * details.
  */
 
-import ClayButton from '@clayui/button';
-import {useIsMounted} from 'frontend-js-react-web';
+import {ClayButtonWithIcon, default as ClayButton} from '@clayui/button';
+import ClayLayout from '@clayui/layout';
+import {useModal} from '@clayui/modal';
+import {ReactPortal, useIsMounted} from '@liferay/frontend-js-react-web';
+import classNames from 'classnames';
 import React, {useEffect, useState} from 'react';
-import ReactDOM from 'react-dom';
 
 import useLazy from '../../core/hooks/useLazy';
 import useLoad from '../../core/hooks/useLoad';
 import usePlugins from '../../core/hooks/usePlugins';
+import CreateLayoutPageTemplateEntryButton from '../../plugins/create-layout-page-template-entry-modal/components/CreateLayoutPageTemplateEntryButton';
 import * as Actions from '../actions/index';
-import {PAGE_TYPES} from '../config/constants/pageTypes';
+import {LAYOUT_TYPES} from '../config/constants/layoutTypes';
+import {SERVICE_NETWORK_STATUS_TYPES} from '../config/constants/serviceNetworkStatusTypes';
 import {config} from '../config/index';
-import {useDispatch, useSelector} from '../store/index';
-import {useSelectItem} from './Controls';
+import {useSelectItem} from '../contexts/ControlsContext';
+import {useEditableProcessorUniqueId} from '../contexts/EditableProcessorContext';
+import {useDispatch, useSelector} from '../contexts/StoreContext';
+import selectCanPublish from '../selectors/selectCanPublish';
+import redo from '../thunks/redo';
+import undo from '../thunks/undo';
+import {useDropClear} from '../utils/drag-and-drop/useDragAndDrop';
+import EditModeSelector from './EditModeSelector';
 import ExperimentsLabel from './ExperimentsLabel';
 import NetworkStatusBar from './NetworkStatusBar';
+import PreviewModal from './PreviewModal';
 import Translation from './Translation';
 import UnsafeHTML from './UnsafeHTML';
+import ViewportSizeSelector from './ViewportSizeSelector';
+import Undo from './undo/Undo';
 
 const {Suspense, useCallback, useRef} = React;
 
-function ToolbarBody() {
+function ToolbarBody({className}) {
 	const dispatch = useDispatch();
+	const dropClearRef = useDropClear();
+	const editableProcessorUniqueId = useEditableProcessorUniqueId();
+	const formRef = useRef();
 	const {getInstance, register} = usePlugins();
 	const isMounted = useIsMounted();
 	const load = useLoad();
 	const selectItem = useSelectItem();
-	const store = useSelector(state => state);
+	const store = useSelector((state) => state);
 
-	const {layoutData, segmentsExperienceId, segmentsExperimentStatus} = store;
+	const canPublish = selectCanPublish(store);
 
-	const [enableDiscard, setEnableDiscard] = useState(false);
+	const [publishPending, setPublishPending] = useState(false);
 
-	useEffect(() => {
-		const mainItemId = layoutData.rootItems.main;
-		const mainItem = layoutData.items[mainItemId];
+	const {
+		network,
+		segmentsExperienceId,
+		segmentsExperimentStatus,
+		selectedViewportSize,
+	} = store;
 
-		const isConversionPage = config.pageType === PAGE_TYPES.conversion;
+	const [openPreviewModal, setOpenPreviewModal] = useState(false);
 
-		setEnableDiscard(isConversionPage || mainItem.children.length > 0);
-	}, [layoutData]);
+	const {observer} = useModal({
+		onClose: () => {
+			if (isMounted()) {
+				setOpenPreviewModal(false);
+			}
+		},
+	});
 
-	const loading = useRef(() => {
+	const loadingRef = useRef(() => {
 		Promise.all(
-			config.toolbarPlugins.map(toolbarPlugin => {
+			config.toolbarPlugins.map((toolbarPlugin) => {
 				const {pluginEntryPoint} = toolbarPlugin;
 				const promise = load(pluginEntryPoint, pluginEntryPoint);
 
@@ -63,13 +87,13 @@ function ToolbarBody() {
 					Actions,
 					config,
 					dispatch,
-					store
+					store,
 				};
 
 				return register(pluginEntryPoint, promise, {
 					app,
-					toolbarPlugin
-				}).then(plugin => {
+					toolbarPlugin,
+				}).then((plugin) => {
 					if (!plugin) {
 						throw new Error(
 							`Failed to get instance from ${pluginEntryPoint}`
@@ -82,17 +106,19 @@ function ToolbarBody() {
 					}
 				});
 			})
-		).catch(error => {
+		).catch((error) => {
 			if (process.env.NODE_ENV === 'development') {
 				console.error(error);
 			}
 		});
 	});
 
-	if (loading.current) {
+	if (loadingRef.current) {
+
 		// Do this once only.
-		loading.current();
-		loading.current = null;
+
+		loadingRef.current();
+		loadingRef.current = null;
 	}
 
 	const ToolbarSection = useLazy(
@@ -106,7 +132,7 @@ function ToolbarBody() {
 		}, [])
 	);
 
-	const handleDiscardDraft = event => {
+	const handleDiscardVariant = (event) => {
 		if (
 			!confirm(
 				Liferay.Language.get(
@@ -118,37 +144,38 @@ function ToolbarBody() {
 		}
 	};
 
-	const handleSubmit = event => {
+	const handleSubmit = (event) => {
+		event.preventDefault();
+
 		if (
-			config.masterUsed &&
-			!confirm(
+			!config.masterUsed ||
+			confirm(
 				Liferay.Language.get(
 					'changes-made-on-this-master-are-going-to-be-propagated-to-all-page-templates,-display-page-templates,-and-pages-using-it.are-you-sure-you-want-to-proceed'
 				)
 			)
 		) {
-			event.preventDefault();
+			setPublishPending(true);
 		}
 	};
 
-	const deselectItem = event => {
+	const onUndo = () => {
+		dispatch(undo({store}));
+	};
+
+	const onRedo = () => {
+		dispatch(redo({store}));
+	};
+
+	const deselectItem = (event) => {
 		if (event.target === event.currentTarget) {
-			selectItem(null, {multiSelect: event.shiftKey});
+			selectItem(null);
 		}
 	};
-
-	let draftButtonLabel = Liferay.Language.get('discard-draft');
-
-	if (config.pageType === PAGE_TYPES.conversion) {
-		draftButtonLabel = Liferay.Language.get('discard-conversion-draft');
-	}
-	else if (config.singleSegmentsExperienceMode) {
-		draftButtonLabel = Liferay.Language.get('discard-variant');
-	}
 
 	let publishButtonLabel = Liferay.Language.get('publish');
 
-	if (config.pageType === PAGE_TYPES.master) {
+	if (config.layoutType === LAYOUT_TYPES.master) {
 		publishButtonLabel = Liferay.Language.get('publish-master');
 	}
 	else if (config.singleSegmentsExperienceMode) {
@@ -158,12 +185,28 @@ function ToolbarBody() {
 		publishButtonLabel = Liferay.Language.get('submit-for-publication');
 	}
 
+	useEffect(() => {
+		if (
+			(network.status === SERVICE_NETWORK_STATUS_TYPES.draftSaved ||
+				!network.status) &&
+			!editableProcessorUniqueId &&
+			publishPending &&
+			formRef.current
+		) {
+			formRef.current.submit();
+		}
+	}, [publishPending, network, editableProcessorUniqueId]);
+
 	return (
-		<div
-			className="container-fluid container-fluid-max-xl"
+		<ClayLayout.ContainerFluid
+			className={classNames(
+				'page-editor__theme-adapter-buttons',
+				className
+			)}
 			onClick={deselectItem}
+			ref={dropClearRef}
 		>
-			<ul className="navbar-nav" onClick={deselectItem}>
+			<ul className="navbar-nav start" onClick={deselectItem}>
 				{config.toolbarPlugins.map(
 					({loadingPlaceholder, pluginEntryPoint}) => {
 						return (
@@ -186,6 +229,7 @@ function ToolbarBody() {
 						);
 					}
 				)}
+
 				<li className="nav-item">
 					<Translation
 						availableLanguages={config.availableLanguages}
@@ -196,6 +240,7 @@ function ToolbarBody() {
 						segmentsExperienceId={segmentsExperienceId}
 					/>
 				</li>
+
 				{!config.singleSegmentsExperienceMode &&
 					segmentsExperimentStatus && (
 						<li className="nav-item pl-2">
@@ -207,30 +252,79 @@ function ToolbarBody() {
 					)}
 			</ul>
 
-			<ul className="navbar-nav" onClick={deselectItem}>
-				<NetworkStatusBar {...store.network} />
+			<ul className="middle navbar-nav" onClick={deselectItem}>
 				<li className="nav-item">
-					<form action={config.discardDraftURL} method="POST">
-						<input
-							name={`${config.portletNamespace}redirect`}
-							type="hidden"
-							value={config.discardDraftRedirectURL}
-						/>
-
-						<ClayButton
-							className="btn btn-secondary mr-3"
-							disabled={!enableDiscard}
-							displayType="secondary"
-							onClick={handleDiscardDraft}
-							small
-							type="submit"
-						>
-							{draftButtonLabel}
-						</ClayButton>
-					</form>
+					<ViewportSizeSelector
+						onSizeSelected={(size) => {
+							if (size !== selectedViewportSize) {
+								dispatch(Actions.switchViewportSize({size}));
+							}
+						}}
+						selectedSize={selectedViewportSize}
+					/>
 				</li>
+			</ul>
+
+			<ul className="end navbar-nav" onClick={deselectItem}>
 				<li className="nav-item">
-					<form action={config.publishURL} method="POST">
+					<NetworkStatusBar {...network} />
+				</li>
+
+				<li className="nav-item">
+					<Undo onRedo={onRedo} onUndo={onUndo} />
+				</li>
+
+				<li className="nav-item">
+					<EditModeSelector />
+				</li>
+
+				<li className="nav-item">
+					<ul className="navbar-nav">
+						<li className="nav-item">
+							<ClayButtonWithIcon
+								className="btn btn-secondary"
+								displayType="secondary"
+								onClick={() => setOpenPreviewModal(true)}
+								small
+								symbol="view"
+								title={Liferay.Language.get('preview')}
+								type="button"
+							>
+								{Liferay.Language.get('preview')}
+							</ClayButtonWithIcon>
+						</li>
+
+						{config.createLayoutPageTemplateEntryEnabled &&
+							config.layoutType === LAYOUT_TYPES.content && (
+								<li className="nav-item">
+									<CreateLayoutPageTemplateEntryButton />
+								</li>
+							)}
+					</ul>
+				</li>
+
+				{config.singleSegmentsExperienceMode && (
+					<li className="nav-item">
+						<form action={config.discardDraftURL} method="POST">
+							<ClayButton
+								className="btn btn-secondary"
+								displayType="secondary"
+								onClick={handleDiscardVariant}
+								small
+								type="submit"
+							>
+								{Liferay.Language.get('discard-variant')}
+							</ClayButton>
+						</form>
+					</li>
+				)}
+
+				<li className="nav-item">
+					<form
+						action={config.publishURL}
+						method="POST"
+						ref={formRef}
+					>
 						<input
 							name={`${config.portletNamespace}redirect`}
 							type="hidden"
@@ -238,7 +332,7 @@ function ToolbarBody() {
 						/>
 
 						<ClayButton
-							disabled={config.pending}
+							disabled={config.pending || !canPublish}
 							displayType="primary"
 							onClick={handleSubmit}
 							small
@@ -249,7 +343,9 @@ function ToolbarBody() {
 					</form>
 				</li>
 			</ul>
-		</div>
+
+			{openPreviewModal && <PreviewModal observer={observer} />}
+		</ClayLayout.ContainerFluid>
 	);
 }
 
@@ -285,11 +381,17 @@ export default function Toolbar() {
 	const isMounted = useIsMounted();
 
 	if (!isMounted()) {
+
 		// First time here, must empty JSP-rendered markup from container.
+
 		while (container.firstChild) {
 			container.removeChild(container.firstChild);
 		}
 	}
 
-	return ReactDOM.createPortal(<ToolbarBody />, container);
+	return (
+		<ReactPortal container={container} wrapper={false}>
+			<ToolbarBody />
+		</ReactPortal>
+	);
 }

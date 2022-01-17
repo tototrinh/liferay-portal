@@ -33,6 +33,7 @@ import serviceFetch from './serviceFetch';
  */
 
 export default {
+
 	/**
 	 * Adds a new Fragment to the current layout
 	 * @param {object} options
@@ -46,7 +47,7 @@ export default {
 		body,
 		fragmentEntryLinkId,
 		onNetworkStatus,
-		parentCommentId = 0
+		parentCommentId = 0,
 	}) {
 		return serviceFetch(
 			config.addFragmentEntryLinkCommentURL,
@@ -54,15 +55,15 @@ export default {
 				body: {
 					body,
 					fragmentEntryLinkId,
-					parentCommentId
-				}
+					parentCommentId,
+				},
 			},
 			onNetworkStatus
 		);
 	},
 
 	/**
-	 * Adds a new Fragment to the current layout
+	 * Adds a new Fragment Composition to the selected collection
 	 * @param {object} options
 	 * @param {string} options.description Fragment composition description
 	 * @param {string} options.fragmentCollectionId Fragment collection ID
@@ -70,6 +71,8 @@ export default {
 	 * @param {string} options.name Fragment composition name
 	 * @param {function} options.onNetworkStatus
 	 * @param {string} options.previewImageURL Fragment composition preview image url
+	 * @param {boolean} options.saveInlineContent Save inline editable content
+	 * @param {boolean} options.saveMappingConfiguration Save fields mapping configuration
 	 * @param {string} options.segmentsExperienceId Current segmentsExperienceId
 	 * @return {Promise<FragmentComposition>} Created FragmentComposition
 	 */
@@ -80,7 +83,9 @@ export default {
 		name,
 		onNetworkStatus,
 		previewImageURL,
-		segmentsExperienceId
+		saveInlineContent,
+		saveMappingConfiguration,
+		segmentsExperienceId,
 	}) {
 		return serviceFetch(
 			config.addFragmentCompositionURL,
@@ -91,8 +96,10 @@ export default {
 					itemId,
 					name,
 					previewImageURL,
-					segmentsExperienceId
-				}
+					saveInlineContent,
+					saveMappingConfiguration,
+					segmentsExperienceId,
+				},
 			},
 			onNetworkStatus,
 			{requestGenerateDraft: true}
@@ -108,7 +115,8 @@ export default {
 	 * @param {string} options.parentItemId
 	 * @param {number} options.position
 	 * @param {string} options.segmentsExperienceId Current segmentsExperienceId
-	 * @return {Promise<FragmentEntryLink>} Created FragmentEntryLink
+	 * @param {string} options.type Type of the Fragment to add
+	 * @return {Promise<{ addedItemId: string, fragmentEntryLink: FragmentEntryLink, layoutData: object }>} Created FragmentEntryLink
 	 */
 	addFragmentEntryLink({
 		fragmentEntryKey,
@@ -116,7 +124,7 @@ export default {
 		onNetworkStatus,
 		parentItemId,
 		position,
-		segmentsExperienceId
+		segmentsExperienceId,
 	}) {
 		return serviceFetch(
 			config.addFragmentEntryLinkURL,
@@ -126,8 +134,44 @@ export default {
 					groupId,
 					parentItemId,
 					position,
-					segmentsExperienceId
-				}
+					segmentsExperienceId,
+				},
+			},
+			onNetworkStatus,
+			{requestGenerateDraft: true}
+		);
+	},
+
+	/**
+	 * Adds a new Fragment Composition to the current layout
+	 * @param {object} options
+	 * @param {string} options.fragmentEntryKey Key of the Fragment composition
+	 * @param {string} options.groupId GroupId that wraps the Fragment
+	 * @param {function} options.onNetworkStatus
+	 * @param {string} options.parentItemId
+	 * @param {number} options.position
+	 * @param {string} options.segmentsExperienceId Current segmentsExperienceId
+	 * @param {string} options.type Type of the Fragment to add
+	 * @return {Promise<{ fragmentEntryLinks: FragmentEntryLink[], layoutData: object }>} Created FragmentEntryLinks
+	 */
+	addFragmentEntryLinks({
+		fragmentEntryKey,
+		groupId,
+		onNetworkStatus,
+		parentItemId,
+		position,
+		segmentsExperienceId,
+	}) {
+		return serviceFetch(
+			config.addFragmentEntryLinksURL,
+			{
+				body: {
+					fragmentEntryKey,
+					groupId,
+					parentItemId,
+					position,
+					segmentsExperienceId,
+				},
 			},
 			onNetworkStatus,
 			{requestGenerateDraft: true}
@@ -145,7 +189,7 @@ export default {
 		return serviceFetch(
 			config.deleteFragmentEntryLinkCommentURL,
 			{
-				body: {commentId}
+				body: {commentId},
 			},
 			onNetworkStatus
 		);
@@ -164,8 +208,8 @@ export default {
 			{
 				body: {
 					itemId,
-					segmentsExperienceId
-				}
+					segmentsExperienceId,
+				},
 			},
 			onNetworkStatus,
 			{requestGenerateDraft: true}
@@ -188,8 +232,8 @@ export default {
 				body: {
 					body,
 					commentId,
-					resolved
-				}
+					resolved,
+				},
 			},
 			onNetworkStatus
 		);
@@ -198,24 +242,64 @@ export default {
 	/**
 	 * Render the content of a fragmentEntryLink
 	 * @param {object} options
+	 * @param {string} options.collectionItemIndex Index of the collection item
+	 * @param {string} options.itemClassName Class name id of the collection item
+	 * @param {string} options.itemClassPK Class PK of the collection item
 	 * @param {string} options.fragmentEntryLinkId Id of the fragmentEntryLink
+	 * @param {string} options.languageId Language id
 	 * @param {function} options.onNetworkStatus
 	 * @param {string} options.segmentsExperienceId Experience id
 	 */
 	renderFragmentEntryLinkContent({
+		collectionItemIndex,
 		fragmentEntryLinkId,
+		itemClassName,
+		itemClassPK,
+		languageId,
 		onNetworkStatus,
-		segmentsExperienceId
+		segmentsExperienceId,
 	}) {
 		return serviceFetch(
 			config.renderFragmentEntryURL,
 			{
 				body: {
+					collectionItemIndex,
 					fragmentEntryLinkId,
-					segmentsExperienceId
-				}
+					itemClassName,
+					itemClassPK,
+					languageId,
+					segmentsExperienceId,
+				},
 			},
 			onNetworkStatus
+		);
+	},
+
+	/**
+	 * Update configurationValues of the fragmentEntryLink with the given fragmentEntryLinkId
+	 * @param {object} options
+	 * @param {string} options.editableValues
+	 * @param {string} options.fragmentEntryLinkId Id of the fragmentEntryLink
+	 * @param {string} options.languageId Language id
+	 * @param {function} options.onNetworkStatus
+	 */
+	updateConfigurationValues({
+		editableValues,
+		fragmentEntryLinkId,
+		languageId,
+		onNetworkStatus,
+	}) {
+		return serviceFetch(
+			config.updateConfigurationValuesURL,
+			{
+				body: {
+					editableValues: JSON.stringify(editableValues),
+					fragmentEntryLinkId,
+					languageId,
+				},
+			},
+			onNetworkStatus,
+			{requestGenerateDraft: true}
 		);
 	},
 
@@ -229,7 +313,8 @@ export default {
 	updateEditableValues({
 		editableValues,
 		fragmentEntryLinkId,
-		onNetworkStatus
+		languageId,
+		onNetworkStatus,
 	}) {
 		return serviceFetch(
 			config.editFragmentEntryLinkURL,
@@ -237,11 +322,11 @@ export default {
 				body: {
 					editableValues: JSON.stringify(editableValues),
 					fragmentEntryLinkId,
-					updateClassedModel: true
-				}
+					languageId,
+				},
 			},
 			onNetworkStatus,
 			{requestGenerateDraft: true}
 		);
-	}
+	},
 };

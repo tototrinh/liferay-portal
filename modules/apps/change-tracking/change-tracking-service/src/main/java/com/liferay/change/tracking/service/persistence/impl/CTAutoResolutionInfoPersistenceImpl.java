@@ -16,9 +16,11 @@ package com.liferay.change.tracking.service.persistence.impl;
 
 import com.liferay.change.tracking.exception.NoSuchAutoResolutionInfoException;
 import com.liferay.change.tracking.model.CTAutoResolutionInfo;
+import com.liferay.change.tracking.model.CTAutoResolutionInfoTable;
 import com.liferay.change.tracking.model.impl.CTAutoResolutionInfoImpl;
 import com.liferay.change.tracking.model.impl.CTAutoResolutionInfoModelImpl;
 import com.liferay.change.tracking.service.persistence.CTAutoResolutionInfoPersistence;
+import com.liferay.change.tracking.service.persistence.CTAutoResolutionInfoUtil;
 import com.liferay.change.tracking.service.persistence.impl.constants.CTPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
@@ -33,15 +35,24 @@ import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +74,9 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = CTAutoResolutionInfoPersistence.class)
+@Component(
+	service = {CTAutoResolutionInfoPersistence.class, BasePersistence.class}
+)
 public class CTAutoResolutionInfoPersistenceImpl
 	extends BasePersistenceImpl<CTAutoResolutionInfo>
 	implements CTAutoResolutionInfoPersistence {
@@ -85,9 +98,9 @@ public class CTAutoResolutionInfoPersistenceImpl
 	private FinderPath _finderPathWithPaginationFindAll;
 	private FinderPath _finderPathWithoutPaginationFindAll;
 	private FinderPath _finderPathCountAll;
-	private FinderPath _finderPathWithPaginationFindByCTCollectionId;
-	private FinderPath _finderPathWithoutPaginationFindByCTCollectionId;
-	private FinderPath _finderPathCountByCTCollectionId;
+	private FinderPath _finderPathWithPaginationFindByCtCollectionId;
+	private FinderPath _finderPathWithoutPaginationFindByCtCollectionId;
+	private FinderPath _finderPathCountByCtCollectionId;
 
 	/**
 	 * Returns all the ct auto resolution infos where ctCollectionId = &#63;.
@@ -96,10 +109,10 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the matching ct auto resolution infos
 	 */
 	@Override
-	public List<CTAutoResolutionInfo> findByCTCollectionId(
+	public List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId) {
 
-		return findByCTCollectionId(
+		return findByCtCollectionId(
 			ctCollectionId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 	}
 
@@ -116,10 +129,10 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the range of matching ct auto resolution infos
 	 */
 	@Override
-	public List<CTAutoResolutionInfo> findByCTCollectionId(
+	public List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end) {
 
-		return findByCTCollectionId(ctCollectionId, start, end, null);
+		return findByCtCollectionId(ctCollectionId, start, end, null);
 	}
 
 	/**
@@ -136,11 +149,11 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the ordered range of matching ct auto resolution infos
 	 */
 	@Override
-	public List<CTAutoResolutionInfo> findByCTCollectionId(
+	public List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
 
-		return findByCTCollectionId(
+		return findByCtCollectionId(
 			ctCollectionId, start, end, orderByComparator, true);
 	}
 
@@ -159,7 +172,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the ordered range of matching ct auto resolution infos
 	 */
 	@Override
-	public List<CTAutoResolutionInfo> findByCTCollectionId(
+	public List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		OrderByComparator<CTAutoResolutionInfo> orderByComparator,
 		boolean useFinderCache) {
@@ -171,12 +184,12 @@ public class CTAutoResolutionInfoPersistenceImpl
 			(orderByComparator == null)) {
 
 			if (useFinderCache) {
-				finderPath = _finderPathWithoutPaginationFindByCTCollectionId;
+				finderPath = _finderPathWithoutPaginationFindByCtCollectionId;
 				finderArgs = new Object[] {ctCollectionId};
 			}
 		}
 		else if (useFinderCache) {
-			finderPath = _finderPathWithPaginationFindByCTCollectionId;
+			finderPath = _finderPathWithPaginationFindByCtCollectionId;
 			finderArgs = new Object[] {
 				ctCollectionId, start, end, orderByComparator
 			};
@@ -186,7 +199,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<CTAutoResolutionInfo>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (CTAutoResolutionInfo ctAutoResolutionInfo : list) {
@@ -247,10 +260,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -270,12 +279,12 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
 	 */
 	@Override
-	public CTAutoResolutionInfo findByCTCollectionId_First(
+	public CTAutoResolutionInfo findByCtCollectionId_First(
 			long ctCollectionId,
 			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
 		throws NoSuchAutoResolutionInfoException {
 
-		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByCTCollectionId_First(
+		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByCtCollectionId_First(
 			ctCollectionId, orderByComparator);
 
 		if (ctAutoResolutionInfo != null) {
@@ -302,11 +311,11 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the first matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
 	 */
 	@Override
-	public CTAutoResolutionInfo fetchByCTCollectionId_First(
+	public CTAutoResolutionInfo fetchByCtCollectionId_First(
 		long ctCollectionId,
 		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
 
-		List<CTAutoResolutionInfo> list = findByCTCollectionId(
+		List<CTAutoResolutionInfo> list = findByCtCollectionId(
 			ctCollectionId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -325,12 +334,12 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
 	 */
 	@Override
-	public CTAutoResolutionInfo findByCTCollectionId_Last(
+	public CTAutoResolutionInfo findByCtCollectionId_Last(
 			long ctCollectionId,
 			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
 		throws NoSuchAutoResolutionInfoException {
 
-		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByCTCollectionId_Last(
+		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByCtCollectionId_Last(
 			ctCollectionId, orderByComparator);
 
 		if (ctAutoResolutionInfo != null) {
@@ -357,17 +366,17 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the last matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
 	 */
 	@Override
-	public CTAutoResolutionInfo fetchByCTCollectionId_Last(
+	public CTAutoResolutionInfo fetchByCtCollectionId_Last(
 		long ctCollectionId,
 		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
 
-		int count = countByCTCollectionId(ctCollectionId);
+		int count = countByCtCollectionId(ctCollectionId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<CTAutoResolutionInfo> list = findByCTCollectionId(
+		List<CTAutoResolutionInfo> list = findByCtCollectionId(
 			ctCollectionId, count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -387,7 +396,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @throws NoSuchAutoResolutionInfoException if a ct auto resolution info with the primary key could not be found
 	 */
 	@Override
-	public CTAutoResolutionInfo[] findByCTCollectionId_PrevAndNext(
+	public CTAutoResolutionInfo[] findByCtCollectionId_PrevAndNext(
 			long ctAutoResolutionInfoId, long ctCollectionId,
 			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
 		throws NoSuchAutoResolutionInfoException {
@@ -402,13 +411,13 @@ public class CTAutoResolutionInfoPersistenceImpl
 
 			CTAutoResolutionInfo[] array = new CTAutoResolutionInfoImpl[3];
 
-			array[0] = getByCTCollectionId_PrevAndNext(
+			array[0] = getByCtCollectionId_PrevAndNext(
 				session, ctAutoResolutionInfo, ctCollectionId,
 				orderByComparator, true);
 
 			array[1] = ctAutoResolutionInfo;
 
-			array[2] = getByCTCollectionId_PrevAndNext(
+			array[2] = getByCtCollectionId_PrevAndNext(
 				session, ctAutoResolutionInfo, ctCollectionId,
 				orderByComparator, false);
 
@@ -422,7 +431,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 		}
 	}
 
-	protected CTAutoResolutionInfo getByCTCollectionId_PrevAndNext(
+	protected CTAutoResolutionInfo getByCtCollectionId_PrevAndNext(
 		Session session, CTAutoResolutionInfo ctAutoResolutionInfo,
 		long ctCollectionId,
 		OrderByComparator<CTAutoResolutionInfo> orderByComparator,
@@ -539,9 +548,9 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @param ctCollectionId the ct collection ID
 	 */
 	@Override
-	public void removeByCTCollectionId(long ctCollectionId) {
+	public void removeByCtCollectionId(long ctCollectionId) {
 		for (CTAutoResolutionInfo ctAutoResolutionInfo :
-				findByCTCollectionId(
+				findByCtCollectionId(
 					ctCollectionId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 					null)) {
 
@@ -556,12 +565,12 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 * @return the number of matching ct auto resolution infos
 	 */
 	@Override
-	public int countByCTCollectionId(long ctCollectionId) {
-		FinderPath finderPath = _finderPathCountByCTCollectionId;
+	public int countByCtCollectionId(long ctCollectionId) {
+		FinderPath finderPath = _finderPathCountByCtCollectionId;
 
 		Object[] finderArgs = new Object[] {ctCollectionId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -588,8 +597,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -603,11 +610,926 @@ public class CTAutoResolutionInfoPersistenceImpl
 	private static final String _FINDER_COLUMN_CTCOLLECTIONID_CTCOLLECTIONID_2 =
 		"ctAutoResolutionInfo.ctCollectionId = ?";
 
+	private FinderPath _finderPathWithPaginationFindByC_MCNI_SMCPK;
+	private FinderPath _finderPathWithoutPaginationFindByC_MCNI_SMCPK;
+	private FinderPath _finderPathCountByC_MCNI_SMCPK;
+	private FinderPath _finderPathWithPaginationCountByC_MCNI_SMCPK;
+
+	/**
+	 * Returns all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @return the matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
+	/**
+	 * Returns a range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @return the range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK, start, end,
+			null);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator,
+		boolean useFinderCache) {
+
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByC_MCNI_SMCPK;
+				finderArgs = new Object[] {
+					ctCollectionId, modelClassNameId, sourceModelClassPK
+				};
+			}
+		}
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByC_MCNI_SMCPK;
+			finderArgs = new Object[] {
+				ctCollectionId, modelClassNameId, sourceModelClassPK, start,
+				end, orderByComparator
+			};
+		}
+
+		List<CTAutoResolutionInfo> list = null;
+
+		if (useFinderCache) {
+			list = (List<CTAutoResolutionInfo>)finderCache.getResult(
+				finderPath, finderArgs);
+
+			if ((list != null) && !list.isEmpty()) {
+				for (CTAutoResolutionInfo ctAutoResolutionInfo : list) {
+					if ((ctCollectionId !=
+							ctAutoResolutionInfo.getCtCollectionId()) ||
+						(modelClassNameId !=
+							ctAutoResolutionInfo.getModelClassNameId()) ||
+						(sourceModelClassPK !=
+							ctAutoResolutionInfo.getSourceModelClassPK())) {
+
+						list = null;
+
+						break;
+					}
+				}
+			}
+		}
+
+		if (list == null) {
+			StringBundler sb = null;
+
+			if (orderByComparator != null) {
+				sb = new StringBundler(
+					5 + (orderByComparator.getOrderByFields().length * 2));
+			}
+			else {
+				sb = new StringBundler(5);
+			}
+
+			sb.append(_SQL_SELECT_CTAUTORESOLUTIONINFO_WHERE);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_2);
+
+			if (orderByComparator != null) {
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
+			}
+			else {
+				sb.append(CTAutoResolutionInfoModelImpl.ORDER_BY_JPQL);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(ctCollectionId);
+
+				queryPos.add(modelClassNameId);
+
+				queryPos.add(sourceModelClassPK);
+
+				list = (List<CTAutoResolutionInfo>)QueryUtil.list(
+					query, getDialect(), start, end);
+
+				cacheResult(list);
+
+				if (useFinderCache) {
+					finderCache.putResult(finderPath, finderArgs, list);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Returns the first ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
+	 */
+	@Override
+	public CTAutoResolutionInfo findByC_MCNI_SMCPK_First(
+			long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException {
+
+		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByC_MCNI_SMCPK_First(
+			ctCollectionId, modelClassNameId, sourceModelClassPK,
+			orderByComparator);
+
+		if (ctAutoResolutionInfo != null) {
+			return ctAutoResolutionInfo;
+		}
+
+		StringBundler sb = new StringBundler(8);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("ctCollectionId=");
+		sb.append(ctCollectionId);
+
+		sb.append(", modelClassNameId=");
+		sb.append(modelClassNameId);
+
+		sb.append(", sourceModelClassPK=");
+		sb.append(sourceModelClassPK);
+
+		sb.append("}");
+
+		throw new NoSuchAutoResolutionInfoException(sb.toString());
+	}
+
+	/**
+	 * Returns the first ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
+	 */
+	@Override
+	public CTAutoResolutionInfo fetchByC_MCNI_SMCPK_First(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
+
+		List<CTAutoResolutionInfo> list = findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK, 0, 1,
+			orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the last ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
+	 */
+	@Override
+	public CTAutoResolutionInfo findByC_MCNI_SMCPK_Last(
+			long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException {
+
+		CTAutoResolutionInfo ctAutoResolutionInfo = fetchByC_MCNI_SMCPK_Last(
+			ctCollectionId, modelClassNameId, sourceModelClassPK,
+			orderByComparator);
+
+		if (ctAutoResolutionInfo != null) {
+			return ctAutoResolutionInfo;
+		}
+
+		StringBundler sb = new StringBundler(8);
+
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+		sb.append("ctCollectionId=");
+		sb.append(ctCollectionId);
+
+		sb.append(", modelClassNameId=");
+		sb.append(modelClassNameId);
+
+		sb.append(", sourceModelClassPK=");
+		sb.append(sourceModelClassPK);
+
+		sb.append("}");
+
+		throw new NoSuchAutoResolutionInfoException(sb.toString());
+	}
+
+	/**
+	 * Returns the last ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
+	 */
+	@Override
+	public CTAutoResolutionInfo fetchByC_MCNI_SMCPK_Last(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
+
+		int count = countByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK);
+
+		if (count == 0) {
+			return null;
+		}
+
+		List<CTAutoResolutionInfo> list = findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPK, count - 1,
+			count, orderByComparator);
+
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns the ct auto resolution infos before and after the current ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctAutoResolutionInfoId the primary key of the current ct auto resolution info
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a ct auto resolution info with the primary key could not be found
+	 */
+	@Override
+	public CTAutoResolutionInfo[] findByC_MCNI_SMCPK_PrevAndNext(
+			long ctAutoResolutionInfoId, long ctCollectionId,
+			long modelClassNameId, long sourceModelClassPK,
+			OrderByComparator<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException {
+
+		CTAutoResolutionInfo ctAutoResolutionInfo = findByPrimaryKey(
+			ctAutoResolutionInfoId);
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			CTAutoResolutionInfo[] array = new CTAutoResolutionInfoImpl[3];
+
+			array[0] = getByC_MCNI_SMCPK_PrevAndNext(
+				session, ctAutoResolutionInfo, ctCollectionId, modelClassNameId,
+				sourceModelClassPK, orderByComparator, true);
+
+			array[1] = ctAutoResolutionInfo;
+
+			array[2] = getByC_MCNI_SMCPK_PrevAndNext(
+				session, ctAutoResolutionInfo, ctCollectionId, modelClassNameId,
+				sourceModelClassPK, orderByComparator, false);
+
+			return array;
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	protected CTAutoResolutionInfo getByC_MCNI_SMCPK_PrevAndNext(
+		Session session, CTAutoResolutionInfo ctAutoResolutionInfo,
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator,
+		boolean previous) {
+
+		StringBundler sb = null;
+
+		if (orderByComparator != null) {
+			sb = new StringBundler(
+				6 + (orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
+		}
+		else {
+			sb = new StringBundler(5);
+		}
+
+		sb.append(_SQL_SELECT_CTAUTORESOLUTIONINFO_WHERE);
+
+		sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2);
+
+		sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2);
+
+		sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_2);
+
+		if (orderByComparator != null) {
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
+
+			if (orderByConditionFields.length > 0) {
+				sb.append(WHERE_AND);
+			}
+
+			for (int i = 0; i < orderByConditionFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
+
+				if ((i + 1) < orderByConditionFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(WHERE_GREATER_THAN);
+					}
+					else {
+						sb.append(WHERE_LESSER_THAN);
+					}
+				}
+			}
+
+			sb.append(ORDER_BY_CLAUSE);
+
+			String[] orderByFields = orderByComparator.getOrderByFields();
+
+			for (int i = 0; i < orderByFields.length; i++) {
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
+
+				if ((i + 1) < orderByFields.length) {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
+					}
+					else {
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
+					}
+				}
+				else {
+					if (orderByComparator.isAscending() ^ previous) {
+						sb.append(ORDER_BY_ASC);
+					}
+					else {
+						sb.append(ORDER_BY_DESC);
+					}
+				}
+			}
+		}
+		else {
+			sb.append(CTAutoResolutionInfoModelImpl.ORDER_BY_JPQL);
+		}
+
+		String sql = sb.toString();
+
+		Query query = session.createQuery(sql);
+
+		query.setFirstResult(0);
+		query.setMaxResults(2);
+
+		QueryPos queryPos = QueryPos.getInstance(query);
+
+		queryPos.add(ctCollectionId);
+
+		queryPos.add(modelClassNameId);
+
+		queryPos.add(sourceModelClassPK);
+
+		if (orderByComparator != null) {
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						ctAutoResolutionInfo)) {
+
+				queryPos.add(orderByConditionValue);
+			}
+		}
+
+		List<CTAutoResolutionInfo> list = query.list();
+
+		if (list.size() == 2) {
+			return list.get(1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	/**
+	 * Returns all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @return the matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId,
+		long[] sourceModelClassPKs) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPKs,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
+
+	/**
+	 * Returns a range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @return the range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPKs, start, end,
+			null);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator) {
+
+		return findByC_MCNI_SMCPK(
+			ctCollectionId, modelClassNameId, sourceModelClassPKs, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;, optionally using the finder cache.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	@Override
+	public List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end,
+		OrderByComparator<CTAutoResolutionInfo> orderByComparator,
+		boolean useFinderCache) {
+
+		if (sourceModelClassPKs == null) {
+			sourceModelClassPKs = new long[0];
+		}
+		else if (sourceModelClassPKs.length > 1) {
+			sourceModelClassPKs = ArrayUtil.sortedUnique(sourceModelClassPKs);
+		}
+
+		if (sourceModelClassPKs.length == 1) {
+			return findByC_MCNI_SMCPK(
+				ctCollectionId, modelClassNameId, sourceModelClassPKs[0], start,
+				end, orderByComparator);
+		}
+
+		Object[] finderArgs = null;
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderArgs = new Object[] {
+					ctCollectionId, modelClassNameId,
+					StringUtil.merge(sourceModelClassPKs)
+				};
+			}
+		}
+		else if (useFinderCache) {
+			finderArgs = new Object[] {
+				ctCollectionId, modelClassNameId,
+				StringUtil.merge(sourceModelClassPKs), start, end,
+				orderByComparator
+			};
+		}
+
+		List<CTAutoResolutionInfo> list = null;
+
+		if (useFinderCache) {
+			list = (List<CTAutoResolutionInfo>)finderCache.getResult(
+				_finderPathWithPaginationFindByC_MCNI_SMCPK, finderArgs);
+
+			if ((list != null) && !list.isEmpty()) {
+				for (CTAutoResolutionInfo ctAutoResolutionInfo : list) {
+					if ((ctCollectionId !=
+							ctAutoResolutionInfo.getCtCollectionId()) ||
+						(modelClassNameId !=
+							ctAutoResolutionInfo.getModelClassNameId()) ||
+						!ArrayUtil.contains(
+							sourceModelClassPKs,
+							ctAutoResolutionInfo.getSourceModelClassPK())) {
+
+						list = null;
+
+						break;
+					}
+				}
+			}
+		}
+
+		if (list == null) {
+			StringBundler sb = new StringBundler();
+
+			sb.append(_SQL_SELECT_CTAUTORESOLUTIONINFO_WHERE);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2);
+
+			if (sourceModelClassPKs.length > 0) {
+				sb.append("(");
+
+				sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_7);
+
+				sb.append(StringUtil.merge(sourceModelClassPKs));
+
+				sb.append(")");
+
+				sb.append(")");
+			}
+
+			sb.setStringAt(
+				removeConjunction(sb.stringAt(sb.index() - 1)), sb.index() - 1);
+
+			if (orderByComparator != null) {
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
+			}
+			else {
+				sb.append(CTAutoResolutionInfoModelImpl.ORDER_BY_JPQL);
+			}
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(ctCollectionId);
+
+				queryPos.add(modelClassNameId);
+
+				list = (List<CTAutoResolutionInfo>)QueryUtil.list(
+					query, getDialect(), start, end);
+
+				cacheResult(list);
+
+				if (useFinderCache) {
+					finderCache.putResult(
+						_finderPathWithPaginationFindByC_MCNI_SMCPK, finderArgs,
+						list);
+				}
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Removes all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63; from the database.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 */
+	@Override
+	public void removeByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK) {
+
+		for (CTAutoResolutionInfo ctAutoResolutionInfo :
+				findByC_MCNI_SMCPK(
+					ctCollectionId, modelClassNameId, sourceModelClassPK,
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
+			remove(ctAutoResolutionInfo);
+		}
+	}
+
+	/**
+	 * Returns the number of ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @return the number of matching ct auto resolution infos
+	 */
+	@Override
+	public int countByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK) {
+
+		FinderPath finderPath = _finderPathCountByC_MCNI_SMCPK;
+
+		Object[] finderArgs = new Object[] {
+			ctCollectionId, modelClassNameId, sourceModelClassPK
+		};
+
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append(_SQL_COUNT_CTAUTORESOLUTIONINFO_WHERE);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_2);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(ctCollectionId);
+
+				queryPos.add(modelClassNameId);
+
+				queryPos.add(sourceModelClassPK);
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(finderPath, finderArgs, count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	/**
+	 * Returns the number of ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @return the number of matching ct auto resolution infos
+	 */
+	@Override
+	public int countByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId,
+		long[] sourceModelClassPKs) {
+
+		if (sourceModelClassPKs == null) {
+			sourceModelClassPKs = new long[0];
+		}
+		else if (sourceModelClassPKs.length > 1) {
+			sourceModelClassPKs = ArrayUtil.sortedUnique(sourceModelClassPKs);
+		}
+
+		Object[] finderArgs = new Object[] {
+			ctCollectionId, modelClassNameId,
+			StringUtil.merge(sourceModelClassPKs)
+		};
+
+		Long count = (Long)finderCache.getResult(
+			_finderPathWithPaginationCountByC_MCNI_SMCPK, finderArgs);
+
+		if (count == null) {
+			StringBundler sb = new StringBundler();
+
+			sb.append(_SQL_COUNT_CTAUTORESOLUTIONINFO_WHERE);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2);
+
+			sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2);
+
+			if (sourceModelClassPKs.length > 0) {
+				sb.append("(");
+
+				sb.append(_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_7);
+
+				sb.append(StringUtil.merge(sourceModelClassPKs));
+
+				sb.append(")");
+
+				sb.append(")");
+			}
+
+			sb.setStringAt(
+				removeConjunction(sb.stringAt(sb.index() - 1)), sb.index() - 1);
+
+			String sql = sb.toString();
+
+			Session session = null;
+
+			try {
+				session = openSession();
+
+				Query query = session.createQuery(sql);
+
+				QueryPos queryPos = QueryPos.getInstance(query);
+
+				queryPos.add(ctCollectionId);
+
+				queryPos.add(modelClassNameId);
+
+				count = (Long)query.uniqueResult();
+
+				finderCache.putResult(
+					_finderPathWithPaginationCountByC_MCNI_SMCPK, finderArgs,
+					count);
+			}
+			catch (Exception exception) {
+				throw processException(exception);
+			}
+			finally {
+				closeSession(session);
+			}
+		}
+
+		return count.intValue();
+	}
+
+	private static final String _FINDER_COLUMN_C_MCNI_SMCPK_CTCOLLECTIONID_2 =
+		"ctAutoResolutionInfo.ctCollectionId = ? AND ";
+
+	private static final String _FINDER_COLUMN_C_MCNI_SMCPK_MODELCLASSNAMEID_2 =
+		"ctAutoResolutionInfo.modelClassNameId = ? AND ";
+
+	private static final String
+		_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_2 =
+			"ctAutoResolutionInfo.sourceModelClassPK = ?";
+
+	private static final String
+		_FINDER_COLUMN_C_MCNI_SMCPK_SOURCEMODELCLASSPK_7 =
+			"ctAutoResolutionInfo.sourceModelClassPK IN (";
+
 	public CTAutoResolutionInfoPersistenceImpl() {
 		setModelClass(CTAutoResolutionInfo.class);
 
 		setModelImplClass(CTAutoResolutionInfoImpl.class);
 		setModelPKClass(long.class);
+
+		setTable(CTAutoResolutionInfoTable.INSTANCE);
 	}
 
 	/**
@@ -618,11 +1540,11 @@ public class CTAutoResolutionInfoPersistenceImpl
 	@Override
 	public void cacheResult(CTAutoResolutionInfo ctAutoResolutionInfo) {
 		entityCache.putResult(
-			entityCacheEnabled, CTAutoResolutionInfoImpl.class,
+			CTAutoResolutionInfoImpl.class,
 			ctAutoResolutionInfo.getPrimaryKey(), ctAutoResolutionInfo);
-
-		ctAutoResolutionInfo.resetOriginalValues();
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the ct auto resolution infos in the entity cache if it is enabled.
@@ -631,17 +1553,22 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<CTAutoResolutionInfo> ctAutoResolutionInfos) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (ctAutoResolutionInfos.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (CTAutoResolutionInfo ctAutoResolutionInfo :
 				ctAutoResolutionInfos) {
 
 			if (entityCache.getResult(
-					entityCacheEnabled, CTAutoResolutionInfoImpl.class,
+					CTAutoResolutionInfoImpl.class,
 					ctAutoResolutionInfo.getPrimaryKey()) == null) {
 
 				cacheResult(ctAutoResolutionInfo);
-			}
-			else {
-				ctAutoResolutionInfo.resetOriginalValues();
 			}
 		}
 	}
@@ -657,9 +1584,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(CTAutoResolutionInfoImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(CTAutoResolutionInfoImpl.class);
 	}
 
 	/**
@@ -672,36 +1597,26 @@ public class CTAutoResolutionInfoPersistenceImpl
 	@Override
 	public void clearCache(CTAutoResolutionInfo ctAutoResolutionInfo) {
 		entityCache.removeResult(
-			entityCacheEnabled, CTAutoResolutionInfoImpl.class,
-			ctAutoResolutionInfo.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+			CTAutoResolutionInfoImpl.class, ctAutoResolutionInfo);
 	}
 
 	@Override
 	public void clearCache(List<CTAutoResolutionInfo> ctAutoResolutionInfos) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (CTAutoResolutionInfo ctAutoResolutionInfo :
 				ctAutoResolutionInfos) {
 
 			entityCache.removeResult(
-				entityCacheEnabled, CTAutoResolutionInfoImpl.class,
-				ctAutoResolutionInfo.getPrimaryKey());
+				CTAutoResolutionInfoImpl.class, ctAutoResolutionInfo);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(CTAutoResolutionInfoImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			entityCache.removeResult(
-				entityCacheEnabled, CTAutoResolutionInfoImpl.class, primaryKey);
+				CTAutoResolutionInfoImpl.class, primaryKey);
 		}
 	}
 
@@ -839,15 +1754,28 @@ public class CTAutoResolutionInfoPersistenceImpl
 		CTAutoResolutionInfoModelImpl ctAutoResolutionInfoModelImpl =
 			(CTAutoResolutionInfoModelImpl)ctAutoResolutionInfo;
 
+		if (isNew && (ctAutoResolutionInfo.getCreateDate() == null)) {
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
+			Date date = new Date();
+
+			if (serviceContext == null) {
+				ctAutoResolutionInfo.setCreateDate(date);
+			}
+			else {
+				ctAutoResolutionInfo.setCreateDate(
+					serviceContext.getCreateDate(date));
+			}
+		}
+
 		Session session = null;
 
 		try {
 			session = openSession();
 
-			if (ctAutoResolutionInfo.isNew()) {
+			if (isNew) {
 				session.save(ctAutoResolutionInfo);
-
-				ctAutoResolutionInfo.setNew(false);
 			}
 			else {
 				ctAutoResolutionInfo = (CTAutoResolutionInfo)session.merge(
@@ -861,52 +1789,13 @@ public class CTAutoResolutionInfoPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (!_columnBitmaskEnabled) {
-			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			Object[] args = new Object[] {
-				ctAutoResolutionInfoModelImpl.getCtCollectionId()
-			};
-
-			finderCache.removeResult(_finderPathCountByCTCollectionId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByCTCollectionId, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((ctAutoResolutionInfoModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByCTCollectionId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					ctAutoResolutionInfoModelImpl.getOriginalCtCollectionId()
-				};
-
-				finderCache.removeResult(
-					_finderPathCountByCTCollectionId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByCTCollectionId, args);
-
-				args = new Object[] {
-					ctAutoResolutionInfoModelImpl.getCtCollectionId()
-				};
-
-				finderCache.removeResult(
-					_finderPathCountByCTCollectionId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByCTCollectionId, args);
-			}
-		}
-
 		entityCache.putResult(
-			entityCacheEnabled, CTAutoResolutionInfoImpl.class,
-			ctAutoResolutionInfo.getPrimaryKey(), ctAutoResolutionInfo, false);
+			CTAutoResolutionInfoImpl.class, ctAutoResolutionInfoModelImpl,
+			false, true);
+
+		if (isNew) {
+			ctAutoResolutionInfo.setNew(false);
+		}
 
 		ctAutoResolutionInfo.resetOriginalValues();
 
@@ -1049,7 +1938,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<CTAutoResolutionInfo>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -1090,10 +1979,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1123,7 +2008,7 @@ public class CTAutoResolutionInfoPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -1140,9 +2025,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1178,54 +2060,105 @@ public class CTAutoResolutionInfoPersistenceImpl
 	 */
 	@Activate
 	public void activate() {
-		CTAutoResolutionInfoModelImpl.setEntityCacheEnabled(entityCacheEnabled);
-		CTAutoResolutionInfoModelImpl.setFinderCacheEnabled(finderCacheEnabled);
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled,
-			CTAutoResolutionInfoImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled,
-			CTAutoResolutionInfoImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
-		_finderPathWithPaginationFindByCTCollectionId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled,
-			CTAutoResolutionInfoImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByCTCollectionId",
+		_finderPathWithPaginationFindByCtCollectionId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByCtCollectionId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"ctCollectionId"}, true);
 
-		_finderPathWithoutPaginationFindByCTCollectionId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled,
-			CTAutoResolutionInfoImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByCTCollectionId",
+		_finderPathWithoutPaginationFindByCtCollectionId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByCtCollectionId",
 			new String[] {Long.class.getName()},
-			CTAutoResolutionInfoModelImpl.CTCOLLECTIONID_COLUMN_BITMASK |
-			CTAutoResolutionInfoModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {"ctCollectionId"}, true);
 
-		_finderPathCountByCTCollectionId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByCTCollectionId",
-			new String[] {Long.class.getName()});
+		_finderPathCountByCtCollectionId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByCtCollectionId",
+			new String[] {Long.class.getName()},
+			new String[] {"ctCollectionId"}, false);
+
+		_finderPathWithPaginationFindByC_MCNI_SMCPK = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_MCNI_SMCPK",
+			new String[] {
+				Long.class.getName(), Long.class.getName(),
+				Long.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {
+				"ctCollectionId", "modelClassNameId", "sourceModelClassPK"
+			},
+			true);
+
+		_finderPathWithoutPaginationFindByC_MCNI_SMCPK = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByC_MCNI_SMCPK",
+			new String[] {
+				Long.class.getName(), Long.class.getName(), Long.class.getName()
+			},
+			new String[] {
+				"ctCollectionId", "modelClassNameId", "sourceModelClassPK"
+			},
+			true);
+
+		_finderPathCountByC_MCNI_SMCPK = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_MCNI_SMCPK",
+			new String[] {
+				Long.class.getName(), Long.class.getName(), Long.class.getName()
+			},
+			new String[] {
+				"ctCollectionId", "modelClassNameId", "sourceModelClassPK"
+			},
+			false);
+
+		_finderPathWithPaginationCountByC_MCNI_SMCPK = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_MCNI_SMCPK",
+			new String[] {
+				Long.class.getName(), Long.class.getName(), Long.class.getName()
+			},
+			new String[] {
+				"ctCollectionId", "modelClassNameId", "sourceModelClassPK"
+			},
+			false);
+
+		_setCTAutoResolutionInfoUtilPersistence(this);
 	}
 
 	@Deactivate
 	public void deactivate() {
+		_setCTAutoResolutionInfoUtilPersistence(null);
+
 		entityCache.removeCache(CTAutoResolutionInfoImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+	}
+
+	private void _setCTAutoResolutionInfoUtilPersistence(
+		CTAutoResolutionInfoPersistence ctAutoResolutionInfoPersistence) {
+
+		try {
+			Field field = CTAutoResolutionInfoUtil.class.getDeclaredField(
+				"_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, ctAutoResolutionInfoPersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	@Override
@@ -1234,12 +2167,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 		unbind = "-"
 	)
 	public void setConfiguration(Configuration configuration) {
-		super.setConfiguration(configuration);
-
-		_columnBitmaskEnabled = GetterUtil.getBoolean(
-			configuration.get(
-				"value.object.column.bitmask.enabled.com.liferay.change.tracking.model.CTAutoResolutionInfo"),
-			true);
 	}
 
 	@Override
@@ -1259,8 +2186,6 @@ public class CTAutoResolutionInfoPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private boolean _columnBitmaskEnabled;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -1292,13 +2217,13 @@ public class CTAutoResolutionInfoPersistenceImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		CTAutoResolutionInfoPersistenceImpl.class);
 
-	static {
-		try {
-			Class.forName(CTPersistenceConstants.class.getName());
-		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
-		}
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
 	}
+
+	@Reference
+	private CTAutoResolutionInfoModelArgumentsResolver
+		_ctAutoResolutionInfoModelArgumentsResolver;
 
 }

@@ -16,7 +16,7 @@ package com.liferay.document.library.web.internal.display.context;
 
 import com.liferay.document.library.kernel.versioning.VersioningStrategy;
 import com.liferay.document.library.util.DLURLHelper;
-import com.liferay.document.library.web.internal.util.DLTrashUtil;
+import com.liferay.document.library.web.internal.helper.DLTrashHelper;
 import com.liferay.image.gallery.display.kernel.display.context.IGDisplayContextFactory;
 import com.liferay.image.gallery.display.kernel.display.context.IGViewFileVersionDisplayContext;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
@@ -26,7 +26,7 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.repository.model.FileShortcut;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ResourceBundle;
@@ -59,14 +59,13 @@ public class IGDisplayContextProvider {
 				(ThemeDisplay)httpServletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			ResourceBundle resourceBundle =
-				_resourceBundleLoader.loadResourceBundle(
-					themeDisplay.getLocale());
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+				themeDisplay.getLocale(), getClass());
 
 			IGViewFileVersionDisplayContext igViewFileVersionDisplayContext =
 				new DefaultIGViewFileVersionDisplayContext(
 					httpServletRequest, httpServletResponse, fileShortcut,
-					resourceBundle, _dlTrashUtil, _versioningStrategy,
+					resourceBundle, _dlTrashHelper, _versioningStrategy,
 					_dlURLHelper);
 
 			if (fileShortcut == null) {
@@ -99,14 +98,13 @@ public class IGDisplayContextProvider {
 				(ThemeDisplay)httpServletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			ResourceBundle resourceBundle =
-				_resourceBundleLoader.loadResourceBundle(
-					themeDisplay.getLocale());
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+				themeDisplay.getLocale(), getClass());
 
 			IGViewFileVersionDisplayContext igViewFileVersionDisplayContext =
 				new DefaultIGViewFileVersionDisplayContext(
 					httpServletRequest, httpServletResponse, fileVersion,
-					resourceBundle, _dlTrashUtil, _versioningStrategy,
+					resourceBundle, _dlTrashHelper, _versioningStrategy,
 					_dlURLHelper);
 
 			if (fileVersion == null) {
@@ -141,20 +139,13 @@ public class IGDisplayContextProvider {
 	}
 
 	@Reference
-	private DLTrashUtil _dlTrashUtil;
+	private DLTrashHelper _dlTrashHelper;
 
 	@Reference
 	private DLURLHelper _dlURLHelper;
 
-	private ServiceTrackerList<IGDisplayContextFactory, IGDisplayContextFactory>
+	private ServiceTrackerList<IGDisplayContextFactory>
 		_igDisplayContextFactories;
-
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.document.library.web)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
 
 	@Reference(
 		policy = ReferencePolicy.DYNAMIC,

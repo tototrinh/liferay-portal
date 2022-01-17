@@ -12,41 +12,49 @@
  * details.
  */
 
-import classNames from 'classnames';
+import ClayLayout from '@clayui/layout';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
-import {LAYOUT_DATA_ITEM_DEFAULT_CONFIGURATIONS} from '../../config/constants/layoutDataItemDefaultConfigurations';
-import {LAYOUT_DATA_ITEM_TYPES} from '../../config/constants/layoutDataItemTypes';
+import {useNextColumnSizes} from '../../contexts/ResizeContext';
+import {useSelector} from '../../contexts/StoreContext';
+import selectCanUpdateItemConfiguration from '../../selectors/selectCanUpdateItemConfiguration';
+import selectCanUpdatePageStructure from '../../selectors/selectCanUpdatePageStructure';
+import {getResponsiveColumnSize} from '../../utils/getResponsiveColumnSize';
 
 const Column = React.forwardRef(({children, className, item}, ref) => {
-	const {
-		config: {
-			size = LAYOUT_DATA_ITEM_DEFAULT_CONFIGURATIONS[
-				LAYOUT_DATA_ITEM_TYPES.column
-			].size
-		}
-	} = item;
+	const canUpdateItemConfiguration = useSelector(
+		selectCanUpdateItemConfiguration
+	);
+	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
+	);
+	const nextColumnSizes = useNextColumnSizes();
+
+	const columnSize =
+		nextColumnSizes?.[item.itemId] ||
+		getResponsiveColumnSize(item.config, selectedViewportSize);
+
+	const columnContent =
+		canUpdatePageStructure || canUpdateItemConfiguration ? (
+			<div className="page-editor__col__border">{children}</div>
+		) : (
+			children
+		);
 
 	return (
-		<>
-			<div
-				className={classNames(className, 'col', {
-					[`col-${size}`]: size
-				})}
-				ref={ref}
-			>
-				{children}
-			</div>
-		</>
+		<ClayLayout.Col className={className} ref={ref} size={columnSize}>
+			{columnContent}
+		</ClayLayout.Col>
 	);
 });
 
 Column.propTypes = {
 	item: getLayoutDataItemPropTypes({
-		config: PropTypes.shape({size: PropTypes.number})
-	}).isRequired
+		config: PropTypes.shape({size: PropTypes.number}),
+	}).isRequired,
 };
 
 export default Column;

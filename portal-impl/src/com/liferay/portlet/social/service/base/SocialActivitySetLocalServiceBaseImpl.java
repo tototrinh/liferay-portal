@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.social.service.base;
 
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -33,17 +35,20 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.social.kernel.model.SocialActivitySet;
 import com.liferay.social.kernel.service.SocialActivitySetLocalService;
-import com.liferay.social.kernel.service.persistence.SocialActivityFinder;
-import com.liferay.social.kernel.service.persistence.SocialActivityPersistence;
+import com.liferay.social.kernel.service.SocialActivitySetLocalServiceUtil;
 import com.liferay.social.kernel.service.persistence.SocialActivitySetFinder;
 import com.liferay.social.kernel.service.persistence.SocialActivitySetPersistence;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -67,11 +72,15 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>SocialActivitySetLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.social.kernel.service.SocialActivitySetLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>SocialActivitySetLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>SocialActivitySetLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the social activity set to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SocialActivitySetLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param socialActivitySet the social activity set
 	 * @return the social activity set that was added
@@ -101,6 +110,10 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 	/**
 	 * Deletes the social activity set with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SocialActivitySetLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param activitySetId the primary key of the social activity set
 	 * @return the social activity set that was removed
 	 * @throws PortalException if a social activity set with the primary key could not be found
@@ -116,6 +129,10 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 	/**
 	 * Deletes the social activity set from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SocialActivitySetLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param socialActivitySet the social activity set
 	 * @return the social activity set that was removed
 	 */
@@ -125,6 +142,18 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 		SocialActivitySet socialActivitySet) {
 
 		return socialActivitySetPersistence.remove(socialActivitySet);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return socialActivitySetPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -280,6 +309,7 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -296,6 +326,11 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 
 		return socialActivitySetLocalService.deleteSocialActivitySet(
 			(SocialActivitySet)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<SocialActivitySet> getBasePersistence() {
+		return socialActivitySetPersistence;
 	}
 
 	/**
@@ -336,6 +371,10 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 
 	/**
 	 * Updates the social activity set in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect SocialActivitySetLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param socialActivitySet the social activity set
 	 * @return the social activity set that was updated
@@ -431,78 +470,19 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 		this.counterLocalService = counterLocalService;
 	}
 
-	/**
-	 * Returns the social activity local service.
-	 *
-	 * @return the social activity local service
-	 */
-	public com.liferay.social.kernel.service.SocialActivityLocalService
-		getSocialActivityLocalService() {
-
-		return socialActivityLocalService;
-	}
-
-	/**
-	 * Sets the social activity local service.
-	 *
-	 * @param socialActivityLocalService the social activity local service
-	 */
-	public void setSocialActivityLocalService(
-		com.liferay.social.kernel.service.SocialActivityLocalService
-			socialActivityLocalService) {
-
-		this.socialActivityLocalService = socialActivityLocalService;
-	}
-
-	/**
-	 * Returns the social activity persistence.
-	 *
-	 * @return the social activity persistence
-	 */
-	public SocialActivityPersistence getSocialActivityPersistence() {
-		return socialActivityPersistence;
-	}
-
-	/**
-	 * Sets the social activity persistence.
-	 *
-	 * @param socialActivityPersistence the social activity persistence
-	 */
-	public void setSocialActivityPersistence(
-		SocialActivityPersistence socialActivityPersistence) {
-
-		this.socialActivityPersistence = socialActivityPersistence;
-	}
-
-	/**
-	 * Returns the social activity finder.
-	 *
-	 * @return the social activity finder
-	 */
-	public SocialActivityFinder getSocialActivityFinder() {
-		return socialActivityFinder;
-	}
-
-	/**
-	 * Sets the social activity finder.
-	 *
-	 * @param socialActivityFinder the social activity finder
-	 */
-	public void setSocialActivityFinder(
-		SocialActivityFinder socialActivityFinder) {
-
-		this.socialActivityFinder = socialActivityFinder;
-	}
-
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.social.kernel.model.SocialActivitySet",
 			socialActivitySetLocalService);
+
+		_setLocalServiceUtilService(socialActivitySetLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.social.kernel.model.SocialActivitySet");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -515,8 +495,23 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 		return SocialActivitySetLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<SocialActivitySet> getCTPersistence() {
+		return socialActivitySetPersistence;
+	}
+
+	@Override
+	public Class<SocialActivitySet> getModelClass() {
 		return SocialActivitySet.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<SocialActivitySet>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(socialActivitySetPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -548,6 +543,23 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		SocialActivitySetLocalService socialActivitySetLocalService) {
+
+		try {
+			Field field =
+				SocialActivitySetLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, socialActivitySetLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = SocialActivitySetLocalService.class)
 	protected SocialActivitySetLocalService socialActivitySetLocalService;
 
@@ -562,18 +574,6 @@ public abstract class SocialActivitySetLocalServiceBaseImpl
 	)
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@BeanReference(
-		type = com.liferay.social.kernel.service.SocialActivityLocalService.class
-	)
-	protected com.liferay.social.kernel.service.SocialActivityLocalService
-		socialActivityLocalService;
-
-	@BeanReference(type = SocialActivityPersistence.class)
-	protected SocialActivityPersistence socialActivityPersistence;
-
-	@BeanReference(type = SocialActivityFinder.class)
-	protected SocialActivityFinder socialActivityFinder;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

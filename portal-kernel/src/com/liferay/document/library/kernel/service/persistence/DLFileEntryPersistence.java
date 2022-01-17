@@ -17,6 +17,7 @@ package com.liferay.document.library.kernel.service.persistence;
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -32,7 +33,8 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface DLFileEntryPersistence extends BasePersistence<DLFileEntry> {
+public interface DLFileEntryPersistence
+	extends BasePersistence<DLFileEntry>, CTPersistence<DLFileEntry> {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -3764,6 +3766,56 @@ public interface DLFileEntryPersistence extends BasePersistence<DLFileEntry> {
 	public int countByS_L_C1_C2(
 		long smallImageId, long largeImageId, long custom1ImageId,
 		long custom2ImageId);
+
+	/**
+	 * Returns the document library file entry where groupId = &#63; and externalReferenceCode = &#63; or throws a <code>NoSuchFileEntryException</code> if it could not be found.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the matching document library file entry
+	 * @throws NoSuchFileEntryException if a matching document library file entry could not be found
+	 */
+	public DLFileEntry findByG_ERC(long groupId, String externalReferenceCode)
+		throws NoSuchFileEntryException;
+
+	/**
+	 * Returns the document library file entry where groupId = &#63; and externalReferenceCode = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the matching document library file entry, or <code>null</code> if a matching document library file entry could not be found
+	 */
+	public DLFileEntry fetchByG_ERC(long groupId, String externalReferenceCode);
+
+	/**
+	 * Returns the document library file entry where groupId = &#63; and externalReferenceCode = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching document library file entry, or <code>null</code> if a matching document library file entry could not be found
+	 */
+	public DLFileEntry fetchByG_ERC(
+		long groupId, String externalReferenceCode, boolean useFinderCache);
+
+	/**
+	 * Removes the document library file entry where groupId = &#63; and externalReferenceCode = &#63; from the database.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the document library file entry that was removed
+	 */
+	public DLFileEntry removeByG_ERC(long groupId, String externalReferenceCode)
+		throws NoSuchFileEntryException;
+
+	/**
+	 * Returns the number of document library file entries where groupId = &#63; and externalReferenceCode = &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param externalReferenceCode the external reference code
+	 * @return the number of matching document library file entries
+	 */
+	public int countByG_ERC(long groupId, String externalReferenceCode);
 
 	/**
 	 * Caches the document library file entry in the entity cache if it is enabled.

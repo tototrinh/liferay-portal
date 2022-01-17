@@ -14,21 +14,24 @@
 
 import React from 'react';
 
-import {useHoverItem, useSelectItem} from '../../../app/components/Controls';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../app/config/constants/layoutDataItemTypes';
-import {useSelector} from '../../../app/store/index';
+import {
+	useHoverItem,
+	useSelectItem,
+} from '../../../app/contexts/ControlsContext';
+import {useSelector} from '../../../app/contexts/StoreContext';
 import SidebarPanelContent from '../../../common/components/SidebarPanelContent';
 import SidebarPanelHeader from '../../../common/components/SidebarPanelHeader';
 import NoCommentsMessage from './NoCommentsMessage';
 import ResolvedCommentsToggle from './ResolvedCommentsToggle';
 
 export default function FragmentEntryLinksWithComments() {
-	const itemsWithComments = useSelector(state =>
+	const itemsWithComments = useSelector((state) =>
 		Object.values(state.layoutData.items)
-			.filter(item => item.type === LAYOUT_DATA_ITEM_TYPES.fragment)
-			.map(item => [
+			.filter((item) => item.type === LAYOUT_DATA_ITEM_TYPES.fragment)
+			.map((item) => [
 				item,
-				state.fragmentEntryLinks[item.config.fragmentEntryLinkId]
+				state.fragmentEntryLinks[item.config.fragmentEntryLinkId],
 			])
 			.map(([item, fragmentEntryLink]) => [
 				item,
@@ -38,8 +41,8 @@ export default function FragmentEntryLinksWithComments() {
 						({resolved}) =>
 							(state.showResolvedComments && resolved) ||
 							!resolved
-					)
-				}
+					),
+				},
 			])
 			.filter(
 				([, fragmentEntryLink]) => fragmentEntryLink.comments.length

@@ -55,11 +55,6 @@ public class JSPEmptyLinesCheck extends BaseEmptyLinesCheck {
 		return content;
 	}
 
-	@Override
-	protected boolean isJavaSource(String content, int pos) {
-		return JSPSourceUtil.isJavaSource(content, pos);
-	}
-
 	private String _fixMissingEmptyLines(String content) {
 		Matcher matcher = _missingEmptyLinePattern1.matcher(content);
 
@@ -125,13 +120,13 @@ public class JSPEmptyLinesCheck extends BaseEmptyLinesCheck {
 	private static final Pattern _missingEmptyLinePattern1 = Pattern.compile(
 		"[\t\n](--)?%>\n\t*(?!-->)\\S");
 	private static final Pattern _missingEmptyLinePattern2 = Pattern.compile(
-		"\\S(?!<\\!--)\n\t*<%(--)?\n");
+		"\\S(?!<\\!--)\n\t*<%(--|\\!)?\n");
 	private static final Pattern _missingEmptyLinePattern3 = Pattern.compile(
-		"[\t\n]<%\n\t*//");
+		"[\t\n]<%\\!?\n\t*//");
 	private static final Pattern _missingEmptyLinePattern4 = Pattern.compile(
 		"[\t\n]//.*\n\t*%>\n");
 	private static final Pattern _redundantEmptyLinePattern1 = Pattern.compile(
-		"[\n\t]<%\n\n(\t*)[^/\n\t]");
+		"[\n\t]<%\\!?\n\n(\t*)[^/\n\t]");
 	private static final Pattern _redundantEmptyLinePattern2 = Pattern.compile(
 		"[\n\t][^/\n\t].*\n\n\t*%>");
 

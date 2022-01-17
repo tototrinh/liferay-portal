@@ -41,6 +41,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * @author Brian Wing Shun Chan
  * @author Raymond Augé
@@ -85,7 +88,9 @@ public class Transformer {
 	public String transform(
 			ThemeDisplay themeDisplay, Map<String, Object> contextObjects,
 			String script, String langType,
-			UnsyncStringWriter unsyncStringWriter)
+			UnsyncStringWriter unsyncStringWriter,
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
 		if (Validator.isNull(langType)) {
@@ -135,6 +140,8 @@ public class Transformer {
 			template.put("scopeGroupId", scopeGroupId);
 			template.put("siteGroupId", siteGroupId);
 			template.put("templatesPath", templatesPath);
+
+			template.prepareTaglib(httpServletRequest, httpServletResponse);
 
 			// Deprecated variables
 
@@ -214,17 +221,9 @@ public class Transformer {
 	protected String getTemplatesPath(
 		long companyId, long groupId, long classNameId) {
 
-		StringBundler sb = new StringBundler(7);
-
-		sb.append(TemplateConstants.TEMPLATE_SEPARATOR);
-		sb.append(StringPool.SLASH);
-		sb.append(companyId);
-		sb.append(StringPool.SLASH);
-		sb.append(groupId);
-		sb.append(StringPool.SLASH);
-		sb.append(classNameId);
-
-		return sb.toString();
+		return StringBundler.concat(
+			TemplateConstants.TEMPLATE_SEPARATOR, StringPool.SLASH, companyId,
+			StringPool.SLASH, groupId, StringPool.SLASH, classNameId);
 	}
 
 	protected void prepareTemplate(ThemeDisplay themeDisplay, Template template)

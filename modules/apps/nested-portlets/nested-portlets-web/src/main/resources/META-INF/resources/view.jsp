@@ -16,14 +16,22 @@
 
 <%@ include file="/init.jsp" %>
 
+<aui:script>
+	var nestedPortlet = document.getElementById(
+		'_<%= portletDisplay.getId() %>__main-content'
+	);
+
+	if (nestedPortlet != null) {
+		nestedPortlet.removeAttribute('role');
+	}
+</aui:script>
+
 <c:if test="<%= LayoutPermissionUtil.contains(permissionChecker, layout, ActionKeys.UPDATE) %>">
 	<div class="alert alert-info hide" id="<portlet:namespace />nested-portlets-msg">
 		<liferay-ui:message key="drag-applications-below-to-nest-them" />
 	</div>
 
-	<aui:script require="metal-dom/src/dom">
-		var dom = metalDomSrcDom.default;
-
+	<aui:script>
 		var portletWrapper = document.getElementById(
 			'p_p_id_<%= portletDisplay.getId() %>_'
 		);
@@ -39,9 +47,7 @@
 			);
 
 			if (nestedPortletsMsg) {
-				dom.addClasses(nestedPortletsMsg, 'show');
-
-				dom.removeClasses(nestedPortletsMsg, 'hide');
+				nestedPortletsMsg.classList.replace('hide', 'show');
 			}
 		}
 	</aui:script>
@@ -53,7 +59,7 @@ try {
 	String templateContent = (String)request.getAttribute(NestedPortletsWebKeys.TEMPLATE_CONTENT + portletDisplay.getId());
 
 	if (Validator.isNotNull(templateId) && Validator.isNotNull(templateContent)) {
-		RuntimePageUtil.processTemplate(nestedPortletsDisplayContext.getLastForwardRequest(), response, new StringTemplateResource(templateId, templateContent), TemplateConstants.LANG_TYPE_FTL);
+		RuntimePageUtil.processTemplate(nestedPortletsDisplayContext.getLastForwardHttpServletRequest(), response, new StringTemplateResource(templateId, templateContent), TemplateConstants.LANG_TYPE_FTL);
 	}
 }
 catch (Exception e) {
@@ -65,5 +71,5 @@ finally {
 %>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("com_liferay_nested_portlets_web.view_jsp");
+private static final Log _log = LogFactoryUtil.getLog("com_liferay_nested_portlets_web.view_jsp");
 %>

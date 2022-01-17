@@ -17,11 +17,11 @@
 <%@ include file="/init.jsp" %>
 
 <%
-List statsUsers = null;
+List<BlogsStatsUser> statsUsers = null;
 
 if (selectionMethod.equals("users")) {
 	if (organizationId > 0) {
-		statsUsers = BlogsStatsUserLocalServiceUtil.getOrganizationStatsUsers(organizationId, 0, max, new StatsUserLastPostDateComparator());
+		statsUsers = BlogsStatsUserLocalServiceUtil.getOrganizationStatsUsers(organizationId, 0, max);
 	}
 	else {
 		statsUsers = BlogsStatsUserLocalServiceUtil.getGroupsStatsUsers(company.getCompanyId(), scopeGroupId, 0, max);
@@ -39,7 +39,7 @@ else {
 	<c:otherwise>
 
 		<%
-		SearchContainer searchContainer = new SearchContainer();
+		SearchContainer<BlogsStatsUser> searchContainer = new SearchContainer();
 
 		List<String> headerNames = new ArrayList<String>();
 
@@ -53,18 +53,18 @@ else {
 
 		boolean statsUserRendered = false;
 
-		List resultRows = searchContainer.getResultRows();
+		List<com.liferay.portal.kernel.dao.search.ResultRow> resultRows = searchContainer.getResultRows();
 
 		for (int i = 0; i < statsUsers.size(); i++) {
-			BlogsStatsUser statsUser = (BlogsStatsUser)statsUsers.get(i);
+			BlogsStatsUser statsUser = statsUsers.get(i);
 
 			try {
 				Group group = GroupLocalServiceUtil.getGroup(statsUser.getGroupId());
-				User user2 = UserLocalServiceUtil.getUserById(statsUser.getUserId());
+				User user2 = UserLocalServiceUtil.getUserById(statsUser.getStatsUserId());
 
 				int entriesCount = BlogsEntryServiceUtil.getGroupUserEntriesCount(group.getGroupId(), user2.getUserId(), WorkflowConstants.STATUS_APPROVED);
 
-				List entries = BlogsEntryServiceUtil.getGroupUserEntries(group.getGroupId(), user2.getUserId(), WorkflowConstants.STATUS_APPROVED, 0, max, new EntryModifiedDateComparator());
+				List<BlogsEntry> entries = BlogsEntryServiceUtil.getGroupUserEntries(group.getGroupId(), user2.getUserId(), WorkflowConstants.STATUS_APPROVED, 0, max, new EntryModifiedDateComparator());
 
 				if (entries.isEmpty()) {
 					if (!selectionMethod.equals("users")) {
@@ -84,7 +84,7 @@ else {
 
 				statsUserRendered = true;
 
-				BlogsEntry entry = (BlogsEntry)entries.get(0);
+				BlogsEntry entry = entries.get(0);
 
 				StringBundler sb = new StringBundler(4);
 

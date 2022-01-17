@@ -22,14 +22,15 @@ function getExperienceUsedPortletIds({body, dispatch}) {
 		config.getExperienceUsedPortletsURL,
 		{
 			body: {
-				segmentsExperienceId
-			}
+				segmentsExperienceId,
+			},
 		},
 		dispatch
 	);
 }
 
 export default {
+
 	/**
 	 * Asks backend to create a new experience
 	 * @param {object} options
@@ -44,7 +45,7 @@ export default {
 		const payload = {
 			active: true,
 			name,
-			segmentsEntryId
+			segmentsEntryId,
 		};
 
 		return serviceFetch(
@@ -55,20 +56,38 @@ export default {
 	},
 
 	/**
+	 * Asks backend to duplicate an experience
+	 * @param {object} options
+	 * @param {object} options.body
+	 * @param {string} options.body.segmentsExperienceId Id of the experience to be duplicated
+	 * @param {function} options.dispatch
+	 */
+	duplicateExperience({body, dispatch}) {
+		const {segmentsExperienceId} = body;
+
+		const payload = {
+			segmentsExperienceId,
+		};
+
+		return serviceFetch(
+			config.duplicateSegmentsExperienceURL,
+			{body: payload},
+			dispatch
+		);
+	},
+
+	/**
 	 * Asks backend to remove an experience
 	 * @param {object} options
 	 * @param {object} options.body
-	 * @param {number[]} options.body.fragmentEntryLinkIds List of fragment entry ids unique to the  experience to delete
 	 * @param {string} options.body.segmentsExperienceId Id of the experience to be deleted
 	 * @param {function} options.dispatch
 	 */
 	removeExperience({body, dispatch}) {
-		const {fragmentEntryLinkIds, segmentsExperienceId} = body;
+		const {segmentsExperienceId} = body;
 
 		const payload = {
-			deleteSegmentsExperience: true,
-			fragmentEntryLinkIds: JSON.stringify(fragmentEntryLinkIds),
-			segmentsExperienceId
+			segmentsExperienceId,
 		};
 
 		return serviceFetch(
@@ -83,7 +102,7 @@ export default {
 
 		return getExperienceUsedPortletIds({
 			body: {segmentsExperienceId},
-			dispatch
+			dispatch,
 		});
 	},
 
@@ -117,7 +136,7 @@ export default {
 
 		const payload = {
 			newPriority,
-			segmentsExperienceId
+			segmentsExperienceId,
 		};
 
 		return serviceFetch(
@@ -125,5 +144,5 @@ export default {
 			{body: payload},
 			dispatch
 		);
-	}
+	},
 };

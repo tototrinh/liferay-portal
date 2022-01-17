@@ -15,10 +15,12 @@
 package com.liferay.site.teams.web.internal.display.context;
 
 import com.liferay.exportimport.kernel.staging.StagingUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Team;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.TeamLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
@@ -31,6 +33,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.sitesadmin.search.UserTeamChecker;
 import com.liferay.portlet.usersadmin.search.UserSearch;
 import com.liferay.portlet.usersadmin.search.UserSearchTerms;
+import com.liferay.site.teams.web.internal.constants.SiteTeamsPortletKeys;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
 import java.util.LinkedHashMap;
@@ -61,8 +64,9 @@ public class SelectUsersDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "icon");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest, SiteTeamsPortletKeys.SITE_TEAMS,
+			"users-display-style", "icon");
 
 		return _displayStyle;
 	}
@@ -112,32 +116,49 @@ public class SelectUsersDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/select_users.jsp"
+		).setRedirect(
+			getRedirect()
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
 
-		portletURL.setParameter("mvcPath", "/select_users.jsp");
-		portletURL.setParameter("redirect", getRedirect());
-		portletURL.setParameter("teamId", String.valueOf(getTeamId()));
-		portletURL.setParameter("eventName", getEventName());
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = getKeywords();
+				return null;
+			}
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).setParameter(
+			"teamId", getTeamId()
+		).buildPortletURL();
 	}
 
 	public String getRedirect() {
@@ -170,7 +191,7 @@ public class SelectUsersDisplayContext {
 		return _teamId;
 	}
 
-	public SearchContainer getUserSearchContainer() {
+	public SearchContainer<User> getUserSearchContainer() {
 		if (_userSearchContainer != null) {
 			return _userSearchContainer;
 		}
@@ -179,7 +200,7 @@ public class SelectUsersDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer userSearchContainer = new UserSearch(
+		SearchContainer<User> userSearchContainer = new UserSearch(
 			_renderRequest, getPortletURL());
 
 		OrderByComparator<User> orderByComparator =
@@ -245,6 +266,6 @@ public class SelectUsersDisplayContext {
 	private final RenderResponse _renderResponse;
 	private Team _team;
 	private Long _teamId;
-	private SearchContainer _userSearchContainer;
+	private SearchContainer<User> _userSearchContainer;
 
 }

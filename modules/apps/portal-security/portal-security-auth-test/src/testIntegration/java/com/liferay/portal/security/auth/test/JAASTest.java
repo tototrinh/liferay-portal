@@ -16,8 +16,8 @@ package com.liferay.portal.security.auth.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.events.Action;
+import com.liferay.portal.kernel.events.LifecycleAction;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.jaas.PortalPrincipal;
@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.IntegerWrapper;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.security.jaas.JAASHelper;
@@ -43,7 +44,6 @@ import java.security.Principal;
 
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -71,6 +71,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -242,15 +247,24 @@ public class JAASTest {
 		mockHttpServletRequest.setAttribute(
 			AbsoluteRedirectsResponse.class.getName(), new Object());
 
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
 		JAASAction preJAASAction = new JAASAction();
 		JAASAction postJAASAction = new JAASAction();
 
-		try {
-			EventsProcessorUtil.registerEvent(
-				PropsKeys.LOGIN_EVENTS_PRE, preJAASAction);
-			EventsProcessorUtil.registerEvent(
-				PropsKeys.LOGIN_EVENTS_POST, postJAASAction);
+		ServiceRegistration<?> serviceRegistration1 =
+			bundleContext.registerService(
+				LifecycleAction.class, preJAASAction,
+				MapUtil.singletonDictionary("key", PropsKeys.LOGIN_EVENTS_PRE));
+		ServiceRegistration<?> serviceRegistration2 =
+			bundleContext.registerService(
+				LifecycleAction.class, postJAASAction,
+				MapUtil.singletonDictionary(
+					"key", PropsKeys.LOGIN_EVENTS_POST));
 
+		try {
 			RequestDispatcher requestDispatcher =
 				servletContext.getRequestDispatcher("/c");
 
@@ -265,10 +279,8 @@ public class JAASTest {
 			Assert.assertFalse(lastLoginDate.after(_user.getLastLoginDate()));
 		}
 		finally {
-			EventsProcessorUtil.unregisterEvent(
-				PropsKeys.LOGIN_EVENTS_PRE, postJAASAction);
-			EventsProcessorUtil.unregisterEvent(
-				PropsKeys.LOGIN_EVENTS_POST, postJAASAction);
+			serviceRegistration1.unregister();
+			serviceRegistration2.unregister();
 		}
 	}
 
@@ -401,13 +413,12 @@ public class JAASTest {
 			AppConfigurationEntry[] appConfigurationEntries =
 				new AppConfigurationEntry[1];
 
-			Map<String, Object> options = HashMapBuilder.<String, Object>put(
-				"debug", Boolean.TRUE
-			).build();
-
 			appConfigurationEntries[0] = new AppConfigurationEntry(
 				"com.liferay.portal.kernel.security.jaas.PortalLoginModule",
-				LoginModuleControlFlag.REQUIRED, options);
+				LoginModuleControlFlag.REQUIRED,
+				HashMapBuilder.<String, Object>put(
+					"debug", Boolean.TRUE
+				).build());
 
 			return appConfigurationEntries;
 		}

@@ -15,7 +15,6 @@
 package com.liferay.portal.search.elasticsearch7.internal.search.engine.adapter.document;
 
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchClientResolver;
-import com.liferay.portal.search.engine.adapter.document.BulkableDocumentRequestTranslator;
 import com.liferay.portal.search.engine.adapter.document.UpdateDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.UpdateDocumentResponse;
 
@@ -42,7 +41,8 @@ public class UpdateDocumentRequestExecutorImpl
 		UpdateDocumentRequest updateDocumentRequest) {
 
 		UpdateRequest updateRequest =
-			_bulkableDocumentRequestTranslator.translate(updateDocumentRequest);
+			_elasticsearchBulkableDocumentRequestTranslator.translate(
+				updateDocumentRequest);
 
 		UpdateResponse updateResponse = getUpdateResponse(
 			updateRequest, updateDocumentRequest);
@@ -58,7 +58,8 @@ public class UpdateDocumentRequestExecutorImpl
 
 		RestHighLevelClient restHighLevelClient =
 			_elasticsearchClientResolver.getRestHighLevelClient(
-				updateDocumentRequest.getConnectionId(), false);
+				updateDocumentRequest.getConnectionId(),
+				updateDocumentRequest.isPreferLocalCluster());
 
 		try {
 			return restHighLevelClient.update(
@@ -71,9 +72,11 @@ public class UpdateDocumentRequestExecutorImpl
 
 	@Reference(target = "(search.engine.impl=Elasticsearch)", unbind = "-")
 	protected void setBulkableDocumentRequestTranslator(
-		BulkableDocumentRequestTranslator bulkableDocumentRequestTranslator) {
+		ElasticsearchBulkableDocumentRequestTranslator
+			elasticsearchBulkableDocumentRequestTranslator) {
 
-		_bulkableDocumentRequestTranslator = bulkableDocumentRequestTranslator;
+		_elasticsearchBulkableDocumentRequestTranslator =
+			elasticsearchBulkableDocumentRequestTranslator;
 	}
 
 	@Reference(unbind = "-")
@@ -83,8 +86,8 @@ public class UpdateDocumentRequestExecutorImpl
 		_elasticsearchClientResolver = elasticsearchClientResolver;
 	}
 
-	private BulkableDocumentRequestTranslator
-		_bulkableDocumentRequestTranslator;
+	private ElasticsearchBulkableDocumentRequestTranslator
+		_elasticsearchBulkableDocumentRequestTranslator;
 	private ElasticsearchClientResolver _elasticsearchClientResolver;
 
 }

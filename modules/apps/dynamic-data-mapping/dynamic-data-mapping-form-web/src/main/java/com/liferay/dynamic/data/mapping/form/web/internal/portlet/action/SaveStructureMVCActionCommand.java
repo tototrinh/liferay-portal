@@ -15,15 +15,16 @@
 package com.liferay.dynamic.data.mapping.form.web.internal.portlet.action;
 
 import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
+import com.liferay.dynamic.data.mapping.constants.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.exception.StructureDefinitionException;
 import com.liferay.dynamic.data.mapping.exception.StructureLayoutException;
 import com.liferay.dynamic.data.mapping.form.builder.context.DDMFormContextDeserializer;
 import com.liferay.dynamic.data.mapping.form.builder.context.DDMFormContextDeserializerRequest;
+import com.liferay.dynamic.data.mapping.form.web.internal.portlet.action.helper.SaveFormInstanceMVCCommandHelper;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
-import com.liferay.dynamic.data.mapping.model.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.service.DDMStructureService;
 import com.liferay.dynamic.data.mapping.storage.StorageType;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -60,7 +61,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + DDMPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN,
-		"mvc.command.name=saveStructure"
+		"mvc.command.name=/dynamic_data_mapping_form/save_structure"
 	},
 	service = MVCActionCommand.class
 )
@@ -99,7 +100,7 @@ public class SaveStructureMVCActionCommand extends BaseMVCActionCommand {
 				groupId, DDMStructureConstants.DEFAULT_PARENT_STRUCTURE_ID,
 				_portal.getClassNameId(DDMFormInstance.class), structureKey,
 				nameMap, descriptionMap, ddmForm, ddmFormLayout,
-				StorageType.JSON.toString(),
+				StorageType.DEFAULT.toString(),
 				DDMStructureConstants.TYPE_FRAGMENT, serviceContext);
 		}
 		else {

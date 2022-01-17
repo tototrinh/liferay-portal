@@ -228,6 +228,10 @@ public interface Portal {
 		ThemeDisplay themeDisplay, String url, boolean typeControlPanel,
 		boolean doAsUser);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addUserLocaleOptionsMessage(
 		HttpServletRequest httpServletRequest);
 
@@ -679,13 +683,27 @@ public interface Portal {
 	public String getFullName(
 		String firstName, String middleName, String lastName);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public String getGlobalLibDir();
 
 	public String getGoogleGadgetURL(Portlet portlet, ThemeDisplay themeDisplay)
 		throws PortalException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * #getGroupFriendlyURL(LayoutSet, ThemeDisplay, boolean, boolean)}
+	 */
+	@Deprecated
 	public String getGroupFriendlyURL(
 			LayoutSet layoutSet, ThemeDisplay themeDisplay)
+		throws PortalException;
+
+	public String getGroupFriendlyURL(
+			LayoutSet layoutSet, ThemeDisplay themeDisplay,
+			boolean canonicalURL, boolean controlPanel)
 		throws PortalException;
 
 	public String getGroupFriendlyURL(
@@ -1001,6 +1019,11 @@ public interface Portal {
 		throws PortalException;
 
 	public String getSiteAdminURL(
+			String portalURL, Group group, String ppid,
+			Map<String, String[]> params)
+		throws PortalException;
+
+	public String getSiteAdminURL(
 			ThemeDisplay themeDisplay, String ppid,
 			Map<String, String[]> params)
 		throws PortalException;
@@ -1094,7 +1117,7 @@ public interface Portal {
 
 	public String getUserPassword(HttpServletRequest httpServletRequest);
 
-	public String getUserPassword(HttpSession session);
+	public String getUserPassword(HttpSession httpSession);
 
 	public String getUserPassword(PortletRequest portletRequest);
 

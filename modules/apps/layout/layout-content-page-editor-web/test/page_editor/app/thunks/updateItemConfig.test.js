@@ -12,13 +12,13 @@
  * details.
  */
 
-import updateLayoutData from '../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateLayoutData';
+import updateItemConfigAction from '../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateItemConfig';
 import updatePageContents from '../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updatePageContents';
 import LayoutService from '../../../../src/main/resources/META-INF/resources/page_editor/app/services/LayoutService';
 import updateItemConfig from '../../../../src/main/resources/META-INF/resources/page_editor/app/thunks/updateItemConfig';
 
 jest.mock(
-	'../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateLayoutData',
+	'../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateItemConfig',
 	() => jest.fn()
 );
 
@@ -36,10 +36,10 @@ jest.mock(
 					classPK: 'pk',
 					name: 'contents',
 					title: 'title',
-					usagesCount: 1
-				}
+					usagesCount: 1,
+				},
 			])
-		)
+		),
 	})
 );
 
@@ -51,7 +51,7 @@ jest.mock(
 describe('updateItemConfig', () => {
 	afterEach(() => {
 		LayoutService.updateItemConfig.mockClear();
-		updateLayoutData.mockClear();
+		updateItemConfigAction.mockClear();
 	});
 
 	const runThunk = () =>
@@ -59,7 +59,7 @@ describe('updateItemConfig', () => {
 			config: {},
 			itemConfig: {},
 			itemId: '0',
-			segmentsExperienceId: '0'
+			segmentsExperienceId: '0',
 		})(() => {});
 
 	it('calls LayoutService.updateItemConfig with the given information', () => {
@@ -71,21 +71,22 @@ describe('updateItemConfig', () => {
 		expect(LayoutService.updateItemConfig).toHaveBeenCalled();
 	});
 
-	it('dispatches updateLayoutData and updatePageContents actions', async () => {
+	it('dispatches updateItemConfig and updatePageContents actions', async () => {
 		LayoutService.updateItemConfig.mockImplementation(() =>
 			Promise.resolve({
 				items: {},
-				version: 1
+				version: 1,
 			})
 		);
 
 		await runThunk();
 
-		expect(updateLayoutData).toHaveBeenCalledWith({
+		expect(updateItemConfigAction).toHaveBeenCalledWith({
+			itemId: '0',
 			layoutData: {
 				items: {},
-				version: 1
-			}
+				version: 1,
+			},
 		});
 
 		expect(updatePageContents).toHaveBeenCalledWith({
@@ -94,9 +95,9 @@ describe('updateItemConfig', () => {
 					classPK: 'pk',
 					name: 'contents',
 					title: 'title',
-					usagesCount: 1
-				}
-			]
+					usagesCount: 1,
+				},
+			],
 		});
 	});
 });

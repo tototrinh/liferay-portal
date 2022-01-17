@@ -76,6 +76,12 @@ public class PermissionConverterImpl implements PermissionConverter {
 
 			scopes = new int[] {ResourceConstants.SCOPE_GROUP_TEMPLATE};
 		}
+		else if (role.getType() == RoleConstants.TYPE_ACCOUNT) {
+			scopes = new int[] {
+				ResourceConstants.SCOPE_COMPANY, ResourceConstants.SCOPE_GROUP,
+				ResourceConstants.SCOPE_GROUP_TEMPLATE
+			};
+		}
 
 		List<Permission> permissions = new ArrayList<>();
 

@@ -17,6 +17,8 @@ package com.liferay.frontend.taglib.clay.servlet.taglib.display.context;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,7 +32,7 @@ public class SearchContainerManagementToolbarDisplayContext
 		HttpServletRequest httpServletRequest,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
-		SearchContainer searchContainer) {
+		SearchContainer<?> searchContainer) {
 
 		super(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse);
@@ -49,7 +51,7 @@ public class SearchContainerManagementToolbarDisplayContext
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
 		HttpServletRequest httpServletRequest,
-		SearchContainer searchContainer) {
+		SearchContainer<?> searchContainer) {
 
 		this(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
@@ -63,12 +65,15 @@ public class SearchContainerManagementToolbarDisplayContext
 
 	@Override
 	public String getSearchContainerId() {
-		return searchContainer.getId(request, getNamespace());
+		return searchContainer.getId(httpServletRequest, getNamespace());
 	}
 
 	@Override
 	public Boolean isDisabled() {
-		if (getItemsTotal() == 0) {
+		if ((getItemsTotal() == 0) &&
+			Validator.isNull(
+				ParamUtil.getString(httpServletRequest, "keywords"))) {
+
 			return true;
 		}
 
@@ -95,6 +100,6 @@ public class SearchContainerManagementToolbarDisplayContext
 		return searchContainer.getOrderByTypeParam();
 	}
 
-	protected SearchContainer searchContainer;
+	protected SearchContainer<?> searchContainer;
 
 }

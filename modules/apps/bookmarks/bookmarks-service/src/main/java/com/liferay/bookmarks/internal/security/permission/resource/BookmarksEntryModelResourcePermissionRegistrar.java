@@ -15,10 +15,10 @@
 package com.liferay.bookmarks.internal.security.permission.resource;
 
 import com.liferay.bookmarks.constants.BookmarksConstants;
+import com.liferay.bookmarks.constants.BookmarksFolderConstants;
 import com.liferay.bookmarks.constants.BookmarksPortletKeys;
 import com.liferay.bookmarks.model.BookmarksEntry;
 import com.liferay.bookmarks.model.BookmarksFolder;
-import com.liferay.bookmarks.model.BookmarksFolderConstants;
 import com.liferay.bookmarks.service.BookmarksEntryLocalService;
 import com.liferay.bookmarks.service.BookmarksFolderLocalService;
 import com.liferay.exportimport.kernel.staging.permission.StagingPermission;
@@ -29,7 +29,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Dictionary;
@@ -49,12 +49,14 @@ public class BookmarksEntryModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", BookmarksEntry.class.getName());
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", BookmarksEntry.class.getName()
+			).build();
 
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<BookmarksEntry>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				BookmarksEntry.class, BookmarksEntry::getEntryId,
 				_bookmarksEntryLocalService::getEntry,
@@ -116,7 +118,8 @@ public class BookmarksEntryModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<BookmarksEntry>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

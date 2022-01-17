@@ -16,14 +16,16 @@ package com.liferay.account.admin.web.internal.frontend.taglib.servlet.taglib;
 
 import com.liferay.account.admin.web.internal.constants.AccountScreenNavigationEntryConstants;
 import com.liferay.account.admin.web.internal.constants.AccountWebKeys;
-import com.liferay.account.constants.AccountPortletKeys;
 import com.liferay.frontend.taglib.servlet.taglib.ScreenNavigationEntry;
 import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.util.AggregateResourceBundle;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
@@ -31,9 +33,6 @@ import java.io.IOException;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -63,6 +62,22 @@ public abstract class BaseAccountUserScreenNavigationEntry
 	}
 
 	@Override
+	public boolean isVisible(User user, User selUser) {
+		PermissionChecker permissionChecker =
+			PermissionCheckerFactoryUtil.create(user);
+
+		if (UserPermissionUtil.contains(
+				permissionChecker, selUser.getUserId(), ActionKeys.VIEW) &&
+			UserPermissionUtil.contains(
+				permissionChecker, selUser.getUserId(), ActionKeys.UPDATE)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
 	public void render(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse)
@@ -80,19 +95,11 @@ public abstract class BaseAccountUserScreenNavigationEntry
 		httpServletRequest.setAttribute(
 			AccountWebKeys.SHOW_TITLE, isShowTitle());
 
-		PortletURL redirect = portal.getControlPanelPortletURL(
-			httpServletRequest, AccountPortletKeys.ACCOUNT_USERS_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		redirect.setParameter(
-			"p_u_i_d", ParamUtil.getString(httpServletRequest, "p_u_i_d"));
-		redirect.setParameter(
-			"mvcPath", "/account_users_admin/edit_account_user.jsp");
-
 		DynamicServletRequest dynamicServletRequest = new DynamicServletRequest(
 			httpServletRequest);
 
-		dynamicServletRequest.appendParameter("redirect", redirect.toString());
+		dynamicServletRequest.appendParameter(
+			"redirect", portal.getCurrentURL(httpServletRequest));
 
 		jspRenderer.renderJSP(
 			servletContext, dynamicServletRequest, httpServletResponse,

@@ -15,9 +15,11 @@
 package com.liferay.layout.page.template.service;
 
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.security.access.control.AccessControlled;
 import com.liferay.portal.kernel.service.BaseService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -40,6 +42,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @AccessControlled
+@CTAware
 @JSONWebService
 @ProviderType
 @Transactional(
@@ -51,7 +54,7 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link LayoutPageTemplateEntryServiceUtil} to access the layout page template entry remote service. Add custom service methods to <code>com.liferay.layout.page.template.service.impl.LayoutPageTemplateEntryServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.layout.page.template.service.impl.LayoutPageTemplateEntryServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the layout page template entry remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link LayoutPageTemplateEntryServiceUtil} if injection and service tracking are not available.
 	 */
 
 	/**
@@ -106,6 +109,12 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 			long layoutPageTemplateEntryId, ServiceContext serviceContext)
 		throws PortalException;
 
+	public LayoutPageTemplateEntry createLayoutPageTemplateEntryFromLayout(
+			long segmentsExperienceId, Layout sourceLayout, String name,
+			long targetLayoutPageTemplateCollectionId,
+			ServiceContext serviceContext)
+		throws Exception;
+
 	public void deleteLayoutPageTemplateEntries(
 			long[] layoutPageTemplateEntryIds)
 		throws PortalException;
@@ -139,6 +148,16 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntries(
 		long groupId, int type, int start, int end,
+		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntries(
+		long groupId, int[] types, int status, int start, int end,
+		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntries(
+		long groupId, int[] types, int start, int end,
 		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -219,6 +238,16 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntries(
+		long groupId, String name, int[] types, int status, int start, int end,
+		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntries(
+		long groupId, String name, int[] types, int start, int end,
+		OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<LayoutPageTemplateEntry> getLayoutPageTemplateEntriesByType(
 		long groupId, long layoutPageTemplateCollectionId, int type, int start,
 		int end, OrderByComparator<LayoutPageTemplateEntry> orderByComparator);
@@ -229,6 +258,13 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getLayoutPageTemplateEntriesCount(
 		long groupId, int type, int status);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getLayoutPageTemplateEntriesCount(long groupId, int[] types);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getLayoutPageTemplateEntriesCount(
+		long groupId, int[] types, int status);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getLayoutPageTemplateEntriesCount(
@@ -274,8 +310,21 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 		long groupId, String name, int type, int status);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getLayoutPageTemplateEntriesCount(
+		long groupId, String name, int[] types);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getLayoutPageTemplateEntriesCount(
+		long groupId, String name, int[] types, int status);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getLayoutPageTemplateEntriesCountByType(
 		long groupId, long layoutPageTemplateCollectionId, int type);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public LayoutPageTemplateEntry getLayoutPageTemplateEntry(
+			long groupId, String layoutPageTemplateEntryKey)
+		throws PortalException;
 
 	/**
 	 * Returns the OSGi service identifier.
@@ -283,6 +332,11 @@ public interface LayoutPageTemplateEntryService extends BaseService {
 	 * @return the OSGi service identifier
 	 */
 	public String getOSGiServiceIdentifier();
+
+	public LayoutPageTemplateEntry moveLayoutPageTemplateEntry(
+			long layoutPageTemplateEntryId,
+			long targetLayoutPageTemplateCollectionId)
+		throws PortalException;
 
 	public LayoutPageTemplateEntry updateLayoutPageTemplateEntry(
 			long layoutPageTemplateEntryId, boolean defaultTemplate)

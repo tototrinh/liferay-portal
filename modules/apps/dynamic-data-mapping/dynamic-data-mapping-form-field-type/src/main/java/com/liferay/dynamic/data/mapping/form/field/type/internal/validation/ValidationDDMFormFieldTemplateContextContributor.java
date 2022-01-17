@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.validation;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
 import com.liferay.portal.kernel.json.JSONException;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Map;
@@ -34,7 +36,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Bruno Basto
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=validation",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.VALIDATION,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		ValidationDDMFormFieldTemplateContextContributor.class
@@ -49,11 +52,36 @@ public class ValidationDDMFormFieldTemplateContextContributor
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		return HashMapBuilder.<String, Object>put(
-			"value", getValue(ddmFormFieldRenderingContext)
+			"dataType", getDataType(ddmFormField, ddmFormFieldRenderingContext)
+		).put(
+			"value", _getValue(ddmFormFieldRenderingContext)
 		).build();
 	}
 
-	protected Map<String, Object> getValue(
+	protected String getDataType(
+		DDMFormField ddmFormField,
+		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
+
+		Map<String, Object> changedProperties =
+			(Map<String, Object>)ddmFormFieldRenderingContext.getProperty(
+				"changedProperties");
+
+		if (MapUtil.isNotEmpty(changedProperties)) {
+			String validationDataType = (String)changedProperties.get(
+				"validationDataType");
+
+			if (Validator.isNotNull(validationDataType)) {
+				return validationDataType;
+			}
+		}
+
+		return ddmFormField.getDataType();
+	}
+
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private Map<String, Object> _getValue(
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		String valueString = ddmFormFieldRenderingContext.getValue();
@@ -87,9 +115,6 @@ public class ValidationDDMFormFieldTemplateContextContributor
 			"parameter", jsonFactory.createJSONObject()
 		).build();
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ValidationDDMFormFieldTemplateContextContributor.class);

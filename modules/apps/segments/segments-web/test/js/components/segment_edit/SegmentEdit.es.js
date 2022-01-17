@@ -17,9 +17,6 @@ import {cleanup, fireEvent, render, wait} from '@testing-library/react';
 import React from 'react';
 
 import SegmentEdit from '../../../../src/main/resources/META-INF/resources/js/components/segment_edit/SegmentEdit.es';
-import {SOURCES} from '../../../../src/main/resources/META-INF/resources/js/utils/constants.es';
-
-const SOURCE_ICON_TESTID = 'source-icon';
 
 const PROPERTY_GROUPS_BASIC = [
 	{
@@ -31,11 +28,11 @@ const PROPERTY_GROUPS_BASIC = [
 				name: 'value',
 				options: [],
 				selectEntity: null,
-				type: 'string'
-			}
+				type: 'string',
+			},
 		],
-		propertyKey: 'first-test-values-group'
-	}
+		propertyKey: 'first-test-values-group',
+	},
 ];
 
 const DEFAULT_REDIRECT = '/test-url';
@@ -46,8 +43,8 @@ const CONTRIBUTORS = [
 		conjunctionInputId: 'conjunction-input-1',
 		initialQuery: "(value eq 'value')",
 		inputId: 'input-id-for-backend-form',
-		propertyKey: 'first-test-values-group'
-	}
+		propertyKey: 'first-test-values-group',
+	},
 ];
 
 function _renderSegmentEditComponent({
@@ -55,18 +52,18 @@ function _renderSegmentEditComponent({
 	redirect = DEFAULT_REDIRECT,
 	hasUpdatePermission = undefined,
 	contributors = undefined,
-	showInEditMode = undefined
+	showInEditMode = undefined,
 } = {}) {
 	return render(
 		<SegmentEdit
 			availableLocales={{
-				en_US: ''
+				en_US: '',
 			}}
 			contributors={contributors}
 			defaultLanguageId="en_US"
 			hasUpdatePermission={hasUpdatePermission}
 			initialSegmentName={{
-				en_US: 'Segment title'
+				en_US: 'Segment title',
 			}}
 			locale="en_US"
 			redirect={redirect}
@@ -85,35 +82,11 @@ describe('SegmentEdit', () => {
 		expect(asFragment()).toMatchSnapshot();
 	});
 
-	it('renders with an analytics cloud icon', () => {
-		const {icon, name} = SOURCES.ASAH_FARO_BACKEND;
-
-		const {getByTestId} = _renderSegmentEditComponent({
-			source: name
-		});
-
-		const image = getByTestId(SOURCE_ICON_TESTID);
-
-		expect(image).toHaveAttribute('src', icon);
-	});
-
-	it('renders with a dxp icon', () => {
-		const {icon, name} = SOURCES.DEFAULT;
-
-		const {getByTestId} = _renderSegmentEditComponent({
-			source: name
-		});
-
-		const image = getByTestId(SOURCE_ICON_TESTID);
-
-		expect(image).toHaveAttribute('src', icon);
-	});
-
 	it('renders with edit buttons if the user has update permissions', () => {
 		const hasUpdatePermission = true;
 
 		const {asFragment} = _renderSegmentEditComponent({
-			hasUpdatePermission
+			hasUpdatePermission,
 		});
 
 		expect(asFragment()).toMatchSnapshot();
@@ -123,7 +96,7 @@ describe('SegmentEdit', () => {
 		const hasUpdatePermission = false;
 
 		const {asFragment} = _renderSegmentEditComponent({
-			hasUpdatePermission
+			hasUpdatePermission,
 		});
 
 		expect(asFragment()).toMatchSnapshot();
@@ -135,13 +108,13 @@ describe('SegmentEdit', () => {
 		const {asFragment, getByTestId} = render(
 			<SegmentEdit
 				availableLocales={{
-					en_US: ''
+					en_US: '',
 				}}
 				contributors={CONTRIBUTORS}
 				defaultLanguageId="en_US"
 				hasUpdatePermission={hasUpdatePermission}
 				initialSegmentName={{
-					en_US: 'Segment title'
+					en_US: 'Segment title',
 				}}
 				locale="en_US"
 				propertyGroups={PROPERTY_GROUPS_BASIC}
@@ -168,7 +141,7 @@ describe('SegmentEdit', () => {
 		const {getByText} = _renderSegmentEditComponent({
 			contributors: CONTRIBUTORS,
 			hasUpdatePermission,
-			propertyGroups: PROPERTY_GROUPS_BASIC
+			propertyGroups: PROPERTY_GROUPS_BASIC,
 		});
 
 		const cancelButton = getByText('cancel');
@@ -182,7 +155,7 @@ describe('SegmentEdit', () => {
 		expect(mockConfirm).toHaveBeenCalledTimes(0);
 	});
 
-	it('redirects when cancelling after title edition', done => {
+	it('redirects when cancelling after title edition', (done) => {
 		const mockConfirm = jest.fn();
 		const mockNavigate = jest.fn();
 		window.Liferay.Util.navigate = mockNavigate;
@@ -193,7 +166,7 @@ describe('SegmentEdit', () => {
 		const {getByTestId, getByText} = _renderSegmentEditComponent({
 			contributors: CONTRIBUTORS,
 			hasUpdatePermission,
-			propertyGroups: PROPERTY_GROUPS_BASIC
+			propertyGroups: PROPERTY_GROUPS_BASIC,
 		});
 
 		const localizedInput = getByTestId('localized-main-input');

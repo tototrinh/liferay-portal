@@ -84,9 +84,8 @@ public class StaticBlockCheck extends BaseCheck {
 
 		DetailAST firstUseVariableDetailAST = variableDetailASTList.get(0);
 
-		topLevelDetailAST = _getTopLevelDetailAST(firstUseVariableDetailAST);
-
-		int statementStartLineNumber = getStartLineNumber(topLevelDetailAST);
+		int statementStartLineNumber = getStartLineNumber(
+			_getTopLevelDetailAST(firstUseVariableDetailAST));
 
 		if (!_isRequiredMethodCall(
 				variableName, classObjectNames, identDetailASTMap,
@@ -133,9 +132,9 @@ public class StaticBlockCheck extends BaseCheck {
 				staticObjectNames.add(name);
 			}
 			else {
-				String typeName = getTypeName(previousSiblingDetailAST, true);
+				if (!immutableFieldTypes.contains(
+						getTypeName(previousSiblingDetailAST, true))) {
 
-				if (!immutableFieldTypes.contains(typeName)) {
 					staticObjectNames.add(name);
 				}
 			}

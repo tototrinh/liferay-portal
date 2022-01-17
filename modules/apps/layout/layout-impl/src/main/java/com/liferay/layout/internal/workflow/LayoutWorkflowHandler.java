@@ -25,8 +25,6 @@ import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.workflow.BaseWorkflowHandler;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -36,7 +34,6 @@ import java.io.Serializable;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -60,10 +57,7 @@ public class LayoutWorkflowHandler extends BaseWorkflowHandler<Layout> {
 
 	@Override
 	public String getType(Locale locale) {
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, "content-page");
+		return LanguageUtil.get(locale, "content-page");
 	}
 
 	@Override
@@ -97,6 +91,12 @@ public class LayoutWorkflowHandler extends BaseWorkflowHandler<Layout> {
 			(String)workflowContext.get(
 				WorkflowConstants.CONTEXT_ENTRY_CLASS_PK));
 
+		Layout layout = _layoutLocalService.getLayout(classPK);
+
+		if (layout.isDenied() && (status == WorkflowConstants.STATUS_PENDING)) {
+			return layout;
+		}
+
 		ServiceContext serviceContext = (ServiceContext)workflowContext.get(
 			"serviceContext");
 
@@ -105,10 +105,7 @@ public class LayoutWorkflowHandler extends BaseWorkflowHandler<Layout> {
 				userId, classPK, status, serviceContext);
 		}
 
-		Layout layout = _layoutLocalService.getLayout(classPK);
-
-		Layout draftLayout = _layoutLocalService.fetchLayout(
-			_portal.getClassNameId(Layout.class), layout.getPlid());
+		Layout draftLayout = layout.fetchDraftLayout();
 
 		try {
 			_layoutCopyHelper.copyLayout(draftLayout, layout);
@@ -117,14 +114,15 @@ public class LayoutWorkflowHandler extends BaseWorkflowHandler<Layout> {
 			throw new PortalException(exception);
 		}
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			draftLayout.getTypeSettingsProperties();
 
-		typeSettingsProperties.setProperty("published", "true");
+		typeSettingsUnicodeProperties.setProperty("published", "true");
 
 		draftLayout = _layoutLocalService.updateLayout(
 			draftLayout.getGroupId(), draftLayout.isPrivateLayout(),
-			draftLayout.getLayoutId(), typeSettingsProperties.toString());
+			draftLayout.getLayoutId(),
+			typeSettingsUnicodeProperties.toString());
 
 		draftLayout.setStatus(WorkflowConstants.STATUS_APPROVED);
 
@@ -152,9 +150,5 @@ public class LayoutWorkflowHandler extends BaseWorkflowHandler<Layout> {
 
 	@Reference
 	private Portal _portal;
-
-	private final ResourceBundleLoader _resourceBundleLoader =
-		ResourceBundleLoaderUtil.getResourceBundleLoaderByBundleSymbolicName(
-			"com.liferay.layout.impl");
 
 }

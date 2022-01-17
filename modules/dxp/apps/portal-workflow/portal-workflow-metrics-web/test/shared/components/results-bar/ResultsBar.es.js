@@ -17,27 +17,27 @@ import {MockRouter} from '../../../mock/MockRouter.es';
 
 describe('The ResultsBar component should', () => {
 	const mockProps = {
-		filterKeys: ['taskKeys'],
+		filterKeys: ['taskNames'],
 		filters: [
 			{
 				items: [
 					{active: true, key: 'review', name: 'Review'},
-					{active: true, key: 'update', name: 'Update'}
+					{active: true, key: 'update', name: 'Update'},
 				],
-				key: 'taskKeys',
+				key: 'taskNames',
 				name: 'Process Step',
-				pinned: false
-			}
+				pinned: false,
+			},
 		],
 		page: 1,
 		pageSize: 20,
-		sort: encodeURIComponent('overdueTaskCount:asc')
+		sort: 'overdueTaskCount:asc',
 	};
 
 	afterEach(cleanup);
 
 	test('Render with search value "test" and total count "1"', () => {
-		const {getByTestId} = render(
+		const {getByText} = render(
 			<MockRouter>
 				<ResultsBar>
 					<ResultsBar.TotalCount totalCount={1} />
@@ -47,13 +47,13 @@ describe('The ResultsBar component should', () => {
 			</MockRouter>
 		);
 
-		const totalCount = getByTestId('totalCount');
-		expect(totalCount.innerHTML).toBe('x-result-for-x');
+		const totalCount = getByText('x-result-for-x');
+		expect(totalCount).toBeTruthy();
 	});
 
 	test('Render with search value "test" and with 2 selected filter item', async () => {
-		const {getAllByTestId, getByTestId} = render(
-			<MockRouter query={'?search=test'}>
+		const {container, getByText} = render(
+			<MockRouter query="?search=test">
 				<ResultsBar>
 					<ResultsBar.TotalCount search="test" totalCount={2} />
 
@@ -65,20 +65,20 @@ describe('The ResultsBar component should', () => {
 		);
 
 		const {
-			filters: [{items}]
+			filters: [{items}],
 		} = mockProps;
 
-		const removeFilter = getAllByTestId('removeFilter');
-		const totalCount = getByTestId('totalCount');
-		const clearAll = getByTestId('clearAll');
+		const removeFilter = container.querySelectorAll('.lexicon-icon-times');
+		const totalCount = getByText('x-results-for-x');
+		const clearAll = getByText('clear-all');
 
 		expect(removeFilter.length).toBe(2);
 
-		expect(totalCount.innerHTML).toBe('x-results-for-x');
+		expect(totalCount).toBeTruthy();
 		expect(items[0].active).toBe(true);
 		expect(items[1].active).toBe(true);
 
-		fireEvent.click(removeFilter[0]);
+		fireEvent.click(removeFilter[0].parentNode);
 
 		expect(items[0].active).toBe(false);
 		expect(items[1].active).toBe(true);

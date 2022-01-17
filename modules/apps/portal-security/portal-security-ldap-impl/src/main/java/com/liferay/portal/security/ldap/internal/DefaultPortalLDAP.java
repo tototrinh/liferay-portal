@@ -200,7 +200,7 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 		LdapContext ldapContext = getContext(ldapServerId, companyId);
 
-		NamingEnumeration<SearchResult> enu = null;
+		NamingEnumeration<SearchResult> enumeration = null;
 
 		try {
 			if (ldapContext == null) {
@@ -241,17 +241,18 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			SearchControls searchControls = new SearchControls(
 				SearchControls.SUBTREE_SCOPE, 1, 0, null, false, false);
 
-			enu = ldapContext.search(groupsDN, sb.toString(), searchControls);
+			enumeration = ldapContext.search(
+				groupsDN, sb.toString(), searchControls);
 
-			if (enu.hasMoreElements()) {
-				return enu.nextElement();
+			if (enumeration.hasMoreElements()) {
+				return enumeration.nextElement();
 			}
 
 			return null;
 		}
 		finally {
-			if (enu != null) {
-				enu.close();
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			if (ldapContext != null) {
@@ -461,16 +462,16 @@ public class DefaultPortalLDAP implements PortalLDAP {
 				break;
 			}
 
-			NamingEnumeration<? extends Attribute> enu = null;
+			NamingEnumeration<? extends Attribute> enumeration = null;
 
 			try {
-				enu = attributes.getAll();
+				enumeration = attributes.getAll();
 
-				if (!enu.hasMoreElements()) {
+				if (!enumeration.hasMoreElements()) {
 					break;
 				}
 
-				Attribute curAttribute = enu.nextElement();
+				Attribute curAttribute = enumeration.nextElement();
 
 				for (int i = 0; i < curAttribute.size(); i++) {
 					attribute.add(curAttribute.get(i));
@@ -485,8 +486,8 @@ public class DefaultPortalLDAP implements PortalLDAP {
 				}
 			}
 			finally {
-				if (enu != null) {
-					enu.close();
+				if (enumeration != null) {
+					enumeration.close();
 				}
 			}
 
@@ -515,7 +516,7 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 		LdapContext ldapContext = getContext(ldapServerId, companyId);
 
-		NamingEnumeration<SearchResult> enu = null;
+		NamingEnumeration<SearchResult> enumeration = null;
 
 		try {
 			if (ldapContext == null) {
@@ -589,10 +590,11 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			SearchControls searchControls = new SearchControls(
 				SearchControls.SUBTREE_SCOPE, 1, 0, null, false, false);
 
-			enu = ldapContext.search(baseDN, sb.toString(), searchControls);
+			enumeration = ldapContext.search(
+				baseDN, sb.toString(), searchControls);
 
-			if (enu.hasMoreElements()) {
-				return enu.nextElement();
+			if (enumeration.hasMoreElements()) {
+				return enumeration.nextElement();
 			}
 
 			if (checkOriginalEmail) {
@@ -620,8 +622,8 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			return null;
 		}
 		finally {
-			if (enu != null) {
-				enu.close();
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			if (ldapContext != null) {
@@ -645,10 +647,10 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 		Properties contactMappings = _ldapSettings.getContactMappings(
 			ldapServerId, companyId);
-		Properties contactExpandoMappings =
-			_ldapSettings.getContactExpandoMappings(ldapServerId, companyId);
 
-		PropertiesUtil.merge(contactMappings, contactExpandoMappings);
+		PropertiesUtil.merge(
+			contactMappings,
+			_ldapSettings.getContactExpandoMappings(ldapServerId, companyId));
 
 		PropertiesUtil.merge(userMappings, contactMappings);
 
@@ -796,7 +798,7 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 		LdapContext ldapContext = getContext(ldapServerId, companyId);
 
-		NamingEnumeration<SearchResult> enu = null;
+		NamingEnumeration<SearchResult> enumeration = null;
 
 		try {
 			if (ldapContext == null) {
@@ -806,16 +808,6 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			Properties groupMappings = _ldapSettings.getGroupMappings(
 				ldapServerId, companyId);
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(groupMappings.getProperty("user"));
-			sb.append(StringPool.EQUAL);
-			sb.append(
-				encodeFilterAttribute(
-					StringUtil.replace(userDN, '\\', "\\\\"), false));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
 			SearchControls searchControls = new SearchControls(
 				SearchControls.SUBTREE_SCOPE, 1, 0, null, false, false);
 
@@ -823,9 +815,17 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 			name.add(groupDN);
 
-			enu = ldapContext.search(name, sb.toString(), searchControls);
+			enumeration = ldapContext.search(
+				name,
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					groupMappings.getProperty("user"), StringPool.EQUAL,
+					encodeFilterAttribute(
+						StringUtil.replace(userDN, '\\', "\\\\"), false),
+					StringPool.CLOSE_PARENTHESIS),
+				searchControls);
 
-			if (enu.hasMoreElements()) {
+			if (enumeration.hasMoreElements()) {
 				return true;
 			}
 		}
@@ -839,8 +839,8 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			}
 		}
 		finally {
-			if (enu != null) {
-				enu.close();
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			if (ldapContext != null) {
@@ -858,7 +858,7 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 		LdapContext ldapContext = getContext(ldapServerId, companyId);
 
-		NamingEnumeration<SearchResult> enu = null;
+		NamingEnumeration<SearchResult> enumeration = null;
 
 		try {
 			if (ldapContext == null) {
@@ -868,22 +868,21 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			Properties userMappings = _ldapSettings.getUserMappings(
 				ldapServerId, companyId);
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(userMappings.getProperty(UserConverterKeys.GROUP));
-			sb.append(StringPool.EQUAL);
-			sb.append(
-				encodeFilterAttribute(
-					StringUtil.replace(groupDN, '\\', "\\\\"), false));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
 			SearchControls searchControls = new SearchControls(
 				SearchControls.SUBTREE_SCOPE, 1, 0, null, false, false);
 
-			enu = ldapContext.search(userDN, sb.toString(), searchControls);
+			enumeration = ldapContext.search(
+				userDN,
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					userMappings.getProperty(UserConverterKeys.GROUP),
+					StringPool.EQUAL,
+					encodeFilterAttribute(
+						StringUtil.replace(groupDN, '\\', "\\\\"), false),
+					StringPool.CLOSE_PARENTHESIS),
+				searchControls);
 
-			if (enu.hasMoreElements()) {
+			if (enumeration.hasMoreElements()) {
 				return true;
 			}
 		}
@@ -897,8 +896,8 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			}
 		}
 		finally {
-			if (enu != null) {
-				enu.close();
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			if (ldapContext != null) {
@@ -922,7 +921,7 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			SearchControls.SUBTREE_SCOPE, maxResults, 0, attributeIds, false,
 			false);
 
-		NamingEnumeration<SearchResult> enu = null;
+		NamingEnumeration<SearchResult> enumeration = null;
 
 		try {
 			if (cookie != null) {
@@ -947,31 +946,38 @@ public class DefaultPortalLDAP implements PortalLDAP {
 						});
 				}
 
-				enu = ldapContext.search(baseDN, filter, searchControls);
+				enumeration = ldapContext.search(
+					baseDN, filter, searchControls);
 
-				while (enu.hasMoreElements()) {
-					searchResults.add(enu.nextElement());
+				while (enumeration.hasMoreElements()) {
+					searchResults.add(enumeration.nextElement());
 				}
 
 				return _getCookie(ldapContext.getResponseControls());
 			}
 		}
 		catch (OperationNotSupportedException operationNotSupportedException) {
-			if (enu != null) {
-				enu.close();
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					operationNotSupportedException,
+					operationNotSupportedException);
+			}
+
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			ldapContext.setRequestControls(null);
 
-			enu = ldapContext.search(baseDN, filter, searchControls);
+			enumeration = ldapContext.search(baseDN, filter, searchControls);
 
-			while (enu.hasMoreElements()) {
-				searchResults.add(enu.nextElement());
+			while (enumeration.hasMoreElements()) {
+				searchResults.add(enumeration.nextElement());
 			}
 		}
 		finally {
-			if (enu != null) {
-				enu.close();
+			if (enumeration != null) {
+				enumeration.close();
 			}
 
 			ldapContext.setRequestControls(null);
@@ -1018,7 +1024,9 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			String[] attributeIds)
 		throws Exception {
 
-		Name fullDN = new CompositeName().add(fullDistinguishedName);
+		Name name = new CompositeName();
+
+		Name fullDN = name.add(fullDistinguishedName);
 
 		Attributes attributes = null;
 
@@ -1033,21 +1041,21 @@ public class DefaultPortalLDAP implements PortalLDAP {
 
 			attributes = ldapContext.getAttributes(fullDN);
 
-			NamingEnumeration<? extends Attribute> enu = null;
+			NamingEnumeration<? extends Attribute> enumeration = null;
 
 			try {
 				Attributes auditAttributes = ldapContext.getAttributes(
 					fullDN, auditAttributeIds);
 
-				enu = auditAttributes.getAll();
+				enumeration = auditAttributes.getAll();
 
-				while (enu.hasMoreElements()) {
-					attributes.put(enu.nextElement());
+				while (enumeration.hasMoreElements()) {
+					attributes.put(enumeration.nextElement());
 				}
 			}
 			finally {
-				if (enu != null) {
-					enu.close();
+				if (enumeration != null) {
+					enumeration.close();
 				}
 			}
 		}
@@ -1117,16 +1125,8 @@ public class DefaultPortalLDAP implements PortalLDAP {
 			end += systemLDAPConfiguration.rangeSize();
 		}
 
-		StringBundler sb = new StringBundler(6);
-
-		sb.append(originalAttributeId);
-		sb.append(StringPool.SEMICOLON);
-		sb.append("range=");
-		sb.append(start);
-		sb.append(StringPool.DASH);
-		sb.append(end);
-
-		return sb.toString();
+		return StringBundler.concat(
+			originalAttributeId, ";range=", start, StringPool.DASH, end);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

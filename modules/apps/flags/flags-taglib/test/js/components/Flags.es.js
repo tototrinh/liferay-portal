@@ -17,43 +17,47 @@ import {
 	cleanup,
 	fireEvent,
 	render,
-	waitForElement
+	waitForElement,
 } from '@testing-library/react';
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 
 import Flags from '../../../src/main/resources/META-INF/resources/flags/js/components/Flags.es';
 
-const formDataToObject = formData =>
+const formDataToObject = (formData) =>
 	Array.from(formData).reduce(
 		(memo, [key, val]) => ({
 			...memo,
-			[key]: val
+			[key]: val,
 		}),
 		{}
 	);
 
 function _renderFlagsComponent({
+	captchaURI = '',
 	companyName = 'Liferay',
 	baseData = {},
 	onlyIcon = false,
 	pathTermsOfUse = '/',
 	reasons = {value: 'text', value2: 'text2'},
 	signedIn = false,
-	uri = '//'
+	uri = '//',
+	viewMode = true,
 } = {}) {
 	return render(
 		<Flags
 			baseData={baseData}
+			captchaURI={captchaURI}
 			companyName={companyName}
 			onlyIcon={onlyIcon}
 			pathTermsOfUse={pathTermsOfUse}
 			reasons={reasons}
 			signedIn={signedIn}
 			uri={uri}
+			viewMode={viewMode}
 		/>,
 		{
-			baseElement: document.body
+			baseElement: document.body,
 		}
 	);
 }
@@ -64,8 +68,8 @@ describe('Flags', () => {
 	it('renders', () => {
 		const {getByRole, getByText} = _renderFlagsComponent();
 
-		expect(getByText('report'));
-		expect(getByRole('button'));
+		expect(getByText('report')).toBeTruthy();
+		expect(getByRole('button')).toBeTruthy();
 	});
 
 	it('renders with only icon visible (text visually hidden)', () => {
@@ -74,11 +78,17 @@ describe('Flags', () => {
 		expect(getByText('report')).toHaveClass('sr-only');
 	});
 
+	it('disables interaction when the view mode is not active', () => {
+		const {getByRole} = _renderFlagsComponent({viewMode: false});
+
+		expect(getByRole('button')).toBeDisabled();
+	});
+
 	it('submits a report successfully with baseData', async () => {
 		const {getByRole} = _renderFlagsComponent({
 			baseData: {
-				testingField: 'testingValue'
-			}
+				testingField: 'testingValue',
+			},
 		});
 		fetch.mockResponse('');
 
@@ -86,6 +96,10 @@ describe('Flags', () => {
 			fireEvent.click(getByRole('button'));
 
 			const form = await waitForElement(() => getByRole('form'));
+
+			[...form.elements].forEach((element) => {
+				element.value = 'someValue';
+			});
 
 			fireEvent.submit(form);
 		});

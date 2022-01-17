@@ -22,7 +22,9 @@ import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
@@ -61,7 +63,7 @@ public class SiteNavigationMenuLocalServiceImpl
 
 		validate(groupId, name);
 
-		User user = userLocalService.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		long siteNavigationMenuId = counterLocalService.increment();
 
@@ -82,7 +84,7 @@ public class SiteNavigationMenuLocalServiceImpl
 
 		// Resources
 
-		resourceLocalService.addResources(
+		_resourceLocalService.addResources(
 			siteNavigationMenu.getCompanyId(), siteNavigationMenu.getGroupId(),
 			siteNavigationMenu.getUserId(), SiteNavigationMenu.class.getName(),
 			siteNavigationMenu.getSiteNavigationMenuId(), false, true, true);
@@ -135,9 +137,9 @@ public class SiteNavigationMenuLocalServiceImpl
 
 		// Resources
 
-		resourceLocalService.deleteResource(
+		_resourceLocalService.deleteResource(
 			siteNavigationMenu.getCompanyId(),
-			SiteNavigationMenuItem.class.getName(),
+			SiteNavigationMenu.class.getName(),
 			ResourceConstants.SCOPE_INDIVIDUAL,
 			siteNavigationMenu.getSiteNavigationMenuId());
 
@@ -181,6 +183,13 @@ public class SiteNavigationMenuLocalServiceImpl
 	}
 
 	@Override
+	public SiteNavigationMenu fetchSiteNavigationMenuByName(
+		long groupId, String name) {
+
+		return siteNavigationMenuPersistence.fetchByG_N(groupId, name);
+	}
+
+	@Override
 	public List<SiteNavigationMenu> getAutoSiteNavigationMenus(long groupId) {
 		return siteNavigationMenuPersistence.findByG_A(groupId, true);
 	}
@@ -192,7 +201,8 @@ public class SiteNavigationMenuLocalServiceImpl
 
 	@Override
 	public List<SiteNavigationMenu> getSiteNavigationMenus(
-		long groupId, int start, int end, OrderByComparator orderByComparator) {
+		long groupId, int start, int end,
+		OrderByComparator<SiteNavigationMenu> orderByComparator) {
 
 		return siteNavigationMenuPersistence.findByGroupId(
 			groupId, start, end, orderByComparator);
@@ -201,7 +211,7 @@ public class SiteNavigationMenuLocalServiceImpl
 	@Override
 	public List<SiteNavigationMenu> getSiteNavigationMenus(
 		long groupId, String keywords, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SiteNavigationMenu> orderByComparator) {
 
 		return siteNavigationMenuPersistence.findByG_LikeN(
 			groupId,
@@ -232,7 +242,7 @@ public class SiteNavigationMenuLocalServiceImpl
 
 		_updateOldSiteNavigationMenuType(siteNavigationMenu, type);
 
-		User user = userLocalService.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		siteNavigationMenu.setUserId(userId);
 		siteNavigationMenu.setUserName(user.getFullName());
@@ -276,7 +286,7 @@ public class SiteNavigationMenuLocalServiceImpl
 			return siteNavigationMenu;
 		}
 
-		User user = userLocalService.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		validate(siteNavigationMenu.getGroupId(), name);
 
@@ -345,7 +355,13 @@ public class SiteNavigationMenuLocalServiceImpl
 	private CustomSQL _customSQL;
 
 	@Reference
+	private ResourceLocalService _resourceLocalService;
+
+	@Reference
 	private SiteNavigationMenuItemLocalService
 		_siteNavigationMenuItemLocalService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

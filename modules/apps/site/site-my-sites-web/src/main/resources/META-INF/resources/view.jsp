@@ -25,10 +25,10 @@
 />
 
 <clay:management-toolbar
-	displayContext="<%= new SiteMySitesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteMySitesDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new SiteMySitesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteMySitesDisplayContext) %>"
 />
 
-<aui:form action="<%= siteMySitesDisplayContext.getPortletURL() %>" cssClass="container-fluid-1280" method="get" name="fm">
+<aui:form action="<%= siteMySitesDisplayContext.getPortletURL() %>" cssClass="container-fluid container-fluid-max-xl" method="get" name="fm">
 	<liferay-ui:search-container
 		searchContainer="<%= siteMySitesDisplayContext.getGroupSearchContainer() %>"
 	>
@@ -50,6 +50,8 @@
 			else if (Objects.equals(siteMySitesDisplayContext.getTabs1(), "my-sites") && (group.getPrivateLayoutsPageCount() > 0)) {
 				rowURL = group.getDisplayURL(themeDisplay, true);
 			}
+
+			List<DropdownItem> dropdownItems = siteMySitesDisplayContext.getGroupActionDropdownItems(group);
 			%>
 
 			<c:choose>
@@ -96,9 +98,35 @@
 							/>
 						</h6>
 
-						<h6 class="text-default">
-							<strong><liferay-ui:message key="members" /></strong>: <%= siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId()) %>
-						</h6>
+						<%
+						int usersCount = siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId());
+						%>
+
+						<c:if test="<%= usersCount > 0 %>">
+							<h6 class="text-default">
+								<strong><liferay-ui:message arguments="<%= usersCount %>" key='<%= (usersCount > 1) ? "x-users" : "x-user" %>' /></strong>
+							</h6>
+						</c:if>
+
+						<%
+						int organizationsCount = siteMySitesDisplayContext.getGroupOrganizationsCount(group.getGroupId());
+						%>
+
+						<c:if test="<%= organizationsCount > 0 %>">
+							<h6 class="text-default">
+								<strong><liferay-ui:message arguments="<%= organizationsCount %>" key='<%= (organizationsCount > 1) ? "x-organizations" : "x-organization" %>' /></strong>
+							</h6>
+						</c:if>
+
+						<%
+						int userGroupsCount = siteMySitesDisplayContext.getGroupUserGroupsCount(group.getGroupId());
+						%>
+
+						<c:if test="<%= userGroupsCount > 0 %>">
+							<h6 class="text-default">
+								<strong><liferay-ui:message arguments="<%= userGroupsCount %>" key='<%= (userGroupsCount > 1) ? "x-user-groups" : "x-user-group" %>' /></strong>
+							</h6>
+						</c:if>
 
 						<c:if test='<%= Objects.equals(siteMySitesDisplayContext.getTabs1(), "my-sites") && PropsValues.LIVE_USERS_ENABLED %>'>
 							<h6 class="text-default">
@@ -107,22 +135,19 @@
 						</c:if>
 					</liferay-ui:search-container-column-text>
 
-					<liferay-ui:search-container-column-text>
-						<clay:dropdown-actions
-							defaultEventHandler="<%= MySitesWebKeys.SITES_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-							dropdownItems="<%= siteMySitesDisplayContext.getArticleActionDropdownItems(group) %>"
-						/>
-					</liferay-ui:search-container-column-text>
+					<c:if test="<%= ListUtil.isNotEmpty(dropdownItems) %>">
+						<liferay-ui:search-container-column-text>
+							<clay:dropdown-actions
+								dropdownItems="<%= dropdownItems %>"
+								propsTransformer="js/SiteDropdownDefaultPropsTransformer"
+							/>
+						</liferay-ui:search-container-column-text>
+					</c:if>
 				</c:when>
 				<c:when test='<%= Objects.equals(siteMySitesDisplayContext.getDisplayStyle(), "icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item");
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<clay:vertical-card
-							verticalCard="<%= new SiteVerticalCard(group, renderRequest, renderResponse, siteMySitesDisplayContext.getTabs1(), siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId())) %>"
+							verticalCard="<%= new SiteVerticalCard(group, siteMySitesDisplayContext.getGroupOrganizationsCount(group.getGroupId()), siteMySitesDisplayContext.getGroupUserGroupsCount(group.getGroupId()), siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId()), renderRequest, renderResponse, siteMySitesDisplayContext.getTabs1()) %>"
 						/>
 					</liferay-ui:search-container-column-text>
 				</c:when>
@@ -151,9 +176,48 @@
 					</liferay-ui:search-container-column-text>
 
 					<liferay-ui:search-container-column-text
+						cssClass="table-cell-expand-small table-cell-minw-100"
 						name="members"
-						value="<%= String.valueOf(siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId())) %>"
-					/>
+					>
+						<span onmouseover="Liferay.Portal.ToolTip.show(this, '<liferay-ui:message key="inherited-memberships-are-not-included-in-members-count" unicode="<%= true %>" />');">
+							<div>
+
+								<%
+								int usersCount = siteMySitesDisplayContext.getGroupUsersCounts(group.getGroupId());
+								%>
+
+								<c:if test="<%= usersCount > 0 %>">
+									<div class="user-count">
+										<%= LanguageUtil.format(request, usersCount > 1 ? "x-users" : "x-user", usersCount, false) %>
+									</div>
+								</c:if>
+
+								<%
+								int organizationsCount = siteMySitesDisplayContext.getGroupOrganizationsCount(group.getGroupId());
+								%>
+
+								<c:if test="<%= organizationsCount > 0 %>">
+									<div class="organization-count">
+										<%= LanguageUtil.format(request, organizationsCount > 1 ? "x-organizations" : "x-organization", organizationsCount, false) %>
+									</div>
+								</c:if>
+
+								<%
+								int userGroupsCount = siteMySitesDisplayContext.getGroupUserGroupsCount(group.getGroupId());
+								%>
+
+								<c:if test="<%= userGroupsCount > 0 %>">
+									<div class="user-group-count">
+										<%= LanguageUtil.format(request, userGroupsCount > 1 ? "x-user-groups" : "x-user-group", userGroupsCount, false) %>
+									</div>
+								</c:if>
+
+								<c:if test="<%= (usersCount + organizationsCount + userGroupsCount) <= 0 %>">
+									0
+								</c:if>
+							</div>
+						</span>
+					</liferay-ui:search-container-column-text>
 
 					<c:if test='<%= Objects.equals(siteMySitesDisplayContext.getTabs1(), "my-sites") && PropsValues.LIVE_USERS_ENABLED %>'>
 						<liferay-ui:search-container-column-text
@@ -171,12 +235,14 @@
 						/>
 					</liferay-ui:search-container-column-text>
 
-					<liferay-ui:search-container-column-text>
-						<clay:dropdown-actions
-							defaultEventHandler="<%= MySitesWebKeys.SITES_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-							dropdownItems="<%= siteMySitesDisplayContext.getArticleActionDropdownItems(group) %>"
-						/>
-					</liferay-ui:search-container-column-text>
+					<c:if test="<%= ListUtil.isNotEmpty(dropdownItems) %>">
+						<liferay-ui:search-container-column-text>
+							<clay:dropdown-actions
+								dropdownItems="<%= dropdownItems %>"
+								propsTransformer="js/SiteDropdownDefaultPropsTransformer"
+							/>
+						</liferay-ui:search-container-column-text>
+					</c:if>
 				</c:when>
 			</c:choose>
 		</liferay-ui:search-container-row>
@@ -187,8 +253,3 @@
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= MySitesWebKeys.SITES_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-	module="js/SiteDropdownDefaultEventHandler.es"
-/>

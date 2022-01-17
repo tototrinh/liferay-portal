@@ -1,3 +1,5 @@
+@import 'atlas-variables';
+
 $c: '.ddm-field-options';
 
 #{$c} {
@@ -24,12 +26,18 @@ $c: '.ddm-field-options';
 		margin: 0;
 		width: 100%;
 
-		label {
+		label,
+		p {
 			display: none;
 		}
 
+		.form-control {
+			padding-right: map-get($close, 'width');
+		}
+
 		.key-value-editor {
-			label {
+			label,
+			p {
 				color: #c4cfd6;
 				display: inline-block;
 				margin-right: 5px;
@@ -41,9 +49,14 @@ $c: '.ddm-field-options';
 				color: #6b6c7e;
 				display: inline-block;
 				outline: none;
+
+				&.disabled {
+					cursor: not-allowed;
+				}
 			}
 
 			label,
+			p,
 			input {
 				font-size: 11px;
 			}
@@ -53,7 +66,7 @@ $c: '.ddm-field-options';
 	.close-modal {
 		font-size: 8px;
 		position: absolute;
-		right: 8px;
+		right: 0;
 		top: 4px;
 	}
 

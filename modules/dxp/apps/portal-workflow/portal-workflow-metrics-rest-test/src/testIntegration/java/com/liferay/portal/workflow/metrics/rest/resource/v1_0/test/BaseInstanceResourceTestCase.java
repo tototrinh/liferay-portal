@@ -22,12 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
+import com.liferay.petra.function.UnsafeTriConsumer;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
@@ -55,6 +56,8 @@ import java.text.DateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +69,7 @@ import javax.annotation.Generated;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -107,7 +111,9 @@ public abstract class BaseInstanceResourceTestCase {
 
 		InstanceResource.Builder builder = InstanceResource.builder();
 
-		instanceResource = builder.locale(
+		instanceResource = builder.authentication(
+			"test@liferay.com", "test"
+		).locale(
 			LocaleUtil.getDefault()
 		).build();
 	}
@@ -179,6 +185,8 @@ public abstract class BaseInstanceResourceTestCase {
 
 		instance.setAssetTitle(regex);
 		instance.setAssetType(regex);
+		instance.setClassName(regex);
+		instance.setProcessVersion(regex);
 
 		String json = InstanceSerDes.toJSON(instance);
 
@@ -188,29 +196,31 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Assert.assertEquals(regex, instance.getAssetTitle());
 		Assert.assertEquals(regex, instance.getAssetType());
+		Assert.assertEquals(regex, instance.getClassName());
+		Assert.assertEquals(regex, instance.getProcessVersion());
 	}
 
 	@Test
 	public void testGetProcessInstancesPage() throws Exception {
-		Page<Instance> page = instanceResource.getProcessInstancesPage(
-			testGetProcessInstancesPage_getProcessId(), null,
-			RandomTestUtil.nextDate(), RandomTestUtil.nextDate(), null, null,
-			null, Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long processId = testGetProcessInstancesPage_getProcessId();
 		Long irrelevantProcessId =
 			testGetProcessInstancesPage_getIrrelevantProcessId();
 
-		if ((irrelevantProcessId != null)) {
+		Page<Instance> page = instanceResource.getProcessInstancesPage(
+			processId, null, null, RandomTestUtil.nextDate(),
+			RandomTestUtil.nextDate(), null, null, null, Pagination.of(1, 10),
+			null);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantProcessId != null) {
 			Instance irrelevantInstance =
 				testGetProcessInstancesPage_addInstance(
 					irrelevantProcessId, randomIrrelevantInstance());
 
 			page = instanceResource.getProcessInstancesPage(
-				irrelevantProcessId, null, null, null, null, null, null,
-				Pagination.of(1, 2));
+				irrelevantProcessId, null, null, null, null, null, null, null,
+				Pagination.of(1, 2), null);
 
 			Assert.assertEquals(1, page.getTotalCount());
 
@@ -227,7 +237,8 @@ public abstract class BaseInstanceResourceTestCase {
 			processId, randomInstance());
 
 		page = instanceResource.getProcessInstancesPage(
-			processId, null, null, null, null, null, null, Pagination.of(1, 2));
+			processId, null, null, null, null, null, null, null,
+			Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -251,14 +262,16 @@ public abstract class BaseInstanceResourceTestCase {
 			processId, randomInstance());
 
 		Page<Instance> page1 = instanceResource.getProcessInstancesPage(
-			processId, null, null, null, null, null, null, Pagination.of(1, 2));
+			processId, null, null, null, null, null, null, null,
+			Pagination.of(1, 2), null);
 
 		List<Instance> instances1 = (List<Instance>)page1.getItems();
 
 		Assert.assertEquals(instances1.toString(), 2, instances1.size());
 
 		Page<Instance> page2 = instanceResource.getProcessInstancesPage(
-			processId, null, null, null, null, null, null, Pagination.of(2, 2));
+			processId, null, null, null, null, null, null, null,
+			Pagination.of(2, 2), null);
 
 		Assert.assertEquals(3, page2.getTotalCount());
 
@@ -267,19 +280,137 @@ public abstract class BaseInstanceResourceTestCase {
 		Assert.assertEquals(instances2.toString(), 1, instances2.size());
 
 		Page<Instance> page3 = instanceResource.getProcessInstancesPage(
-			processId, null, null, null, null, null, null, Pagination.of(1, 3));
+			processId, null, null, null, null, null, null, null,
+			Pagination.of(1, 3), null);
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(instance1, instance2, instance3),
 			(List<Instance>)page3.getItems());
 	}
 
+	@Test
+	public void testGetProcessInstancesPageWithSortDateTime() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.DATE_TIME,
+			(entityField, instance1, instance2) -> {
+				BeanUtils.setProperty(
+					instance1, entityField.getName(),
+					DateUtils.addMinutes(new Date(), -2));
+			});
+	}
+
+	@Test
+	public void testGetProcessInstancesPageWithSortInteger() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.INTEGER,
+			(entityField, instance1, instance2) -> {
+				BeanUtils.setProperty(instance1, entityField.getName(), 0);
+				BeanUtils.setProperty(instance2, entityField.getName(), 1);
+			});
+	}
+
+	@Test
+	public void testGetProcessInstancesPageWithSortString() throws Exception {
+		testGetProcessInstancesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, instance1, instance2) -> {
+				Class<?> clazz = instance1.getClass();
+
+				String entityFieldName = entityField.getName();
+
+				java.lang.reflect.Method method = clazz.getMethod(
+					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
+
+				Class<?> returnType = method.getReturnType();
+
+				if (returnType.isAssignableFrom(Map.class)) {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						Collections.singletonMap("Aaa", "Aaa"));
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						Collections.singletonMap("Bbb", "Bbb"));
+				}
+				else if (entityFieldName.contains("email")) {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+				}
+				else {
+					BeanUtils.setProperty(
+						instance1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+					BeanUtils.setProperty(
+						instance2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+				}
+			});
+	}
+
+	protected void testGetProcessInstancesPageWithSort(
+			EntityField.Type type,
+			UnsafeTriConsumer<EntityField, Instance, Instance, Exception>
+				unsafeTriConsumer)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		Long processId = testGetProcessInstancesPage_getProcessId();
+
+		Instance instance1 = randomInstance();
+		Instance instance2 = randomInstance();
+
+		for (EntityField entityField : entityFields) {
+			unsafeTriConsumer.accept(entityField, instance1, instance2);
+		}
+
+		instance1 = testGetProcessInstancesPage_addInstance(
+			processId, instance1);
+
+		instance2 = testGetProcessInstancesPage_addInstance(
+			processId, instance2);
+
+		for (EntityField entityField : entityFields) {
+			Page<Instance> ascPage = instanceResource.getProcessInstancesPage(
+				processId, null, null, null, null, null, null, null,
+				Pagination.of(1, 2), entityField.getName() + ":asc");
+
+			assertEquals(
+				Arrays.asList(instance1, instance2),
+				(List<Instance>)ascPage.getItems());
+
+			Page<Instance> descPage = instanceResource.getProcessInstancesPage(
+				processId, null, null, null, null, null, null, null,
+				Pagination.of(1, 2), entityField.getName() + ":desc");
+
+			assertEquals(
+				Arrays.asList(instance2, instance1),
+				(List<Instance>)descPage.getItems());
+		}
+	}
+
 	protected Instance testGetProcessInstancesPage_addInstance(
 			Long processId, Instance instance)
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return instanceResource.postProcessInstance(processId, instance);
 	}
 
 	protected Long testGetProcessInstancesPage_getProcessId() throws Exception {
@@ -291,6 +422,52 @@ public abstract class BaseInstanceResourceTestCase {
 		throws Exception {
 
 		return null;
+	}
+
+	@Test
+	public void testPostProcessInstance() throws Exception {
+		Instance randomInstance = randomInstance();
+
+		Instance postInstance = testPostProcessInstance_addInstance(
+			randomInstance);
+
+		assertEquals(randomInstance, postInstance);
+		assertValid(postInstance);
+	}
+
+	protected Instance testPostProcessInstance_addInstance(Instance instance)
+		throws Exception {
+
+		return instanceResource.postProcessInstance(
+			testGetProcessInstancesPage_getProcessId(), instance);
+	}
+
+	@Test
+	public void testDeleteProcessInstance() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		Instance instance = testDeleteProcessInstance_addInstance();
+
+		assertHttpResponseStatusCode(
+			204,
+			instanceResource.deleteProcessInstanceHttpResponse(
+				instance.getProcessId(), instance.getId()));
+
+		assertHttpResponseStatusCode(
+			404,
+			instanceResource.getProcessInstanceHttpResponse(
+				instance.getProcessId(), instance.getId()));
+
+		assertHttpResponseStatusCode(
+			404,
+			instanceResource.getProcessInstanceHttpResponse(
+				instance.getProcessId(), 0L));
+	}
+
+	protected Instance testDeleteProcessInstance_addInstance()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
 	}
 
 	@Test
@@ -313,33 +490,110 @@ public abstract class BaseInstanceResourceTestCase {
 	public void testGraphQLGetProcessInstance() throws Exception {
 		Instance instance = testGraphQLInstance_addInstance();
 
-		List<GraphQLField> graphQLFields = getGraphQLFields();
-
-		GraphQLField graphQLField = new GraphQLField(
-			"query",
-			new GraphQLField(
-				"processInstance",
-				new HashMap<String, Object>() {
-					{
-						put("processId", instance.getProcessId());
-						put("instanceId", instance.getId());
-					}
-				},
-				graphQLFields.toArray(new GraphQLField[0])));
-
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			invoke(graphQLField.toString()));
-
-		JSONObject dataJSONObject = jsonObject.getJSONObject("data");
-
 		Assert.assertTrue(
-			equalsJSONObject(
-				instance, dataJSONObject.getJSONObject("processInstance")));
+			equals(
+				instance,
+				InstanceSerDes.toDTO(
+					JSONUtil.getValueAsString(
+						invokeGraphQLQuery(
+							new GraphQLField(
+								"processInstance",
+								new HashMap<String, Object>() {
+									{
+										put(
+											"processId",
+											instance.getProcessId());
+										put("instanceId", instance.getId());
+									}
+								},
+								getGraphQLFields())),
+						"JSONObject/data", "Object/processInstance"))));
+	}
+
+	@Test
+	public void testGraphQLGetProcessInstanceNotFound() throws Exception {
+		Long irrelevantProcessId = RandomTestUtil.randomLong();
+		Long irrelevantInstanceId = RandomTestUtil.randomLong();
+
+		Assert.assertEquals(
+			"Not Found",
+			JSONUtil.getValueAsString(
+				invokeGraphQLQuery(
+					new GraphQLField(
+						"processInstance",
+						new HashMap<String, Object>() {
+							{
+								put("processId", irrelevantProcessId);
+								put("instanceId", irrelevantInstanceId);
+							}
+						},
+						getGraphQLFields())),
+				"JSONArray/errors", "Object/0", "JSONObject/extensions",
+				"Object/code"));
+	}
+
+	@Test
+	public void testPatchProcessInstance() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		Instance instance = testPatchProcessInstance_addInstance();
+
+		assertHttpResponseStatusCode(
+			204,
+			instanceResource.patchProcessInstanceHttpResponse(
+				instance.getProcessId(), instance.getId(), instance));
+
+		assertHttpResponseStatusCode(
+			404,
+			instanceResource.patchProcessInstanceHttpResponse(
+				instance.getProcessId(), 0L, instance));
+	}
+
+	protected Instance testPatchProcessInstance_addInstance() throws Exception {
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPatchProcessInstanceComplete() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		Instance instance = testPatchProcessInstanceComplete_addInstance();
+
+		assertHttpResponseStatusCode(
+			204,
+			instanceResource.patchProcessInstanceCompleteHttpResponse(
+				instance.getProcessId(), instance.getId(), instance));
+
+		assertHttpResponseStatusCode(
+			404,
+			instanceResource.patchProcessInstanceCompleteHttpResponse(
+				instance.getProcessId(), 0L, instance));
+	}
+
+	protected Instance testPatchProcessInstanceComplete_addInstance()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
 	}
 
 	protected Instance testGraphQLInstance_addInstance() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(Instance instance, List<Instance> instances) {
+		boolean contains = false;
+
+		for (Instance item : instances) {
+			if (equals(instance, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			instances + " does not contain " + instance, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -390,29 +644,14 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 	}
 
-	protected void assertEqualsJSONArray(
-		List<Instance> instances, JSONArray jsonArray) {
-
-		for (Instance instance : instances) {
-			boolean contains = false;
-
-			for (Object object : jsonArray) {
-				if (equalsJSONObject(instance, (JSONObject)object)) {
-					contains = true;
-
-					break;
-				}
-			}
-
-			Assert.assertTrue(
-				jsonArray + " does not contain " + instance, contains);
-		}
-	}
-
-	protected void assertValid(Instance instance) {
+	protected void assertValid(Instance instance) throws Exception {
 		boolean valid = true;
 
 		if (instance.getDateCreated() == null) {
+			valid = false;
+		}
+
+		if (instance.getDateModified() == null) {
 			valid = false;
 		}
 
@@ -431,6 +670,14 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("assetTitle_i18n", additionalAssertFieldName)) {
+				if (instance.getAssetTitle_i18n() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("assetType", additionalAssertFieldName)) {
 				if (instance.getAssetType() == null) {
 					valid = false;
@@ -439,16 +686,48 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
-			if (Objects.equals("assigneeUsers", additionalAssertFieldName)) {
-				if (instance.getAssigneeUsers() == null) {
+			if (Objects.equals("assetType_i18n", additionalAssertFieldName)) {
+				if (instance.getAssetType_i18n() == null) {
 					valid = false;
 				}
 
 				continue;
 			}
 
-			if (Objects.equals("creatorUser", additionalAssertFieldName)) {
-				if (instance.getCreatorUser() == null) {
+			if (Objects.equals("assignees", additionalAssertFieldName)) {
+				if (instance.getAssignees() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("className", additionalAssertFieldName)) {
+				if (instance.getClassName() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("classPK", additionalAssertFieldName)) {
+				if (instance.getClassPK() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("completed", additionalAssertFieldName)) {
+				if (instance.getCompleted() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("creator", additionalAssertFieldName)) {
+				if (instance.getCreator() == null) {
 					valid = false;
 				}
 
@@ -463,8 +742,24 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("duration", additionalAssertFieldName)) {
+				if (instance.getDuration() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("processId", additionalAssertFieldName)) {
 				if (instance.getProcessId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("processVersion", additionalAssertFieldName)) {
+				if (instance.getProcessVersion() == null) {
 					valid = false;
 				}
 
@@ -481,14 +776,6 @@ public abstract class BaseInstanceResourceTestCase {
 
 			if (Objects.equals("slaStatus", additionalAssertFieldName)) {
 				if (instance.getSLAStatus() == null) {
-					valid = false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("status", additionalAssertFieldName)) {
-				if (instance.getStatus() == null) {
 					valid = false;
 				}
 
@@ -540,13 +827,51 @@ public abstract class BaseInstanceResourceTestCase {
 		return new String[0];
 	}
 
-	protected List<GraphQLField> getGraphQLFields() {
+	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (String additionalAssertFieldName :
-				getAdditionalAssertFieldNames()) {
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
+					com.liferay.portal.workflow.metrics.rest.dto.v1_0.Instance.
+						class)) {
 
-			graphQLFields.add(new GraphQLField(additionalAssertFieldName));
+			if (!ArrayUtil.contains(
+					getAdditionalAssertFieldNames(), field.getName())) {
+
+				continue;
+			}
+
+			graphQLFields.addAll(getGraphQLFields(field));
+		}
+
+		return graphQLFields;
+	}
+
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
+		throws Exception {
+
+		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		for (java.lang.reflect.Field field : fields) {
+			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
+				vulcanGraphQLField = field.getAnnotation(
+					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
+						class);
+
+			if (vulcanGraphQLField != null) {
+				Class<?> clazz = field.getType();
+
+				if (clazz.isArray()) {
+					clazz = clazz.getComponentType();
+				}
+
+				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
+					getDeclaredFields(clazz));
+
+				graphQLFields.add(
+					new GraphQLField(field.getName(), childrenGraphQLFields));
+			}
 		}
 
 		return graphQLFields;
@@ -574,6 +899,17 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("assetTitle_i18n", additionalAssertFieldName)) {
+				if (!equals(
+						(Map)instance1.getAssetTitle_i18n(),
+						(Map)instance2.getAssetTitle_i18n())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("assetType", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						instance1.getAssetType(), instance2.getAssetType())) {
@@ -584,10 +920,10 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
-			if (Objects.equals("assigneeUsers", additionalAssertFieldName)) {
-				if (!Objects.deepEquals(
-						instance1.getAssigneeUsers(),
-						instance2.getAssigneeUsers())) {
+			if (Objects.equals("assetType_i18n", additionalAssertFieldName)) {
+				if (!equals(
+						(Map)instance1.getAssetType_i18n(),
+						(Map)instance2.getAssetType_i18n())) {
 
 					return false;
 				}
@@ -595,10 +931,49 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
-			if (Objects.equals("creatorUser", additionalAssertFieldName)) {
+			if (Objects.equals("assignees", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
-						instance1.getCreatorUser(),
-						instance2.getCreatorUser())) {
+						instance1.getAssignees(), instance2.getAssignees())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("className", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getClassName(), instance2.getClassName())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("classPK", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getClassPK(), instance2.getClassPK())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("completed", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getCompleted(), instance2.getCompleted())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("creator", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getCreator(), instance2.getCreator())) {
 
 					return false;
 				}
@@ -628,6 +1003,27 @@ public abstract class BaseInstanceResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("dateModified", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getDateModified(),
+						instance2.getDateModified())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("duration", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getDuration(), instance2.getDuration())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("id", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(instance1.getId(), instance2.getId())) {
 					return false;
@@ -639,6 +1035,17 @@ public abstract class BaseInstanceResourceTestCase {
 			if (Objects.equals("processId", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						instance1.getProcessId(), instance2.getProcessId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("processVersion", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						instance1.getProcessVersion(),
+						instance2.getProcessVersion())) {
 
 					return false;
 				}
@@ -659,16 +1066,6 @@ public abstract class BaseInstanceResourceTestCase {
 			if (Objects.equals("slaStatus", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						instance1.getSLAStatus(), instance2.getSLAStatus())) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("status", additionalAssertFieldName)) {
-				if (!Objects.deepEquals(
-						instance1.getStatus(), instance2.getStatus())) {
 
 					return false;
 				}
@@ -705,58 +1102,43 @@ public abstract class BaseInstanceResourceTestCase {
 		return true;
 	}
 
-	protected boolean equalsJSONObject(
-		Instance instance, JSONObject jsonObject) {
+	protected boolean equals(
+		Map<String, Object> map1, Map<String, Object> map2) {
 
-		for (String fieldName : getAdditionalAssertFieldNames()) {
-			if (Objects.equals("assetTitle", fieldName)) {
-				if (!Objects.deepEquals(
-						instance.getAssetTitle(),
-						jsonObject.getString("assetTitle"))) {
+		if (Objects.equals(map1.keySet(), map2.keySet())) {
+			for (Map.Entry<String, Object> entry : map1.entrySet()) {
+				if (entry.getValue() instanceof Map) {
+					if (!equals(
+							(Map)entry.getValue(),
+							(Map)map2.get(entry.getKey()))) {
+
+						return false;
+					}
+				}
+				else if (!Objects.deepEquals(
+							entry.getValue(), map2.get(entry.getKey()))) {
 
 					return false;
 				}
-
-				continue;
 			}
 
-			if (Objects.equals("assetType", fieldName)) {
-				if (!Objects.deepEquals(
-						instance.getAssetType(),
-						jsonObject.getString("assetType"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("id", fieldName)) {
-				if (!Objects.deepEquals(
-						instance.getId(), jsonObject.getLong("id"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			if (Objects.equals("processId", fieldName)) {
-				if (!Objects.deepEquals(
-						instance.getProcessId(),
-						jsonObject.getLong("processId"))) {
-
-					return false;
-				}
-
-				continue;
-			}
-
-			throw new IllegalArgumentException(
-				"Invalid field name " + fieldName);
+			return true;
 		}
 
-		return true;
+		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -817,6 +1199,11 @@ public abstract class BaseInstanceResourceTestCase {
 			return sb.toString();
 		}
 
+		if (entityFieldName.equals("assetTitle_i18n")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("assetType")) {
 			sb.append("'");
 			sb.append(String.valueOf(instance.getAssetType()));
@@ -825,12 +1212,35 @@ public abstract class BaseInstanceResourceTestCase {
 			return sb.toString();
 		}
 
-		if (entityFieldName.equals("assigneeUsers")) {
+		if (entityFieldName.equals("assetType_i18n")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
 
-		if (entityFieldName.equals("creatorUser")) {
+		if (entityFieldName.equals("assignees")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("className")) {
+			sb.append("'");
+			sb.append(String.valueOf(instance.getClassName()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("classPK")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("completed")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("creator")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -898,6 +1308,42 @@ public abstract class BaseInstanceResourceTestCase {
 			return sb.toString();
 		}
 
+		if (entityFieldName.equals("dateModified")) {
+			if (operator.equals("between")) {
+				sb = new StringBundler();
+
+				sb.append("(");
+				sb.append(entityFieldName);
+				sb.append(" gt ");
+				sb.append(
+					_dateFormat.format(
+						DateUtils.addSeconds(instance.getDateModified(), -2)));
+				sb.append(" and ");
+				sb.append(entityFieldName);
+				sb.append(" lt ");
+				sb.append(
+					_dateFormat.format(
+						DateUtils.addSeconds(instance.getDateModified(), 2)));
+				sb.append(")");
+			}
+			else {
+				sb.append(entityFieldName);
+
+				sb.append(" ");
+				sb.append(operator);
+				sb.append(" ");
+
+				sb.append(_dateFormat.format(instance.getDateModified()));
+			}
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("duration")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("id")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
@@ -908,17 +1354,20 @@ public abstract class BaseInstanceResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("processVersion")) {
+			sb.append("'");
+			sb.append(String.valueOf(instance.getProcessVersion()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
 		if (entityFieldName.equals("slaResults")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("slaStatus")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
-		}
-
-		if (entityFieldName.equals("status")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -954,15 +1403,45 @@ public abstract class BaseInstanceResourceTestCase {
 		return httpResponse.getContent();
 	}
 
+	protected JSONObject invokeGraphQLMutation(GraphQLField graphQLField)
+		throws Exception {
+
+		GraphQLField mutationGraphQLField = new GraphQLField(
+			"mutation", graphQLField);
+
+		return JSONFactoryUtil.createJSONObject(
+			invoke(mutationGraphQLField.toString()));
+	}
+
+	protected JSONObject invokeGraphQLQuery(GraphQLField graphQLField)
+		throws Exception {
+
+		GraphQLField queryGraphQLField = new GraphQLField(
+			"query", graphQLField);
+
+		return JSONFactoryUtil.createJSONObject(
+			invoke(queryGraphQLField.toString()));
+	}
+
 	protected Instance randomInstance() throws Exception {
 		return new Instance() {
 			{
-				assetTitle = RandomTestUtil.randomString();
-				assetType = RandomTestUtil.randomString();
+				assetTitle = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				assetType = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				className = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				classPK = RandomTestUtil.randomLong();
+				completed = RandomTestUtil.randomBoolean();
 				dateCompletion = RandomTestUtil.nextDate();
 				dateCreated = RandomTestUtil.nextDate();
+				dateModified = RandomTestUtil.nextDate();
+				duration = RandomTestUtil.randomLong();
 				id = RandomTestUtil.randomLong();
 				processId = RandomTestUtil.randomLong();
+				processVersion = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 			}
 		};
 	}
@@ -988,9 +1467,22 @@ public abstract class BaseInstanceResourceTestCase {
 			this(key, new HashMap<>(), graphQLFields);
 		}
 
+		public GraphQLField(String key, List<GraphQLField> graphQLFields) {
+			this(key, new HashMap<>(), graphQLFields);
+		}
+
 		public GraphQLField(
 			String key, Map<String, Object> parameterMap,
 			GraphQLField... graphQLFields) {
+
+			_key = key;
+			_parameterMap = parameterMap;
+			_graphQLFields = Arrays.asList(graphQLFields);
+		}
+
+		public GraphQLField(
+			String key, Map<String, Object> parameterMap,
+			List<GraphQLField> graphQLFields) {
 
 			_key = key;
 			_parameterMap = parameterMap;
@@ -1008,25 +1500,25 @@ public abstract class BaseInstanceResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
 
-			if (_graphQLFields.length > 0) {
+			if (!_graphQLFields.isEmpty()) {
 				sb.append("{");
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1034,14 +1526,14 @@ public abstract class BaseInstanceResourceTestCase {
 			return sb.toString();
 		}
 
-		private final GraphQLField[] _graphQLFields;
+		private final List<GraphQLField> _graphQLFields;
 		private final String _key;
 		private final Map<String, Object> _parameterMap;
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseInstanceResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseInstanceResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

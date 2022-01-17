@@ -14,13 +14,16 @@
 
 package com.liferay.asset.list.web.internal.servlet.taglib.util;
 
+import com.liferay.asset.list.constants.AssetListPortletKeys;
 import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.web.internal.security.permission.resource.AssetListEntryPermission;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
@@ -28,12 +31,11 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.staging.StagingGroupHelper;
+import com.liferay.staging.StagingGroupHelperUtil;
 import com.liferay.taglib.security.PermissionsURLTag;
 
 import java.util.List;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -57,53 +59,81 @@ public class AssetEntryListActionDropdownItems {
 	}
 
 	public List<DropdownItem> getActionDropdownItems() throws Exception {
-		return new DropdownItemList() {
-			{
-				if (AssetListEntryPermission.contains(
-						_themeDisplay.getPermissionChecker(), _assetListEntry,
-						ActionKeys.UPDATE)) {
+		boolean liveGroup = _isLiveGroup();
 
-					add(_getEditAssetListEntryActionUnsafeConsumer());
-					add(_getRenameAssetListEntryActionUnsafeConsumer());
-				}
-
-				if (AssetListEntryPermission.contains(
-						_themeDisplay.getPermissionChecker(), _assetListEntry,
-						ActionKeys.PERMISSIONS)) {
-
-					add(_getPermissionsAssetListEntryActionUnsafeConsumer());
-				}
-
-				add(_getViewAssetListEntryUsagesActionUnsafeConsumer());
-
-				if (AssetListEntryPermission.contains(
-						_themeDisplay.getPermissionChecker(), _assetListEntry,
-						ActionKeys.DELETE)) {
-
-					add(_getDeleteAssetListEntryActionUnsafeConsumer());
-				}
+		return DropdownItemListBuilder.addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						() ->
+							!liveGroup &&
+							AssetListEntryPermission.contains(
+								_themeDisplay.getPermissionChecker(),
+								_assetListEntry, ActionKeys.UPDATE),
+						_getEditAssetListEntryActionUnsafeConsumer()
+					).build());
+				dropdownGroupItem.setSeparator(true);
 			}
-		};
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						() ->
+							!liveGroup &&
+							AssetListEntryPermission.contains(
+								_themeDisplay.getPermissionChecker(),
+								_assetListEntry, ActionKeys.UPDATE),
+						_getRenameAssetListEntryActionUnsafeConsumer()
+					).add(
+						_getViewAssetListEntryUsagesActionUnsafeConsumer()
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						() ->
+							!liveGroup &&
+							AssetListEntryPermission.contains(
+								_themeDisplay.getPermissionChecker(),
+								_assetListEntry, ActionKeys.PERMISSIONS),
+						_getPermissionsAssetListEntryActionUnsafeConsumer()
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).addGroup(
+			dropdownGroupItem -> {
+				dropdownGroupItem.setDropdownItems(
+					DropdownItemListBuilder.add(
+						() ->
+							!liveGroup &&
+							AssetListEntryPermission.contains(
+								_themeDisplay.getPermissionChecker(),
+								_assetListEntry, ActionKeys.DELETE),
+						_getDeleteAssetListEntryActionUnsafeConsumer()
+					).build());
+				dropdownGroupItem.setSeparator(true);
+			}
+		).build();
 	}
 
 	private UnsafeConsumer<DropdownItem, Exception>
 		_getDeleteAssetListEntryActionUnsafeConsumer() {
 
-		PortletURL deleteAssetListEntryURL =
-			_liferayPortletResponse.createActionURL();
-
-		deleteAssetListEntryURL.setParameter(
-			ActionRequest.ACTION_NAME, "/asset_list/delete_asset_list_entry");
-		deleteAssetListEntryURL.setParameter(
-			"redirect", _themeDisplay.getURLCurrent());
-		deleteAssetListEntryURL.setParameter(
-			"assetListEntryId",
-			String.valueOf(_assetListEntry.getAssetListEntryId()));
-
 		return dropdownItem -> {
 			dropdownItem.putData("action", "deleteAssetListEntry");
 			dropdownItem.putData(
-				"deleteAssetListEntryURL", deleteAssetListEntryURL.toString());
+				"deleteAssetListEntryURL",
+				PortletURLBuilder.createActionURL(
+					_liferayPortletResponse
+				).setActionName(
+					"/asset_list/delete_asset_list_entries"
+				).setRedirect(
+					_themeDisplay.getURLCurrent()
+				).setParameter(
+					"assetListEntryId", _assetListEntry.getAssetListEntryId()
+				).buildString());
 			dropdownItem.setLabel(
 				LanguageUtil.get(_httpServletRequest, "delete"));
 		};
@@ -145,15 +175,6 @@ public class AssetEntryListActionDropdownItems {
 	private UnsafeConsumer<DropdownItem, Exception>
 		_getRenameAssetListEntryActionUnsafeConsumer() {
 
-		PortletURL renameAssetListEntryURL =
-			_liferayPortletResponse.createActionURL();
-
-		renameAssetListEntryURL.setParameter(
-			ActionRequest.ACTION_NAME, "/asset_list/update_asset_list_entry");
-		renameAssetListEntryURL.setParameter(
-			"assetListEntryId",
-			String.valueOf(_assetListEntry.getAssetListEntryId()));
-
 		return dropdownItem -> {
 			dropdownItem.putData("action", "renameAssetListEntry");
 			dropdownItem.putData(
@@ -162,7 +183,14 @@ public class AssetEntryListActionDropdownItems {
 			dropdownItem.putData(
 				"assetListEntryTitle", _assetListEntry.getTitle());
 			dropdownItem.putData(
-				"renameAssetListEntryURL", renameAssetListEntryURL.toString());
+				"renameAssetListEntryURL",
+				PortletURLBuilder.createActionURL(
+					_liferayPortletResponse
+				).setActionName(
+					"/asset_list/update_asset_list_entry"
+				).setParameter(
+					"assetListEntryId", _assetListEntry.getAssetListEntryId()
+				).buildString());
 			dropdownItem.setLabel(
 				LanguageUtil.get(_httpServletRequest, "rename"));
 		};
@@ -180,6 +208,26 @@ public class AssetEntryListActionDropdownItems {
 			dropdownItem.setLabel(
 				LanguageUtil.get(_httpServletRequest, "view-usages"));
 		};
+	}
+
+	private boolean _isLiveGroup() {
+		Group group = _themeDisplay.getScopeGroup();
+
+		if (group.isLayout()) {
+			group = group.getParentGroup();
+		}
+
+		StagingGroupHelper stagingGroupHelper =
+			StagingGroupHelperUtil.getStagingGroupHelper();
+
+		if (stagingGroupHelper.isLiveGroup(group) &&
+			stagingGroupHelper.isStagedPortlet(
+				group, AssetListPortletKeys.ASSET_LIST)) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private final AssetListEntry _assetListEntry;

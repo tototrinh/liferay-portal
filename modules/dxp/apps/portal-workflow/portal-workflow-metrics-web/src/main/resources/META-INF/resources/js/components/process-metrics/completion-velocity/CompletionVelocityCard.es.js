@@ -9,144 +9,122 @@
  * distribution rights of the Software.
  */
 
+import ClayLayout from '@clayui/layout';
+import ClayPanel from '@clayui/panel';
 import React, {useMemo} from 'react';
 
-import Panel from '../../../shared/components/Panel.es';
+import PanelHeaderWithOptions from '../../../shared/components/panel-header-with-options/PanelHeaderWithOptions.es';
 import PromisesResolver from '../../../shared/components/promises-resolver/PromisesResolver.es';
 import {useFetch} from '../../../shared/hooks/useFetch.es';
 import {useFilter} from '../../../shared/hooks/useFilter.es';
 import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
 import VelocityUnitFilter from '../../filter/VelocityUnitFilter.es';
-import {isValidDate} from '../../filter/util/timeRangeUtil.es';
+import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import {getVelocityUnits} from '../../filter/util/velocityUnitUtil.es';
-import {Body} from './CompletionVelocityCardBody.es';
+import Body from './CompletionVelocityCardBody.es';
 
-const CompletionVelocityCard = ({routeParams}) => {
+function CompletionVelocityCard({routeParams}) {
 	const {processId} = routeParams;
-
 	const filterKeys = ['timeRange', 'velocityUnit'];
 	const prefixKey = 'completion';
 	const prefixKeys = [prefixKey];
-	const {filterState = {}, filtersError} = useFilter({
-		filterKeys,
-		prefixKeys
-	});
 
 	const {
-		completionVelocityUnit: velocityUnit = [],
-		completionTimeRange: timeRange = []
-	} = filterState;
+		filterValues: {
+			completionDateEnd,
+			completionDateStart,
+			completionVelocityUnit: [velocity] = [],
+		},
+		filtersError,
+	} = useFilter({filterKeys, prefixKeys});
 
-	const timeRangeValues = timeRange.length ? timeRange[0] : {};
-	const {dateEnd, dateStart} = timeRangeValues;
-
-	let timeRangeParams = {};
-	if (isValidDate(dateEnd) && isValidDate(dateStart)) {
-		timeRangeParams = {
-			dateEnd: dateEnd.toISOString(),
-			dateStart: dateStart.toISOString()
-		};
-	}
-
-	const velocityUnitKeys = velocityUnit.length ? velocityUnit[0] : {};
-
-	const velocityUnits = useMemo(
-		() => getVelocityUnits({dateEnd, dateStart}),
-		[dateEnd, dateStart]
+	const timeRange = useMemo(
+		() => getTimeRangeParams(completionDateStart, completionDateEnd),
+		[completionDateEnd, completionDateStart]
 	);
 
-	const defaultUnit = useMemo(
-		() =>
-			velocityUnits.find(
-				velocityUnit => velocityUnit.defaultVelocityUnit
-			) || {},
-		[velocityUnits]
-	);
+	const velocityUnits = useMemo(() => getVelocityUnits(timeRange), [
+		timeRange,
+	]);
 
-	const velocityUnitValues = useMemo(
-		() =>
-			velocityUnits.find(
-				velocityUnit => velocityUnit.key === velocityUnitKeys.key
-			) || defaultUnit,
-		[defaultUnit, velocityUnits, velocityUnitKeys.key]
-	);
-	const {key: unit} = velocityUnitValues;
+	const defaultUnit =
+		velocityUnits.find((unit) => unit.defaultVelocityUnit) || {};
+
+	const velocityUnit =
+		velocityUnits.find((unit) => unit.key === velocity) || defaultUnit;
+
+	const {key: unit} = velocityUnit;
 
 	const {data, fetchData} = useFetch({
 		params: {
-			...timeRangeParams,
-			unit
+			...timeRange,
+			unit,
 		},
-		url: `processes/${processId}/metric`
+		url: `/processes/${processId}/histograms/metrics`,
 	});
 
 	const promises = useMemo(() => {
-		if (timeRangeParams.dateEnd && timeRangeParams.dateStart && unit) {
+		if (timeRange.dateEnd && timeRange.dateStart && unit) {
 			return [fetchData()];
 		}
 
 		return [new Promise((_, reject) => reject(filtersError))];
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
-		fetchData,
 		filtersError,
-		timeRangeParams.dateEnd,
-		timeRangeParams.dateStart,
-		unit
+		timeRange.dateEnd,
+		timeRange.dateStart,
+		routeParams,
+		unit,
 	]);
 
 	return (
 		<PromisesResolver promises={promises}>
-			<Panel>
+			<ClayPanel className="mt-4">
 				<CompletionVelocityCard.Header
 					disableFilters={filtersError}
 					prefixKey={prefixKey}
-					timeRange={timeRangeValues}
+					timeRange={timeRange}
 				/>
 
 				<CompletionVelocityCard.Body
 					data={data}
-					timeRange={timeRangeValues}
-					velocityUnit={velocityUnitValues}
+					timeRange={timeRange}
+					velocityUnit={velocityUnit}
 				/>
-			</Panel>
+			</ClayPanel>
 		</PromisesResolver>
 	);
-};
+}
 
-const Header = ({
-	disableFilters,
-	prefixKey,
-	timeRange: {dateEnd, dateStart}
-}) => {
+function Header({disableFilters, prefixKey, timeRange}) {
 	return (
-		<Panel.HeaderWithOptions
+		<PanelHeaderWithOptions
+			className="pb-0 tabs-panel-header"
 			description={Liferay.Language.get(
 				'completion-velocity-description'
 			)}
-			elementClasses="dashboard-panel-header pb-0"
 			title={Liferay.Language.get('completion-velocity')}
 		>
-			<div className="autofit-col m-0 management-bar management-bar-light navbar">
-				<ul className="navbar-nav">
+			<ClayLayout.ContentCol className="m-0 management-bar management-bar-light navbar">
+				<div className="navbar-nav">
 					<TimeRangeFilter
 						disabled={disableFilters}
-						options={{position: 'right'}}
 						prefixKey={prefixKey}
 					/>
 
-					{dateEnd && dateStart && (
-						<VelocityUnitFilter
-							className={'pl-3'}
-							disabled={disableFilters}
-							prefixKey={prefixKey}
-							timeRange={{dateEnd, dateStart}}
-						/>
-					)}
-				</ul>
-			</div>
-		</Panel.HeaderWithOptions>
+					<VelocityUnitFilter
+						className="pl-3"
+						disabled={disableFilters}
+						prefixKey={prefixKey}
+						timeRange={timeRange}
+					/>
+				</div>
+			</ClayLayout.ContentCol>
+		</PanelHeaderWithOptions>
 	);
-};
+}
 
 CompletionVelocityCard.Header = Header;
 CompletionVelocityCard.Body = Body;

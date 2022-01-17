@@ -18,35 +18,34 @@ import deleteExperienceAction from '../actions/deleteExperience';
 import selectExperienceAction from '../actions/selectExperience';
 
 export default function removeExperience({
-	fragmentEntryLinkIds,
 	segmentsExperienceId,
-	selectedExperienceId
+	selectedExperienceId,
 }) {
-	return dispatch => {
+	return (dispatch) => {
 		if (segmentsExperienceId === selectedExperienceId) {
 			return ExperienceService.selectExperience({
 				body: {
-					segmentsExperienceId: config.defaultSegmentsExperienceId
+					segmentsExperienceId: config.defaultSegmentsExperienceId,
 				},
-				dispatch
-			}).then(portletIds => {
+				dispatch,
+			}).then((portletIds) => {
 				dispatch(
 					selectExperienceAction({
 						portletIds,
-						segmentsExperienceId: config.defaultSegmentsExperienceId
+						segmentsExperienceId:
+							config.defaultSegmentsExperienceId,
 					})
 				);
 
 				ExperienceService.removeExperience({
 					body: {
-						fragmentEntryLinkIds,
-						segmentsExperienceId
+						segmentsExperienceId,
 					},
-					dispatch
+					dispatch,
 				}).then(() => {
 					return dispatch(
 						deleteExperienceAction({
-							segmentsExperienceId
+							segmentsExperienceId,
 						})
 					);
 				});
@@ -55,14 +54,13 @@ export default function removeExperience({
 		else {
 			return ExperienceService.removeExperience({
 				body: {
-					fragmentEntryLinkIds,
-					segmentsExperienceId
+					segmentsExperienceId,
 				},
-				dispatch
+				dispatch,
 			}).then(() => {
 				return dispatch(
 					deleteExperienceAction({
-						segmentsExperienceId
+						segmentsExperienceId,
 					})
 				);
 			});

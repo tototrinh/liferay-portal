@@ -14,18 +14,21 @@
 
 import {SWITCH_SIDEBAR_PANEL} from '../actions/types';
 
-const DEFAULT_PANEL_ID = 'fragments';
+const DEFAULT_PANEL_ID = 'fragments-widgets';
 
 export const INITIAL_STATE = {
-	open: true,
-	panelId: DEFAULT_PANEL_ID
+	open: false,
+	panelId: DEFAULT_PANEL_ID,
 };
 
 export default function sidebarReducer(sidebarStatus = INITIAL_STATE, action) {
 	if (action.type === SWITCH_SIDEBAR_PANEL) {
 		return {
 			open: action.sidebarOpen,
-			panelId: action.sidebarPanelId
+			panelId:
+				action.sidebarPanelId === undefined
+					? sidebarStatus.panelId
+					: action.sidebarPanelId,
 		};
 	}
 

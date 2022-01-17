@@ -148,20 +148,18 @@ public class JournalFolderFinderImpl
 		try {
 			session = openSession();
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(
-				getFoldersSQL(
-					COUNT_F_BY_G_F, groupId, queryDefinition, inlineSQLHelper));
-			sb.append(") UNION ALL (");
-			sb.append(
-				getArticlesSQL(
-					COUNT_A_BY_G_U_F, groupId, queryDefinition,
-					inlineSQLHelper));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			String sql = updateSQL(sb.toString(), folderId);
+			String sql = updateSQL(
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					getFoldersSQL(
+						COUNT_F_BY_G_F, groupId, queryDefinition,
+						inlineSQLHelper),
+					") UNION ALL (",
+					getArticlesSQL(
+						COUNT_A_BY_G_U_F, groupId, queryDefinition,
+						inlineSQLHelper),
+					StringPool.CLOSE_PARENTHESIS),
+				folderId);
 
 			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
@@ -191,10 +189,10 @@ public class JournalFolderFinderImpl
 
 			int count = 0;
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			while (itr.hasNext()) {
-				Long l = itr.next();
+			while (iterator.hasNext()) {
+				Long l = iterator.next();
 
 				if (l != null) {
 					count += l.intValue();
@@ -220,20 +218,18 @@ public class JournalFolderFinderImpl
 		try {
 			session = openSession();
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(
-				getFoldersSQL(
-					FIND_F_BY_G_F, groupId, queryDefinition, inlineSQLHelper));
-			sb.append(") UNION ALL (");
-			sb.append(
-				getArticlesSQL(
-					FIND_A_BY_G_U_F, groupId, queryDefinition,
-					inlineSQLHelper));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			String sql = updateSQL(sb.toString(), folderId);
+			String sql = updateSQL(
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					getFoldersSQL(
+						FIND_F_BY_G_F, groupId, queryDefinition,
+						inlineSQLHelper),
+					") UNION ALL (",
+					getArticlesSQL(
+						FIND_A_BY_G_U_F, groupId, queryDefinition,
+						inlineSQLHelper),
+					StringPool.CLOSE_PARENTHESIS),
+				folderId);
 
 			sql = _customSQL.replaceOrderBy(
 				sql, queryDefinition.getOrderByComparator());
@@ -269,30 +265,31 @@ public class JournalFolderFinderImpl
 
 			List<Object> models = new ArrayList<>();
 
-			Iterator<Object[]> itr = (Iterator<Object[]>)QueryUtil.iterate(
+			Iterator<Object[]> iterator = (Iterator<Object[]>)QueryUtil.iterate(
 				sqlQuery, getDialect(), queryDefinition.getStart(),
 				queryDefinition.getEnd());
 
-			while (itr.hasNext()) {
-				Object[] array = itr.next();
+			while (iterator.hasNext()) {
+				Object[] array = iterator.next();
 
-				long curFolderId = (Long)array[0];
 				long modelFolder = (Long)array[1];
 
-				Object obj = null;
+				Object object = null;
 
 				if (modelFolder == 1) {
-					obj = JournalFolderUtil.findByPrimaryKey(curFolderId);
+					long curFolderId = (Long)array[0];
+
+					object = JournalFolderUtil.findByPrimaryKey(curFolderId);
 				}
 				else {
 					String articleId = (String)array[2];
 					double version = (Double)array[3];
 
-					obj = JournalArticleUtil.findByG_A_V(
+					object = JournalArticleUtil.findByG_A_V(
 						groupId, articleId, version);
 				}
 
-				models.add(obj);
+				models.add(object);
 			}
 
 			return models;
@@ -314,21 +311,18 @@ public class JournalFolderFinderImpl
 		try {
 			session = openSession();
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(
-				getFoldersSQL(
-					FIND_F_BY_G_F_L, groupId, queryDefinition,
-					inlineSQLHelper));
-			sb.append(") UNION ALL (");
-			sb.append(
-				getArticlesSQL(
-					FIND_A_BY_G_U_F_L, groupId, queryDefinition,
-					inlineSQLHelper));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			String sql = updateSQL(sb.toString(), folderId);
+			String sql = updateSQL(
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					getFoldersSQL(
+						FIND_F_BY_G_F_L, groupId, queryDefinition,
+						inlineSQLHelper),
+					") UNION ALL (",
+					getArticlesSQL(
+						FIND_A_BY_G_U_F_L, groupId, queryDefinition,
+						inlineSQLHelper),
+					StringPool.CLOSE_PARENTHESIS),
+				folderId);
 
 			sql = _customSQL.replaceOrderBy(
 				sql, queryDefinition.getOrderByComparator());
@@ -366,30 +360,31 @@ public class JournalFolderFinderImpl
 
 			List<Object> models = new ArrayList<>();
 
-			Iterator<Object[]> itr = (Iterator<Object[]>)QueryUtil.iterate(
+			Iterator<Object[]> iterator = (Iterator<Object[]>)QueryUtil.iterate(
 				sqlQuery, getDialect(), queryDefinition.getStart(),
 				queryDefinition.getEnd());
 
-			while (itr.hasNext()) {
-				Object[] array = itr.next();
+			while (iterator.hasNext()) {
+				Object[] array = iterator.next();
 
-				long curFolderId = (Long)array[0];
 				long modelFolder = (Long)array[1];
 
-				Object obj = null;
+				Object object = null;
 
 				if (modelFolder == 1) {
-					obj = JournalFolderUtil.findByPrimaryKey(curFolderId);
+					long curFolderId = (Long)array[0];
+
+					object = JournalFolderUtil.findByPrimaryKey(curFolderId);
 				}
 				else {
 					String articleId = (String)array[2];
 					double version = (Double)array[3];
 
-					obj = JournalArticleUtil.findByG_A_V(
+					object = JournalArticleUtil.findByG_A_V(
 						groupId, articleId, version);
 				}
 
-				models.add(obj);
+				models.add(object);
 			}
 
 			return models;
@@ -458,7 +453,7 @@ public class JournalFolderFinderImpl
 	}
 
 	protected String updateSQL(String sql, long folderId) {
-		sql = StringUtil.replace(
+		return StringUtil.replace(
 			sql,
 			new String[] {
 				"[$ARTICLE_FOLDER_ID$]", "[$FOLDER_PARENT_FOLDER_ID$]"
@@ -467,8 +462,6 @@ public class JournalFolderFinderImpl
 				getFolderId(folderId, JournalArticleImpl.TABLE_NAME),
 				getFolderId(folderId, JournalFolderImpl.TABLE_NAME)
 			});
-
-		return sql;
 	}
 
 	@Reference

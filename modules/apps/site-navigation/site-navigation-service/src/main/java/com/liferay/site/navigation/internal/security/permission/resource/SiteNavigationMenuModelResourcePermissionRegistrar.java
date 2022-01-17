@@ -17,12 +17,10 @@ package com.liferay.site.navigation.internal.security.permission.resource;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.site.navigation.constants.SiteNavigationConstants;
 import com.liferay.site.navigation.model.SiteNavigationMenu;
 import com.liferay.site.navigation.service.SiteNavigationMenuLocalService;
-
-import java.util.Dictionary;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -39,12 +37,9 @@ public class SiteNavigationMenuModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", SiteNavigationMenu.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<SiteNavigationMenu>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				SiteNavigationMenu.class,
 				SiteNavigationMenu::getSiteNavigationMenuId,
@@ -52,7 +47,9 @@ public class SiteNavigationMenuModelResourcePermissionRegistrar {
 				_portletResourcePermission,
 				(modelResourcePermission, consumer) -> {
 				}),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", SiteNavigationMenu.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -65,7 +62,8 @@ public class SiteNavigationMenuModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<SiteNavigationMenu>>
+		_serviceRegistration;
 
 	@Reference
 	private SiteNavigationMenuLocalService _siteNavigationMenuLocalService;

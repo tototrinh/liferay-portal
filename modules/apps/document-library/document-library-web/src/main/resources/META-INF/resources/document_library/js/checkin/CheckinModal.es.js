@@ -25,7 +25,7 @@ const CheckinModal = ({
 	observer,
 	onModalClose = noop,
 	callback = noop,
-	dlVersionNumberIncreaseValues
+	dlVersionNumberIncreaseValues,
 }) => {
 	const {MAJOR, MINOR, NONE} = dlVersionNumberIncreaseValues;
 	const [changeLog, setChangeLog] = useState('');
@@ -33,11 +33,11 @@ const CheckinModal = ({
 		checkedOut ? MAJOR : MINOR
 	);
 
-	const handleChangeChangeLog = event => {
+	const handleChangeChangeLog = (event) => {
 		setChangeLog(event.target.value);
 	};
 
-	const handleSubmit = event => {
+	const handleSubmit = (event) => {
 		event.preventDefault();
 		callback(versionIncrease, changeLog);
 	};
@@ -56,6 +56,7 @@ const CheckinModal = ({
 								'select-whether-this-is-a-major-or-minor-version'
 							)}
 						</div>
+
 						<ClayRadioGroup
 							name="versionIncrease"
 							onSelectedValueChange={setVersionIncrease}
@@ -65,10 +66,12 @@ const CheckinModal = ({
 								label={Liferay.Language.get('major-version')}
 								value={MAJOR}
 							/>
+
 							<ClayRadio
 								label={Liferay.Language.get('minor-version')}
 								value={MINOR}
 							/>
+
 							<ClayRadio
 								label={Liferay.Language.get(
 									'keep-current-version-number'
@@ -76,11 +79,13 @@ const CheckinModal = ({
 								value={NONE}
 							/>
 						</ClayRadioGroup>
+
 						{versionIncrease !== NONE && (
 							<ClayForm.Group>
 								<label htmlFor="changeLog">
 									{Liferay.Language.get('version-notes')}
 								</label>
+
 								<ClayInput
 									id="changeLog"
 									label={Liferay.Language.get(
@@ -122,10 +127,10 @@ CheckinModal.propTypes = {
 	dlVersionNumberIncreaseValues: PropTypes.shape({
 		MAJOR: PropTypes.string.isRequired,
 		MINOR: PropTypes.string.isRequired,
-		NONE: PropTypes.string.isRequired
+		NONE: PropTypes.string.isRequired,
 	}).isRequired,
 	observer: PropTypes.object.isRequired,
-	onModalClose: PropTypes.func
+	onModalClose: PropTypes.func,
 };
 
 export default CheckinModal;

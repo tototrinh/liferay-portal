@@ -111,13 +111,6 @@ public class EditActionMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	protected void updateAction(ActionRequest actionRequest) throws Exception {
-		long actionId = ParamUtil.getLong(actionRequest, "actionId");
-
-		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
-			actionRequest, "name");
-		Map<Locale, String> descriptionMap =
-			LocalizationUtil.getLocalizationMap(actionRequest, "description");
-
 		String type = ParamUtil.getString(actionRequest, "type");
 
 		ActionHandler actionHandler = ActionHandlerManagerUtil.getActionHandler(
@@ -127,8 +120,15 @@ public class EditActionMVCActionCommand extends BaseMVCActionCommand {
 			throw new ActionTypeException();
 		}
 
-		UnicodeProperties typeSettingsProperties =
-			ActionUtil.getTypeSettingsProperties(
+		long actionId = ParamUtil.getLong(actionRequest, "actionId");
+
+		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
+			actionRequest, "name");
+		Map<Locale, String> descriptionMap =
+			LocalizationUtil.getLocalizationMap(actionRequest, "description");
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			ActionUtil.getTypeSettingsUnicodeProperties(
 				actionRequest, actionHandler.getPropertyNames());
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -140,12 +140,12 @@ public class EditActionMVCActionCommand extends BaseMVCActionCommand {
 
 			_mdrActionService.addAction(
 				ruleGroupInstanceId, nameMap, descriptionMap, type,
-				typeSettingsProperties, serviceContext);
+				typeSettingsUnicodeProperties, serviceContext);
 		}
 		else {
 			_mdrActionService.updateAction(
-				actionId, nameMap, descriptionMap, type, typeSettingsProperties,
-				serviceContext);
+				actionId, nameMap, descriptionMap, type,
+				typeSettingsUnicodeProperties, serviceContext);
 		}
 	}
 

@@ -59,15 +59,13 @@ public class WebSphereDeploymentExtension implements DeploymentExtension {
 				PropsValues.AUTO_DEPLOY_WEBSPHERE_WSADMIN_APP_MANAGER_QUERY)) {
 
 			if (_log.isInfoEnabled()) {
-				StringBundler sb = new StringBundler(4);
-
-				sb.append("Do not install the plugin with wsadmin since the ");
-				sb.append("property \"");
-				sb.append(
-					PropsKeys.AUTO_DEPLOY_WEBSPHERE_WSADMIN_APP_MANAGER_QUERY);
-				sb.append("\"is not configured");
-
-				_log.info(sb.toString());
+				_log.info(
+					StringBundler.concat(
+						"Do not install the plugin with wsadmin since the ",
+						"property \"",
+						PropsKeys.
+							AUTO_DEPLOY_WEBSPHERE_WSADMIN_APP_MANAGER_QUERY,
+						"\"is not configured"));
 			}
 
 			return;
@@ -152,7 +150,7 @@ public class WebSphereDeploymentExtension implements DeploymentExtension {
 		commands.add(wsadminFileName);
 
 		if (_log.isInfoEnabled()) {
-			StringBundler sb = new StringBundler(commands.size() * 2 + 1);
+			StringBundler sb = new StringBundler((commands.size() * 2) + 1);
 
 			sb.append("Installing plugin by executing");
 
@@ -192,7 +190,8 @@ public class WebSphereDeploymentExtension implements DeploymentExtension {
 				}
 			}
 			catch (IllegalThreadStateException illegalThreadStateException) {
-				_log.info("Process did not terminate");
+				_log.info(
+					"Process did not terminate", illegalThreadStateException);
 			}
 		}
 

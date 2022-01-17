@@ -25,7 +25,6 @@ import com.liferay.calendar.service.CalendarResourceLocalService;
 import com.liferay.calendar.service.CalendarService;
 import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.util.RecurrenceUtil;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
@@ -62,7 +61,7 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = {})
 public class CalendarUtil {
 
-	public static JSONObject getCalendarRenderingRules(
+	public static JSONObject getCalendarRenderingRulesJSONObject(
 			ThemeDisplay themeDisplay, long[] calendarIds, int[] statuses,
 			long startTime, long endTime, String ruleName, TimeZone timeZone)
 		throws PortalException {
@@ -75,22 +74,16 @@ public class CalendarUtil {
 		Map<Integer, Map<Integer, List<Integer>>> rulesMap = new HashMap<>();
 
 		for (CalendarBooking calendarBooking : calendarBookings) {
-			TimeZone displayTimeZone = timeZone;
-
-			if (calendarBooking.isAllDay()) {
-				displayTimeZone = _utcTimeZone;
-			}
-
 			long maxStartTime = Math.max(
 				calendarBooking.getStartTime(), startTime);
 
 			java.util.Calendar startTimeJCalendar = JCalendarUtil.getJCalendar(
-				maxStartTime, displayTimeZone);
+				maxStartTime, timeZone);
 
 			long minEndTime = Math.min(calendarBooking.getEndTime(), endTime);
 
 			java.util.Calendar endTimeJCalendar = JCalendarUtil.getJCalendar(
-				minEndTime, displayTimeZone);
+				minEndTime, timeZone);
 
 			long days = JCalendarUtil.getDaysBetween(
 				startTimeJCalendar, endTimeJCalendar);
@@ -136,17 +129,15 @@ public class CalendarUtil {
 
 			Set<Integer> months = monthsMap.keySet();
 
-			JSONObject jsonObjectMonth = JSONFactoryUtil.createJSONObject();
+			JSONObject monthJSONObject = JSONFactoryUtil.createJSONObject();
 
-			jsonObject.put(String.valueOf(year), jsonObjectMonth);
+			jsonObject.put(String.valueOf(year), monthJSONObject);
 
 			for (Integer month : months) {
-				List<Integer> days = monthsMap.get(month);
+				JSONObject dayJSONObject = JSONUtil.put(
+					StringUtil.merge(monthsMap.get(month)), ruleName);
 
-				JSONObject jsonObjectDay = JSONUtil.put(
-					StringUtil.merge(days), ruleName);
-
-				jsonObjectMonth.put(String.valueOf(month), jsonObjectDay);
+				monthJSONObject.put(String.valueOf(month), dayJSONObject);
 			}
 		}
 
@@ -300,14 +291,13 @@ public class CalendarUtil {
 			ThemeDisplay themeDisplay, Calendar calendar)
 		throws PortalException {
 
-		JSONObject jsonObject = JSONUtil.put(
-			"calendarId", calendar.getCalendarId());
-
 		CalendarResource calendarResource =
 			_calendarResourceLocalService.fetchCalendarResource(
 				calendar.getCalendarResourceId());
 
-		jsonObject.put(
+		return JSONUtil.put(
+			"calendarId", calendar.getCalendarId()
+		).put(
 			"calendarResourceId", calendarResource.getCalendarResourceId()
 		).put(
 			"calendarResourceName",
@@ -340,8 +330,6 @@ public class CalendarUtil {
 		).put(
 			"userId", calendar.getUserId()
 		);
-
-		return jsonObject;
 	}
 
 	public static JSONObject toCalendarResourceJSONObject(
@@ -485,8 +473,6 @@ public class CalendarUtil {
 		_calendarModelResourcePermission;
 	private static CalendarResourceLocalService _calendarResourceLocalService;
 	private static CalendarService _calendarService;
-	private static final TimeZone _utcTimeZone = TimeZone.getTimeZone(
-		StringPool.UTC);
 	private static WorkflowDefinitionLinkLocalService
 		_workflowDefinitionLinkLocalService;
 	private static WorkflowInstanceLinkLocalService

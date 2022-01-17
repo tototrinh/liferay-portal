@@ -44,7 +44,7 @@ public class WorkflowDefinitionDemoDataCreatorImpl
 
 		String content = StringUtil.read(
 			WorkflowDefinitionDemoDataCreatorImpl.class,
-			"dependencies/auto-insurance-application-definition.xml");
+			"dependencies/auto-insurance-application-workflow-definition.xml");
 
 		WorkflowDefinition workflowDefinition =
 			_workflowDefinitionManager.deployWorkflowDefinition(
@@ -87,7 +87,7 @@ public class WorkflowDefinitionDemoDataCreatorImpl
 	@Reference
 	private UserLocalService _userLocalService;
 
-	@Reference
+	@Reference(target = "(proxy.bean=false)")
 	private WorkflowDefinitionManager _workflowDefinitionManager;
 
 	private final List<WorkflowDefinition> _workflowDefinitions =

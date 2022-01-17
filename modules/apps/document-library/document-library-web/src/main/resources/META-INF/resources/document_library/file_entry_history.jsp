@@ -27,14 +27,13 @@
 		status = WorkflowConstants.STATUS_ANY;
 	}
 
-	List<FileVersion> fileVersions = fileEntry.getFileVersions(status);
-
-	for (FileVersion fileVersion : fileVersions) {
-		request.setAttribute("info_panel.jsp-fileVersion", fileVersion);
+	for (FileVersion fileVersion : fileEntry.getFileVersions(status)) {
 	%>
 
 		<li class="list-group-item list-group-item-flex">
-			<div class="autofit-col autofit-col-expand">
+			<clay:content-col
+				expand="<%= true %>"
+			>
 				<div class="list-group-title">
 					<liferay-ui:message arguments="<%= fileVersion.getVersion() %>" key="version-x" />
 				</div>
@@ -53,11 +52,18 @@
 						</c:otherwise>
 					</c:choose>
 				</div>
-			</div>
+			</clay:content-col>
 
-			<div class="autofit-col">
-				<liferay-util:include page="/document_library/file_entry_history_action.jsp" servletContext="<%= application %>" />
-			</div>
+			<clay:content-col>
+
+				<%
+				DLViewFileEntryHistoryDisplayContext dlViewFileEntryHistoryDisplayContext = dlDisplayContextProvider.getDLViewFileEntryHistoryDisplayContext(request, response, fileVersion);
+				%>
+
+				<liferay-ui:menu
+					menu="<%= dlViewFileEntryHistoryDisplayContext.getMenu() %>"
+				/>
+			</clay:content-col>
 		</li>
 
 	<%

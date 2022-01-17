@@ -46,11 +46,11 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"javax.portlet.name=" + DDMPortletKeys.DYNAMIC_DATA_MAPPING,
 		"javax.portlet.name=" + PortletKeys.PORTLET_DISPLAY_TEMPLATE,
-		"mvc.command.name=copyTemplate"
+		"mvc.command.name=/dynamic_data_mapping/copy_template"
 	},
 	service = MVCActionCommand.class
 )
-public class CopyTemplateMVCActionCommand extends DDMBaseMVCActionCommand {
+public class CopyTemplateMVCActionCommand extends BaseDDMMVCActionCommand {
 
 	protected DDMTemplate copyTemplate(ActionRequest actionRequest)
 		throws Exception {

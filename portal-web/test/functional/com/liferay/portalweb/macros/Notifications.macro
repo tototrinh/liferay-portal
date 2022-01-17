@@ -12,6 +12,12 @@ definition {
 			value1 = "Confirm");
 	}
 
+	macro clickOnTheNotificationTitle {
+		AssertClick(
+			locator1 = "Notifications#NOTIFICATIONS_TITLE_TEXT",
+			value1 = "${key_notificationsTitle}");
+	}
+
 	macro deleteNotification {
 		var key_contentBody = "${contentBody}";
 
@@ -110,6 +116,17 @@ definition {
 			value1 = "You do not have any notifications.");
 	}
 
+	macro viewExpiredContent {
+		AssertTextEquals(
+			locator1 = "Notifications#NOTIFICATIONS_TITLE",
+			value1 = "${user}: document has expired.");
+
+		AssertTextEquals(
+			key_contentBody = "${contentBody}",
+			locator1 = "Notifications#NOTIFICATIONS_CONTENT",
+			value1 = "${contentBody}");
+	}
+
 	macro viewNewComment {
 		var assetType = StringUtil.lowerCase("${assetType}");
 		var key_contentBody = "${contentBody}";
@@ -139,6 +156,10 @@ definition {
 		AssertTextEquals.assertPartialText(
 			locator1 = "Notifications#NOTIFICATIONS_CONTENT",
 			value1 = "${contentBody}");
+
+		if (isSet(viewEllipsisIcon)) {
+			AssertVisible(locator1 = "Notifications#NOTIFICATIONS_VERTICAL_ELLIPSIS");
+		}
 	}
 
 	macro viewNewContent {
@@ -200,6 +221,18 @@ definition {
 		}
 	}
 
+	macro viewNoPermissions {
+		Notifications.viewBadgeCount(notificationCount = "${notificationCount}");
+
+		Notifications.gotoNotifications();
+
+		Notifications.navigateToContent(contentBody = "${contentBody}");
+
+		AssertTextEquals(
+			locator1 = "Home#ERROR_MESSAGE_ALERT_ERROR",
+			value1 = "Forbidden");
+	}
+
 	macro viewNoRequest {
 		AssertElementNotPresent(locator1 = "Button#CONFIRM");
 
@@ -214,6 +247,29 @@ definition {
 		AssertTextEquals(
 			locator1 = "Notifications#NOTIFICATIONS_TITLE",
 			value1 = "${requestsTitle}");
+	}
+
+	macro viewReviewContent {
+		AssertTextEquals(
+			locator1 = "Notifications#NOTIFICATIONS_TITLE",
+			value1 = "${user} needs to review the document.");
+
+		AssertTextEquals(
+			key_contentBody = "${contentBody}",
+			locator1 = "Notifications#NOTIFICATIONS_CONTENT",
+			value1 = "${contentBody}");
+	}
+
+	macro viewSpecificNotificationDetails {
+		AssertTextEquals(
+			key_notificationsTitle = "${notificationsTitle}",
+			locator1 = "Notifications#NOTIFICATIONS_TITLE_SPECIFIC",
+			value1 = "${notificationsTitle}.");
+
+		AssertTextEquals(
+			key_notificationsTitle = "${notificationsTitle}",
+			locator1 = "Notifications#NOTIFICATIONS_CONTENT_SPECIFIC",
+			value1 = "${contentBody}");
 	}
 
 	macro viewSuccessfulPublication {
@@ -237,6 +293,16 @@ definition {
 		AssertTextEquals(
 			locator1 = "Notifications#NOTIFICATIONS_CONTENT",
 			value1 = "${contentBody}");
+	}
+
+	macro waitForNotificationFlexibly {
+		Pause(locator1 = "${waitingTime}");
+
+		while (IsElementNotPresent(locator1 = "Notifications#PROFILE_BADGE_COUNT")) {
+			Pause(locator1 = "${flexibleRefreshingTime}");
+
+			Refresh();
+		}
 	}
 
 }

@@ -25,7 +25,7 @@ import com.liferay.document.library.kernel.util.DLValidator;
 import com.liferay.document.library.kernel.versioning.VersioningStrategy;
 import com.liferay.document.library.preview.DLPreviewRendererProvider;
 import com.liferay.document.library.util.DLURLHelper;
-import com.liferay.document.library.web.internal.util.DLTrashUtil;
+import com.liferay.document.library.web.internal.helper.DLTrashHelper;
 import com.liferay.dynamic.data.mapping.storage.StorageEngine;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
@@ -37,7 +37,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileShortcut;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ResourceBundle;
@@ -115,14 +115,14 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(themeDisplay.getLocale());
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+			themeDisplay.getLocale(), getClass());
 
 		DLViewFileEntryHistoryDisplayContext
 			dlViewFileEntryHistoryDisplayContext =
 				new DefaultDLViewFileEntryHistoryDisplayContext(
 					httpServletRequest, fileVersion, resourceBundle,
-					_dlTrashUtil, _versioningStrategy, _dlURLHelper);
+					_dlTrashHelper, _versioningStrategy, _dlURLHelper);
 
 		if (fileVersion == null) {
 			return dlViewFileEntryHistoryDisplayContext;
@@ -150,9 +150,8 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 				(ThemeDisplay)httpServletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			ResourceBundle resourceBundle =
-				_resourceBundleLoader.loadResourceBundle(
-					themeDisplay.getLocale());
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+				themeDisplay.getLocale(), getClass());
 
 			FileVersion fileVersion = fileShortcut.getFileVersion();
 
@@ -164,7 +163,7 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 				new DefaultDLViewFileVersionDisplayContext(
 					httpServletRequest, httpServletResponse, fileShortcut,
 					_dlMimeTypeDisplayContext, resourceBundle, _storageEngine,
-					_dlTrashUtil, dlPreviewRendererProvider,
+					_dlTrashHelper, dlPreviewRendererProvider,
 					_versioningStrategy, _dlURLHelper);
 
 			for (DLDisplayContextFactory dlDisplayContextFactory :
@@ -192,8 +191,8 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(themeDisplay.getLocale());
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+			themeDisplay.getLocale(), getClass());
 
 		DLPreviewRendererProvider dlPreviewRendererProvider =
 			_dlPreviewRendererProviders.getService(fileVersion.getMimeType());
@@ -202,7 +201,7 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 			new DefaultDLViewFileVersionDisplayContext(
 				httpServletRequest, httpServletResponse, fileVersion,
 				_dlMimeTypeDisplayContext, resourceBundle, _storageEngine,
-				_dlTrashUtil, dlPreviewRendererProvider, _versioningStrategy,
+				_dlTrashHelper, dlPreviewRendererProvider, _versioningStrategy,
 				_dlURLHelper);
 
 		for (DLDisplayContextFactory dlDisplayContextFactory :
@@ -245,7 +244,7 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 		_dlPreviewRendererProviders.close();
 	}
 
-	private ServiceTrackerList<DLDisplayContextFactory, DLDisplayContextFactory>
+	private ServiceTrackerList<DLDisplayContextFactory>
 		_dlDisplayContextFactories;
 
 	@Reference(
@@ -259,20 +258,13 @@ public class DLDisplayContextProviderImpl implements DLDisplayContextProvider {
 		_dlPreviewRendererProviders;
 
 	@Reference
-	private DLTrashUtil _dlTrashUtil;
+	private DLTrashHelper _dlTrashHelper;
 
 	@Reference
 	private DLURLHelper _dlURLHelper;
 
 	@Reference
 	private DLValidator _dlValidator;
-
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.document.library.web)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
 
 	@Reference
 	private StorageEngine _storageEngine;

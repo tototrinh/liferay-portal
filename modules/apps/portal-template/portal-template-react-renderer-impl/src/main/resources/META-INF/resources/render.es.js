@@ -12,9 +12,9 @@
  * details.
  */
 
-import {render} from 'frontend-js-react-web';
+import {render} from '@liferay/frontend-js-react-web';
 
-export default function(renderFunction, renderData, placeholderId) {
+export default function (renderFunction, renderData, placeholderId) {
 	const element = document.getElementById(placeholderId);
 
 	if (element) {

@@ -12,8 +12,6 @@
  * details.
  */
 
-'use strict';
-
 import navigate from '../../../src/main/resources/META-INF/resources/liferay/util/navigate.es';
 
 describe('Liferay.Util.navigate', () => {
@@ -24,9 +22,9 @@ describe('Liferay.Util.navigate', () => {
 		beforeEach(() => {
 			Liferay.SPA = {
 				app: {
-					canNavigate: jest.fn(url => url.includes('internal')),
-					navigate: jest.fn()
-				}
+					canNavigate: jest.fn((url) => url.includes('internal')),
+					navigate: jest.fn(),
+				},
 			};
 		});
 
@@ -60,7 +58,7 @@ describe('Liferay.Util.navigate', () => {
 
 			navigate(internalUrl, {
 				event1: listenerFn,
-				event2: listenerFn
+				event2: listenerFn,
 			});
 
 			expect(Liferay.once).toHaveBeenCalledTimes(2);

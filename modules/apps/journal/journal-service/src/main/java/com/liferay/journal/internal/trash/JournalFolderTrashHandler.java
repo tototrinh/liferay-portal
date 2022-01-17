@@ -16,10 +16,10 @@ package com.liferay.journal.internal.trash;
 
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.exception.InvalidDDMStructureException;
 import com.liferay.journal.internal.util.JournalUtil;
 import com.liferay.journal.model.JournalFolder;
-import com.liferay.journal.model.JournalFolderConstants;
 import com.liferay.journal.service.JournalFolderLocalService;
 import com.liferay.journal.util.JournalHelper;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -29,7 +29,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashRenderer;
@@ -53,7 +53,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = "model.class.name=com.liferay.journal.model.JournalFolder",
 	service = TrashHandler.class
 )
-public class JournalFolderTrashHandler extends JournalBaseTrashHandler {
+public class JournalFolderTrashHandler extends BaseJournalTrashHandler {
 
 	@Override
 	public void checkRestorableEntry(
@@ -100,6 +100,13 @@ public class JournalFolderTrashHandler extends JournalBaseTrashHandler {
 		long parentFolderId = folder.getParentFolderId();
 
 		if (parentFolderId <= 0) {
+			return null;
+		}
+
+		JournalFolder parentFolder = _journalFolderLocalService.fetchFolder(
+			parentFolderId);
+
+		if (parentFolder == null) {
 			return null;
 		}
 
@@ -159,7 +166,7 @@ public class JournalFolderTrashHandler extends JournalBaseTrashHandler {
 		throws PortalException {
 
 		if (trashActionId.equals(TrashActionKeys.MOVE)) {
-			return ModelResourcePermissionHelper.contains(
+			return ModelResourcePermissionUtil.contains(
 				_journalFolderModelResourcePermission, permissionChecker,
 				groupId, classPK, ActionKeys.ADD_FOLDER);
 		}

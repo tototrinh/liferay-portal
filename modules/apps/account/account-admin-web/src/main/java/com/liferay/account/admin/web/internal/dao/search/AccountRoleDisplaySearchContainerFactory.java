@@ -16,28 +16,42 @@ package com.liferay.account.admin.web.internal.dao.search;
 
 import com.liferay.account.admin.web.internal.display.AccountRoleDisplay;
 import com.liferay.account.constants.AccountConstants;
+import com.liferay.account.constants.AccountRoleConstants;
 import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.AccountRoleLocalServiceUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.util.comparator.RoleNameComparator;
 import com.liferay.portal.vulcan.util.TransformUtil;
+
+import java.util.List;
 
 /**
  * @author Pei-Jung Lan
  */
 public class AccountRoleDisplaySearchContainerFactory {
 
-	public static SearchContainer create(
+	public static SearchContainer<AccountRoleDisplay> create(
 		long accountEntryId, LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse) {
 
-		SearchContainer searchContainer = new SearchContainer(
-			liferayPortletRequest, liferayPortletResponse.createRenderURL(),
-			null, "there-are-no-roles");
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		SearchContainer<AccountRoleDisplay> searchContainer =
+			new SearchContainer(
+				liferayPortletRequest,
+				PortletURLUtil.getCurrent(
+					liferayPortletRequest, liferayPortletResponse),
+				null, "there-are-no-roles");
 
 		searchContainer.setId("accountRoles");
 		searchContainer.setOrderByCol("name");
@@ -55,15 +69,34 @@ public class AccountRoleDisplaySearchContainerFactory {
 
 		BaseModelSearchResult<AccountRole> baseModelSearchResult =
 			AccountRoleLocalServiceUtil.searchAccountRoles(
+				themeDisplay.getCompanyId(),
 				new long[] {
 					accountEntryId, AccountConstants.ACCOUNT_ENTRY_ID_DEFAULT
 				},
-				keywords, searchContainer.getStart(), searchContainer.getEnd(),
+				keywords,
+				LinkedHashMapBuilder.<String, Object>put(
+					"excludedRoleNames",
+					new String[] {
+						AccountRoleConstants.REQUIRED_ROLE_NAME_ACCOUNT_MEMBER
+					}
+				).build(),
+				searchContainer.getStart(), searchContainer.getEnd(),
 				new RoleNameComparator(orderByType.equals("asc")));
 
-		searchContainer.setResults(
-			TransformUtil.transform(
-				baseModelSearchResult.getBaseModels(), AccountRoleDisplay::of));
+		List<AccountRoleDisplay> accountRoleDisplays = TransformUtil.transform(
+			baseModelSearchResult.getBaseModels(),
+			accountRole -> {
+				if (!AccountRoleConstants.isImpliedRole(
+						accountRole.getRole())) {
+
+					return AccountRoleDisplay.of(accountRole);
+				}
+
+				return null;
+			});
+
+		searchContainer.setResults(accountRoleDisplays);
+
 		searchContainer.setTotal(baseModelSearchResult.getLength());
 
 		return searchContainer;

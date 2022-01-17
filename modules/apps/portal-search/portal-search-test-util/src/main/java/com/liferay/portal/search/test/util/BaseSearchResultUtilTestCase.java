@@ -28,8 +28,6 @@ import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactory;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.ProxyFactory;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.RegistryUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +42,6 @@ public abstract class BaseSearchResultUtilTestCase {
 
 	@Before
 	public void setUp() throws Exception {
-		setUpRegistryUtil();
 		setUpClassNameLocalService();
 		setUpFastDateFormatFactoryUtil();
 		setUpPropsUtil();
@@ -124,10 +121,6 @@ public abstract class BaseSearchResultUtilTestCase {
 
 	protected void setUpPropsUtil() {
 		PropsTestUtil.setProps(Collections.emptyMap());
-	}
-
-	protected void setUpRegistryUtil() {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
 	}
 
 	protected void setUpSearchResultTranslator() {

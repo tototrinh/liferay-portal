@@ -21,7 +21,7 @@ import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
@@ -44,18 +44,19 @@ public class KBFolderServiceImpl extends KBFolderServiceBaseImpl {
 
 	@Override
 	public KBFolder addKBFolder(
-			long groupId, long parentResourceClassNameId,
-			long parentResourcePrimKey, String name, String description,
-			ServiceContext serviceContext)
+			String externalReferenceCode, long groupId,
+			long parentResourceClassNameId, long parentResourcePrimKey,
+			String name, String description, ServiceContext serviceContext)
 		throws PortalException {
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_kbFolderModelResourcePermission, getPermissionChecker(), groupId,
 			parentResourcePrimKey, KBActionKeys.ADD_KB_FOLDER);
 
 		return kbFolderLocalService.addKBFolder(
-			getUserId(), groupId, parentResourceClassNameId,
-			parentResourcePrimKey, name, description, serviceContext);
+			externalReferenceCode, getUserId(), groupId,
+			parentResourceClassNameId, parentResourcePrimKey, name, description,
+			serviceContext);
 	}
 
 	@Override
@@ -75,11 +76,12 @@ public class KBFolderServiceImpl extends KBFolderServiceBaseImpl {
 
 	@Override
 	public KBFolder fetchFirstChildKBFolder(
-			long groupId, long kbFolderId, OrderByComparator<KBFolder> obc)
+			long groupId, long kbFolderId,
+			OrderByComparator<KBFolder> orderByComparator)
 		throws PortalException {
 
 		List<KBFolder> kbFolders = kbFolderPersistence.filterFindByG_P(
-			groupId, kbFolderId, 0, 1, obc);
+			groupId, kbFolderId, 0, 1, orderByComparator);
 
 		if (kbFolders.isEmpty()) {
 			return null;

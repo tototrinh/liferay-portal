@@ -36,10 +36,14 @@ public class ServerSummaryStatistics implements SummaryStatistics {
 
 	@Override
 	public long getAverageTime() {
-		long averageTime = 0;
-
 		Set<CompanyStatistics> companyStatisticsSet =
 			_serverStatistics.getCompanyStatisticsSet();
+
+		if (companyStatisticsSet.isEmpty()) {
+			return 0;
+		}
+
+		long averageTime = 0;
 
 		for (CompanyStatistics companyStatistics : companyStatisticsSet) {
 			RequestStatistics requestStatistics =
@@ -274,7 +278,7 @@ public class ServerSummaryStatistics implements SummaryStatistics {
 		}
 		catch (Exception exception) {
 			throw new MonitoringException(
-				"Unable to get company with company id " + companyId,
+				"Unable to get company with company ID " + companyId,
 				exception);
 		}
 	}
@@ -290,7 +294,7 @@ public class ServerSummaryStatistics implements SummaryStatistics {
 		}
 		catch (Exception exception) {
 			throw new MonitoringException(
-				"Unable to get company with web id " + webId, exception);
+				"Unable to get company with web ID " + webId, exception);
 		}
 	}
 

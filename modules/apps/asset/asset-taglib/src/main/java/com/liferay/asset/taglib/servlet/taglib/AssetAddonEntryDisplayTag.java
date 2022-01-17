@@ -18,7 +18,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.AssetAddonEntry;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.taglib.servlet.PipingServletResponse;
+import com.liferay.taglib.servlet.PipingServletResponseFactory;
 import com.liferay.taglib.util.IncludeTag;
 
 import java.io.IOException;
@@ -30,15 +30,19 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 
 /**
- * @author Julio Camarero
+ * @author     Julio Camarero
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class AssetAddonEntryDisplayTag extends IncludeTag {
 
 	@Override
 	public int doEndTag() throws JspException {
 		for (AssetAddonEntry assetAddonEntry : _assetAddonEntries) {
 			try {
-				assetAddonEntry.include(request, getResponse());
+				HttpServletRequest httpServletRequest = getRequest();
+
+				assetAddonEntry.include(httpServletRequest, getResponse());
 			}
 			catch (IOException ioException) {
 				_log.error(ioException, ioException);
@@ -66,7 +70,8 @@ public class AssetAddonEntryDisplayTag extends IncludeTag {
 	}
 
 	protected HttpServletResponse getResponse() {
-		return PipingServletResponse.createPipingServletResponse(pageContext);
+		return PipingServletResponseFactory.createPipingServletResponse(
+			pageContext);
 	}
 
 	@Override

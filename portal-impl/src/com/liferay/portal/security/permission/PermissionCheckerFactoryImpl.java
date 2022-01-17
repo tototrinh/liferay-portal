@@ -14,13 +14,20 @@
 
 package com.liferay.portal.security.permission;
 
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactory;
 import com.liferay.portal.kernel.security.permission.contributor.RoleContributor;
+import com.liferay.portal.kernel.security.permission.wrapper.PermissionCheckerWrapperFactory;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerList;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.osgi.framework.BundleContext;
 
 /**
  * @author Charles May
@@ -38,25 +45,46 @@ public class PermissionCheckerFactoryImpl implements PermissionCheckerFactory {
 	}
 
 	public void afterPropertiesSet() {
-		_roleContributors = ServiceTrackerCollections.openList(
-			RoleContributor.class);
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		_permissionCheckerWrapperFactories = ServiceTrackerListFactory.open(
+			bundleContext, PermissionCheckerWrapperFactory.class);
+		_roleContributors = ServiceTrackerListFactory.open(
+			bundleContext, RoleContributor.class);
 	}
 
 	@Override
 	public PermissionChecker create(User user) {
 		PermissionChecker permissionChecker = _permissionChecker.clone();
 
-		permissionChecker.init(
-			user, _roleContributors.toArray(new RoleContributor[0]));
+		List<RoleContributor> roleContributors = new ArrayList<>();
 
-		return new StagingPermissionChecker(permissionChecker);
+		_roleContributors.forEach(roleContributors::add);
+
+		permissionChecker.init(
+			user, roleContributors.toArray(new RoleContributor[0]));
+
+		permissionChecker = new StagingPermissionChecker(permissionChecker);
+
+		for (PermissionCheckerWrapperFactory permissionCheckerWrapperFactory :
+				_permissionCheckerWrapperFactories) {
+
+			permissionChecker =
+				permissionCheckerWrapperFactory.wrapPermissionChecker(
+					permissionChecker);
+		}
+
+		return permissionChecker;
 	}
 
 	public void destroy() {
+		_permissionCheckerWrapperFactories.close();
 		_roleContributors.close();
 	}
 
 	private final PermissionChecker _permissionChecker;
+	private ServiceTrackerList<PermissionCheckerWrapperFactory>
+		_permissionCheckerWrapperFactories;
 	private ServiceTrackerList<RoleContributor> _roleContributors;
 
 }

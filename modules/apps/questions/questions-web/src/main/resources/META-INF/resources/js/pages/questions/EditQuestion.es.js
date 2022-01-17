@@ -12,142 +12,169 @@
  * details.
  */
 
+import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import {Editor} from 'frontend-editor-ckeditor-web';
-import React, {useState} from 'react';
-import {Link, withRouter} from 'react-router-dom';
+import {useMutation, useQuery} from 'graphql-hooks';
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {withRouter} from 'react-router-dom';
 
-import {getThreadContent, updateThread} from '../../utils/client.es';
-import {getCKEditorConfig, onBeforeLoadCKEditor} from '../../utils/utils.es';
+import {AppContext} from '../../AppContext.es';
+import DefaultQuestionsEditor from '../../components/DefaultQuestionsEditor.es';
+import Link from '../../components/Link.es';
+import TagSelector from '../../components/TagSelector.es';
+import {getThreadContentQuery, updateThreadQuery} from '../../utils/client.es';
+import {getContextLink} from '../../utils/utils.es';
 
 export default withRouter(
 	({
 		history,
 		match: {
-			params: {questionId}
-		}
+			params: {questionId, sectionTitle},
+		},
 	}) => {
-		const [articleBody, setArticleBody] = useState('');
+		const context = useContext(AppContext);
+
+		const editorRef = useRef('');
+		const [hasEnoughContent, setHasEnoughContent] = useState(false);
+
 		const [headline, setHeadline] = useState('');
-		const [tags, setTags] = useState('');
+		const [id, setId] = useState('');
+		const [tags, setTags] = useState([]);
+		const [tagsLoaded, setTagsLoaded] = useState(true);
 
-		const loadThread = () =>
-			getThreadContent(questionId).then(
-				({articleBody, headline, tags}) => {
-					setArticleBody(articleBody);
-					setHeadline(headline);
-					if (tags) {
-						setTags(tags.toString());
-					}
+		const {data = {}} = useQuery(getThreadContentQuery, {
+			variables: {
+				friendlyUrlPath: questionId,
+				siteKey: context.siteKey,
+			},
+		});
+
+		useEffect(() => {
+			if (data.messageBoardThreadByFriendlyUrlPath) {
+				editorRef.current.setContent(
+					data.messageBoardThreadByFriendlyUrlPath.articleBody
+				);
+				setHeadline(data.messageBoardThreadByFriendlyUrlPath.headline);
+				setId(data.messageBoardThreadByFriendlyUrlPath.id);
+				if (data.messageBoardThreadByFriendlyUrlPath.keywords) {
+					setTags(
+						data.messageBoardThreadByFriendlyUrlPath.keywords.map(
+							(keyword) => ({
+								label: keyword,
+								value: keyword,
+							})
+						)
+					);
 				}
-			);
+			}
+		}, [data]);
 
-		const submit = () =>
-			updateThread(articleBody, headline, tags, questionId).then(() =>
-				history.goBack()
-			);
+		const [updateThread] = useMutation(updateThreadQuery);
 
 		return (
-			<>
-				<h1>{Liferay.Language.get('edit-question')}</h1>
+			<section className="c-mt-5 questions-section questions-section-edit">
+				<div className="questions-container row">
+					<div className="c-mx-auto col-xl-10">
+						<h1>{Liferay.Language.get('edit-question')}</h1>
 
-				<ClayForm>
-					<ClayForm.Group className="form-group-sm">
-						<label htmlFor="basicInput">
-							{Liferay.Language.get('title')}
+						<ClayForm>
+							<ClayForm.Group className="c-mt-4">
+								<label htmlFor="basicInput">
+									{Liferay.Language.get('title')}
 
-							<span className="reference-mark">
-								<ClayIcon symbol="asterisk" />
-							</span>
-						</label>
-						<ClayInput
-							onChange={event => setHeadline(event.target.value)}
-							placeholder={Liferay.Language.get(
-								'what-is-your-question'
-							)}
-							required
-							type="text"
-							value={headline}
-						/>
-						<ClayForm.FeedbackGroup>
-							<ClayForm.FeedbackItem>
-								{Liferay.Language.get(
-									'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
-								)}
-							</ClayForm.FeedbackItem>
-						</ClayForm.FeedbackGroup>
-					</ClayForm.Group>
-					<ClayForm.Group className="form-group-sm">
-						<label htmlFor="basicInput">
-							{Liferay.Language.get('body')}
+									<span className="c-ml-2 reference-mark">
+										<ClayIcon symbol="asterisk" />
+									</span>
+								</label>
 
-							<span className="reference-mark">
-								<ClayIcon symbol="asterisk" />
-							</span>
-						</label>
+								<ClayInput
+									onChange={(event) =>
+										setHeadline(event.target.value)
+									}
+									placeholder={Liferay.Language.get(
+										'what-is-your-question'
+									)}
+									required
+									type="text"
+									value={headline}
+								/>
 
-						<Editor
-							config={getCKEditorConfig()}
-							data={articleBody}
-							onBeforeLoad={onBeforeLoadCKEditor}
-							onChange={event =>
-								setArticleBody(event.editor.getData())
-							}
-							onInstanceReady={loadThread}
-							required
-						/>
+								<ClayForm.FeedbackGroup>
+									<ClayForm.FeedbackItem>
+										<span className="small text-secondary">
+											{Liferay.Language.get(
+												'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
+											)}
+										</span>
+									</ClayForm.FeedbackItem>
+								</ClayForm.FeedbackGroup>
+							</ClayForm.Group>
 
-						<ClayForm.FeedbackGroup>
-							<ClayForm.FeedbackItem>
-								{Liferay.Language.get(
+							<DefaultQuestionsEditor
+								additionalInformation={Liferay.Language.get(
 									'include-all-the-information-someone-would-need-to-answer-your-question'
 								)}
-							</ClayForm.FeedbackItem>
-							<ClayForm.Text>{''}</ClayForm.Text>
-						</ClayForm.FeedbackGroup>
-					</ClayForm.Group>
-					<ClayForm.Group className="form-group-sm">
-						<label htmlFor="basicInput">
-							{Liferay.Language.get('tags')}
-						</label>
-						<ClayInput
-							onChange={event => setTags(event.target.value)}
-							placeholder={Liferay.Language.get('add-your-tags')}
-							type="text"
-							value={tags}
-						/>
-						<ClayForm.FeedbackGroup>
-							<ClayForm.FeedbackItem>
-								{Liferay.Language.get(
-									'add-up-to-5-tags-to-describe-what-your-question-is-about'
-								)}
-							</ClayForm.FeedbackItem>
-						</ClayForm.FeedbackGroup>
-					</ClayForm.Group>
-				</ClayForm>
+								label={Liferay.Language.get('body')}
+								onContentLengthValid={setHasEnoughContent}
+								ref={editorRef}
+							/>
 
-				<div className="sheet-footer">
-					<div className="btn-group-item">
-						<div className="btn-group-item">
-							<button
-								className="btn btn-primary"
-								disabled={!articleBody || !headline}
-								onClick={submit}
+							<ClayForm.Group className="c-mt-4">
+								<TagSelector
+									tags={tags}
+									tagsChange={(tags) => setTags(tags)}
+									tagsLoaded={setTagsLoaded}
+								/>
+							</ClayForm.Group>
+						</ClayForm>
+
+						<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
+							<ClayButton
+								className="c-mt-4 c-mt-sm-0"
+								disabled={
+									hasEnoughContent || !headline || !tagsLoaded
+								}
+								displayType="primary"
+								onClick={() => {
+									updateThread(
+										{
+											variables: {
+												articleBody: editorRef.current.getContent(),
+												headline,
+												keywords: tags.map(
+													(tag) => tag.value
+												),
+												messageBoardThreadId: id,
+											},
+										},
+										{
+											fetchOptionsOverrides: getContextLink(
+												`${sectionTitle}/${questionId}`
+											),
+										}
+									).then(() => history.goBack());
+								}}
 							>
-								{Liferay.Language.get('update-your-question')}
-							</button>
-						</div>
-						<div className="btn-group-item">
-							<Link to={'/questions/' + questionId}>
-								<button className="btn btn-secondary">
-									{Liferay.Language.get('cancel')}
-								</button>
+								{context.trustedUser
+									? Liferay.Language.get(
+											'update-your-question'
+									  )
+									: Liferay.Language.get(
+											'submit-for-publication'
+									  )}
+							</ClayButton>
+
+							<Link
+								className="btn btn-secondary c-ml-sm-3"
+								to={`/questions/${sectionTitle}/${questionId}`}
+							>
+								{Liferay.Language.get('cancel')}
 							</Link>
 						</div>
 					</div>
 				</div>
-			</>
+			</section>
 		);
 	}
 );

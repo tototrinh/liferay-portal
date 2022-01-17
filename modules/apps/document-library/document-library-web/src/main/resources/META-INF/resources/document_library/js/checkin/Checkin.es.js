@@ -17,10 +17,10 @@ import React, {useState} from 'react';
 
 import CheckinModal from './CheckinModal.es';
 
-function Checkin({
+export default function Checkin({
 	checkedOut,
 	dlVersionNumberIncreaseValues,
-	portletNamespace
+	portletNamespace,
 }) {
 	const [showModal, setShowModal] = useState(false);
 	const [callback, setCallback] = useState();
@@ -31,20 +31,20 @@ function Checkin({
 	};
 
 	const {observer, onClose} = useModal({
-		onClose: handleOnClose
+		onClose: handleOnClose,
 	});
 
 	if (!Liferay.component(bridgeComponentId)) {
 		Liferay.component(
 			bridgeComponentId,
 			{
-				open: callback => {
+				open: (callback) => {
 					setCallback(() => callback);
 					setShowModal(true);
-				}
+				},
 			},
 			{
-				destroyOnNavigate: true
+				destroyOnNavigate: true,
 			}
 		);
 	}
@@ -63,11 +63,5 @@ function Checkin({
 				/>
 			)}
 		</>
-	);
-}
-
-export default function(props) {
-	return (
-		<Checkin {...props} portletNamespace={`_${props.portletNamespace}_`} />
 	);
 }

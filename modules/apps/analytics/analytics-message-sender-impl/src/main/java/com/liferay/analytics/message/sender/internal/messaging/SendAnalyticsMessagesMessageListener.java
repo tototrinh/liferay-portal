@@ -19,6 +19,7 @@ import com.liferay.analytics.message.sender.constants.AnalyticsMessagesDestinati
 import com.liferay.analytics.message.sender.constants.AnalyticsMessagesProcessorCommand;
 import com.liferay.analytics.message.storage.model.AnalyticsMessage;
 import com.liferay.analytics.message.storage.service.AnalyticsMessageLocalService;
+import com.liferay.analytics.settings.configuration.AnalyticsConfigurationTracker;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -35,6 +36,7 @@ import com.liferay.portal.kernel.scheduler.SchedulerEntryImpl;
 import com.liferay.portal.kernel.scheduler.TimeUnit;
 import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerFactory;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 
 import java.nio.charset.StandardCharsets;
 
@@ -43,7 +45,6 @@ import java.util.List;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -57,7 +58,6 @@ import org.osgi.service.component.annotations.Reference;
 public class SendAnalyticsMessagesMessageListener extends BaseMessageListener {
 
 	@Activate
-	@Modified
 	protected void activate() {
 		Class<?> clazz = getClass();
 
@@ -80,29 +80,20 @@ public class SendAnalyticsMessagesMessageListener extends BaseMessageListener {
 
 	@Override
 	protected void doReceive(Message message) throws Exception {
-		AnalyticsMessagesProcessorCommand analyticsMessagesProcessorCommand =
-			(AnalyticsMessagesProcessorCommand)message.get("command");
-
-		if ((analyticsMessagesProcessorCommand != null) &&
-			(analyticsMessagesProcessorCommand !=
-				AnalyticsMessagesProcessorCommand.SEND)) {
-
+		if (_skipProcess(message)) {
 			return;
 		}
 
-		long companyId = message.getLong("companyId");
+		_companyLocalService.forEachCompanyId(companyId -> _process(companyId));
+	}
 
-		if (companyId != 0) {
-			_process(companyId);
-
+	@Override
+	protected void doReceive(Message message, long companyId) throws Exception {
+		if (_skipProcess(message)) {
 			return;
 		}
 
-		for (long curCompanyId :
-				_analyticsMessageLocalService.getCompanyIds()) {
-
-			_process(curCompanyId);
-		}
+		_process(companyId);
 	}
 
 	@Reference(target = ModuleServiceLifecycle.PORTAL_INITIALIZED, unbind = "-")
@@ -163,16 +154,40 @@ public class SendAnalyticsMessagesMessageListener extends BaseMessageListener {
 		}
 	}
 
+	private boolean _skipProcess(Message message) {
+		if (!_analyticsConfigurationTracker.isActive()) {
+			return true;
+		}
+
+		AnalyticsMessagesProcessorCommand analyticsMessagesProcessorCommand =
+			(AnalyticsMessagesProcessorCommand)message.get("command");
+
+		if ((analyticsMessagesProcessorCommand != null) &&
+			(analyticsMessagesProcessorCommand !=
+				AnalyticsMessagesProcessorCommand.SEND)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private static final int _BATCH_SIZE = 100;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		SendAnalyticsMessagesMessageListener.class);
 
 	@Reference
+	private AnalyticsConfigurationTracker _analyticsConfigurationTracker;
+
+	@Reference
 	private AnalyticsMessageLocalService _analyticsMessageLocalService;
 
 	@Reference
 	private AnalyticsMessageSenderClient _analyticsMessageSenderClient;
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private SchedulerEngineHelper _schedulerEngineHelper;

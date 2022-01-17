@@ -1,5 +1,3 @@
-@import 'mixins';
-
 .lfr-ddm-edit-data-provider .has-success .form-control {
 	background-color: #f1f2f5;
 	border: 0.0625rem solid #e7e7ed;
@@ -31,4 +29,8 @@
 	.lfr-search-container-wrapper .list-group .list-group-item .autofit-col h4 {
 		font-weight: 600;
 	}
+}
+
+.taglib-empty-result-message {
+	margin-top: 104px;
 }

@@ -1,9 +1,9 @@
 @component-name = "portal-collaboration"
 definition {
 
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
 	property testray.component.names = "Mentions";
 	property testray.main.component.name = "Mentions";
 
@@ -18,29 +18,17 @@ definition {
 			userLastName = "userln",
 			userScreenName = "usersn");
 
-		JSONUser.setFirstPassword(
-			agreeToTermsAndAnswerReminderQuery = "true",
-			requireReset = "false",
-			userEmailAddress = "userea@liferay.com");
-
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.assignRegularRoleCP(
+		JSONRole.assignRoleToUser(
 			roleTitle = "Administrator",
-			userScreenName = "usersn");
-
-		User.logoutPG();
-
-		User.loginPG(
-			password = "test",
 			userEmailAddress = "userea@liferay.com");
 
-		User.logoutPG();
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "userea@liferay.com",
+			userLoginFullName = "userfn userln");
 
-		User.loginPG();
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "test@liferay.com",
+			userLoginFullName = "Test Test");
 	}
 
 	tearDown {
@@ -52,8 +40,6 @@ definition {
 		else {
 			DMDocument.tearDownCP();
 
-			DMFolder.tearDownCP();
-
 			Page.tearDownCP();
 
 			JSONUser.tearDownNonAdminUsers();
@@ -61,45 +47,33 @@ definition {
 	}
 
 	@priority = "5"
-	test ViewMentionViaDMComment {
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+	@refactordone
+	test CanViewMentionViaDMComment {
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Documents and Media Page");
 
-		SitePages.addPublicPage(
-			pageName = "Documents and Media Page",
-			sitePageType = "Widget Page");
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Guest",
+			layoutName = "Documents and Media Page",
+			widgetName = "Documents and Media");
 
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		Portlet.addPG(portletName = "Documents and Media");
-
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Documents and Media");
-
-		DMDocument.addCP(
+		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
-			dmDocumentFile = "Document_1.txt",
-			dmDocumentTitle = "DM Document Title");
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			mimeType = "text/plain",
+			sourceFileName = "Document_1.txt");
 
-		User.logoutPG();
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "userea@liferay.com",
+			userLoginFullName = "userfn userln");
 
-		User.loginUserPG(
-			password = "test",
-			userEmailAddress = "userea@liferay.com");
-
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-		DMDocument.viewPG(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "DM Document Title");
+		DMNavigator.openToEntryInAdmin(
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			siteURLKey = "guest");
 
 		Mentions.addMentionViaComments(
 			entryComment = "Comment mentioning",
@@ -112,83 +86,48 @@ definition {
 	}
 
 	@priority = "5"
-	test ViewReplyMentionViaDMComment {
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+	@refactordone
+	test CanViewReplyMentionViaDMComment {
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Documents and Media Page");
 
-		SitePages.addPublicPage(
-			pageName = "Documents and Media Page",
-			sitePageType = "Widget Page");
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Guest",
+			layoutName = "Documents and Media Page",
+			widgetName = "Documents and Media");
 
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		Portlet.addPG(portletName = "Documents and Media");
-
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Documents and Media");
-
-		DMDocument.addCP(
+		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
-			dmDocumentFile = "Document_1.txt",
-			dmDocumentTitle = "DM Document Title");
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			mimeType = "text/plain",
+			sourceFileName = "Document_1.txt");
 
-		User.logoutPG();
+		JSONDocument.addComment(
+			commentBody = "Comment mentioning",
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest");
 
-		User.loginUserPG(
-			password = "test",
-			userEmailAddress = "userea@liferay.com");
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "userea@liferay.com",
+			userLoginFullName = "userfn userln");
 
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-		DMDocument.viewPG(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "DM Document Title");
-
-		Mentions.addMentionViaComments(
-			entryComment = "Comment mentioning",
-			mentionsUserFullName = "Test Test",
-			mentionsUserScreenName = "test");
-
-		Mentions.viewCommentMentionTagLink(
-			mentionsUserFullName = "Test Test",
-			mentionsUserScreenName = "test");
-
-		User.logoutPG();
-
-		User.loginUserPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
-
-		Navigator.gotoPage(pageName = "Documents and Media Page");
-
-		LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-		DMDocument.viewPG(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "DM Document Title");
-
-		AssertClick(
-			key_entryComment = "Comment mentioning",
-			key_text = "Reply",
-			locator1 = "Comments#ANY_BUTTON_IN_COMMENT",
-			value1 = "Reply");
+		DMNavigator.openToEntryInAdmin(
+			dmDocumentTitle = "DM Document Title",
+			groupName = "Guest",
+			siteURLKey = "guest");
 
 		Mentions.addMentionViaComments(
 			entryComment = "Comment reply mentioning",
-			mentionsUserFullName = "userfn userln",
-			mentionsUserScreenName = "usersn");
+			mentionsUserFullName = "Test Test",
+			mentionsUserScreenName = "test",
+			parentComment = "Comment mentioning");
 
 		Mentions.viewCommentMentionTagLink(
-			mentionsUserFullName = "userfn userln",
-			mentionsUserScreenName = "usersn");
+			mentionsUserFullName = "Test Test",
+			mentionsUserScreenName = "test");
 	}
 
 }

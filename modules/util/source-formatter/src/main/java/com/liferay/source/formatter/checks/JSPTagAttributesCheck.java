@@ -19,11 +19,14 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.checks.util.TaglibUtil;
 import com.liferay.source.formatter.parser.JavaClass;
@@ -32,14 +35,13 @@ import com.liferay.source.formatter.parser.JavaMethod;
 import com.liferay.source.formatter.parser.JavaParameter;
 import com.liferay.source.formatter.parser.JavaSignature;
 import com.liferay.source.formatter.parser.JavaTerm;
-import com.liferay.source.formatter.parser.ParseException;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,26 +94,67 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 	}
 
 	@Override
-	protected Tag formatTagAttributeType(Tag tag) throws Exception {
+	protected Tag formatTagAttributeType(String absolutePath, Tag tag)
+		throws Exception {
+
+		if (absolutePath.endsWith(".jspx")) {
+			return tag;
+		}
+
 		Map<String, String> setMethodsMap = _getSetMethodsMap(tag.getName());
 
 		Map<String, String> attributesMap = tag.getAttributesMap();
 
-		for (Map.Entry<String, String> entry : attributesMap.entrySet()) {
-			String attributeValue = entry.getValue();
+		Set<Map.Entry<String, String>> entrySet = attributesMap.entrySet();
+
+		Iterator<Map.Entry<String, String>> iterator = entrySet.iterator();
+
+		while (iterator.hasNext()) {
+			Map.Entry<String, String> entry = iterator.next();
 
 			String attributeName = entry.getKey();
+			String attributeValue = entry.getValue();
 
-			if (attributeName.equals("style")) {
-				String tagName = tag.getName();
+			String tagName = tag.getName();
 
-				if (!tagName.contains(StringPool.COLON) ||
-					tagName.startsWith("aui:")) {
+			if (tagName.matches("\\w+")) {
+				tag.putAttribute(
+					attributeName,
+					_formatPortletNamespaceValue(attributeValue));
+			}
 
-					tag.putAttribute(
-						attributeName,
-						_formatStyleAttributeValue(attributeValue));
-				}
+			if (tagName.equals("aui:button") && attributeName.equals("type") &&
+				attributeValue.equals("button")) {
+
+				iterator.remove();
+
+				continue;
+			}
+
+			if ((tagName.equals("aui:form") ||
+				 tagName.equals("liferay-frontend:edit-form")) &&
+				attributeName.equals("action") &&
+				StringUtil.endsWith(attributeValue, "url.toString() %>")) {
+
+				tag.putAttribute(
+					attributeName,
+					StringUtil.replaceLast(attributeValue, ".toString()", ""));
+			}
+
+			if (tagName.equals("liferay-ui:message") &&
+				attributeName.equals("arguments")) {
+
+				tag.putAttribute(
+					attributeName,
+					_formatMessageArgumentsValue(attributeValue));
+			}
+
+			if (attributeName.equals("style") &&
+				(!tagName.contains(StringPool.COLON) ||
+				 tagName.startsWith("aui:"))) {
+
+				tag.putAttribute(
+					attributeName, _formatStyleAttributeValue(attributeValue));
 			}
 
 			if (attributeValue.matches("<%= Boolean\\.(FALSE|TRUE) %>")) {
@@ -169,6 +212,39 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 		}
 
 		return tag;
+	}
+
+	private String _formatMessageArgumentsValue(String attributeValue) {
+		Matcher matcher = _messageArgumentArrayPattern.matcher(attributeValue);
+
+		if (!matcher.find()) {
+			return attributeValue;
+		}
+
+		List<String> parametersList = JavaSourceUtil.splitParameters(
+			matcher.group(2));
+
+		if (parametersList.size() == 1) {
+			return matcher.replaceFirst("$1$2$3");
+		}
+
+		return attributeValue;
+	}
+
+	private String _formatPortletNamespaceValue(String attributeValue) {
+		if (attributeValue.matches(
+				"<%= liferayPortletResponse\\.getNamespace\\(\\) \\+ " +
+					"\"\\w+\" %>")) {
+
+			return StringUtil.replace(
+				attributeValue,
+				new String[] {
+					"<%= liferayPortletResponse.getNamespace() + \"", "\" %>"
+				},
+				new String[] {"<portlet:namespace />", ""});
+		}
+
+		return attributeValue;
 	}
 
 	private String _formatSingleLineTagAttributes(
@@ -324,11 +400,9 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 	private synchronized Set<String> _getPrimitiveTagAttributeDataTypes() {
 		if (_primitiveTagAttributeDataTypes == null) {
 			_primitiveTagAttributeDataTypes = SetUtil.fromArray(
-				new String[] {
-					"java.lang.Boolean", "Boolean", "boolean",
-					"java.lang.Double", "Double", "double", "java.lang.Integer",
-					"Integer", "int", "java.lang.Long", "Long", "long"
-				});
+				"java.lang.Boolean", "Boolean", "boolean", "java.lang.Double",
+				"Double", "double", "java.lang.Integer", "Integer", "int",
+				"java.lang.Long", "Long", "long");
 		}
 
 		return _primitiveTagAttributeDataTypes;
@@ -338,21 +412,25 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 		throws Exception {
 
 		if (_tagSetMethodsMap != null) {
-			return _tagSetMethodsMap.get(tagName);
+			if (_tagSetMethodsMap.containsKey(tagName)) {
+				return _tagSetMethodsMap.get(tagName);
+			}
+
+			return _tagSetMethodsMap.get("liferay-" + tagName);
 		}
 
 		_tagSetMethodsMap = new HashMap<>();
 
 		List<String> tldFileNames = TaglibUtil.getTLDFileNames(
 			getBaseDirName(), _allFileNames, getSourceFormatterExcludes(),
-			isPortalSource());
+			isPortalSource(), getMaxDirLevel());
 
 		if (tldFileNames.isEmpty()) {
 			return _tagSetMethodsMap.get(tagName);
 		}
 
 		String utilTaglibSrcDirName = TaglibUtil.getUtilTaglibSrcDirName(
-			getBaseDirName());
+			getBaseDirName(), getMaxDirLevel());
 
 		outerLoop:
 		for (String tldFileName : tldFileNames) {
@@ -368,6 +446,10 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 			Element rootElement = document.getRootElement();
 
 			Element shortNameElement = rootElement.element("short-name");
+
+			if (shortNameElement == null) {
+				continue;
+			}
 
 			String shortName = shortNameElement.getStringValue();
 
@@ -395,12 +477,16 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 				}
 
 				if (srcDir == null) {
-					if (tldFileName.contains("/src/")) {
-						srcDir = SourceUtil.getAbsolutePath(tldFile);
+					String absolutePath = SourceUtil.getAbsolutePath(tldFile);
 
-						srcDir =
-							srcDir.substring(0, srcDir.lastIndexOf("/src/")) +
-								"/src/";
+					int x = absolutePath.lastIndexOf("/src/");
+
+					if (x != -1) {
+						srcDir = absolutePath.substring(0, x + 5);
+
+						if (tldFileName.contains("/modules/")) {
+							srcDir += "main/java/";
+						}
 					}
 					else {
 						srcDir = utilTaglibSrcDirName;
@@ -436,7 +522,7 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 
 	private Map<String, String> _getSetMethodsMap(
 			String tagFileName, String utilTaglibSrcDirName)
-		throws IOException, ParseException {
+		throws Exception {
 
 		if (_classSetMethodsMap.containsKey(tagFileName)) {
 			return _classSetMethodsMap.get(tagFileName);
@@ -522,6 +608,10 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 				Double.parseDouble(value);
 			}
 			catch (NumberFormatException numberFormatException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(numberFormatException, numberFormatException);
+				}
+
 				return false;
 			}
 
@@ -549,10 +639,15 @@ public class JSPTagAttributesCheck extends BaseTagAttributesCheck {
 		"liferay-util:include", "liferay-util:param"
 	};
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		JSPTagAttributesCheck.class);
+
 	private static final Pattern _javaSourceInsideTagPattern = Pattern.compile(
 		"<%.*?%>");
 	private static final Pattern _jspTaglibPattern = Pattern.compile(
 		"\t*<[-\\w]+:[-\\w]+ .");
+	private static final Pattern _messageArgumentArrayPattern = Pattern.compile(
+		"^(<%= )new \\w+\\[\\] \\{([^<>]+)\\}( %>)$");
 	private static final Pattern _styleAttributePattern = Pattern.compile(
 		"(\\A|\\W)([a-z\\-]+)\\s*:");
 

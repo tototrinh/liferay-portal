@@ -19,6 +19,7 @@ import com.liferay.asset.kernel.model.adapter.StagedAssetLink;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.kernel.service.AssetLinkLocalService;
 import com.liferay.exportimport.changeset.constants.ChangesetPortletKeys;
+import com.liferay.exportimport.configuration.ExportImportServiceConfiguration;
 import com.liferay.exportimport.constants.ExportImportConstants;
 import com.liferay.exportimport.controller.PortletExportController;
 import com.liferay.exportimport.internal.lar.DeletionSystemEventExporter;
@@ -38,8 +39,8 @@ import com.liferay.exportimport.kernel.lar.PortletDataHandler;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerKeys;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerStatusMessageSender;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
-import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleConstants;
 import com.liferay.exportimport.kernel.lifecycle.ExportImportLifecycleManager;
+import com.liferay.exportimport.kernel.lifecycle.constants.ExportImportLifecycleConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.portlet.data.handler.provider.PortletDataHandlerProvider;
 import com.liferay.exportimport.portlet.preferences.processor.Capability;
@@ -61,16 +62,18 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.Portlet;
-import com.liferay.portal.kernel.model.PortletConstants;
 import com.liferay.portal.kernel.model.PortletItem;
 import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.adapter.ModelAdapterUtil;
+import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.PortletItemLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.PortletPreferenceValueLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
@@ -160,14 +163,8 @@ public class PortletExportControllerImpl implements PortletExportController {
 
 			return file;
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			ExportImportThreadLocal.setPortletExportInProcess(false);
-
-			if (portletDataContext != null) {
-				ZipWriter zipWriter = portletDataContext.getZipWriter();
-
-				zipWriter.umount();
-			}
 
 			_exportImportLifecycleManager.fireExportImportLifecycleEvent(
 				ExportImportLifecycleConstants.EVENT_PORTLET_EXPORT_FAILED,
@@ -176,9 +173,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 					exportImportConfiguration.getExportImportConfigurationId()),
 				_portletDataContextFactory.clonePortletDataContext(
 					portletDataContext),
-				t);
+				throwable);
 
-			throw t;
+			throw throwable;
 		}
 	}
 
@@ -198,12 +195,14 @@ public class PortletExportControllerImpl implements PortletExportController {
 
 			List<AssetLink> assetLinks = new ArrayList<>();
 
-			assetLinks.addAll(
-				_assetLinkLocalService.getLinks(
-					portletDataContext.getGroupId(),
-					portletDataContext.getStartDate(),
-					portletDataContext.getEndDate(), QueryUtil.ALL_POS,
-					QueryUtil.ALL_POS));
+			if (_isIncludeAllAssetLinks()) {
+				assetLinks.addAll(
+					_assetLinkLocalService.getLinks(
+						portletDataContext.getGroupId(),
+						portletDataContext.getStartDate(),
+						portletDataContext.getEndDate(), QueryUtil.ALL_POS,
+						QueryUtil.ALL_POS));
+			}
 
 			Set<Long> assetLinkIds = portletDataContext.getAssetLinkIds();
 
@@ -308,6 +307,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 			return;
 		}
 
+		PortletDataHandler portletDataHandler =
+			portlet.getPortletDataHandlerInstance();
+
 		if (BackgroundTaskThreadLocal.hasBackgroundTask()) {
 			PortletDataContext clonedPortletDataContext =
 				_portletDataContextFactory.clonePortletDataContext(
@@ -317,9 +319,6 @@ public class PortletExportControllerImpl implements PortletExportController {
 				clonedPortletDataContext.getManifestSummary();
 
 			manifestSummary.resetCounters();
-
-			PortletDataHandler portletDataHandler =
-				portlet.getPortletDataHandlerInstance();
 
 			portletDataHandler.prepareManifestSummary(clonedPortletDataContext);
 
@@ -345,14 +344,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 			"private-layout",
 			String.valueOf(portletDataContext.isPrivateLayout()));
 
-		StringBundler pathSB = new StringBundler(4);
-
-		pathSB.append(ExportImportPathUtil.getPortletPath(portletDataContext));
-		pathSB.append(StringPool.SLASH);
-		pathSB.append(plid);
-		pathSB.append("/portlet.xml");
-
-		String path = pathSB.toString();
+		String path = StringBundler.concat(
+			ExportImportPathUtil.getPortletPath(portletDataContext),
+			StringPool.SLASH, plid, "/portlet.xml");
 
 		portletElement.addAttribute("self-path", path);
 
@@ -405,15 +399,10 @@ public class PortletExportControllerImpl implements PortletExportController {
 			}
 
 			if (!portlet.isPreferencesUniquePerLayout()) {
-				StringBundler sb = new StringBundler(5);
-
-				sb.append(portlet.getPortletId());
-				sb.append(StringPool.AT);
-				sb.append(portletDataContext.getScopeType());
-				sb.append(StringPool.AT);
-				sb.append(portletDataContext.getScopeLayoutUuid());
-
-				String dataKey = sb.toString();
+				String dataKey = StringBundler.concat(
+					portlet.getPortletId(), StringPool.AT,
+					portletDataContext.getScopeType(), StringPool.AT,
+					portletDataContext.getScopeLayoutUuid());
 
 				if (!portletDataContext.hasNotUniquePerLayout(dataKey)) {
 					portletDataContext.putNotUniquePerLayout(dataKey);
@@ -536,6 +525,11 @@ public class PortletExportControllerImpl implements PortletExportController {
 		// Permissions
 
 		if (exportPermissions) {
+			if (Validator.isNotNull(portletDataHandler.getResourceName())) {
+				portletDataContext.addPortletPermissions(
+					portletDataHandler.getResourceName());
+			}
+
 			_permissionExporter.exportPortletPermissions(
 				portletDataContext, portlet.getPortletId(), layout,
 				portletElement);
@@ -549,9 +543,6 @@ public class PortletExportControllerImpl implements PortletExportController {
 		element.addAttribute("layout-id", String.valueOf(layoutId));
 		element.addAttribute("path", path);
 		element.addAttribute("portlet-data", String.valueOf(exportPortletData));
-
-		PortletDataHandler portletDataHandler =
-			portlet.getPortletDataHandlerInstance();
 
 		element.addAttribute(
 			"schema-version", portletDataHandler.getSchemaVersion());
@@ -764,14 +755,10 @@ public class PortletExportControllerImpl implements PortletExportController {
 		if (!layout.isTypeControlPanel() && !layout.isTypePanel() &&
 			!layout.isTypePortlet()) {
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Unable to export layout ");
-			sb.append(layout.getPlid());
-			sb.append(" because it has an invalid type: ");
-			sb.append(layout.getType());
-
-			throw new LayoutImportException(sb.toString());
+			throw new LayoutImportException(
+				StringBundler.concat(
+					"Unable to export layout ", layout.getPlid(),
+					" because it has an invalid type: ", layout.getType()));
 		}
 
 		ServiceContext serviceContext =
@@ -943,14 +930,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 			String portletId, long plid, Element parentElement)
 		throws Exception {
 
-		String preferencesXML = portletPreferences.getPreferences();
-
-		if (Validator.isNull(preferencesXML)) {
-			preferencesXML = PortletConstants.DEFAULT_PREFERENCES;
-		}
-
 		javax.portlet.PortletPreferences jxPortletPreferences =
-			PortletPreferencesFactoryUtil.fromDefaultXML(preferencesXML);
+			_portletPreferenceValueLocalService.getPreferences(
+				portletPreferences);
 
 		Portlet portlet = _portletLocalService.getPortletById(
 			portletDataContext.getCompanyId(), portletId);
@@ -1087,14 +1069,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 			Element parentElement)
 		throws Exception {
 
-		String preferencesXML = portletPreferences.getPreferences();
-
-		if (Validator.isNull(preferencesXML)) {
-			preferencesXML = PortletConstants.DEFAULT_PREFERENCES;
-		}
-
 		javax.portlet.PortletPreferences jxPortletPreferences =
-			PortletPreferencesFactoryUtil.fromDefaultXML(preferencesXML);
+			_portletPreferenceValueLocalService.getPreferences(
+				portletPreferences);
 
 		Document document = SAXReaderUtil.read(
 			PortletPreferencesFactoryUtil.toXML(jxPortletPreferences));
@@ -1178,18 +1155,10 @@ public class PortletExportControllerImpl implements PortletExportController {
 		PortletDataContext portletDataContext, String className, String key,
 		Lock lock) {
 
-		StringBundler sb = new StringBundler(8);
-
-		sb.append(ExportImportPathUtil.getRootPath(portletDataContext));
-		sb.append("/locks/");
-		sb.append(_portal.getClassNameId(className));
-		sb.append(CharPool.FORWARD_SLASH);
-		sb.append(key);
-		sb.append(CharPool.FORWARD_SLASH);
-		sb.append(lock.getLockId());
-		sb.append(".xml");
-
-		return sb.toString();
+		return StringBundler.concat(
+			ExportImportPathUtil.getRootPath(portletDataContext), "/locks/",
+			_portal.getClassNameId(className), CharPool.FORWARD_SLASH, key,
+			CharPool.FORWARD_SLASH, lock.getLockId(), ".xml");
 	}
 
 	protected PortletDataContext getPortletDataContext(
@@ -1370,6 +1339,22 @@ public class PortletExportControllerImpl implements PortletExportController {
 		return false;
 	}
 
+	private boolean _isIncludeAllAssetLinks() {
+		try {
+			ExportImportServiceConfiguration exportImportServiceConfiguration =
+				_configurationProvider.getCompanyConfiguration(
+					ExportImportServiceConfiguration.class,
+					CompanyThreadLocal.getCompanyId());
+
+			return exportImportServiceConfiguration.includeAllAssetLinks();
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+		}
+
+		return false;
+	}
+
 	private Optional<Portlet> _replacePortlet(
 		PortletDataContext portletDataContext, Portlet portlet) {
 
@@ -1400,6 +1385,10 @@ public class PortletExportControllerImpl implements PortletExportController {
 
 	private AssetEntryLocalService _assetEntryLocalService;
 	private AssetLinkLocalService _assetLinkLocalService;
+
+	@Reference
+	private ConfigurationProvider _configurationProvider;
+
 	private final DeletionSystemEventExporter _deletionSystemEventExporter =
 		DeletionSystemEventExporter.getInstance();
 
@@ -1433,6 +1422,11 @@ public class PortletExportControllerImpl implements PortletExportController {
 	private PortletItemLocalService _portletItemLocalService;
 	private PortletLocalService _portletLocalService;
 	private PortletPreferencesLocalService _portletPreferencesLocalService;
+
+	@Reference
+	private PortletPreferenceValueLocalService
+		_portletPreferenceValueLocalService;
+
 	private UserLocalService _userLocalService;
 
 	private class UpdatePortletLastPublishDateCallable

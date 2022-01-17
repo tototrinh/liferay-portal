@@ -27,6 +27,8 @@ import com.liferay.portlet.documentlibrary.util.DLAppUtil;
 import java.io.File;
 import java.io.InputStream;
 
+import java.util.Date;
+
 /**
  * @author Adolfo Pérez
  */
@@ -44,9 +46,10 @@ public class ModelValidatorLocalRepositoryWrapper
 
 	@Override
 	public FileEntry addFileEntry(
-			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog, File file,
-			ServiceContext serviceContext)
+			String externalReferenceCode, long userId, long folderId,
+			String sourceFileName, String mimeType, String title,
+			String description, String changeLog, File file,
+			Date expirationDate, Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
 		FileContentReference fileContentReference =
@@ -57,27 +60,31 @@ public class ModelValidatorLocalRepositoryWrapper
 		_modelValidator.validate(fileContentReference);
 
 		return super.addFileEntry(
-			userId, folderId, sourceFileName, mimeType, title, description,
-			changeLog, file, serviceContext);
+			externalReferenceCode, userId, folderId, sourceFileName, mimeType,
+			title, description, changeLog, file, expirationDate, reviewDate,
+			serviceContext);
 	}
 
 	@Override
 	public FileEntry addFileEntry(
-			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog, InputStream is,
-			long size, ServiceContext serviceContext)
+			String externalReferenceCode, long userId, long folderId,
+			String sourceFileName, String mimeType, String title,
+			String description, String changeLog, InputStream inputStream,
+			long size, Date expirationDate, Date reviewDate,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		FileContentReference fileContentReference =
 			FileContentReference.fromInputStream(
 				sourceFileName, DLAppUtil.getExtension(title, sourceFileName),
-				mimeType, is, size);
+				mimeType, inputStream, size);
 
 		_modelValidator.validate(fileContentReference);
 
 		return super.addFileEntry(
-			userId, folderId, sourceFileName, mimeType, title, description,
-			changeLog, is, size, serviceContext);
+			externalReferenceCode, userId, folderId, sourceFileName, mimeType,
+			title, description, changeLog, inputStream, size, expirationDate,
+			reviewDate, serviceContext);
 	}
 
 	@Override
@@ -85,7 +92,7 @@ public class ModelValidatorLocalRepositoryWrapper
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
 			DLVersionNumberIncrease dlVersionNumberIncrease, File file,
-			ServiceContext serviceContext)
+			Date expirationDate, Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
 		FileContentReference fileContentReference =
@@ -97,28 +104,31 @@ public class ModelValidatorLocalRepositoryWrapper
 
 		return super.updateFileEntry(
 			userId, fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, dlVersionNumberIncrease, file, serviceContext);
+			changeLog, dlVersionNumberIncrease, file, expirationDate,
+			reviewDate, serviceContext);
 	}
 
 	@Override
 	public FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			DLVersionNumberIncrease dlVersionNumberIncrease, InputStream is,
-			long size, ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease,
+			InputStream inputStream, long size, Date expirationDate,
+			Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
 		FileContentReference fileContentReference =
 			FileContentReference.fromInputStream(
 				fileEntryId, sourceFileName,
-				DLAppUtil.getExtension(title, sourceFileName), mimeType, is,
-				size);
+				DLAppUtil.getExtension(title, sourceFileName), mimeType,
+				inputStream, size);
 
 		_modelValidator.validate(fileContentReference);
 
 		return super.updateFileEntry(
 			userId, fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, dlVersionNumberIncrease, is, size, serviceContext);
+			changeLog, dlVersionNumberIncrease, inputStream, size,
+			expirationDate, reviewDate, serviceContext);
 	}
 
 	private final ModelValidator<FileContentReference> _modelValidator;

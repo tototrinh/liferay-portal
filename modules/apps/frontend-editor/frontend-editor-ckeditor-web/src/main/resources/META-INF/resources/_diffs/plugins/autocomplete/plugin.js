@@ -12,22 +12,19 @@
  * details.
  */
 
-(function() {
+(function () {
 	CKEDITOR.plugins.add('autocomplete', {
 		init(editor) {
 			var instance = this;
 
-			AUI().use('aui-debounce', 'liferay-autocomplete-input', A => {
+			AUI().use('aui-debounce', 'liferay-autocomplete-input', () => {
 				var path = instance.path;
 
 				var dependencies = [CKEDITOR.getUrl(path + 'autocomplete.js')];
 
 				CKEDITOR.scriptLoader.load(dependencies, () => {
 					var liferayAutoCompleteCKEditor = new Liferay.AutoCompleteCKEditor(
-						A.merge(editor.config.autocomplete, {
-							editor,
-							width: 300
-						})
+						{...editor.config.autocomplete, editor, width: 300}
 					);
 
 					liferayAutoCompleteCKEditor.render();
@@ -35,6 +32,6 @@
 					liferayAutoCompleteCKEditor.detach('valueChange');
 				});
 			});
-		}
+		},
 	});
 })();

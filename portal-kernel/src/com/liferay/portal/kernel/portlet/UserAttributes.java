@@ -81,7 +81,14 @@ public class UserAttributes {
 
 	public static final String USER_NAME_SUFFIX = "user.name.suffix";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #USER_NAME_NICK_NAME}
+	 */
+	@Deprecated
 	public static final String USER_NAME_NICKNAME = "user.name.nickName";
+
+	public static final String USER_NAME_NICK_NAME = "user.name.nickName";
 
 	public static final String USER_HOME_INFO_POSTAL_NAME =
 		"user.home-info.postal.name";
@@ -341,9 +348,7 @@ public class UserAttributes {
 			return _user.getFullName();
 		}
 		else if (name.equals(USER_BDATE)) {
-			Date birthday = _user.getBirthday();
-
-			return birthday.toString();
+			return String.valueOf(_user.getBirthday());
 		}
 		else if (name.equals(USER_BDATE_DAY)) {
 			Date birthday = _user.getBirthday();

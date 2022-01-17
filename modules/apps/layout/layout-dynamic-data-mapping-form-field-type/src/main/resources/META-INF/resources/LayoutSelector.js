@@ -12,176 +12,139 @@
  * details.
  */
 
-/* eslint-disable no-unused-vars */
-import {FieldBase} from 'dynamic-data-mapping-form-field-type';
+import ClayButton from '@clayui/button';
+import ClayForm, {ClayInput} from '@clayui/form';
+import {FieldBase} from 'dynamic-data-mapping-form-field-type/FieldBase/ReactFieldBase.es';
+import {openSelectionModal} from 'frontend-js-web';
+import React, {useEffect, useState} from 'react';
 
-/* eslint-enable no-unused-vars */
-import Component from 'metal-component';
-import Soy from 'metal-soy';
-import {Config} from 'metal-state';
-
-import './LayoutSelectorAdapter.soy';
-
-import './LayoutSelectorRegister.soy';
-
-import './ReactLayoutSelectorAdapter';
-import templates from './LayoutSelector.soy';
-
-class LayoutSelector extends Component {
-	dispatchEvent(event, name, value) {
-		this.emit(name, {
-			fieldInstance: this,
-			originalEvent: event,
-			value
-		});
+function getInputValue(value, predefinedValue) {
+	if (!value || value === '') {
+		return predefinedValue;
 	}
 
-	_handleOnDispatch(event) {
-		switch (event.type) {
-			case 'value':
-				this.dispatchEvent(event, 'fieldEdited', event.payload);
-				break;
-			case 'blur':
-				this.dispatchEvent(
-					event.payload,
-					'fieldBlurred',
-					event.payload.target.value
-				);
-				break;
-			case 'focus':
-				this.dispatchEvent(
-					event.payload,
-					'fieldFocused',
-					event.payload.target.value
-				);
-				break;
-			default:
-				console.error(new TypeError(`There is no type ${event.type}`));
-				break;
+	if (value && typeof value !== 'string') {
+		try {
+			return JSON.stringify(value);
 		}
+		catch (error) {}
 	}
+
+	return value;
 }
 
-LayoutSelector.STATE = {
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
+const LayoutSelector = ({
+	disabled,
+	editingLanguageId,
+	inputValue,
+	itemSelectorURL,
+	name,
+	onChange,
+	portletNamespace,
+}) => {
+	const [layout, setLayout] = useState(() => JSON.parse(inputValue || '{}'));
 
-	errorMessage: Config.string(),
+	useEffect(() => {
+		setLayout(JSON.parse(getInputValue(inputValue, '{}')));
+	}, [inputValue]);
 
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?bool}
-	 */
+	const handleClearClick = () => {
+		setLayout({});
+		onChange('');
+	};
 
-	evaluable: Config.bool().value(false),
+	const handleFieldChanged = (selectedItem) => {
+		if (selectedItem && selectedItem.layoutId) {
+			setLayout(selectedItem);
+			onChange(JSON.stringify(selectedItem));
+		}
+	};
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
+	const handleItemSelectorTriggerClick = (event) => {
+		event.preventDefault();
 
-	fieldName: Config.string(),
+		openSelectionModal({
+			onSelect: handleFieldChanged,
+			selectEventName: `${portletNamespace}selectLayout`,
+			title: Liferay.Language.get('page'),
+			url: itemSelectorURL,
+		});
+	};
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
+	return (
+		<ClayForm.Group style={{marginBottom: '0.5rem'}}>
+			<ClayInput.Group>
+				<ClayInput.GroupItem className="d-none d-sm-block" prepend>
+					<input
+						name={name}
+						type="hidden"
+						value={JSON.stringify(layout)}
+					/>
 
-	label: Config.string(),
+					<ClayInput
+						className="bg-light"
+						dir={Liferay.Language.direction[editingLanguageId]}
+						disabled={disabled}
+						lang={editingLanguageId}
+						onClick={handleItemSelectorTriggerClick}
+						readOnly
+						type="text"
+						value={layout.name || ''}
+					/>
+				</ClayInput.GroupItem>
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
+				<ClayInput.GroupItem append shrink>
+					<ClayButton
+						disabled={disabled}
+						displayType="secondary"
+						onClick={handleItemSelectorTriggerClick}
+						type="button"
+					>
+						{Liferay.Language.get('select')}
+					</ClayButton>
+				</ClayInput.GroupItem>
 
-	name: Config.string().required(),
-
-	/**
-	 * @default '000000'
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
-
-	predefinedValue: Config.string().value('000000'),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?bool}
-	 */
-
-	readOnly: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(bool|undefined)}
-	 */
-
-	repeatable: Config.bool().value(false),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(bool|undefined)}
-	 */
-
-	required: Config.bool().value(false),
-
-	/**
-	 * @default true
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(bool|undefined)}
-	 */
-
-	showLabel: Config.bool().value(true),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
-
-	spritemap: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
-
-	tip: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof LayoutSelector
-	 * @type {?(string|undefined)}
-	 */
-
-	value: Config.string()
+				{layout.layoutId && (
+					<ClayInput.GroupItem shrink>
+						<ClayButton
+							disabled={disabled}
+							displayType="secondary"
+							onClick={handleClearClick}
+							type="button"
+						>
+							{Liferay.Language.get('clear')}
+						</ClayButton>
+					</ClayInput.GroupItem>
+				)}
+			</ClayInput.Group>
+		</ClayForm.Group>
+	);
 };
 
-Soy.register(LayoutSelector, templates);
+const Main = ({
+	editingLanguageId,
+	itemSelectorURL,
+	name,
+	onChange,
+	portletNamespace,
+	predefinedValue,
+	readOnly,
+	value,
+	...otherProps
+}) => (
+	<FieldBase {...otherProps} name={name} readOnly={readOnly}>
+		<LayoutSelector
+			disabled={readOnly}
+			editingLanguageId={editingLanguageId}
+			inputValue={getInputValue(value, predefinedValue)}
+			itemSelectorURL={itemSelectorURL}
+			name={name}
+			onChange={(value) => onChange({}, value)}
+			portletNamespace={portletNamespace}
+		/>
+	</FieldBase>
+);
 
-export {LayoutSelector};
-export default LayoutSelector;
+Main.displayName = 'LayoutSelector';
+
+export default Main;

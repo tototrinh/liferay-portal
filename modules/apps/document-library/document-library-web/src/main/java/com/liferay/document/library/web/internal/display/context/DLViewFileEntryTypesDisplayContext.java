@@ -14,10 +14,13 @@
 
 package com.liferay.document.library.web.internal.display.context;
 
+import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeServiceUtil;
 import com.liferay.document.library.web.internal.security.permission.resource.DLPermission;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -26,6 +29,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.PortletURL;
@@ -63,16 +67,13 @@ public class DLViewFileEntryTypesDisplayContext {
 
 			return CreationMenuBuilder.addPrimaryDropdownItem(
 				dropdownItem -> {
-					PortletURL creationURL = renderResponse.createRenderURL();
-
-					creationURL.setParameter(
+					dropdownItem.setHref(
+						renderResponse.createRenderURL(),
 						"mvcRenderCommandName",
-						"/document_library/edit_file_entry_type");
-					creationURL.setParameter(
-						"redirect",
+						"/document_library/edit_file_entry_type", "redirect",
 						PortalUtil.getCurrentURL(_httpServletRequest));
-
-					dropdownItem.setHref(creationURL.toString());
+					dropdownItem.setLabel(
+						LanguageUtil.get(_httpServletRequest, "new"));
 				}
 			).build();
 		}
@@ -84,7 +85,9 @@ public class DLViewFileEntryTypesDisplayContext {
 		return String.valueOf(getPortletURL());
 	}
 
-	public SearchContainer getSearchContainer() throws PortalException {
+	public SearchContainer<DLFileEntryType> getSearchContainer()
+		throws PortalException {
+
 		if (_searchContainer != null) {
 			return _searchContainer;
 		}
@@ -93,14 +96,14 @@ public class DLViewFileEntryTypesDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer searchContainer = new SearchContainer(
+		SearchContainer<DLFileEntryType> searchContainer = new SearchContainer(
 			_renderRequest, new DisplayTerms(_httpServletRequest),
 			new DisplayTerms(_httpServletRequest),
 			SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA,
 			getPortletURL(), null,
 			LanguageUtil.get(_httpServletRequest, "there-are-no-results"));
 
-		DisplayTerms searchTerms = searchContainer.getSearchTerms();
+		DisplayTerms displayTerms = searchContainer.getSearchTerms();
 
 		boolean includeBasicFileEntryType = ParamUtil.getBoolean(
 			_renderRequest, "includeBasicFileEntryType");
@@ -109,7 +112,8 @@ public class DLViewFileEntryTypesDisplayContext {
 			themeDisplay.getCompanyId(),
 			PortalUtil.getCurrentAndAncestorSiteGroupIds(
 				themeDisplay.getScopeGroupId()),
-			searchTerms.getKeywords(), includeBasicFileEntryType);
+			displayTerms.getKeywords(), includeBasicFileEntryType,
+			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT);
 
 		searchContainer.setTotal(total);
 
@@ -118,7 +122,8 @@ public class DLViewFileEntryTypesDisplayContext {
 				themeDisplay.getCompanyId(),
 				PortalUtil.getCurrentAndAncestorSiteGroupIds(
 					themeDisplay.getScopeGroupId()),
-				searchTerms.getKeywords(), includeBasicFileEntryType,
+				displayTerms.getKeywords(), includeBasicFileEntryType,
+				DLFileEntryTypeConstants.FILE_ENTRY_TYPE_SCOPE_DEFAULT,
 				searchContainer.getStart(), searchContainer.getEnd(),
 				searchContainer.getOrderByComparator()));
 
@@ -128,23 +133,37 @@ public class DLViewFileEntryTypesDisplayContext {
 	}
 
 	public int getTotalItems() throws PortalException {
-		SearchContainer searchContainer = getSearchContainer();
+		SearchContainer<DLFileEntryType> searchContainer = getSearchContainer();
 
 		return searchContainer.getTotal();
 	}
 
+	public boolean isSearchDisabled() throws PortalException {
+		SearchContainer<DLFileEntryType> searchContainer = getSearchContainer();
+
+		DisplayTerms displayTerms = searchContainer.getSearchTerms();
+
+		if ((searchContainer.getTotal() == 0) &&
+			Validator.isNull(displayTerms.getKeywords())) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	protected PortletURL getPortletURL() {
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("navigation", "file_entry_types");
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setNavigation(
+			"file_entry_types"
+		).buildPortletURL();
 	}
 
 	protected final RenderResponse renderResponse;
 
 	private final HttpServletRequest _httpServletRequest;
 	private final RenderRequest _renderRequest;
-	private SearchContainer _searchContainer;
+	private SearchContainer<DLFileEntryType> _searchContainer;
 
 }

@@ -23,7 +23,7 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.search.searcher.SearchRequestBuilder;
 import com.liferay.portal.search.web.internal.display.context.PortletRequestThemeDisplaySupplier;
 import com.liferay.portal.search.web.internal.display.context.ThemeDisplaySupplier;
-import com.liferay.portal.search.web.internal.portlet.shared.task.PortletSharedRequestHelper;
+import com.liferay.portal.search.web.internal.portlet.shared.task.helper.PortletSharedRequestHelper;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchSettings;
 import com.liferay.portal.search.web.search.request.SearchSettings;
 
@@ -147,6 +147,11 @@ public class PortletSharedSearchSettingsImpl
 	}
 
 	@Override
+	public Optional<String> getScopeParameterName() {
+		return _searchSettings.getScopeParameterName();
+	}
+
+	@Override
 	public SearchContext getSearchContext() {
 		return _searchSettings.getSearchContext();
 	}
@@ -195,6 +200,11 @@ public class PortletSharedSearchSettingsImpl
 
 		_searchSettings.setPaginationStartParameterName(
 			paginationStartParameterName);
+	}
+
+	@Override
+	public void setScopeParameterName(String scopeParameterName) {
+		_searchSettings.setScopeParameterName(scopeParameterName);
 	}
 
 	private final String _portletId;

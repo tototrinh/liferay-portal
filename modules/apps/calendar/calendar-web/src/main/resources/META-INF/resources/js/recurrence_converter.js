@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-calendar-recurrence-converter',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var LString = Lang.String;
@@ -37,7 +37,7 @@ AUI.add(
 
 		var padNumber = A.rbind('padNumber', LString, 2);
 
-		var RecurrenceConverter = function() {};
+		var RecurrenceConverter = function () {};
 
 		A.mix(RecurrenceConverter.prototype, {
 			_encode(value) {
@@ -125,7 +125,7 @@ AUI.add(
 
 				return {
 					dayOfWeek,
-					position: Lang.toInt(position)
+					position: Lang.toInt(position),
 				};
 			},
 
@@ -210,7 +210,7 @@ AUI.add(
 
 					if (rrule) {
 						recurrence = {
-							rrule
+							rrule,
 						};
 
 						var exdate = instance._parseExDate(parts[1]);
@@ -222,7 +222,7 @@ AUI.add(
 				}
 
 				return recurrence;
-			}
+			},
 		});
 
 		Liferay.RecurrenceConverter = RecurrenceConverter;

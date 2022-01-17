@@ -12,9 +12,7 @@
  * details.
  */
 
-(function() {
-	var A = AUI();
-
+(function () {
 	var BBCodeUtil = Liferay.BBCodeUtil;
 	var CKTools = CKEDITOR.tools;
 
@@ -31,34 +29,35 @@
 		6: 24,
 		7: 32,
 		8: 48,
-		defaultSize: 14
+		defaultSize: 14,
 	};
 
 	var MAP_HANDLERS = {
 		'*': '_handleListItem',
-		b: '_handleStrong',
-		center: '_handleTextAlign',
-		code: '_handleCode',
-		color: '_handleColor',
-		colour: '_handleColor',
-		email: '_handleEmail',
-		font: '_handleFont',
-		i: '_handleEm',
-		img: '_handleImage',
-		justify: '_handleTextAlign',
-		left: '_handleTextAlign',
-		li: '_handleListItem',
-		list: '_handleList',
-		q: '_handleQuote',
-		quote: '_handleQuote',
-		right: '_handleTextAlign',
-		s: '_handleStrikeThrough',
-		size: '_handleSize',
-		table: '_handleTable',
-		td: '_handleTableCell',
-		th: '_handleTableHeader',
-		tr: '_handleTableRow',
-		url: '_handleURL'
+		'b': '_handleStrong',
+		'center': '_handleTextAlign',
+		'code': '_handleCode',
+		'color': '_handleColor',
+		'colour': '_handleColor',
+		'email': '_handleEmail',
+		'font': '_handleFont',
+		'i': '_handleEm',
+		// eslint-disable-next-line @liferay/no-abbreviations
+		'img': '_handleImage',
+		'justify': '_handleTextAlign',
+		'left': '_handleTextAlign',
+		'li': '_handleListItem',
+		'list': '_handleList',
+		'q': '_handleQuote',
+		'quote': '_handleQuote',
+		'right': '_handleTextAlign',
+		's': '_handleStrikeThrough',
+		'size': '_handleSize',
+		'table': '_handleTable',
+		'td': '_handleTableCell',
+		'th': '_handleTableHeader',
+		'tr': '_handleTableRow',
+		'url': '_handleURL',
 	};
 
 	var MAP_IMAGE_ATTRIBUTES = {
@@ -71,7 +70,7 @@
 		longdesc: 1,
 		style: 1,
 		title: 1,
-		width: 1
+		width: 1,
 	};
 
 	var MAP_ORDERED_LIST_STYLES = {
@@ -79,22 +78,22 @@
 		A: 'list-style-type: upper-alpha;',
 		I: 'list-style-type: upper-roman;',
 		a: 'list-style-type: lower-alpha;',
-		i: 'list-style-type: lower-roman;'
+		i: 'list-style-type: lower-roman;',
 	};
 
 	var MAP_TOKENS_EXCLUDE_NEW_LINE = {
 		'*': 3,
-		li: 3,
-		table: 2,
-		td: 3,
-		th: 3,
-		tr: 3
+		'li': 3,
+		'table': 2,
+		'td': 3,
+		'th': 3,
+		'tr': 3,
 	};
 
 	var MAP_UNORDERED_LIST_STYLES = {
 		circle: 'list-style-type: circle;',
 		disc: 'list-style-type: disc;',
-		square: 'list-style-type: square;'
+		square: 'list-style-type: square;',
 	};
 
 	var REGEX_ATTRS = /\s*([^=]+)\s*=\s*"([^"]+)"\s*/g;
@@ -165,7 +164,7 @@
 		'<img src="{imageSrc}" {attributes} />'
 	);
 
-	var Converter = function(config) {
+	var Converter = function (config) {
 		var instance = this;
 
 		config = config || {};
@@ -176,7 +175,7 @@
 	};
 
 	Converter.prototype = {
-		_escapeHTML: A.Lang.String.escapeHTML,
+		_escapeHTML: Liferay.Util.escapeHTML,
 
 		_extractData(toTagName, consume) {
 			var instance = this;
@@ -255,7 +254,7 @@
 
 				for (var i = 0; i < length; i++) {
 					var image = tplImage.output({
-						imageSrc: emoticonPath + emoticonImages[i]
+						imageSrc: emoticonPath + emoticonImages[i],
 					});
 
 					var escapedSymbol = emoticonSymbols[i].replace(
@@ -332,7 +331,7 @@
 
 			var result = tplImage.output({
 				attributes: instance._handleImageAttributes(token, token.value),
-				imageSrc
+				imageSrc,
 			});
 
 			instance._result.push(result);
@@ -665,7 +664,7 @@
 
 			instance._result = [];
 			instance._stack = [];
-		}
+		},
 	};
 
 	CKEDITOR.BBCode2HTML = Converter;

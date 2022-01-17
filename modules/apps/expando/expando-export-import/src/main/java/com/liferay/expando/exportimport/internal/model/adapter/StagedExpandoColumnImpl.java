@@ -76,6 +76,11 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 	}
 
 	@Override
+	public ExpandoColumn cloneWithOriginalValues() {
+		return (ExpandoColumn)clone();
+	}
+
+	@Override
 	public int compareTo(ExpandoColumn expandoColumn) {
 		return _expandoColumn.compareTo(expandoColumn);
 	}
@@ -93,6 +98,11 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 	@Override
 	public Date getCreateDate() {
 		return new Date();
+	}
+
+	@Override
+	public long getCtCollectionId() {
+		return _expandoColumn.getCtCollectionId();
 	}
 
 	@Override
@@ -133,6 +143,11 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 	@Override
 	public Date getModifiedDate() {
 		return new Date();
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return _expandoColumn.getMvccVersion();
 	}
 
 	@Override
@@ -187,6 +202,10 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 		return _expandoColumn.isCachedModel();
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public boolean isEntityCacheEnabled() {
 		return _expandoColumn.isEntityCacheEnabled();
@@ -197,6 +216,10 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 		return _expandoColumn.isEscapedModel();
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public boolean isFinderCacheEnabled() {
 		return _expandoColumn.isFinderCacheEnabled();
@@ -238,6 +261,11 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 	}
 
 	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public void setDefaultData(String defaultData) {
 		_expandoColumn.setDefaultData(defaultData);
 	}
@@ -265,6 +293,11 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 	@Override
 	public void setModifiedDate(Date date) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		_expandoColumn.setMvccVersion(mvccVersion);
 	}
 
 	@Override
@@ -304,9 +337,9 @@ public class StagedExpandoColumnImpl implements StagedExpandoColumn {
 
 	@Override
 	public void setTypeSettingsProperties(
-		UnicodeProperties typeSettingsProperties) {
+		UnicodeProperties typeSettingsUnicodeProperties) {
 
-		_expandoColumn.setTypeSettingsProperties(typeSettingsProperties);
+		_expandoColumn.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 	}
 
 	@Override

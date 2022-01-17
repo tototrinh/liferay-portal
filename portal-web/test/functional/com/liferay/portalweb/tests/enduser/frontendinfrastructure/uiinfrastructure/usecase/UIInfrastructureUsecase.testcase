@@ -3,6 +3,7 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
+	property testray.component.names = "User Interface";
 	property testray.main.component.name = "User Interface";
 
 	setUp {
@@ -17,116 +18,169 @@ definition {
 		if ("${testPortalInstance}" == "true") {
 			PortalInstances.tearDownCP();
 		}
+		else {
+			Page.tearDownCP();
+
+			JSONUser.tearDownNonAdminUsers();
+		}
 	}
 
-	@description = "This is a use case for LPS-95157. It checks the nav-bar menu icons on guest page level after page refresh."
+	@description = "This is a use case for LPS-95157. Verify control menu on an admin page is styled correctly after refreshing page"
 	@priority = "5"
-	test RefreshHomePage {
-		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "UIInfrastructureUsecase#RefreshHomePage";
-
-		Navigator.gotoPage(pageName = "Home");
-
-		Refresh();
-
-		SikuliAssertElementPresent(locator1 = "Navigation#SCREENSHOTS_HOME_PAGE_NAV_LEFT_PNG");
-
-		SikuliAssertElementPresent(locator1 = "Navigation#SCREENSHOTS_HOME_PAGE_NAV_RIGHT_PNG");
-
-		takeScreenshot();
-	}
-
-	@description = "This is a use case for LPS-95157. It checks the nav-bar menu icons on admin page level after page refresh."
-	@priority = "5"
-	test RefreshWebContent {
-		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "UIInfrastructureUsecase#RefreshWebContent";
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Web Content");
-
-		Refresh();
-
-		SikuliAssertElementPresent(locator1 = "Navigation#SCREENSHOTS_WEB_CONTENT_NAV_LEFT_PNG");
-
-		SikuliAssertElementPresent(locator1 = "Navigation#SCREENSHOTS_WEB_CONTENT_NAV_RIGHT_PNG");
-
-		takeScreenshot();
-	}
-
-	@priority = "5"
-	test RightToLeftSmoke {
-		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "UIInfrastructureUsecase#RightToLeftSmoke";
-
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
-
-		SitePages.addPublicPage(pageName = "RTL Test Page");
-
-		Navigator.gotoPage(pageName = "RTL Test Page");
-
-		Portlet.addPG(portletName = "Language Selector");
-
-		LanguagePortlet.selectLanguagePG(
-			locale = "ar_SA",
-			textIcon = "العربية-السعودية");
-
-		ProductMenuHelper.openProductMenu();
-
-		Page.viewRTLLayout();
-
-		LanguagePortlet.selectLanguagePG(
-			locale = "en_US",
-			textIcon = "english-United States");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Web Content");
-
-		WebContentNavigator.gotoAddCP();
-
-		Navigator.ensureLocaleURL(locale = "ar");
-
-		PortletEntry.changeLocale(locale = "ar_SA");
-
-		WebContent.addCP(webContentTitle = "WC Title");
-
-		WebContent.viewRTLLayout();
-
-		Navigator.openURL();
-
-		Navigator.ensureLocaleURL(locale = "en");
-	}
-
-	@description = "Ensure that a user can access portlet options and drag and drop portlets."
-	@priority = "5"
-	test Smoke {
+	@refactordone
+	test AdminPageCanDisplayStyleCorrectlyAfterPageRefresh {
+		property app.server.types = "tomcat";
+		property database.types = "mysql";
+		property environment.acceptance = "true";
 		property portal.acceptance = "true";
 
 		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		SitePages.addPublicPage(pageName = "Test Page");
+		Refresh();
+
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "display",
+			value1 = "flex");
+
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "list-style",
+			value1 = "outside none none");
+
+		takeScreenshot();
+	}
+
+	@description = "This is a use case for LPS-70390."
+	@priority = "4"
+	@refactordone
+	test CanViewNonASCIICharactersWithSPADisabled {
+		property custom.properties = "javascript.single.page.application.enabled=false";
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.addCP(
+			userEmailAddress = "skandi@liferay.com",
+			userFirstName = "Skändi",
+			userLastName = "Ääkkönen",
+			userScreenName = "uskandi");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.viewCP(
+			userEmailAddress = "skandi@liferay.com",
+			userFirstName = "Skändi",
+			userLastName = "Ääkkönen",
+			userScreenName = "uskandi");
+	}
+
+	@description = "Verify portlets have defined boundaries in 3 column page layout."
+	@priority = "5"
+	@refactordone
+	test PortletBoundariesAreContained {
+		property app.server.types = "tomcat";
+		property database.types = "mysql";
+		property environment.acceptance = "true";
+		property osgi.modules.includes = "frontend-taglib-clay-sample-web";
+		property portal.acceptance = "true";
+
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Page");
+
+		JSONLayout.updateLayoutTemplateOfPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Page",
+			layoutTemplate = "3 Columns");
+
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Page",
+			widgetName = "Message Boards");
+
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Page",
+			widgetName = "Clay Sample");
+
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Guest",
+			layoutName = "Test Page",
+			widgetName = "Documents and Media");
 
 		Navigator.gotoPage(pageName = "Test Page");
 
-		Portlet.addPG(portletName = "Hello World");
+		Portlet.dragAndDropPortletToColumnPG(
+			columnNumberFrom = "1",
+			columnNumberTo = "2",
+			portletName = "Clay Sample");
 
-		task ("Close the Add Panel") {
-			Click(locator1 = "ControlMenuAddPanel#CLOSE_ADD_PANEL");
+		Navigator.gotoPage(pageName = "Test Page");
+
+		Portlet.dragAndDropPortletToColumnPG(
+			columnNumberFrom = "1",
+			columnNumberTo = "3",
+			portletName = "Documents and Media");
+
+		MouseOver(
+			key_portletTitleName = "Message Boards",
+			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_1_PORTLET_TITLE");
+
+		Portlet.assertPortletHeader(portletName = "MBPortlet");
+
+		takeScreenshot();
+
+		MouseOver(
+			key_portletTitleName = "Clay Sample",
+			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_2_PORTLET_TITLE");
+
+		Portlet.assertPortletHeader(portletName = "ClaySamplePortlet");
+
+		takeScreenshot();
+
+		MouseOver(
+			key_portletTitleName = "Documents and Media",
+			locator1 = "Home#PAGE_COLUMN_PORTLET_COLUMN_3_PORTLET_TITLE");
+
+		Portlet.assertPortletHeader(portletName = "DLPortlet");
+
+		takeScreenshot();
+	}
+
+	@description = "Smoke test to verify portlet can be dragged and dropped, configuration is available, look and feel is available, and can be removed"
+	@priority = "5"
+	@refactordone
+	test PortletUISmoke {
+		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
+		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property environment.acceptance = "true";
+		property osgi.modules.includes = "frontend-taglib-clay-sample-web";
+		property portal.acceptance = "true";
+
+		task ("Add portlet to public page") {
+			JSONLayout.addPublicLayout(
+				groupName = "Guest",
+				layoutName = "Test Page");
+
+			JSONLayout.addWidgetToPublicLayout(
+				groupName = "Guest",
+				layoutName = "Test Page",
+				widgetName = "Clay Sample");
 		}
 
-		task ("Assert the 'Configuration' iframe of the Hello World portlet") {
+		task ("Assert the 'Configuration' iframe of the portlet") {
+			Navigator.gotoPage(pageName = "Test Page");
+
 			Portlet.gotoPortletOptions(
-				portletName = "Hello World",
+				portletName = "Clay Sample",
 				portletOption = "Configuration");
 
 			IFrame.selectConfigurationFrame();
@@ -139,11 +193,11 @@ definition {
 			IFrame.closeFrame();
 		}
 
-		Navigator.gotoPage(pageName = "Test Page");
+		task ("Assert the 'Look and Feel' iframe of the Clay Sample portlet") {
+			Navigator.gotoPage(pageName = "Test Page");
 
-		task ("Assert the 'Look and Feel' iframe of the Hello World portlet") {
 			Portlet.gotoPortletOptions(
-				portletName = "Hello World",
+				portletName = "Clay Sample",
 				portletOption = "Look and Feel Configuration");
 
 			IFrame.selectConfigurationFrame();
@@ -157,55 +211,71 @@ definition {
 			IFrame.closeFrame();
 		}
 
-		Portlet.dragAndDropPortletToColumnPG(
-			columnNumberFrom = "1",
-			columnNumberTo = "2",
-			portletName = "Hello World");
-
-		Portlet.dragAndDropPortletToColumnPG(
-			columnNumberFrom = "2",
-			columnNumberTo = "1",
-			portletName = "Hello World");
-
-		task ("Removes Hello World Portlets on Test Page and Welcome Page") {
+		task ("Assert able to drag and drop portlet") {
 			Navigator.gotoPage(pageName = "Test Page");
 
-			Portlet.deletePG(portletName = "Hello World");
+			Portlet.dragAndDropPortletToColumnPG(
+				columnNumberFrom = "1",
+				columnNumberTo = "2",
+				portletName = "Clay Sample");
 
-			Navigator.gotoPage(pageName = "Home");
+			Portlet.dragAndDropPortletToColumnPG(
+				columnNumberFrom = "2",
+				columnNumberTo = "1",
+				portletName = "Clay Sample");
+		}
 
-			Portlet.deletePG(portletName = "Hello World");
+		task ("Removes Clay Sample Portlet on Test Page") {
+			Navigator.gotoPage(pageName = "Test Page");
 
-			Portlet.viewNoSpecificPG(portletName = "Hello World");
+			Portlet.deletePG(portletName = "Clay Sample");
+
+			Portlet.viewNoSpecificPG(portletName = "Clay Sample");
 		}
 	}
 
-	@description = "This is a use case for LPS-70390."
-	@priority = "4"
-	test ViewNonASCIICharactersWithSPADisabled {
-		property custom.properties = "javascript.single.page.application.enabled=false";
+	@description = "This is a use case for LPS-95157. Verify control menu on home page is styled correctly after refreshing page."
+	@priority = "5"
+	@refactordone
+	test SitePageCanDisplayStyleCorrectlyAfterPageRefresh {
+		property app.server.types = "tomcat";
+		property database.types = "mysql";
+		property environment.acceptance = "true";
+		property portal.acceptance = "true";
 
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		Navigator.gotoPage(pageName = "Home");
 
-		User.addCP(
-			userEmailAddress = "skandi@liferay.com",
-			userFirstName = "Skändi",
-			userLastName = "Ääkkönen",
-			userScreenName = "uskandi");
+		ProductMenuHelper.closeProductMenu();
 
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
+		Refresh();
 
-		User.viewCP(
-			userEmailAddress = "skandi@liferay.com",
-			userFirstName = "Skändi",
-			userLastName = "Ääkkönen",
-			userScreenName = "uskandi");
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "display",
+			value1 = "flex");
+
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "list-style",
+			value1 = "outside none none");
+
+		takeScreenshot();
+
+		ProductMenuHelper.openProductMenu();
+
+		Refresh();
+
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "display",
+			value1 = "flex");
+
+		AssertCssValue(
+			locator1 = "//ul[contains(@id,'controlMenu')]",
+			locator2 = "list-style",
+			value1 = "outside none none");
+
+		takeScreenshot();
 	}
 
 }

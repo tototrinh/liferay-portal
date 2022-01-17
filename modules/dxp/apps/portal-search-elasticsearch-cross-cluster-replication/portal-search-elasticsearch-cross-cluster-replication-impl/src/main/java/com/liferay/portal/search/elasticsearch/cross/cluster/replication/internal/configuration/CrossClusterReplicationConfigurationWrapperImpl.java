@@ -15,7 +15,6 @@
 package com.liferay.portal.search.elasticsearch.cross.cluster.replication.internal.configuration;
 
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
-import com.liferay.portal.search.configuration.CrossClusterReplicationConfigurationWrapper;
 
 import java.util.Map;
 
@@ -28,16 +27,21 @@ import org.osgi.service.component.annotations.Modified;
  */
 @Component(
 	configurationPid = "com.liferay.portal.search.elasticsearch.cross.cluster.replication.internal.configuration.CrossClusterReplicationConfiguration",
-	immediate = true,
+	enabled = false, immediate = true,
 	service = CrossClusterReplicationConfigurationWrapper.class
 )
 public class CrossClusterReplicationConfigurationWrapperImpl
 	implements CrossClusterReplicationConfigurationWrapper {
 
 	@Override
-	public String getCCRLocalClusterConnectionId() {
+	public String[] getCCRLocalClusterConnectionConfigurations() {
 		return crossClusterReplicationConfiguration.
-			ccrLocalClusterConnectionId();
+			ccrLocalClusterConnectionConfigurations();
+	}
+
+	@Override
+	public String getRemoteClusterAlias() {
+		return crossClusterReplicationConfiguration.remoteClusterAlias();
 	}
 
 	@Override

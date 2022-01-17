@@ -349,6 +349,20 @@ public interface BatchEngineImportTaskModel
 	public void setParameters(Map<String, Serializable> parameters);
 
 	/**
+	 * Returns the processed items count of this batch engine import task.
+	 *
+	 * @return the processed items count of this batch engine import task
+	 */
+	public int getProcessedItemsCount();
+
+	/**
+	 * Sets the processed items count of this batch engine import task.
+	 *
+	 * @param processedItemsCount the processed items count of this batch engine import task
+	 */
+	public void setProcessedItemsCount(int processedItemsCount);
+
+	/**
 	 * Returns the start time of this batch engine import task.
 	 *
 	 * @return the start time of this batch engine import task
@@ -361,5 +375,37 @@ public interface BatchEngineImportTaskModel
 	 * @param startTime the start time of this batch engine import task
 	 */
 	public void setStartTime(Date startTime);
+
+	/**
+	 * Returns the task item delegate name of this batch engine import task.
+	 *
+	 * @return the task item delegate name of this batch engine import task
+	 */
+	@AutoEscape
+	public String getTaskItemDelegateName();
+
+	/**
+	 * Sets the task item delegate name of this batch engine import task.
+	 *
+	 * @param taskItemDelegateName the task item delegate name of this batch engine import task
+	 */
+	public void setTaskItemDelegateName(String taskItemDelegateName);
+
+	/**
+	 * Returns the total items count of this batch engine import task.
+	 *
+	 * @return the total items count of this batch engine import task
+	 */
+	public int getTotalItemsCount();
+
+	/**
+	 * Sets the total items count of this batch engine import task.
+	 *
+	 * @param totalItemsCount the total items count of this batch engine import task
+	 */
+	public void setTotalItemsCount(int totalItemsCount);
+
+	@Override
+	public BatchEngineImportTask cloneWithOriginalValues();
 
 }

@@ -21,11 +21,11 @@ import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.fragment.renderer.FragmentRendererTracker;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
+import com.liferay.item.selector.ItemSelector;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
 import com.liferay.layout.content.page.editor.web.internal.util.FragmentEntryLinkUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.layout.structure.LayoutStructureUtil;
 import com.liferay.layout.util.structure.LayoutStructureItem;
-import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.PortletIdException;
@@ -33,9 +33,16 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.PortletItem;
+import com.liferay.portal.kernel.portlet.InvokerPortlet;
+import com.liferay.portal.kernel.portlet.LiferayRenderRequest;
+import com.liferay.portal.kernel.portlet.LiferayRenderResponse;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
+import com.liferay.portal.kernel.portlet.PortletInstanceFactoryUtil;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.PortletItemLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -44,15 +51,21 @@ import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portlet.RenderRequestFactory;
+import com.liferay.portlet.RenderResponseFactory;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
-import com.liferay.segments.util.SegmentsExperiencePortletUtil;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
+import javax.portlet.PortletPreferences;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -64,7 +77,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/add_portlet"
+		"mvc.command.name=/layout_content_page_editor/add_portlet"
 	},
 	service = MVCActionCommand.class
 )
@@ -93,7 +106,7 @@ public class AddPortletMVCActionCommand
 				themeDisplay.getPlid(),
 				layoutStructure -> {
 					LayoutStructureItem layoutStructureItem =
-						layoutStructure.addFragmentLayoutStructureItem(
+						layoutStructure.addFragmentStyledLayoutStructureItem(
 							fragmentEntryLinkId, parentItemId, position);
 
 					jsonObject.put(
@@ -109,13 +122,19 @@ public class AddPortletMVCActionCommand
 		throws Exception {
 
 		JSONObject jsonObject = processAddPortlet(
-			actionRequest, actionResponse);
+			actionRequest, actionResponse
+		).put(
+			"error",
+			() -> {
+				if (SessionErrors.contains(
+						actionRequest, "fragmentEntryContentInvalid")) {
 
-		if (SessionErrors.contains(
-				actionRequest, "fragmentEntryContentInvalid")) {
+					return true;
+				}
 
-			jsonObject.put("error", true);
-		}
+				return null;
+			}
+		);
 
 		SessionMessages.add(actionRequest, "fragmentEntryLinkAdded");
 
@@ -136,12 +155,15 @@ public class AddPortletMVCActionCommand
 			themeDisplay.getPermissionChecker(), themeDisplay.getScopeGroupId(),
 			themeDisplay.getLayout(), portletId, ActionKeys.ADD_TO_PAGE);
 
-		ServiceContext serviceContext = ServiceContextFactory.getInstance(
-			actionRequest);
+		long segmentsExperienceId = ParamUtil.getLong(
+			actionRequest, "segmentsExperienceId",
+			SegmentsExperienceConstants.ID_DEFAULT);
+
+		String namespace = StringUtil.randomId();
 
 		String instanceId = _getPortletInstanceId(
-			themeDisplay.getLayout(), portletId,
-			ParamUtil.getLong(actionRequest, "segmentsExperienceId"));
+			namespace, themeDisplay.getLayout(), portletId,
+			segmentsExperienceId);
 
 		JSONObject editableValueJSONObject =
 			_fragmentEntryProcessorRegistry.getDefaultEditableValuesJSONObject(
@@ -153,57 +175,101 @@ public class AddPortletMVCActionCommand
 			"portletId", portletId
 		);
 
+		ServiceContext serviceContext = ServiceContextFactory.getInstance(
+			actionRequest);
+
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
 				serviceContext.getUserId(), serviceContext.getScopeGroupId(), 0,
-				0, _portal.getClassNameId(Layout.class), themeDisplay.getPlid(),
+				0, segmentsExperienceId, themeDisplay.getPlid(),
 				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-				StringPool.BLANK, editableValueJSONObject.toString(),
-				StringPool.BLANK, 0, null, serviceContext);
+				StringPool.BLANK, editableValueJSONObject.toString(), namespace,
+				0, null, serviceContext);
 
 		JSONObject jsonObject = addFragmentEntryLinkToLayoutData(
 			actionRequest, fragmentEntryLink.getFragmentEntryLinkId());
 
+		long portletItemId = ParamUtil.getLong(actionRequest, "portletItemId");
+
+		PortletItem portletItem = null;
+
+		if (portletItemId != 0) {
+			portletItem = _portletItemLocalService.fetchPortletItem(
+				portletItemId);
+		}
+
+		if (portletItem != null) {
+			PortletPreferences portletPreferences =
+				_portletPreferencesLocalService.getPreferences(
+					themeDisplay.getCompanyId(), portletItemId,
+					PortletKeys.PREFS_OWNER_TYPE_ARCHIVED, 0, portletId);
+
+			_portletPreferencesLocalService.addPortletPreferences(
+				themeDisplay.getCompanyId(), PortletKeys.PREFS_OWNER_ID_DEFAULT,
+				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, themeDisplay.getPlid(),
+				PortletIdCodec.encode(portletId, instanceId), null,
+				PortletPreferencesFactoryUtil.toXML(portletPreferences));
+		}
+
+		HttpServletRequest httpServletRequest = _portal.getHttpServletRequest(
+			actionRequest);
+
+		Portlet portlet = _portletLocalService.getPortletById(portletId);
+
+		InvokerPortlet invokerPortlet = PortletInstanceFactoryUtil.create(
+			portlet, httpServletRequest.getServletContext());
+
+		LiferayRenderRequest liferayRenderRequest = RenderRequestFactory.create(
+			httpServletRequest, portlet, invokerPortlet,
+			actionRequest.getPortletContext(), actionRequest.getWindowState(),
+			actionRequest.getPortletMode(), actionRequest.getPreferences(),
+			themeDisplay.getPlid());
+
+		httpServletRequest.setAttribute(
+			JavaConstants.JAVAX_PORTLET_REQUEST, liferayRenderRequest);
+
+		LiferayRenderResponse liferayRenderResponse =
+			RenderResponseFactory.create(
+				_portal.getHttpServletResponse(actionResponse),
+				liferayRenderRequest);
+
+		httpServletRequest.setAttribute(
+			JavaConstants.JAVAX_PORTLET_RESPONSE, liferayRenderResponse);
+
 		return jsonObject.put(
 			"fragmentEntryLink",
 			FragmentEntryLinkUtil.getFragmentEntryLinkJSONObject(
-				actionRequest, actionResponse,
+				liferayRenderRequest, liferayRenderResponse,
 				_fragmentEntryConfigurationParser, fragmentEntryLink,
 				_fragmentCollectionContributorTracker,
 				_fragmentRendererController, _fragmentRendererTracker,
-				portletId));
+				_itemSelector, portletId));
 	}
 
 	private String _getPortletInstanceId(
-			Layout layout, String portletId, long segmentsExperienceId)
-		throws PortletIdException {
+			String namespace, Layout layout, String portletId,
+			long segmentsExperienceId)
+		throws Exception {
 
 		Portlet portlet = _portletLocalService.getPortletById(portletId);
 
 		if (portlet.isInstanceable()) {
-			return SegmentsExperiencePortletUtil.setSegmentsExperienceId(
-				PortletIdCodec.generateInstanceId(), segmentsExperienceId);
+			return namespace;
 		}
 
-		String instanceId =
-			SegmentsExperiencePortletUtil.setSegmentsExperienceId(
-				String.valueOf(CharPool.NUMBER_0), segmentsExperienceId);
-
-		String checkPortletId =
-			SegmentsExperiencePortletUtil.setSegmentsExperienceId(
-				PortletIdCodec.encode(portletId, instanceId),
-				segmentsExperienceId);
-
 		long count = _portletPreferencesLocalService.getPortletPreferencesCount(
-			PortletKeys.PREFS_OWNER_TYPE_LAYOUT, layout.getPlid(),
-			checkPortletId);
+			PortletKeys.PREFS_OWNER_TYPE_LAYOUT, layout.getPlid(), portletId);
 
-		if (count > 0) {
+		if ((count > 0) &&
+			!LayoutStructureUtil.isPortletMarkedForDeletion(
+				layout.getGroupId(), layout.getPlid(), portletId,
+				segmentsExperienceId)) {
+
 			throw new PortletIdException(
 				"Unable to add uninstanceable portlet more than once");
 		}
 
-		return instanceId;
+		return StringPool.BLANK;
 	}
 
 	@Reference
@@ -226,7 +292,13 @@ public class AddPortletMVCActionCommand
 	private FragmentRendererTracker _fragmentRendererTracker;
 
 	@Reference
+	private ItemSelector _itemSelector;
+
+	@Reference
 	private Portal _portal;
+
+	@Reference
+	private PortletItemLocalService _portletItemLocalService;
 
 	@Reference
 	private PortletLocalService _portletLocalService;

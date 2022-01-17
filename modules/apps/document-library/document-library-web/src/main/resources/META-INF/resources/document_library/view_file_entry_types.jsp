@@ -25,14 +25,18 @@ DLViewFileEntryTypesDisplayContext dlViewFileEntryTypesDisplayContext = new DLVi
 <clay:management-toolbar
 	clearResultsURL="<%= dlViewFileEntryTypesDisplayContext.getClearResultsURL() %>"
 	creationMenu="<%= dlViewFileEntryTypesDisplayContext.getCreationMenu() %>"
-	disabled="<%= dlViewFileEntryTypesDisplayContext.getTotalItems() == 0 %>"
+	disabled="<%= dlViewFileEntryTypesDisplayContext.isSearchDisabled() %>"
 	itemsTotal="<%= dlViewFileEntryTypesDisplayContext.getTotalItems() %>"
 	searchActionURL="<%= dlViewFileEntryTypesDisplayContext.getSearchActionURL() %>"
 	searchFormName="fm"
 	selectable="<%= false %>"
 />
 
-<div class="container-fluid container-fluid-max-xl main-content-body">
+<clay:container-fluid>
+	<liferay-ui:breadcrumb
+		showLayout="<%= false %>"
+	/>
+
 	<liferay-ui:error exception="<%= RequiredFileEntryTypeException.class %>" message="cannot-delete-a-document-type-that-is-presently-used-by-one-or-more-documents" />
 
 	<liferay-ui:search-container
@@ -46,11 +50,15 @@ DLViewFileEntryTypesDisplayContext dlViewFileEntryTypesDisplayContext = new DLVi
 		>
 
 			<%
-			PortletURL rowURL = liferayPortletResponse.createRenderURL();
-
-			rowURL.setParameter("mvcRenderCommandName", "/document_library/edit_file_entry_type");
-			rowURL.setParameter("redirect", currentURL);
-			rowURL.setParameter("fileEntryTypeId", String.valueOf(fileEntryType.getFileEntryTypeId()));
+			PortletURL rowURL = PortletURLBuilder.createRenderURL(
+				liferayPortletResponse
+			).setMVCRenderCommandName(
+				"/document_library/edit_file_entry_type"
+			).setRedirect(
+				currentURL
+			).setParameter(
+				"fileEntryTypeId", fileEntryType.getFileEntryTypeId()
+			).buildPortletURL();
 			%>
 
 			<liferay-ui:search-container-column-text
@@ -86,4 +94,4 @@ DLViewFileEntryTypesDisplayContext dlViewFileEntryTypesDisplayContext = new DLVi
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>

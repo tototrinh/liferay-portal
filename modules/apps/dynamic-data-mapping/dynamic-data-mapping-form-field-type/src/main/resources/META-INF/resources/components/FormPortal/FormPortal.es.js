@@ -22,6 +22,7 @@ import templates from './FormPortal.soy';
 class FormPortal extends Component {}
 
 FormPortal.STATE = {
+
 	/**
 	 * @default input
 	 * @instance
@@ -29,7 +30,7 @@ FormPortal.STATE = {
 	 * @type {?html}
 	 */
 
-	contentRenderer: Config.any()
+	contentRenderer: Config.any(),
 };
 
 Soy.register(FormPortal, templates);

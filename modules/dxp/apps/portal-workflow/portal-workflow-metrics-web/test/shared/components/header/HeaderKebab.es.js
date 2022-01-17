@@ -25,7 +25,7 @@ describe('The HeaderKebab component should', () => {
 
 		body.className = 'user-control-group';
 
-		body.innerHTML = `<div class="control-menu-icon"></div>`;
+		body.innerHTML = `<ul class="control-menu-nav"><li></li></ul>`;
 
 		document.body.appendChild(body);
 	});
@@ -41,25 +41,26 @@ describe('The HeaderKebab component should', () => {
 		const kebabItems = [
 			{
 				action: mockAction,
-				label: 'test'
+				label: 'test',
 			},
 			{
 				label: 'test1',
-				link: '/'
-			}
+				link: '/',
+			},
 		];
 
-		const {getAllByTestId, getByTestId} = render(
+		render(
 			<MockRouter>
 				<HeaderKebab kebabItems={kebabItems} />
 			</MockRouter>
 		);
 
-		const button = getByTestId('headerKebabButton');
+		const button = document.getElementById('headerKebab').children[0]
+			.children[0].children[0];
 
 		fireEvent.click(button);
 
-		const dropDownItems = getAllByTestId('headerKebabItem');
+		const dropDownItems = document.querySelectorAll('.dropdown-item');
 
 		expect(dropDownItems[0]).toHaveTextContent('test');
 

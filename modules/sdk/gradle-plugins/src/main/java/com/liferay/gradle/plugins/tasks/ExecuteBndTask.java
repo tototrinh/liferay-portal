@@ -21,7 +21,6 @@ import aQute.bnd.osgi.Constants;
 import aQute.bnd.osgi.Jar;
 import aQute.bnd.osgi.Processor;
 import aQute.bnd.version.MavenVersion;
-import aQute.bnd.version.Version;
 
 import aQute.lib.utf8properties.UTF8Properties;
 
@@ -46,15 +45,19 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
  * @author Andrea Di Giorgi
  * @author Raymond Augé
  */
+@CacheableTask
 public class ExecuteBndTask extends DefaultTask {
 
 	public ExecuteBndTask() {
@@ -121,15 +124,12 @@ public class ExecuteBndTask extends DefaultTask {
 				 Constants.EMPTY_HEADER.equals(bundleVersion)) &&
 				(project.getVersion() != null)) {
 
-				Object version = project.getVersion();
-
 				MavenVersion mavenVersion = MavenVersion.parseString(
-					version.toString());
-
-				Version osgiVersion = mavenVersion.getOSGiVersion();
+					String.valueOf(project.getVersion()));
 
 				builder.setProperty(
-					Constants.BUNDLE_VERSION, osgiVersion.toString());
+					Constants.BUNDLE_VERSION,
+					String.valueOf(mavenVersion.getOSGiVersion()));
 			}
 
 			if (logger.isDebugEnabled()) {
@@ -183,11 +183,13 @@ public class ExecuteBndTask extends DefaultTask {
 	}
 
 	@Input
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getBaseDir() {
 		return GradleUtil.toFile(getProject(), _baseDir);
 	}
 
 	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getClasspath() {
 		return _classpath;
 	}
@@ -210,11 +212,13 @@ public class ExecuteBndTask extends DefaultTask {
 	}
 
 	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getResourceDirs() {
 		return _resourceDirs;
 	}
 
 	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getSourceDirs() {
 		return _sourceDirs;
 	}

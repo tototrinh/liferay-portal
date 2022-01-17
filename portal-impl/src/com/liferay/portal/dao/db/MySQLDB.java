@@ -14,13 +14,14 @@
 
 package com.liferay.portal.dao.db;
 
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.IOException;
@@ -56,36 +57,25 @@ public class MySQLDB extends BaseDB {
 	}
 
 	@Override
-	public List<Index> getIndexes(Connection con) throws SQLException {
+	public List<Index> getIndexes(Connection connection) throws SQLException {
 		List<Index> indexes = new ArrayList<>();
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+		String sql = StringBundler.concat(
+			"select distinct(index_name), table_name, non_unique from ",
+			"information_schema.statistics where index_schema = database() ",
+			"and (index_name like 'LIFERAY_%' or index_name like 'IX_%')");
 
-		try {
-			StringBundler sb = new StringBundler(4);
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			sb.append("select distinct(index_name), table_name, non_unique ");
-			sb.append("from information_schema.statistics where index_schema ");
-			sb.append("= database() and (index_name like 'LIFERAY_%' or ");
-			sb.append("index_name like 'IX_%')");
-
-			String sql = sb.toString();
-
-			ps = con.prepareStatement(sql);
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				String indexName = rs.getString("index_name");
-				String tableName = rs.getString("table_name");
-				boolean unique = !rs.getBoolean("non_unique");
+			while (resultSet.next()) {
+				String indexName = resultSet.getString("index_name");
+				String tableName = resultSet.getString("table_name");
+				boolean unique = !resultSet.getBoolean("non_unique");
 
 				indexes.add(new Index(indexName, tableName, unique));
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps, rs);
 		}
 
 		return indexes;
@@ -98,28 +88,14 @@ public class MySQLDB extends BaseDB {
 
 	@Override
 	public String getPopulateSQL(String databaseName, String sqlContent) {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append("use ");
-		sb.append(databaseName);
-		sb.append(";\n\n");
-		sb.append(sqlContent);
-
-		return sb.toString();
+		return StringBundler.concat("use ", databaseName, ";\n\n", sqlContent);
 	}
 
 	@Override
 	public String getRecreateSQL(String databaseName) {
-		StringBundler sb = new StringBundler(6);
-
-		sb.append("drop database if exists ");
-		sb.append(databaseName);
-		sb.append(";\n");
-		sb.append("create database ");
-		sb.append(databaseName);
-		sb.append(" character set utf8;\n");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"drop database if exists ", databaseName, ";\n", "create database ",
+			databaseName, " character set utf8;\n");
 	}
 
 	@Override
@@ -172,9 +148,19 @@ public class MySQLDB extends BaseDB {
 				else if (line.startsWith(ALTER_COLUMN_TYPE)) {
 					String[] template = buildColumnTypeTokens(line);
 
-					line = StringUtil.replace(
-						"alter table @table@ modify @old-column@ @type@;",
-						REWORD_TEMPLATE, template);
+					String nullable = template[template.length - 1];
+
+					if (Validator.isBlank(nullable)) {
+						line = StringUtil.replace(
+							"alter table @table@ modify @old-column@ @type@;",
+							REWORD_TEMPLATE, template);
+					}
+					else {
+						line = StringUtil.replace(
+							"alter table @table@ modify @old-column@ @type@ " +
+								"@nullable@;",
+							REWORD_TEMPLATE, template);
+					}
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);
@@ -184,7 +170,7 @@ public class MySQLDB extends BaseDB {
 						RENAME_TABLE_TEMPLATE, template);
 				}
 
-				int pos = line.indexOf(";");
+				int pos = line.indexOf(CharPool.SEMICOLON);
 
 				if (createTable && (pos != -1)) {
 					createTable = false;

@@ -17,7 +17,7 @@ import {
 	cleanup,
 	fireEvent,
 	render,
-	waitForElement
+	waitForElement,
 } from '@testing-library/react';
 import React from 'react';
 import {act} from 'react-dom/test-utils';
@@ -28,7 +28,7 @@ const bridgeComponentId = '_portletNamespace_DocumentLibraryCheckinModal';
 const dlVersionNumberIncreaseValues = {
 	MAJOR: 'MAJOR',
 	MINOR: 'MINOR',
-	NONE: 'NONE'
+	NONE: 'NONE',
 };
 
 function _renderCheckinComponent({checkedOut = true} = {}) {
@@ -36,10 +36,10 @@ function _renderCheckinComponent({checkedOut = true} = {}) {
 		<Checkin
 			checkedOut={checkedOut}
 			dlVersionNumberIncreaseValues={dlVersionNumberIncreaseValues}
-			portletNamespace="portletNamespace"
+			portletNamespace="_portletNamespace_"
 		/>,
 		{
-			baseElement: document.body
+			baseElement: document.body,
 		}
 	);
 }
@@ -49,7 +49,7 @@ describe('Checkin', () => {
 	Liferay.component = (id, component) => {
 		components[id] = component;
 	};
-	Liferay.componentReady = id => Promise.resolve(components[id]);
+	Liferay.componentReady = (id) => Promise.resolve(components[id]);
 	afterEach(cleanup);
 
 	describe('when the file is checked out', () => {
@@ -77,7 +77,7 @@ describe('Checkin', () => {
 					const form = await waitForElement(() =>
 						result.getByRole('form')
 					);
-					expect(form);
+					expect(form).toBeTruthy();
 				});
 
 				describe('and the form is submitted', () => {
@@ -112,7 +112,7 @@ describe('Checkin', () => {
 
 						act(() => {
 							fireEvent.change(changeLogField, {
-								target: {value: 'ChangeLog notes'}
+								target: {value: 'ChangeLog notes'},
 							});
 							fireEvent.click(minorVersionRadio);
 						});
@@ -156,7 +156,7 @@ describe('Checkin', () => {
 					const form = await waitForElement(() =>
 						result.getByRole('form')
 					);
-					expect(form);
+					expect(form).toBeTruthy();
 				});
 
 				describe('and the form is submitted', () => {

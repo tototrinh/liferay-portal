@@ -25,6 +25,7 @@ import com.liferay.adaptive.media.image.processor.AMImageAttribute;
 import com.liferay.adaptive.media.image.processor.AMImageProcessor;
 import com.liferay.adaptive.media.image.service.AMImageEntryLocalService;
 import com.liferay.adaptive.media.image.util.AMImageSerializer;
+import com.liferay.document.library.constants.DLPortletDataHandlerConstants;
 import com.liferay.document.library.exportimport.data.handler.DLPluggableContentDataHandler;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.petra.string.StringBundler;
@@ -35,7 +36,6 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.xml.Element;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.Collection;
@@ -64,6 +64,10 @@ public class AMImageDLPluggableContentDataHandler
 			FileEntry fileEntry)
 		throws Exception {
 
+		if (!_isEnabled(portletDataContext)) {
+			return;
+		}
+
 		Collection<AMImageConfigurationEntry> amImageConfigurationEntries =
 			_amImageConfigurationHelper.getAMImageConfigurationEntries(
 				portletDataContext.getCompanyId());
@@ -80,6 +84,10 @@ public class AMImageDLPluggableContentDataHandler
 			PortletDataContext portletDataContext, Element fileEntryElement,
 			FileEntry fileEntry, FileEntry importedFileEntry)
 		throws Exception {
+
+		if (!_isEnabled(portletDataContext)) {
+			return;
+		}
 
 		Collection<AMImageConfigurationEntry> amImageConfigurationEntries =
 			_amImageConfigurationHelper.getAMImageConfigurationEntries(
@@ -106,7 +114,7 @@ public class AMImageDLPluggableContentDataHandler
 
 	private void _exportMedia(
 			PortletDataContext portletDataContext, FileEntry fileEntry)
-		throws IOException, PortalException {
+		throws Exception {
 
 		FileVersion fileVersion = fileEntry.getFileVersion();
 
@@ -127,7 +135,7 @@ public class AMImageDLPluggableContentDataHandler
 	private void _exportMedia(
 			PortletDataContext portletDataContext, FileEntry fileEntry,
 			AdaptiveMedia<AMImageProcessor> adaptiveMedia)
-		throws IOException {
+		throws Exception {
 
 		Optional<String> configurationUuidOptional =
 			adaptiveMedia.getValueOptional(
@@ -177,14 +185,12 @@ public class AMImageDLPluggableContentDataHandler
 				).done());
 		}
 		catch (PortalException portalException) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Unable to find adaptive media for file entry ");
-			sb.append(fileEntry.getFileEntryId());
-			sb.append(" and configuration ");
-			sb.append(amImageConfigurationEntry.getUUID());
-
-			_log.error(sb.toString(), portalException);
+			_log.error(
+				StringBundler.concat(
+					"Unable to find adaptive media for file entry ",
+					fileEntry.getFileEntryId(), " and configuration ",
+					amImageConfigurationEntry.getUUID()),
+				portalException);
 		}
 
 		return Stream.empty();
@@ -242,7 +248,7 @@ public class AMImageDLPluggableContentDataHandler
 			PortletDataContext portletDataContext, FileEntry fileEntry,
 			FileEntry importedFileEntry,
 			AMImageConfigurationEntry amImageConfigurationEntry)
-		throws IOException, PortalException {
+		throws Exception {
 
 		String configuration = portletDataContext.getZipEntryAsString(
 			_getConfigurationEntryBinPath(amImageConfigurationEntry));
@@ -300,6 +306,11 @@ public class AMImageDLPluggableContentDataHandler
 				heightOptional.get(), widthOptional.get(), inputStream,
 				contentLengthOptional.get());
 		}
+	}
+
+	private boolean _isEnabled(PortletDataContext portletDataContext) {
+		return portletDataContext.getBooleanParameter(
+			DLPortletDataHandlerConstants.NAMESPACE, "previews-and-thumbnails");
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

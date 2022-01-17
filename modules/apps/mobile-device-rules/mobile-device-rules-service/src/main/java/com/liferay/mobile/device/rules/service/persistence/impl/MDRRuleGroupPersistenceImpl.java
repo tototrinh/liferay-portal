@@ -16,9 +16,11 @@ package com.liferay.mobile.device.rules.service.persistence.impl;
 
 import com.liferay.mobile.device.rules.exception.NoSuchRuleGroupException;
 import com.liferay.mobile.device.rules.model.MDRRuleGroup;
+import com.liferay.mobile.device.rules.model.MDRRuleGroupTable;
 import com.liferay.mobile.device.rules.model.impl.MDRRuleGroupImpl;
 import com.liferay.mobile.device.rules.model.impl.MDRRuleGroupModelImpl;
 import com.liferay.mobile.device.rules.service.persistence.MDRRuleGroupPersistence;
+import com.liferay.mobile.device.rules.service.persistence.MDRRuleGroupUtil;
 import com.liferay.mobile.device.rules.service.persistence.impl.constants.MDRPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
@@ -37,10 +39,13 @@ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -49,6 +54,7 @@ import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
 import java.util.Date;
@@ -75,7 +81,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Edward C. Han
  * @generated
  */
-@Component(service = MDRRuleGroupPersistence.class)
+@Component(service = {MDRRuleGroupPersistence.class, BasePersistence.class})
 public class MDRRuleGroupPersistenceImpl
 	extends BasePersistenceImpl<MDRRuleGroup>
 	implements MDRRuleGroupPersistence {
@@ -192,7 +198,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<MDRRuleGroup>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (MDRRuleGroup mdrRuleGroup : list) {
@@ -262,10 +268,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -576,7 +578,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -614,8 +616,6 @@ public class MDRRuleGroupPersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -708,7 +708,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			result = finderCache.getResult(
-				_finderPathFetchByUUID_G, finderArgs, this);
+				_finderPathFetchByUUID_G, finderArgs);
 		}
 
 		if (result instanceof MDRRuleGroup) {
@@ -773,11 +773,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(
-						_finderPathFetchByUUID_G, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -824,7 +819,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid, groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -866,8 +861,6 @@ public class MDRRuleGroupPersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -992,7 +985,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<MDRRuleGroup>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (MDRRuleGroup mdrRuleGroup : list) {
@@ -1068,10 +1061,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1410,7 +1399,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid, companyId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1452,8 +1441,6 @@ public class MDRRuleGroupPersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1568,7 +1555,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<MDRRuleGroup>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (MDRRuleGroup mdrRuleGroup : list) {
@@ -1627,10 +1614,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2479,7 +2462,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<MDRRuleGroup>)finderCache.getResult(
-				_finderPathWithPaginationFindByGroupId, finderArgs, this);
+				_finderPathWithPaginationFindByGroupId, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (MDRRuleGroup mdrRuleGroup : list) {
@@ -2543,11 +2526,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(
-						_finderPathWithPaginationFindByGroupId, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2585,7 +2563,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -2612,8 +2590,6 @@ public class MDRRuleGroupPersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2642,7 +2618,7 @@ public class MDRRuleGroupPersistenceImpl
 		Object[] finderArgs = new Object[] {StringUtil.merge(groupIds)};
 
 		Long count = (Long)finderCache.getResult(
-			_finderPathWithPaginationCountByGroupId, finderArgs, this);
+			_finderPathWithPaginationCountByGroupId, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler();
@@ -2679,9 +2655,6 @@ public class MDRRuleGroupPersistenceImpl
 					_finderPathWithPaginationCountByGroupId, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(
-					_finderPathWithPaginationCountByGroupId, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2811,16 +2784,18 @@ public class MDRRuleGroupPersistenceImpl
 		"mdrRuleGroup.groupId IN (";
 
 	public MDRRuleGroupPersistenceImpl() {
-		setModelClass(MDRRuleGroup.class);
-
-		setModelImplClass(MDRRuleGroupImpl.class);
-		setModelPKClass(long.class);
-
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
 		dbColumnNames.put("uuid", "uuid_");
 
 		setDBColumnNames(dbColumnNames);
+
+		setModelClass(MDRRuleGroup.class);
+
+		setModelImplClass(MDRRuleGroupImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(MDRRuleGroupTable.INSTANCE);
 	}
 
 	/**
@@ -2831,16 +2806,15 @@ public class MDRRuleGroupPersistenceImpl
 	@Override
 	public void cacheResult(MDRRuleGroup mdrRuleGroup) {
 		entityCache.putResult(
-			entityCacheEnabled, MDRRuleGroupImpl.class,
-			mdrRuleGroup.getPrimaryKey(), mdrRuleGroup);
+			MDRRuleGroupImpl.class, mdrRuleGroup.getPrimaryKey(), mdrRuleGroup);
 
 		finderCache.putResult(
 			_finderPathFetchByUUID_G,
 			new Object[] {mdrRuleGroup.getUuid(), mdrRuleGroup.getGroupId()},
 			mdrRuleGroup);
-
-		mdrRuleGroup.resetOriginalValues();
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the mdr rule groups in the entity cache if it is enabled.
@@ -2849,15 +2823,19 @@ public class MDRRuleGroupPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<MDRRuleGroup> mdrRuleGroups) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (mdrRuleGroups.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (MDRRuleGroup mdrRuleGroup : mdrRuleGroups) {
 			if (entityCache.getResult(
-					entityCacheEnabled, MDRRuleGroupImpl.class,
-					mdrRuleGroup.getPrimaryKey()) == null) {
+					MDRRuleGroupImpl.class, mdrRuleGroup.getPrimaryKey()) ==
+						null) {
 
 				cacheResult(mdrRuleGroup);
-			}
-			else {
-				mdrRuleGroup.resetOriginalValues();
 			}
 		}
 	}
@@ -2873,9 +2851,7 @@ public class MDRRuleGroupPersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(MDRRuleGroupImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(MDRRuleGroupImpl.class);
 	}
 
 	/**
@@ -2887,39 +2863,22 @@ public class MDRRuleGroupPersistenceImpl
 	 */
 	@Override
 	public void clearCache(MDRRuleGroup mdrRuleGroup) {
-		entityCache.removeResult(
-			entityCacheEnabled, MDRRuleGroupImpl.class,
-			mdrRuleGroup.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((MDRRuleGroupModelImpl)mdrRuleGroup, true);
+		entityCache.removeResult(MDRRuleGroupImpl.class, mdrRuleGroup);
 	}
 
 	@Override
 	public void clearCache(List<MDRRuleGroup> mdrRuleGroups) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (MDRRuleGroup mdrRuleGroup : mdrRuleGroups) {
-			entityCache.removeResult(
-				entityCacheEnabled, MDRRuleGroupImpl.class,
-				mdrRuleGroup.getPrimaryKey());
-
-			clearUniqueFindersCache((MDRRuleGroupModelImpl)mdrRuleGroup, true);
+			entityCache.removeResult(MDRRuleGroupImpl.class, mdrRuleGroup);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(MDRRuleGroupImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
-			entityCache.removeResult(
-				entityCacheEnabled, MDRRuleGroupImpl.class, primaryKey);
+			entityCache.removeResult(MDRRuleGroupImpl.class, primaryKey);
 		}
 	}
 
@@ -2930,36 +2889,9 @@ public class MDRRuleGroupPersistenceImpl
 			mdrRuleGroupModelImpl.getUuid(), mdrRuleGroupModelImpl.getGroupId()
 		};
 
+		finderCache.putResult(_finderPathCountByUUID_G, args, Long.valueOf(1));
 		finderCache.putResult(
-			_finderPathCountByUUID_G, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByUUID_G, args, mdrRuleGroupModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		MDRRuleGroupModelImpl mdrRuleGroupModelImpl, boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				mdrRuleGroupModelImpl.getUuid(),
-				mdrRuleGroupModelImpl.getGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUUID_G, args);
-			finderCache.removeResult(_finderPathFetchByUUID_G, args);
-		}
-
-		if ((mdrRuleGroupModelImpl.getColumnBitmask() &
-			 _finderPathFetchByUUID_G.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				mdrRuleGroupModelImpl.getOriginalUuid(),
-				mdrRuleGroupModelImpl.getOriginalGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUUID_G, args);
-			finderCache.removeResult(_finderPathFetchByUUID_G, args);
-		}
+			_finderPathFetchByUUID_G, args, mdrRuleGroupModelImpl);
 	}
 
 	/**
@@ -3102,24 +3034,24 @@ public class MDRRuleGroupPersistenceImpl
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if (isNew && (mdrRuleGroup.getCreateDate() == null)) {
 			if (serviceContext == null) {
-				mdrRuleGroup.setCreateDate(now);
+				mdrRuleGroup.setCreateDate(date);
 			}
 			else {
-				mdrRuleGroup.setCreateDate(serviceContext.getCreateDate(now));
+				mdrRuleGroup.setCreateDate(serviceContext.getCreateDate(date));
 			}
 		}
 
 		if (!mdrRuleGroupModelImpl.hasSetModifiedDate()) {
 			if (serviceContext == null) {
-				mdrRuleGroup.setModifiedDate(now);
+				mdrRuleGroup.setModifiedDate(date);
 			}
 			else {
 				mdrRuleGroup.setModifiedDate(
-					serviceContext.getModifiedDate(now));
+					serviceContext.getModifiedDate(date));
 			}
 		}
 
@@ -3128,10 +3060,8 @@ public class MDRRuleGroupPersistenceImpl
 		try {
 			session = openSession();
 
-			if (mdrRuleGroup.isNew()) {
+			if (isNew) {
 				session.save(mdrRuleGroup);
-
-				mdrRuleGroup.setNew(false);
 			}
 			else {
 				mdrRuleGroup = (MDRRuleGroup)session.merge(mdrRuleGroup);
@@ -3144,106 +3074,14 @@ public class MDRRuleGroupPersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (!_columnBitmaskEnabled) {
-			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			Object[] args = new Object[] {mdrRuleGroupModelImpl.getUuid()};
-
-			finderCache.removeResult(_finderPathCountByUuid, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByUuid, args);
-
-			args = new Object[] {
-				mdrRuleGroupModelImpl.getUuid(),
-				mdrRuleGroupModelImpl.getCompanyId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUuid_C, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByUuid_C, args);
-
-			args = new Object[] {mdrRuleGroupModelImpl.getGroupId()};
-
-			finderCache.removeResult(_finderPathCountByGroupId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByGroupId, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((mdrRuleGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					mdrRuleGroupModelImpl.getOriginalUuid()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
-
-				args = new Object[] {mdrRuleGroupModelImpl.getUuid()};
-
-				finderCache.removeResult(_finderPathCountByUuid, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
-			}
-
-			if ((mdrRuleGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid_C.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					mdrRuleGroupModelImpl.getOriginalUuid(),
-					mdrRuleGroupModelImpl.getOriginalCompanyId()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid_C, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-
-				args = new Object[] {
-					mdrRuleGroupModelImpl.getUuid(),
-					mdrRuleGroupModelImpl.getCompanyId()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid_C, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-			}
-
-			if ((mdrRuleGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByGroupId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					mdrRuleGroupModelImpl.getOriginalGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-
-				args = new Object[] {mdrRuleGroupModelImpl.getGroupId()};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-			}
-		}
-
 		entityCache.putResult(
-			entityCacheEnabled, MDRRuleGroupImpl.class,
-			mdrRuleGroup.getPrimaryKey(), mdrRuleGroup, false);
+			MDRRuleGroupImpl.class, mdrRuleGroupModelImpl, false, true);
 
-		clearUniqueFindersCache(mdrRuleGroupModelImpl, false);
 		cacheUniqueFindersCache(mdrRuleGroupModelImpl);
+
+		if (isNew) {
+			mdrRuleGroup.setNew(false);
+		}
 
 		mdrRuleGroup.resetOriginalValues();
 
@@ -3383,7 +3221,7 @@ public class MDRRuleGroupPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<MDRRuleGroup>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -3424,10 +3262,6 @@ public class MDRRuleGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -3457,7 +3291,7 @@ public class MDRRuleGroupPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -3473,9 +3307,6 @@ public class MDRRuleGroupPersistenceImpl
 					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -3516,109 +3347,115 @@ public class MDRRuleGroupPersistenceImpl
 	 */
 	@Activate
 	public void activate() {
-		MDRRuleGroupModelImpl.setEntityCacheEnabled(entityCacheEnabled);
-		MDRRuleGroupModelImpl.setFinderCacheEnabled(finderCacheEnabled);
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid",
 			new String[] {
 				String.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_"}, true);
 
 		_finderPathWithoutPaginationFindByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid",
-			new String[] {String.class.getName()},
-			MDRRuleGroupModelImpl.UUID_COLUMN_BITMASK |
-			MDRRuleGroupModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			true);
 
 		_finderPathCountByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid",
-			new String[] {String.class.getName()});
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			false);
 
 		_finderPathFetchByUUID_G = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_ENTITY, "fetchByUUID_G",
 			new String[] {String.class.getName(), Long.class.getName()},
-			MDRRuleGroupModelImpl.UUID_COLUMN_BITMASK |
-			MDRRuleGroupModelImpl.GROUPID_COLUMN_BITMASK);
+			new String[] {"uuid_", "groupId"}, true);
 
 		_finderPathCountByUUID_G = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUUID_G",
-			new String[] {String.class.getName(), Long.class.getName()});
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "groupId"}, false);
 
 		_finderPathWithPaginationFindByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid_C",
 			new String[] {
 				String.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathWithoutPaginationFindByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid_C",
 			new String[] {String.class.getName(), Long.class.getName()},
-			MDRRuleGroupModelImpl.UUID_COLUMN_BITMASK |
-			MDRRuleGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			MDRRuleGroupModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathCountByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid_C",
-			new String[] {String.class.getName(), Long.class.getName()});
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "companyId"}, false);
 
 		_finderPathWithPaginationFindByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId"}, true);
 
 		_finderPathWithoutPaginationFindByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, MDRRuleGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
-			new String[] {Long.class.getName()},
-			MDRRuleGroupModelImpl.GROUPID_COLUMN_BITMASK |
-			MDRRuleGroupModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			true);
 
 		_finderPathCountByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
 
 		_finderPathWithPaginationCountByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByGroupId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
+
+		_setMDRRuleGroupUtilPersistence(this);
 	}
 
 	@Deactivate
 	public void deactivate() {
+		_setMDRRuleGroupUtilPersistence(null);
+
 		entityCache.removeCache(MDRRuleGroupImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+	}
+
+	private void _setMDRRuleGroupUtilPersistence(
+		MDRRuleGroupPersistence mdrRuleGroupPersistence) {
+
+		try {
+			Field field = MDRRuleGroupUtil.class.getDeclaredField(
+				"_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, mdrRuleGroupPersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	@Override
@@ -3627,12 +3464,6 @@ public class MDRRuleGroupPersistenceImpl
 		unbind = "-"
 	)
 	public void setConfiguration(Configuration configuration) {
-		super.setConfiguration(configuration);
-
-		_columnBitmaskEnabled = GetterUtil.getBoolean(
-			configuration.get(
-				"value.object.column.bitmask.enabled.com.liferay.mobile.device.rules.model.MDRRuleGroup"),
-			true);
 	}
 
 	@Override
@@ -3652,8 +3483,6 @@ public class MDRRuleGroupPersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private boolean _columnBitmaskEnabled;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -3710,13 +3539,13 @@ public class MDRRuleGroupPersistenceImpl
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
 		new String[] {"uuid"});
 
-	static {
-		try {
-			Class.forName(MDRPersistenceConstants.class.getName());
-		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
-		}
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
 	}
+
+	@Reference
+	private MDRRuleGroupModelArgumentsResolver
+		_mdrRuleGroupModelArgumentsResolver;
 
 }

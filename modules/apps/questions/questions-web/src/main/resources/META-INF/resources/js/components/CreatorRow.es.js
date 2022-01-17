@@ -12,45 +12,45 @@
  * details.
  */
 
-import classnames from 'classnames';
-import React, {useState} from 'react';
+import React from 'react';
+import {withRouter} from 'react-router-dom';
 
 import {timeDifference} from '../utils/utils.es';
+import Link from './Link.es';
 import UserIcon from './UserIcon.es';
 import UserPopover from './UserPopover.es';
 
-export default ({question: {creator, dateCreated}}) => {
-	const [showPopover, setShowPopover] = useState(false);
-
-	return (
-		<div
-			className={classnames(
-				'autofit-padded',
-				'autofit-row',
-				'autofit-row-center',
-				'question-author-badge'
-			)}
-			onMouseLeave={() => setShowPopover(false)}
-			onMouseOver={() => setShowPopover(true)}
+export default withRouter(
+	({
+		match: {
+			params: {sectionTitle},
+		},
+		question: {creator = {}, creatorStatistics, dateCreated},
+	}) => (
+		<Link
+			className="align-items-center border-light btn btn-secondary c-ml-md-3 c-mt-3 c-mt-md-0 c-p-3 d-inline-flex justify-content-center position-relative questions-user"
+			to={`/questions/${sectionTitle}${
+				creator ? `/creator/${creator.id}` : ''
+			}`}
 		>
-			<div className="autofit-col">
-				<UserIcon
-					fullName={creator.name}
-					portraitURL={creator.image}
-					size="sm"
-					userId={String(creator.id)}
-				/>
-			</div>
-			<div className="autofit-col">
-				<p className="mb-0">
-					<small>{timeDifference(dateCreated)}</small>
-				</p>
-				<p className="mb-0">
-					<strong>{creator.name}</strong>
+			<UserIcon
+				fullName={creator?.name}
+				portraitURL={creator?.image}
+				userId={String(creator?.id)}
+			/>
+
+			<div className="c-ml-3 text-left">
+				<p className="c-mb-0 small">{timeDifference(dateCreated)}</p>
+
+				<p className="c-mb-0 font-weight-bold text-dark">
+					{creator?.name ||
+						Liferay.Language.get(
+							'anonymous-user-configuration-name'
+						)}
 				</p>
 			</div>
 
-			<UserPopover creator={creator} show={showPopover} />
-		</div>
-	);
-};
+			<UserPopover creator={creator} statistics={creatorStatistics} />
+		</Link>
+	)
+);

@@ -32,25 +32,19 @@ public class ExistsQueryImpl extends BaseQueryImpl implements ExistsQuery {
 		return queryVisitor.visit(this);
 	}
 
+	@Override
 	public String getField() {
 		return _field;
 	}
 
+	@Override
 	public int getSortOrder() {
 		return 1;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("{(");
-		sb.append(_field);
-		sb.append("), ");
-		sb.append(super.toString());
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat("{(", _field, "), ", super.toString(), "}");
 	}
 
 	private static final long serialVersionUID = 1L;

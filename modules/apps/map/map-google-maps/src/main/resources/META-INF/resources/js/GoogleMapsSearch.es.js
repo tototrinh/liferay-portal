@@ -12,8 +12,7 @@
  * details.
  */
 
-import {isInputNode} from 'map-common/js/validators.es';
-import {toElement} from 'metal-dom';
+import {isInputNode} from '@liferay/map-common/js/validators.es';
 import State, {Config} from 'metal-state';
 
 /**
@@ -21,6 +20,7 @@ import State, {Config} from 'metal-state';
  * @review
  */
 class GoogleMapsSearch extends State {
+
 	/**
 	 * Creates a new search handler using Google Map's API
 	 * @param  {Array} args List of arguments to be passed to State
@@ -28,7 +28,7 @@ class GoogleMapsSearch extends State {
 	 */
 	constructor(...args) {
 		super(...args);
-		const inputNode = toElement(this.inputNode);
+		const inputNode = this.inputNode;
 		this._handlePlaceChanged = this._handlePlaceChanged.bind(this);
 
 		this._autocomplete = new google.maps.places.Autocomplete(inputNode);
@@ -40,7 +40,7 @@ class GoogleMapsSearch extends State {
 	 * @review
 	 */
 	destructor() {
-		this._eventHandlers.forEach(item => {
+		this._eventHandlers.forEach((item) => {
 			google.maps.event.removeListener(item);
 		});
 	}
@@ -58,7 +58,16 @@ class GoogleMapsSearch extends State {
 				this._autocomplete,
 				'place_changed',
 				this._handlePlaceChanged
-			)
+			),
+			google.maps.event.addDomListener(
+				this.inputNode,
+				'keydown',
+				(event) => {
+					if (event.keyCode === 13) {
+						event.preventDefault();
+					}
+				}
+			),
 		];
 	}
 
@@ -79,9 +88,9 @@ class GoogleMapsSearch extends State {
 					address: place.formatted_address,
 					location: {
 						lat: geolocation.lat(),
-						lng: geolocation.lng()
-					}
-				}
+						lng: geolocation.lng(),
+					},
+				},
 			});
 		}
 	}
@@ -94,12 +103,13 @@ class GoogleMapsSearch extends State {
  * @type {!Object}
  */
 GoogleMapsSearch.STATE = {
+
 	/**
 	 * Input element that will be used for searching addresses.
 	 * @review
 	 * @type {HTMLInputElement}
 	 */
-	inputNode: Config.validator(isInputNode).value(null)
+	inputNode: Config.validator(isInputNode).value(null),
 };
 
 export default GoogleMapsSearch;

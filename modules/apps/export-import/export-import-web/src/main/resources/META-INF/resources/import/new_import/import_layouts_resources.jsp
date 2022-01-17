@@ -61,9 +61,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 	<ul>
 
 		<%
-		List<Tuple> missingLayoutPrototypes = lpe.getMissingLayoutPrototypes();
-
-		for (Tuple missingLayoutPrototype : missingLayoutPrototypes) {
+		for (Tuple missingLayoutPrototype : lpe.getMissingLayoutPrototypes()) {
 			String layoutPrototypeClassName = (String)missingLayoutPrototype.getObject(0);
 			String layoutPrototypeUuid = (String)missingLayoutPrototype.getObject(1);
 			String layoutPrototypeName = (String)missingLayoutPrototype.getObject(2);
@@ -100,7 +98,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 	<liferay-ui:message arguments="<%= sdske.getStructureKey() %>" key="dynamic-data-mapping-structure-with-structure-key-x-already-exists" translateArguments="<%= false %>" />
 </liferay-ui:error>
 
-<portlet:actionURL name="importLayouts" var="importPagesURL">
+<portlet:actionURL name="/export_import/import_layouts" var="importPagesURL">
 	<portlet:param name="mvcRenderCommandName" value="viewImport" />
 	<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.IMPORT %>" />
 	<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
@@ -108,7 +106,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 
 <aui:form action="<%= importPagesURL %>" cssClass="lfr-export-dialog" method="post" name="fm1">
 	<portlet:renderURL var="portletURL">
-		<portlet:param name="mvcRenderCommandName" value="importLayoutsView" />
+		<portlet:param name="mvcRenderCommandName" value="/export_import/view_import_layouts" />
 		<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
 	</portlet:renderURL>
 
@@ -139,7 +137,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 						Date exportDate = manifestSummary.getExportDate();
 						%>
 
-						<span onmouseover="Liferay.Portal.ToolTip.show(this, '<%= HtmlUtil.escapeJS(dateFormatDateTime.format(exportDate)) %>')">
+						<span class="lfr-portal-tooltip" title="<%= HtmlUtil.escape(dateFormatDateTime.format(exportDate)) %>">
 							<liferay-ui:message arguments="<%= LanguageUtil.getTimeDescription(request, System.currentTimeMillis() - exportDate.getTime(), true) %>" key="x-ago" translateArguments="<%= false %>" />
 						</span>
 					</dd>
@@ -159,7 +157,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 			</aui:fieldset>
 
 			<c:choose>
-				<c:when test="<%= !group.isLayoutPrototype() && !group.isLayoutSetPrototype() && !group.isCompany() %>">
+				<c:when test="<%= !group.isDepot() && !group.isCompany() && !group.isLayoutPrototype() && !group.isLayoutSetPrototype() %>">
 					<aui:fieldset collapsible="<%= true %>" cssClass="options-group" label="pages">
 						<aui:input id="publicPages" label="public-pages" name="privateLayout" type="radio" value="<%= false %>" />
 
@@ -247,17 +245,16 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 													<%
 													PortletDataHandlerControl[] importControls = portletDataHandler.getImportControls();
 													PortletDataHandlerControl[] importMetadataControls = portletDataHandler.getImportMetadataControls();
-
-													if (ArrayUtil.isNotEmpty(importControls) || ArrayUtil.isNotEmpty(importMetadataControls)) {
 													%>
 
+													<c:if test="<%= ArrayUtil.isNotEmpty(importControls) || ArrayUtil.isNotEmpty(importMetadataControls) %>">
 														<div class="hide" id="<portlet:namespace />content_<%= portlet.getRootPortletId() %>">
 															<ul class="lfr-tree list-unstyled">
 																<li class="tree-item">
 																	<aui:fieldset cssClass="portlet-type-data-section" label="<%= portletTitle %>">
+																		<c:if test="<%= importControls != null %>">
 
-																		<%
-																		if (importControls != null) {
+																			<%
 																			request.setAttribute("render_controls.jsp-action", Constants.IMPORT);
 																			request.setAttribute("render_controls.jsp-childControl", false);
 																			request.setAttribute("render_controls.jsp-controls", importControls);
@@ -265,18 +262,18 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 																			request.setAttribute("render_controls.jsp-portletDisabled", !portletDataHandler.isPublishToLiveByDefault());
 																			request.setAttribute("render_controls.jsp-portletId", portlet.getPortletId());
 																			request.setAttribute("render_controls.jsp-rootControlId", rootControlId);
-																		%>
+																			%>
 
 																			<aui:field-wrapper label='<%= ArrayUtil.isNotEmpty(importMetadataControls) ? "content" : StringPool.BLANK %>'>
 																				<ul class="lfr-tree list-unstyled">
 																					<liferay-util:include page="/render_controls.jsp" servletContext="<%= application %>" />
 																				</ul>
 																			</aui:field-wrapper>
+																		</c:if>
 
-																		<%
-																		}
+																		<c:if test="<%= importMetadataControls != null %>">
 
-																		if (importMetadataControls != null) {
+																			<%
 																			for (PortletDataHandlerControl metadataControl : importMetadataControls) {
 																				if (!displayedControls.contains(metadataControl.getControlName())) {
 																					displayedControls.add(metadataControl.getControlName());
@@ -288,23 +285,26 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 																				PortletDataHandlerBoolean control = (PortletDataHandlerBoolean)metadataControl;
 
 																				PortletDataHandlerControl[] childrenControls = control.getChildren();
+																			%>
 
-																				if (ArrayUtil.isNotEmpty(childrenControls)) {
+																				<c:if test="<%= ArrayUtil.isNotEmpty(childrenControls) %>">
+
+																					<%
 																					request.setAttribute("render_controls.jsp-controls", childrenControls);
-																		%>
+																					%>
 
 																					<aui:field-wrapper label="content-metadata">
 																						<ul class="lfr-tree list-unstyled">
 																							<liferay-util:include page="/render_controls.jsp" servletContext="<%= application %>" />
 																						</ul>
 																					</aui:field-wrapper>
+																				</c:if>
 
-																		<%
-																				}
+																			<%
 																			}
-																		}
-																		%>
+																			%>
 
+																		</c:if>
 																	</aui:fieldset>
 																</li>
 															</ul>
@@ -314,14 +314,20 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 															<li>
 																<span class="selected-labels" id="<portlet:namespace />selectedContent_<%= portlet.getRootPortletId() %>"></span>
 
-																<%
-																Map<String, Object> data = new HashMap<String, Object>();
-
-																data.put("portletid", portlet.getRootPortletId());
-																data.put("portlettitle", portletTitle);
-																%>
-
-																<aui:a cssClass="content-link modify-link" data="<%= data %>" href="javascript:;" id='<%= "contentLink_" + portlet.getRootPortletId() %>' label="change" method="get" />
+																<aui:a
+																	cssClass="content-link modify-link"
+																	data='<%=
+																		HashMapBuilder.<String, Object>put(
+																			"portletid", portlet.getRootPortletId()
+																		).put(
+																			"portlettitle", portletTitle
+																		).build()
+																	%>'
+																	href="javascript:;"
+																	id='<%= "contentLink_" + portlet.getRootPortletId() %>'
+																	label="change"
+																	method="get"
+																/>
 															</li>
 														</ul>
 
@@ -331,11 +337,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 																'<portlet:namespace />showChangeContent<%= StringPool.UNDERLINE + portlet.getRootPortletId() %>'
 															);
 														</aui:script>
-
-													<%
-													}
-													%>
-
+													</c:if>
 												</li>
 											</c:if>
 
@@ -418,7 +420,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 
 	<aui:button-row>
 		<portlet:renderURL var="backURL">
-			<portlet:param name="mvcRenderCommandName" value="importLayouts" />
+			<portlet:param name="mvcRenderCommandName" value="/export_import/import_layouts" />
 			<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.VALIDATE %>" />
 			<portlet:param name="groupId" value="<%= String.valueOf(groupId) %>" />
 		</portlet:renderURL>
@@ -431,7 +433,7 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 
 <aui:script>
 	Liferay.Util.toggleRadio('<portlet:namespace />allApplications', '', [
-		'<portlet:namespace />selectApplications'
+		'<portlet:namespace />selectApplications',
 	]);
 	Liferay.Util.toggleRadio(
 		'<portlet:namespace />chooseApplications',
@@ -458,6 +460,6 @@ ManifestSummary manifestSummary = ExportImportHelperUtil.getManifestSummary(user
 		themeReferenceNode: '#<%= PortletDataHandlerKeys.THEME_REFERENCE %>',
 		timeZoneOffset: <%= timeZoneOffset %>,
 		userPreferencesNode:
-			'#<%= PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL %>'
+			'#<%= PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL %>',
 	});
 </aui:script>

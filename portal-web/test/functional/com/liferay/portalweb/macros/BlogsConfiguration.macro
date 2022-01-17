@@ -1,23 +1,7 @@
 definition {
 
-	macro configureScopePG {
-		Portlet.gotoPortletOptions(
-			portletName = "${portletName}",
-			portletOption = "Configuration");
-
-		SelectFrame(locator1 = "IFrame#CONFIGURATION");
-
-		Navigator.gotoNavItem(navItem = "Scope");
-
-		Select(
-			locator1 = "Select#SCOPE",
-			value1 = "${scopeSelection}");
-
-		PortletEntry.save();
-	}
-
-	macro enableReadingTime {
-		ProductMenu.gotoPortlet(
+	macro configureDisplayStyleInSystemSettings {
+		ApplicationsMenu.gotoPortlet(
 			category = "Configuration",
 			panel = "Control Panel",
 			portlet = "System Settings");
@@ -27,7 +11,48 @@ definition {
 			configurationName = "Blogs",
 			configurationScope = "Widget Scope");
 
-		FormFields.enableCheckbox(fieldName = "enableReadingTime");
+		if ("${displayStyle}" == "Abstract") {
+			var displayStyleKey = "abstract";
+		}
+		else if ("${displayStyle}" == "Full Content") {
+			var displayStyleKey = "full-content";
+		}
+		else if ("${displayStyle}" == "Title") {
+			var displayStyleKey = "title";
+		}
+		else if ("${displayStyle}" == "Basic") {
+			var displayStyleKey = "ddmTemplate_BLOGS-BASIC-FTL";
+		}
+		else if ("${displayStyle}" == "Card") {
+			var displayStyleKey = "ddmTemplate_BLOGS-CARD-FTL";
+		}
+
+		Type(
+			key_label = "Display Style",
+			locator1 = "TextArea#ANY_LABELED",
+			value1 = "${displayStyleKey}");
+
+		SystemSettings.saveConfiguration();
+	}
+
+	macro enableReadingTime {
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "Blogs",
+			configurationName = "Blogs",
+			configurationScope = "Widget Scope");
+
+		if (IsNotChecked.isNotCheckedNotVisible(locator1 = "FormFields#CHECKBOX", key_fieldName = "enableReadingTime")) {
+			Check.checkNotVisible(
+				key_fieldName = "enableReadingTime",
+				locator1 = "FormFields#CHECKBOX");
+		}
+
+		FormFields.viewCheckboxChecked(fieldName = "enableReadingTime");
 
 		Button.clickSave();
 
@@ -55,7 +80,7 @@ definition {
 	}
 
 	macro selectConfigurationIFrame {
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 	}
 
 	macro selectDisplayTemplate {
@@ -70,41 +95,12 @@ definition {
 			value1 = "${maximumItemsToDisplay}");
 	}
 
-	macro selectScopeCP {
-		var key_scopeDefault = "${scopeDefault}";
-
-		Click.pauseClickAt(locator1 = "ProductMenu#PRODUCT_MENU_PANEL_SCOPE_COG");
-
-		var key_scopeSelection = "${scopeSelection}";
-
-		AssertClick.assertPartialTextClickAt(
-			key_menuItem = "${scopeSelection}",
-			locator1 = "MenuItem#ANY_MENU_ITEM",
-			value1 = "${scopeSelection}");
-
-		AssertTextEquals.assertPartialText(
-			locator1 = "ProductMenu#PRODUCT_MENU_PANEL_SCOPE",
-			value1 = "${scopeSelection}");
-	}
-
-	macro selectScopePG {
-		var key_scopeSelection = "${scopeSelection}";
-
-		Select(
-			locator1 = "Select#SCOPE",
-			value1 = "regexp:.*${scopeSelection}.*");
-
-		Pause(locator1 = "3000");
-
-		Click(locator1 = "Button#SAVE");
-
-		Alert.viewSuccessMessage();
-
-		BlogsConfiguration.viewScopeSelection(scopeSelection = "${scopeSelection}");
-	}
-
 	macro uncheckComments {
 		Uncheck(locator1 = "Checkbox#ENABLE_COMMENTS");
+	}
+
+	macro uncheckRatings {
+		Uncheck(locator1 = "Checkbox#ENABLE_RATINGS");
 	}
 
 	macro uncheckRelatedAssets {
@@ -243,7 +239,7 @@ definition {
 		if (IsElementPresent(locator1 = "Portlet#OPTIONS_MENULIST_PERMISSIONS")) {
 			Click(locator1 = "Portlet#OPTIONS_MENULIST_PERMISSIONS");
 
-			SelectFrame(locator1 = "IFrame#DIALOG");
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
 		}
 
 		MenuItem.viewPresent(menuItem = "Permissions");
@@ -254,7 +250,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			panel = "Site Administration",
 			portlet = "Blogs");
 
 		AssertElementPresent(locator1 = "ProductMenu#PRODUCT_MENU_PANEL_SCOPE");

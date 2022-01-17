@@ -23,7 +23,6 @@ import com.liferay.source.formatter.parser.JavaTerm;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -64,11 +63,9 @@ public class JavaModuleJavaxPortletInitParamTemplatePathCheck
 
 		List<String> extendedClassNames = javaClass.getExtendedClassNames();
 
-		if (!extendedClassNames.contains("MVCPortlet")) {
-			return content;
-		}
+		if (!extendedClassNames.contains("MVCPortlet") ||
+			!absolutePath.contains("/src/")) {
 
-		if (!absolutePath.contains("/src/")) {
 			return content;
 		}
 
@@ -121,7 +118,7 @@ public class JavaModuleJavaxPortletInitParamTemplatePathCheck
 	}
 
 	private String _getTemplatePath(String resourcesAbsolutePath)
-		throws IOException {
+		throws Exception {
 
 		File resourcesDir = new File(resourcesAbsolutePath);
 

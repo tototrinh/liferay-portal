@@ -15,13 +15,13 @@
 /**
  * The Icon Component.
  *
- * @deprecated since 7.2, unused
+ * @deprecated As of Mueller (7.2.x), with no direct replacement
  * @module liferay-icon
  */
 
 AUI.add(
 	'liferay-icon',
-	A => {
+	(A) => {
 		var _ICON_REGISTRY = {};
 
 		var Icon = {
@@ -75,21 +75,21 @@ AUI.add(
 			},
 
 			_onMouseHover(event, src) {
-				var img = event.currentTarget.one('img');
+				var image = event.currentTarget.one('img');
 
-				if (img) {
-					img.attr('src', src);
+				if (image) {
+					image.attr('src', src);
 				}
 			},
 
 			_useDialog(event) {
 				Liferay.Util.openInDialog(event, {
 					dialog: {
-						destroyOnHide: true
+						destroyOnHide: true,
 					},
 					dialogIframe: {
-						bodyCssClass: 'dialog-with-footer'
-					}
+						bodyCssClass: 'cadmin dialog-with-footer',
+					},
 				});
 			},
 
@@ -122,13 +122,13 @@ AUI.add(
 				Liferay.once('screenLoad', () => {
 					delete _ICON_REGISTRY[config.id];
 				});
-			}
+			},
 		};
 
 		Liferay.Icon = Icon;
 	},
 	'',
 	{
-		requires: ['aui-base', 'liferay-util-window']
+		requires: ['aui-base', 'liferay-util-window'],
 	}
 );

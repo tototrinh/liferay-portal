@@ -21,6 +21,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuil
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
 import com.liferay.layout.set.prototype.constants.LayoutSetPrototypePortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -42,7 +43,6 @@ import com.liferay.portal.kernel.util.comparator.LayoutSetPrototypeCreateDateCom
 import java.util.List;
 import java.util.Objects;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
@@ -89,26 +89,26 @@ public class LayoutSetPrototypeDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("orderByCol", getOrderByCol());
-		clearResultsURL.setParameter("orderByType", getOrderByType());
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() throws PortalException {
-		PortletURL addLayoutSetPrototypeRenderURL =
-			_renderResponse.createRenderURL();
-
-		addLayoutSetPrototypeRenderURL.setParameter(
-			"mvcPath", "/edit_layout_set_prototype.jsp");
-		addLayoutSetPrototypeRenderURL.setParameter(
-			"redirect", PortalUtil.getCurrentURL(_httpServletRequest));
-
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			dropdownItem -> {
-				dropdownItem.setHref(addLayoutSetPrototypeRenderURL.toString());
+				dropdownItem.setHref(
+					PortletURLBuilder.createRenderURL(
+						_renderResponse
+					).setMVCPath(
+						"/edit_layout_set_prototype.jsp"
+					).setRedirect(
+						PortalUtil.getCurrentURL(_httpServletRequest)
+					).buildString());
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "add"));
 			}
@@ -175,22 +175,24 @@ public class LayoutSetPrototypeDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL searchURL = getPortletURL();
-
-		searchURL.setParameter("orderByCol", getOrderByCol());
-		searchURL.setParameter("orderByType", getOrderByType());
-
-		return searchURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildString();
 	}
 
-	public SearchContainer getSearchContainer() {
+	public SearchContainer<LayoutSetPrototype> getSearchContainer() {
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer searchContainer = new SearchContainer(
-			_renderRequest, _renderResponse.createRenderURL(), null,
-			"there-are-no-site-templates");
+		SearchContainer<LayoutSetPrototype> searchContainer =
+			new SearchContainer(
+				_renderRequest, _renderResponse.createRenderURL(), null,
+				"there-are-no-site-templates");
 
 		searchContainer.setId("layoutSetPrototype");
 		searchContainer.setRowChecker(
@@ -211,10 +213,11 @@ public class LayoutSetPrototypeDisplayContext {
 
 		searchContainer.setTotal(getTotal());
 
-		List results = LayoutSetPrototypeLocalServiceUtil.search(
-			themeDisplay.getCompanyId(), getActive(),
-			searchContainer.getStart(), searchContainer.getEnd(),
-			searchContainer.getOrderByComparator());
+		List<LayoutSetPrototype> results =
+			LayoutSetPrototypeLocalServiceUtil.search(
+				themeDisplay.getCompanyId(), getActive(),
+				searchContainer.getStart(), searchContainer.getEnd(),
+				searchContainer.getOrderByComparator());
 
 		searchContainer.setResults(results);
 
@@ -222,30 +225,33 @@ public class LayoutSetPrototypeDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getPortletURL();
-
-		sortingURL.setParameter("keywords", _getKeywords());
-		sortingURL.setParameter("orderByCol", getOrderByCol());
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			_getKeywords()
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public int getTotalItems() throws PortalException {
-		SearchContainer searchContainer = getSearchContainer();
+		SearchContainer<LayoutSetPrototype> searchContainer =
+			getSearchContainer();
 
 		return searchContainer.getTotal();
 	}
 
 	public List<ViewTypeItem> getViewTypeItems() {
-		PortletURL portletURL = _renderResponse.createActionURL();
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "changeDisplayStyle");
-		portletURL.setParameter(
-			"redirect", PortalUtil.getCurrentURL(_httpServletRequest));
+		PortletURL portletURL = PortletURLBuilder.createActionURL(
+			_renderResponse
+		).setActionName(
+			"changeDisplayStyle"
+		).setRedirect(
+			PortalUtil.getCurrentURL(_httpServletRequest)
+		).buildPortletURL();
 
 		return new ViewTypeItemList(portletURL, getDisplayStyle()) {
 			{
@@ -265,11 +271,7 @@ public class LayoutSetPrototypeDisplayContext {
 	}
 
 	public boolean isDisabledManagementBar() {
-		if (getTotal() > 0) {
-			return false;
-		}
-
-		if (!Objects.equals(getNavigation(), "all")) {
+		if ((getTotal() > 0) || !Objects.equals(getNavigation(), "all")) {
 			return false;
 		}
 

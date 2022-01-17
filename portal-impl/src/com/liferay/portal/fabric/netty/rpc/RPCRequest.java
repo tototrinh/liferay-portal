@@ -73,8 +73,9 @@ public class RPCRequest<T extends Serializable> extends RPCSerializable {
 
 				});
 		}
-		catch (Throwable t) {
-			sendRPCResponse(channel, new RPCResponse<T>(id, false, null, t));
+		catch (Throwable throwable) {
+			sendRPCResponse(
+				channel, new RPCResponse<T>(id, false, null, throwable));
 		}
 		finally {
 			ChannelThreadLocal.removeChannel();
@@ -83,15 +84,8 @@ public class RPCRequest<T extends Serializable> extends RPCSerializable {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("{id=");
-		sb.append(id);
-		sb.append(", rpcCallable=");
-		sb.append(_rpcCallable);
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{id=", id, ", rpcCallable=", _rpcCallable, "}");
 	}
 
 	protected void sendRPCResponse(

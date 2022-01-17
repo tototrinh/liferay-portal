@@ -14,8 +14,8 @@
 
 package com.liferay.portlet;
 
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
@@ -151,14 +151,9 @@ public class VelocityPortlet extends GenericPortlet {
 			return name;
 		}
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(_portletContextName);
-		sb.append(TemplateConstants.SERVLET_SEPARATOR);
-		sb.append(StrutsUtil.TEXT_HTML_DIR);
-		sb.append(name);
-
-		return sb.toString();
+		return StringBundler.concat(
+			_portletContextName, TemplateConstants.SERVLET_SEPARATOR,
+			StrutsUtil.TEXT_HTML_DIR, name);
 	}
 
 	protected void mergeTemplate(

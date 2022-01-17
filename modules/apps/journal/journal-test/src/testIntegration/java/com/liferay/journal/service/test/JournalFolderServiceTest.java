@@ -19,15 +19,17 @@ import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
 import com.liferay.dynamic.data.mapping.test.util.DDMTemplateTestUtil;
+import com.liferay.journal.constants.JournalArticleConstants;
+import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.exception.InvalidDDMStructureException;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.model.JournalArticleConstants;
 import com.liferay.journal.model.JournalFolder;
-import com.liferay.journal.model.JournalFolderConstants;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.journal.service.JournalFolderLocalServiceUtil;
 import com.liferay.journal.service.JournalFolderServiceUtil;
 import com.liferay.journal.test.util.JournalTestUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -128,7 +130,7 @@ public class JournalFolderServiceTest {
 		try {
 			JournalTestUtil.addArticleWithXMLContent(
 				_group.getGroupId(), folder.getFolderId(),
-				JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+				JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 				ddmStructure2.getStructureKey(), ddmTemplate2.getTemplateKey());
 
 			Assert.fail();
@@ -142,7 +144,7 @@ public class JournalFolderServiceTest {
 		try {
 			JournalTestUtil.addArticleWithXMLContent(
 				_group.getGroupId(), subfolder.getFolderId(),
-				JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+				JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 				ddmStructure2.getStructureKey(), ddmTemplate2.getTemplateKey());
 
 			Assert.fail();
@@ -159,6 +161,62 @@ public class JournalFolderServiceTest {
 				RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW);
 
 		Assert.assertTrue(ddmStructures.toString(), ddmStructures.isEmpty());
+	}
+
+	@Test
+	public void testAddRestrictionToParentWithRestrictedChildFolder()
+		throws Exception {
+
+		JournalFolder parentFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test 1");
+
+		JournalFolder childFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(), parentFolder.getFolderId(), "Test 2");
+
+		String xml = DDMStructureTestUtil.getSampleStructuredContent(
+			"Test Article");
+
+		DDMStructure childDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
+			_group.getGroupId(), childDDMStructure.getStructureId(),
+			PortalUtil.getClassNameId(JournalArticle.class),
+			LocaleUtil.getDefault());
+
+		JournalTestUtil.addArticleWithXMLContent(
+			_group.getGroupId(), childFolder.getFolderId(),
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
+			childDDMStructure.getStructureKey(), ddmTemplate.getTemplateKey());
+
+		long[] childDDMStructureIds = {childDDMStructure.getStructureId()};
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			childFolder.getFolderId(), childFolder.getParentFolderId(),
+			childFolder.getName(), childFolder.getDescription(),
+			childDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		DDMStructure parentDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		parentFolder = JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			parentFolder.getFolderId(), parentFolder.getParentFolderId(),
+			parentFolder.getName(), parentFolder.getDescription(),
+			new long[] {parentDDMStructure.getStructureId()},
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		Assert.assertEquals(
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			parentFolder.getRestrictionType());
 	}
 
 	@Test
@@ -196,12 +254,11 @@ public class JournalFolderServiceTest {
 		DDMStructure ddmStructure1 = DDMStructureTestUtil.addStructure(
 			_group.getGroupId(), JournalArticle.class.getName());
 
-		long[] ddmStructureIds = {ddmStructure1.getStructureId()};
-
 		JournalFolderServiceUtil.updateFolder(
 			serviceContext.getScopeGroupId(), spainFolder.getFolderId(),
 			spainFolder.getParentFolderId(), spainFolder.getName(),
-			spainFolder.getDescription(), ddmStructureIds,
+			spainFolder.getDescription(),
+			new long[] {ddmStructure1.getStructureId()},
 			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
 			false, serviceContext);
 
@@ -238,7 +295,7 @@ public class JournalFolderServiceTest {
 
 		JournalArticle article = JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(), folder1.getFolderId(),
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		JournalFolderLocalServiceUtil.moveFolderToTrash(
@@ -273,6 +330,9 @@ public class JournalFolderServiceTest {
 			Assert.fail();
 		}
 		catch (RestoreEntryException restoreEntryException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(restoreEntryException, restoreEntryException);
+			}
 		}
 
 		JournalFolder subfolder = JournalTestUtil.addFolder(
@@ -285,6 +345,9 @@ public class JournalFolderServiceTest {
 			Assert.fail();
 		}
 		catch (RestoreEntryException restoreEntryException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(restoreEntryException, restoreEntryException);
+			}
 		}
 	}
 
@@ -304,7 +367,7 @@ public class JournalFolderServiceTest {
 		JournalArticle article = JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		JournalFolder folder = JournalTestUtil.addFolder(
@@ -372,7 +435,7 @@ public class JournalFolderServiceTest {
 
 		JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(), folder2.getFolderId(),
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		JournalFolderLocalServiceUtil.moveFolderToTrash(
@@ -407,6 +470,9 @@ public class JournalFolderServiceTest {
 			Assert.fail();
 		}
 		catch (RestoreEntryException restoreEntryException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(restoreEntryException, restoreEntryException);
+			}
 		}
 
 		JournalFolder subfolder = JournalTestUtil.addFolder(
@@ -419,6 +485,9 @@ public class JournalFolderServiceTest {
 			Assert.fail();
 		}
 		catch (RestoreEntryException restoreEntryException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(restoreEntryException, restoreEntryException);
+			}
 		}
 	}
 
@@ -441,7 +510,7 @@ public class JournalFolderServiceTest {
 
 		JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(), folder1.getFolderId(),
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		JournalFolder folder2 = JournalTestUtil.addFolder(
@@ -486,6 +555,91 @@ public class JournalFolderServiceTest {
 	}
 
 	@Test
+	public void testRemoveChildRestriction() throws Exception {
+		JournalFolder parentFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test 1");
+
+		DDMStructure parentDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		long[] parentDDMStructureIds = {parentDDMStructure.getStructureId()};
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		parentFolder = JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			parentFolder.getFolderId(), parentFolder.getParentFolderId(),
+			parentFolder.getName(), parentFolder.getDescription(),
+			parentDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		JournalFolder childFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(), parentFolder.getFolderId(), "Test 2");
+
+		String xml = DDMStructureTestUtil.getSampleStructuredContent(
+			"Test Article");
+
+		DDMStructure childDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		long[] childDDMStructureIds = {childDDMStructure.getStructureId()};
+
+		JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			childFolder.getFolderId(), childFolder.getParentFolderId(),
+			childFolder.getName(), childFolder.getDescription(),
+			childDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		DDMTemplate childDDMTemplate = DDMTemplateTestUtil.addTemplate(
+			_group.getGroupId(), childDDMStructure.getStructureId(),
+			PortalUtil.getClassNameId(JournalArticle.class),
+			LocaleUtil.getDefault());
+
+		JournalTestUtil.addArticleWithXMLContent(
+			_group.getGroupId(), childFolder.getFolderId(),
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
+			childDDMStructure.getStructureKey(),
+			childDDMTemplate.getTemplateKey());
+
+		try {
+			JournalFolderLocalServiceUtil.updateFolder(
+				TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+				childFolder.getFolderId(), childFolder.getParentFolderId(),
+				childFolder.getName(), childFolder.getDescription(),
+				new long[0], JournalFolderConstants.RESTRICTION_TYPE_INHERIT,
+				false, serviceContext);
+
+			Assert.fail();
+		}
+		catch (InvalidDDMStructureException invalidDDMStructureException) {
+		}
+
+		JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			parentFolder.getFolderId(), parentFolder.getParentFolderId(),
+			parentFolder.getName(), parentFolder.getDescription(),
+			childDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		childFolder = JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			childFolder.getFolderId(), childFolder.getParentFolderId(),
+			childFolder.getName(), childFolder.getDescription(), new long[0],
+			JournalFolderConstants.RESTRICTION_TYPE_INHERIT, false,
+			serviceContext);
+
+		Assert.assertEquals(
+			JournalFolderConstants.RESTRICTION_TYPE_INHERIT,
+			childFolder.getRestrictionType());
+	}
+
+	@Test
 	public void testSubfolders() throws Exception {
 		JournalFolder folder1 = JournalTestUtil.addFolder(
 			_group.getGroupId(),
@@ -525,7 +679,7 @@ public class JournalFolderServiceTest {
 
 		JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(), folder.getFolderId(),
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		DDMStructure ddmStructure2 = DDMStructureTestUtil.addStructure(
@@ -555,7 +709,7 @@ public class JournalFolderServiceTest {
 
 		JournalTestUtil.addArticleWithXMLContent(
 			_group.getGroupId(), subfolder.getFolderId(),
-			JournalArticleConstants.CLASSNAME_ID_DEFAULT, xml,
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
 			ddmStructure1.getStructureKey(), ddmTemplate1.getTemplateKey());
 
 		try {
@@ -572,6 +726,69 @@ public class JournalFolderServiceTest {
 		catch (InvalidDDMStructureException invalidDDMStructureException) {
 		}
 	}
+
+	@Test
+	public void testUpdateParentWithRestriction() throws Exception {
+		JournalFolder parentFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test 1");
+
+		DDMStructure parentDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		long[] parentDDMStructureIds = {parentDDMStructure.getStructureId()};
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+
+		parentFolder = JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			parentFolder.getFolderId(), parentFolder.getParentFolderId(),
+			parentFolder.getName(), parentFolder.getDescription(),
+			parentDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		JournalFolder childFolder = JournalTestUtil.addFolder(
+			_group.getGroupId(), parentFolder.getFolderId(), "Test 2");
+
+		String xml = DDMStructureTestUtil.getSampleStructuredContent(
+			"Test Article");
+
+		DDMStructure childDDMStructure = DDMStructureTestUtil.addStructure(
+			_group.getGroupId(), JournalArticle.class.getName());
+
+		JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			childFolder.getFolderId(), childFolder.getParentFolderId(),
+			childFolder.getName(), childFolder.getDescription(),
+			new long[] {childDDMStructure.getStructureId()},
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		DDMTemplate childDDMTemplate = DDMTemplateTestUtil.addTemplate(
+			_group.getGroupId(), childDDMStructure.getStructureId(),
+			PortalUtil.getClassNameId(JournalArticle.class),
+			LocaleUtil.getDefault());
+
+		JournalTestUtil.addArticleWithXMLContent(
+			_group.getGroupId(), childFolder.getFolderId(),
+			JournalArticleConstants.CLASS_NAME_ID_DEFAULT, xml,
+			childDDMStructure.getStructureKey(),
+			childDDMTemplate.getTemplateKey());
+
+		parentFolder = JournalFolderLocalServiceUtil.updateFolder(
+			TestPropsValues.getUserId(), serviceContext.getScopeGroupId(),
+			parentFolder.getFolderId(), parentFolder.getParentFolderId(),
+			parentFolder.getName(), "Description 1", parentDDMStructureIds,
+			JournalFolderConstants.RESTRICTION_TYPE_DDM_STRUCTURES_AND_WORKFLOW,
+			false, serviceContext);
+
+		Assert.assertEquals("Description 1", parentFolder.getDescription());
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JournalFolderServiceTest.class);
 
 	@DeleteAfterTestRun
 	private Group _group;

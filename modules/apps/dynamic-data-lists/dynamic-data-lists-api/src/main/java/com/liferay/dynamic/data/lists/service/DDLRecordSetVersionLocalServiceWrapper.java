@@ -14,7 +14,10 @@
 
 package com.liferay.dynamic.data.lists.service;
 
+import com.liferay.dynamic.data.lists.model.DDLRecordSetVersion;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 
 /**
  * Provides a wrapper for {@link DDLRecordSetVersionLocalService}.
@@ -36,14 +39,16 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	/**
 	 * Adds the ddl record set version to the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDLRecordSetVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ddlRecordSetVersion the ddl record set version
 	 * @return the ddl record set version that was added
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-		addDDLRecordSetVersion(
-			com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-				ddlRecordSetVersion) {
+	public DDLRecordSetVersion addDDLRecordSetVersion(
+		DDLRecordSetVersion ddlRecordSetVersion) {
 
 		return _ddlRecordSetVersionLocalService.addDDLRecordSetVersion(
 			ddlRecordSetVersion);
@@ -56,8 +61,8 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	 * @return the new ddl record set version
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-		createDDLRecordSetVersion(long recordSetVersionId) {
+	public DDLRecordSetVersion createDDLRecordSetVersion(
+		long recordSetVersionId) {
 
 		return _ddlRecordSetVersionLocalService.createDDLRecordSetVersion(
 			recordSetVersionId);
@@ -83,14 +88,16 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	/**
 	 * Deletes the ddl record set version from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDLRecordSetVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ddlRecordSetVersion the ddl record set version
 	 * @return the ddl record set version that was removed
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-		deleteDDLRecordSetVersion(
-			com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-				ddlRecordSetVersion) {
+	public DDLRecordSetVersion deleteDDLRecordSetVersion(
+		DDLRecordSetVersion ddlRecordSetVersion) {
 
 		return _ddlRecordSetVersionLocalService.deleteDDLRecordSetVersion(
 			ddlRecordSetVersion);
@@ -99,13 +106,17 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	/**
 	 * Deletes the ddl record set version with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDLRecordSetVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param recordSetVersionId the primary key of the ddl record set version
 	 * @return the ddl record set version that was removed
 	 * @throws PortalException if a ddl record set version with the primary key could not be found
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-			deleteDDLRecordSetVersion(long recordSetVersionId)
+	public DDLRecordSetVersion deleteDDLRecordSetVersion(
+			long recordSetVersionId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddlRecordSetVersionLocalService.deleteDDLRecordSetVersion(
@@ -122,6 +133,18 @@ public class DDLRecordSetVersionLocalServiceWrapper
 
 		return _ddlRecordSetVersionLocalService.deletePersistedModel(
 			persistedModel);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _ddlRecordSetVersionLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _ddlRecordSetVersionLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -216,8 +239,8 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	}
 
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-		fetchDDLRecordSetVersion(long recordSetVersionId) {
+	public DDLRecordSetVersion fetchDDLRecordSetVersion(
+		long recordSetVersionId) {
 
 		return _ddlRecordSetVersionLocalService.fetchDDLRecordSetVersion(
 			recordSetVersionId);
@@ -238,8 +261,7 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	 * @throws PortalException if a ddl record set version with the primary key could not be found
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-			getDDLRecordSetVersion(long recordSetVersionId)
+	public DDLRecordSetVersion getDDLRecordSetVersion(long recordSetVersionId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddlRecordSetVersionLocalService.getDDLRecordSetVersion(
@@ -258,9 +280,8 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	 * @return the range of ddl record set versions
 	 */
 	@Override
-	public java.util.List
-		<com.liferay.dynamic.data.lists.model.DDLRecordSetVersion>
-			getDDLRecordSetVersions(int start, int end) {
+	public java.util.List<DDLRecordSetVersion> getDDLRecordSetVersions(
+		int start, int end) {
 
 		return _ddlRecordSetVersionLocalService.getDDLRecordSetVersions(
 			start, end);
@@ -285,8 +306,7 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	}
 
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-			getLatestRecordSetVersion(long recordSetId)
+	public DDLRecordSetVersion getLatestRecordSetVersion(long recordSetId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddlRecordSetVersionLocalService.getLatestRecordSetVersion(
@@ -316,8 +336,7 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	}
 
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-			getRecordSetVersion(long recordSetVersionId)
+	public DDLRecordSetVersion getRecordSetVersion(long recordSetVersionId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddlRecordSetVersionLocalService.getRecordSetVersion(
@@ -325,8 +344,8 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	}
 
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-			getRecordSetVersion(long recordSetId, String version)
+	public DDLRecordSetVersion getRecordSetVersion(
+			long recordSetId, String version)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _ddlRecordSetVersionLocalService.getRecordSetVersion(
@@ -334,22 +353,18 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	}
 
 	@Override
-	public java.util.List
-		<com.liferay.dynamic.data.lists.model.DDLRecordSetVersion>
-			getRecordSetVersions(long recordSetId) {
+	public java.util.List<DDLRecordSetVersion> getRecordSetVersions(
+		long recordSetId) {
 
 		return _ddlRecordSetVersionLocalService.getRecordSetVersions(
 			recordSetId);
 	}
 
 	@Override
-	public java.util.List
-		<com.liferay.dynamic.data.lists.model.DDLRecordSetVersion>
-			getRecordSetVersions(
-				long recordSetId, int start, int end,
-				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.dynamic.data.lists.model.DDLRecordSetVersion>
-						orderByComparator) {
+	public java.util.List<DDLRecordSetVersion> getRecordSetVersions(
+		long recordSetId, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<DDLRecordSetVersion>
+			orderByComparator) {
 
 		return _ddlRecordSetVersionLocalService.getRecordSetVersions(
 			recordSetId, start, end, orderByComparator);
@@ -364,17 +379,39 @@ public class DDLRecordSetVersionLocalServiceWrapper
 	/**
 	 * Updates the ddl record set version in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DDLRecordSetVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ddlRecordSetVersion the ddl record set version
 	 * @return the ddl record set version that was updated
 	 */
 	@Override
-	public com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-		updateDDLRecordSetVersion(
-			com.liferay.dynamic.data.lists.model.DDLRecordSetVersion
-				ddlRecordSetVersion) {
+	public DDLRecordSetVersion updateDDLRecordSetVersion(
+		DDLRecordSetVersion ddlRecordSetVersion) {
 
 		return _ddlRecordSetVersionLocalService.updateDDLRecordSetVersion(
 			ddlRecordSetVersion);
+	}
+
+	@Override
+	public CTPersistence<DDLRecordSetVersion> getCTPersistence() {
+		return _ddlRecordSetVersionLocalService.getCTPersistence();
+	}
+
+	@Override
+	public Class<DDLRecordSetVersion> getModelClass() {
+		return _ddlRecordSetVersionLocalService.getModelClass();
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DDLRecordSetVersion>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return _ddlRecordSetVersionLocalService.updateWithUnsafeFunction(
+			updateUnsafeFunction);
 	}
 
 	@Override

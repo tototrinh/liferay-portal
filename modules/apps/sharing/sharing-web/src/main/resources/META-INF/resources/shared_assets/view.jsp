@@ -17,34 +17,53 @@
 <%@ include file="/shared_assets/init.jsp" %>
 
 <%
-SharedAssetsViewDisplayContext sharedAssetsViewDisplayContext = (SharedAssetsViewDisplayContext)renderRequest.getAttribute(SharedAssetsViewDisplayContext.class.getName());
+ViewSharedAssetsDisplayContext viewSharedAssetsDisplayContext = (ViewSharedAssetsDisplayContext)renderRequest.getAttribute(ViewSharedAssetsDisplayContext.class.getName());
 %>
 
 <clay:navigation-bar
 	inverted="<%= layout.isTypeControlPanel() %>"
-	navigationItems="<%= sharedAssetsViewDisplayContext.getNavigationItems() %>"
-/>
-
-<clay:management-toolbar
-	defaultEventHandler='<%= renderResponse.getNamespace() + "SharedAssets" %>'
-	filterDropdownItems="<%= sharedAssetsViewDisplayContext.getFilterDropdownItems() %>"
-	selectable="<%= false %>"
-	showSearch="<%= false %>"
-	sortingOrder="<%= sharedAssetsViewDisplayContext.getSortingOrder() %>"
-	sortingURL="<%= String.valueOf(sharedAssetsViewDisplayContext.getSortingURL()) %>"
+	navigationItems="<%= viewSharedAssetsDisplayContext.getNavigationItems() %>"
 />
 
 <%
-PortletURL portletURL = renderResponse.createRenderURL();
+PortletURL viewAssetTypeURL = PortletURLBuilder.create(
+	PortletURLUtil.clone(currentURLObj, liferayPortletResponse)
+).setParameter(
+	"className", (String)null
+).buildPortletURL();
 
-portletURL.setParameter("mvcRenderCommandName", "/blogs/view");
-
-SearchContainer sharingEntriesSearchContainer = new SearchContainer(renderRequest, PortletURLUtil.clone(portletURL, liferayPortletResponse), null, "no-entries-were-found");
-
-sharedAssetsViewDisplayContext.populateResults(sharingEntriesSearchContainer);
+PortletURL selectAssetTypeURL = viewSharedAssetsDisplayContext.getSelectAssetTypeURL();
 %>
 
-<div class="container-fluid-1280 main-content-body">
+<clay:management-toolbar
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"selectAssetTypeURL", selectAssetTypeURL.toString()
+		).put(
+			"viewAssetTypeURL", viewAssetTypeURL.toString()
+		).build()
+	%>'
+	filterDropdownItems="<%= viewSharedAssetsDisplayContext.getFilterDropdownItems() %>"
+	propsTransformer="shared_assets/js/SharedAssetsManagementToolbarPropsTransformer"
+	selectable="<%= false %>"
+	showSearch="<%= false %>"
+	sortingOrder="<%= viewSharedAssetsDisplayContext.getSortingOrder() %>"
+	sortingURL="<%= String.valueOf(viewSharedAssetsDisplayContext.getSortingURL()) %>"
+/>
+
+<%
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/blogs/view"
+).buildPortletURL();
+
+SearchContainer<SharingEntry> sharingEntriesSearchContainer = new SearchContainer(renderRequest, PortletURLUtil.clone(portletURL, liferayPortletResponse), null, "no-entries-were-found");
+
+viewSharedAssetsDisplayContext.populateResults(sharingEntriesSearchContainer);
+%>
+
+<clay:container-fluid>
 	<liferay-ui:search-container
 		id="sharingEntries"
 		searchContainer="<%= sharingEntriesSearchContainer %>"
@@ -56,23 +75,23 @@ sharedAssetsViewDisplayContext.populateResults(sharingEntriesSearchContainer);
 			modelVar="sharingEntry"
 		>
 			<liferay-portlet:renderURL varImpl="rowURL">
-				<portlet:param name="mvcRenderCommandName" value="/shared_assets/view_sharing_entry" />
+				<portlet:param name="mvcRenderCommandName" value="/sharing/view_sharing_entry" />
 				<portlet:param name="redirect" value="<%= currentURL %>" />
 				<portlet:param name="sharingEntryId" value="<%= String.valueOf(sharingEntry.getSharingEntryId()) %>" />
 			</liferay-portlet:renderURL>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
-				href="<%= sharedAssetsViewDisplayContext.isVisible(sharingEntry) ? rowURL : null %>"
+				cssClass="table-cell-expand"
+				href="<%= viewSharedAssetsDisplayContext.isVisible(sharingEntry) ? rowURL : null %>"
 				name="title"
 				orderable="<%= false %>"
-				value="<%= sharedAssetsViewDisplayContext.getTitle(sharingEntry) %>"
+				value="<%= viewSharedAssetsDisplayContext.getTitle(sharingEntry) %>"
 			/>
 
 			<liferay-ui:search-container-column-text
 				name="asset-type"
 				orderable="<%= false %>"
-				value="<%= sharedAssetsViewDisplayContext.getAssetTypeTitle(sharingEntry) %>"
+				value="<%= viewSharedAssetsDisplayContext.getAssetTypeTitle(sharingEntry) %>"
 			/>
 
 			<liferay-ui:search-container-column-text
@@ -80,12 +99,11 @@ sharedAssetsViewDisplayContext.populateResults(sharingEntriesSearchContainer);
 				name="status"
 				orderable="<%= false %>"
 			>
-				<c:if test="<%= !sharedAssetsViewDisplayContext.isVisible(sharingEntry) %>">
-					<span class="label label-info">
-						<span class="label-item label-item-expand">
-							<liferay-ui:message key="not-visible" />
-						</span>
-					</span>
+				<c:if test="<%= !viewSharedAssetsDisplayContext.isVisible(sharingEntry) %>">
+					<clay:label
+						displayType="info"
+						label="not-visible"
+					/>
 				</c:if>
 			</liferay-ui:search-container-column-text>
 
@@ -105,23 +123,8 @@ sharedAssetsViewDisplayContext.populateResults(sharingEntriesSearchContainer);
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
-
-<%
-PortletURL viewAssetTypeURL = PortletURLUtil.clone(currentURLObj, liferayPortletResponse);
-
-viewAssetTypeURL.setParameter("className", (String)null);
-
-Map<String, Object> context = new HashMap<>();
-
-PortletURL selectAssetTypeURL = sharedAssetsViewDisplayContext.getSelectAssetTypeURL();
-
-context.put("selectAssetTypeURL", selectAssetTypeURL.toString());
-context.put("viewAssetTypeURL", viewAssetTypeURL.toString());
-%>
+</clay:container-fluid>
 
 <liferay-frontend:component
-	componentId='<%= renderResponse.getNamespace() + "SharedAssets" %>'
-	context="<%= context %>"
-	module="SharedAssets.es"
+	module="shared_assets/js/SharedAssets"
 />

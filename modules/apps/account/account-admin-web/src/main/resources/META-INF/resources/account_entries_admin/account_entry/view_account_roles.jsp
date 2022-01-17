@@ -19,21 +19,22 @@
 <%
 AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttribute(AccountWebKeys.ACCOUNT_ENTRY_DISPLAY);
 
-SearchContainer accountRoleDisplaySearchContainer = AccountRoleDisplaySearchContainerFactory.create(accountEntryDisplay.getAccountEntryId(), liferayPortletRequest, liferayPortletResponse);
+SearchContainer<AccountRoleDisplay> accountRoleDisplaySearchContainer = AccountRoleDisplaySearchContainerFactory.create(accountEntryDisplay.getAccountEntryId(), liferayPortletRequest, liferayPortletResponse);
 
 ViewAccountRolesManagementToolbarDisplayContext viewAccountRolesManagementToolbarDisplayContext = new ViewAccountRolesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, accountRoleDisplaySearchContainer);
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(ParamUtil.getString(request, "backURL", String.valueOf(renderResponse.createRenderURL())));
 
-renderResponse.setTitle((accountEntryDisplay == null) ? "" : accountEntryDisplay.getName());
+renderResponse.setTitle(accountEntryDisplay.getName());
 %>
 
 <clay:management-toolbar
-	displayContext="<%= viewAccountRolesManagementToolbarDisplayContext %>"
+	managementToolbarDisplayContext="<%= viewAccountRolesManagementToolbarDisplayContext %>"
+	propsTransformer="account_entries_admin/js/AccountRolesManagementToolbarPropsTransformer"
 />
 
-<aui:container cssClass="container-fluid container-fluid-max-xl">
+<clay:container-fluid>
 	<aui:form method="post" name="fm">
 		<aui:input name="accountRoleIds" type="hidden" />
 
@@ -52,12 +53,6 @@ renderResponse.setTitle((accountEntryDisplay == null) ? "" : accountEntryDisplay
 					<portlet:param name="accountRoleId" value="<%= String.valueOf(accountRole.getAccountRoleId()) %>" />
 				</portlet:renderURL>
 
-				<%
-				if (AccountRoleConstants.isRequiredRole(accountRole.getRole())) {
-					rowURL = StringPool.BLANK;
-				}
-				%>
-
 				<liferay-ui:search-container-column-text
 					cssClass="table-cell-expand-small table-cell-minw-150"
 					href="<%= rowURL %>"
@@ -72,6 +67,13 @@ renderResponse.setTitle((accountEntryDisplay == null) ? "" : accountEntryDisplay
 					value="<%= accountRole.getDescription(locale) %>"
 				/>
 
+				<liferay-ui:search-container-column-text
+					cssClass="table-cell-expand-small table-cell-minw-150"
+					href="<%= rowURL %>"
+					name="type"
+					value="<%= accountRole.getTypeLabel(locale) %>"
+				/>
+
 				<liferay-ui:search-container-column-jsp
 					path="/account_entries_admin/account_role_action.jsp"
 				/>
@@ -82,9 +84,4 @@ renderResponse.setTitle((accountEntryDisplay == null) ? "" : accountEntryDisplay
 			/>
 		</liferay-ui:search-container>
 	</aui:form>
-</aui:container>
-
-<liferay-frontend:component
-	componentId="<%= viewAccountRolesManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="account_entries_admin/js/AccountRolesManagementToolbarDefaultEventHandler.es"
-/>
+</clay:container-fluid>

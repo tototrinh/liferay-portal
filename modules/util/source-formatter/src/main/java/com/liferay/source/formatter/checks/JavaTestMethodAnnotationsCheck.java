@@ -16,8 +16,11 @@ package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.source.formatter.parser.JavaClass;
+import com.liferay.source.formatter.parser.JavaParameter;
+import com.liferay.source.formatter.parser.JavaSignature;
 import com.liferay.source.formatter.parser.JavaTerm;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,13 +39,7 @@ public class JavaTestMethodAnnotationsCheck extends BaseJavaTermCheck {
 		String fileName, String absolutePath, JavaTerm javaTerm,
 		String fileContent) {
 
-		if (!fileName.endsWith("Test.java")) {
-			return javaTerm.getContent();
-		}
-
-		String accessModifier = javaTerm.getAccessModifier();
-
-		if (!accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PUBLIC)) {
+		if (!javaTerm.isPublic() || !fileName.endsWith("Test.java")) {
 			return javaTerm.getContent();
 		}
 
@@ -53,14 +50,18 @@ public class JavaTestMethodAnnotationsCheck extends BaseJavaTermCheck {
 		}
 
 		_checkAnnotationForMethod(
-			fileName, javaTerm, "After", "\\btearDown(?!Class)", false);
+			fileName, javaTerm, "^tearDown(?!Class)", false, "After",
+			"AfterEach");
 		_checkAnnotationForMethod(
-			fileName, javaTerm, "AfterClass", "\\btearDownClass", true);
+			fileName, javaTerm, "^tearDownClass", true, "AfterAll",
+			"AfterClass");
 		_checkAnnotationForMethod(
-			fileName, javaTerm, "Before", "\\bsetUp(?!Class)", false);
+			fileName, javaTerm, "^setUp(?!Class)", false, "Before",
+			"BeforeEach");
 		_checkAnnotationForMethod(
-			fileName, javaTerm, "BeforeClass", "\\bsetUpClass", true);
-		_checkAnnotationForMethod(fileName, javaTerm, "Test", "^.*test", false);
+			fileName, javaTerm, "^setUpClass", true, "BeforeAll",
+			"BeforeClass");
+		_checkAnnotationForMethod(fileName, javaTerm, "^test", false, "Test");
 
 		return javaTerm.getContent();
 	}
@@ -71,8 +72,8 @@ public class JavaTestMethodAnnotationsCheck extends BaseJavaTermCheck {
 	}
 
 	private void _checkAnnotationForMethod(
-		String fileName, JavaTerm javaTerm, String annotation,
-		String requiredMethodNameRegex, boolean staticRequired) {
+		String fileName, JavaTerm javaTerm, String requiredMethodNameRegex,
+		boolean staticRequired, String... annotations) {
 
 		String methodName = javaTerm.getName();
 
@@ -80,22 +81,68 @@ public class JavaTestMethodAnnotationsCheck extends BaseJavaTermCheck {
 
 		Matcher matcher = pattern.matcher(methodName);
 
-		if (javaTerm.hasAnnotation(annotation)) {
+		boolean hasAnnotation = false;
+
+		for (String annotation : annotations) {
+			if (javaTerm.hasAnnotation(annotation)) {
+				hasAnnotation = true;
+
+				break;
+			}
+		}
+
+		if (hasAnnotation) {
 			if (!matcher.find()) {
 				addMessage(
-					fileName, "Incorrect method name '" + methodName + "'");
+					fileName, "Incorrect method name '" + methodName + "'",
+					javaTerm.getLineNumber());
 			}
 			else if (javaTerm.isStatic() != staticRequired) {
 				addMessage(
-					fileName, "Incorrect method type for '" + methodName + "'");
+					fileName, "Incorrect method type for '" + methodName + "'",
+					javaTerm.getLineNumber());
 			}
+
+			return;
 		}
-		else if (matcher.find() && !javaTerm.hasAnnotation("Override")) {
+
+		if (!matcher.find()) {
+			return;
+		}
+
+		JavaSignature signature = javaTerm.getSignature();
+
+		List<JavaParameter> parameters = signature.getParameters();
+
+		if (!parameters.isEmpty()) {
+			return;
+		}
+
+		JavaClass javaClass = javaTerm.getParentJavaClass();
+
+		if (javaClass.isAnonymous()) {
+			return;
+		}
+
+		JavaClass parentJavaClass = javaClass.getParentJavaClass();
+
+		if (parentJavaClass == null) {
+			StringBundler sb = new StringBundler();
+
+			for (String annotation : annotations) {
+				sb.append("@");
+				sb.append(annotation);
+				sb.append(" or ");
+			}
+
+			sb.setIndex(sb.index() - 1);
+
 			addMessage(
 				fileName,
 				StringBundler.concat(
-					"Annotation @", annotation, " required for '", methodName,
-					"'"));
+					"Annotation ", sb.toString(), " required for '", methodName,
+					"'"),
+				javaTerm.getLineNumber());
 		}
 	}
 

@@ -15,9 +15,12 @@
 package com.liferay.portal.workflow.kaleo.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.search.test.util.SearchTestRule;
+import com.liferay.portal.workflow.kaleo.definition.ExecutionType;
+import com.liferay.portal.workflow.kaleo.definition.Task;
 import com.liferay.portal.workflow.kaleo.model.KaleoAction;
 import com.liferay.portal.workflow.kaleo.model.KaleoInstance;
 import com.liferay.portal.workflow.kaleo.model.KaleoNode;
@@ -25,7 +28,6 @@ import com.liferay.portal.workflow.kaleo.model.KaleoNode;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,13 +35,9 @@ import org.junit.runner.RunWith;
 /**
  * @author Inácio Nery
  */
+@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class KaleoActionLocalServiceTest extends BaseKaleoLocalServiceTestCase {
-
-	@ClassRule
-	@Rule
-	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
 
 	@Test
 	public void testGetKaleoActions() throws Exception {
@@ -47,7 +45,8 @@ public class KaleoActionLocalServiceTest extends BaseKaleoLocalServiceTestCase {
 
 		KaleoInstance kaleoInstance = addKaleoInstance();
 
-		KaleoNode kaleoNode = addKaleoNode(kaleoInstance);
+		KaleoNode kaleoNode = addKaleoNode(
+			kaleoInstance, new Task("task", StringPool.BLANK));
 
 		KaleoAction kaleoAction = addKaleoAction(kaleoInstance, kaleoNode);
 
@@ -61,10 +60,13 @@ public class KaleoActionLocalServiceTest extends BaseKaleoLocalServiceTestCase {
 
 		kaleoActions = kaleoActionLocalService.getKaleoActions(
 			companyId, KaleoNode.class.getName(), kaleoNode.getKaleoNodeId(),
-			"onAssignment");
+			ExecutionType.ON_ASSIGNMENT.getValue());
 
 		Assert.assertEquals(kaleoActions.toString(), 1, kaleoActions.size());
 		Assert.assertEquals(kaleoAction, kaleoActions.get(0));
 	}
+
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
 
 }

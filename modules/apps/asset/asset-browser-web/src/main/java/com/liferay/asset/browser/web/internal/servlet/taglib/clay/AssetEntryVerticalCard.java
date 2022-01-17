@@ -19,7 +19,11 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -28,6 +32,8 @@ import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.portlet.RenderRequest;
@@ -54,52 +60,7 @@ public class AssetEntryVerticalCard implements VerticalCard {
 	}
 
 	@Override
-	public Map<String, String> getData() {
-		if (_assetBrowserDisplayContext.isMultipleSelection()) {
-			return null;
-		}
-
-		if (_assetEntry.getEntryId() ==
-				_assetBrowserDisplayContext.getRefererAssetEntryId()) {
-
-			return null;
-		}
-
-		Map<String, String> data = HashMapBuilder.put(
-			"assetclassname", _assetEntry.getClassName()
-		).put(
-			"assetclassnameid", String.valueOf(_assetEntry.getClassNameId())
-		).put(
-			"assetclasspk", String.valueOf(_assetEntry.getClassPK())
-		).put(
-			"assettitle", _assetRenderer.getTitle(_themeDisplay.getLocale())
-		).put(
-			"assettype",
-			_assetRendererFactory.getTypeName(
-				_themeDisplay.getLocale(),
-				_assetBrowserDisplayContext.getSubtypeSelectionId())
-		).put(
-			"entityid", String.valueOf(_assetEntry.getEntryId())
-		).build();
-
-		Group group = GroupLocalServiceUtil.fetchGroup(
-			_assetEntry.getGroupId());
-
-		if (group != null) {
-			try {
-				data.put(
-					"groupdescriptivename",
-					group.getDescriptiveName(_themeDisplay.getLocale()));
-			}
-			catch (Exception exception) {
-			}
-		}
-
-		return data;
-	}
-
-	@Override
-	public String getElementClasses() {
+	public String getCssClass() {
 		if (_assetEntry.getEntryId() !=
 				_assetBrowserDisplayContext.getRefererAssetEntryId()) {
 
@@ -108,6 +69,53 @@ public class AssetEntryVerticalCard implements VerticalCard {
 		}
 
 		return StringPool.BLANK;
+	}
+
+	@Override
+	public Map<String, String> getDynamicAttributes() {
+		if (_assetBrowserDisplayContext.isMultipleSelection() ||
+			(_assetEntry.getEntryId() ==
+				_assetBrowserDisplayContext.getRefererAssetEntryId())) {
+
+			return null;
+		}
+
+		Map<String, String> data = HashMapBuilder.put(
+			"data-assetclassname", _assetEntry.getClassName()
+		).put(
+			"data-assetclassnameid",
+			String.valueOf(_assetEntry.getClassNameId())
+		).put(
+			"data-assetclasspk", String.valueOf(_assetEntry.getClassPK())
+		).put(
+			"data-assettitle",
+			_assetRenderer.getTitle(_themeDisplay.getLocale())
+		).put(
+			"data-assettype",
+			_assetRendererFactory.getTypeName(
+				_themeDisplay.getLocale(),
+				_assetBrowserDisplayContext.getSubtypeSelectionId())
+		).put(
+			"data-entityid", String.valueOf(_assetEntry.getEntryId())
+		).build();
+
+		Group group = GroupLocalServiceUtil.fetchGroup(
+			_assetEntry.getGroupId());
+
+		if (group != null) {
+			try {
+				data.put(
+					"data-groupdescriptivename",
+					group.getDescriptiveName(_themeDisplay.getLocale()));
+			}
+			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+			}
+		}
+
+		return data;
 	}
 
 	@Override
@@ -121,9 +129,28 @@ public class AssetEntryVerticalCard implements VerticalCard {
 			return _assetRenderer.getThumbnailPath(_renderRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
+	}
+
+	@Override
+	public String getInputValue() {
+		return String.valueOf(_assetEntry.getEntryId());
+	}
+
+	@Override
+	public List<LabelItem> getLabels() {
+		if (!_assetBrowserDisplayContext.isShowAssetEntryStatus()) {
+			return Collections.emptyList();
+		}
+
+		return LabelItemListBuilder.add(
+			labelItem -> labelItem.setStatus(_assetRenderer.getStatus())
+		).build();
 	}
 
 	@Override
@@ -135,14 +162,19 @@ public class AssetEntryVerticalCard implements VerticalCard {
 					_assetBrowserDisplayContext.getSubtypeSelectionId()));
 		}
 
-		Group group = GroupLocalServiceUtil.fetchGroup(
-			_assetEntry.getGroupId());
+		if (_assetBrowserDisplayContext.isSearchEverywhere()) {
+			Group group = GroupLocalServiceUtil.fetchGroup(
+				_assetEntry.getGroupId());
 
-		try {
-			return HtmlUtil.escape(
-				group.getDescriptiveName(_themeDisplay.getLocale()));
-		}
-		catch (Exception exception) {
+			try {
+				return HtmlUtil.escape(
+					group.getDescriptiveName(_themeDisplay.getLocale()));
+			}
+			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
+			}
 		}
 
 		return null;
@@ -158,10 +190,13 @@ public class AssetEntryVerticalCard implements VerticalCard {
 		return _assetBrowserDisplayContext.isMultipleSelection();
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssetEntryVerticalCard.class);
+
 	private final AssetBrowserDisplayContext _assetBrowserDisplayContext;
 	private final AssetEntry _assetEntry;
-	private final AssetRenderer _assetRenderer;
-	private final AssetRendererFactory _assetRendererFactory;
+	private final AssetRenderer<?> _assetRenderer;
+	private final AssetRendererFactory<?> _assetRendererFactory;
 	private final RenderRequest _renderRequest;
 	private final ThemeDisplay _themeDisplay;
 

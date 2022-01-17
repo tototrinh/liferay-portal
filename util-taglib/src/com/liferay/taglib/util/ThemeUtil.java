@@ -14,17 +14,20 @@
 
 package com.liferay.taglib.util;
 
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
+import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Theme;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.servlet.PluginContextListener;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateContextContributor;
-import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
@@ -33,9 +36,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerList;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.io.Writer;
 
@@ -49,7 +49,9 @@ import javax.servlet.http.HttpServletResponse;
  * @author Raymond Augé
  * @author Mika Koivisto
  * @author Shuyang Zhou
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link com.liferay.portal.kernel.theme.ThemeUtil}
  */
+@Deprecated
 public class ThemeUtil {
 
 	public static String getPortletId(HttpServletRequest httpServletRequest) {
@@ -216,14 +218,7 @@ public class ThemeUtil {
 				httpServletResponse, writer);
 		}
 
-		TemplateManager templateManager =
-			TemplateManagerUtil.getTemplateManager(
-				TemplateConstants.LANG_TYPE_FTL);
-
-		templateManager.addTaglibSupport(
-			template, httpServletRequest, httpServletResponse);
-		templateManager.addTaglibTheme(
-			template, "taglibLiferay", httpServletRequest, httpServletResponse);
+		template.prepareTaglib(httpServletRequest, httpServletResponse);
 
 		template.put(TemplateConstants.WRITER, writer);
 
@@ -241,7 +236,8 @@ public class ThemeUtil {
 	private static final Log _log = LogFactoryUtil.getLog(ThemeUtil.class);
 
 	private static final ServiceTrackerList<TemplateContextContributor>
-		_templateContextContributors = ServiceTrackerCollections.openList(
+		_templateContextContributors = ServiceTrackerListFactory.open(
+			SystemBundleUtil.getBundleContext(),
 			TemplateContextContributor.class,
 			"(type=" + TemplateContextContributor.TYPE_THEME + ")");
 

@@ -17,9 +17,9 @@
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet" %>
 
 <%@ taglib uri="http://liferay.com/tld/aui" prefix="aui" %><%@
-taglib uri="http://liferay.com/tld/ddm" prefix="liferay-ddm" %><%@
 taglib uri="http://liferay.com/tld/frontend" prefix="liferay-frontend" %><%@
-taglib uri="http://liferay.com/tld/portlet" prefix="liferay-portlet" %>
+taglib uri="http://liferay.com/tld/portlet" prefix="liferay-portlet" %><%@
+taglib uri="http://liferay.com/tld/template" prefix="liferay-template" %>
 
 <%@ page import="com.liferay.portal.kernel.util.Constants" %><%@
 page import="com.liferay.portal.kernel.util.WebKeys" %><%@
@@ -59,7 +59,7 @@ TagFacetPortletPreferences tagFacetPortletPreferences = new TagFacetPortletPrefe
 				label="display-settings"
 			>
 				<div class="display-template">
-					<liferay-ddm:template-selector
+					<liferay-template:template-selector
 						className="<%= AssetTagsSearchFacetTermDisplayContext.class.getName() %>"
 						displayStyle="<%= tagFacetPortletInstanceConfiguration.displayStyle() %>"
 						displayStyleGroupId="<%= assetTagsSearchFacetDisplayContext.getDisplayStyleGroupId() %>"
@@ -74,11 +74,6 @@ TagFacetPortletPreferences tagFacetPortletPreferences = new TagFacetPortletPrefe
 				label="advanced-configuration"
 			>
 				<aui:input label="tag-parameter-name" name="<%= PortletPreferencesJspUtil.getInputName(TagFacetPortletPreferences.PREFERENCE_KEY_PARAMETER_NAME) %>" value="<%= tagFacetPortletPreferences.getParameterName() %>" />
-
-				<aui:select label="display-style" name="<%= PortletPreferencesJspUtil.getInputName(TagFacetPortletPreferences.PREFERENCE_KEY_DISPLAY_STYLE) %>">
-					<aui:option label="cloud" selected="<%= tagFacetPortletPreferences.isDisplayStyleCloud() %>" />
-					<aui:option label="list" selected="<%= tagFacetPortletPreferences.isDisplayStyleList() %>" />
-				</aui:select>
 
 				<aui:input label="max-terms" name="<%= PortletPreferencesJspUtil.getInputName(TagFacetPortletPreferences.PREFERENCE_KEY_MAX_TERMS) %>" value="<%= tagFacetPortletPreferences.getMaxTerms() %>" />
 

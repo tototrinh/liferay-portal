@@ -18,6 +18,7 @@ import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.service.FragmentCollectionServiceUtil;
 import com.liferay.fragment.util.comparator.FragmentCollectionCreateDateComparator;
 import com.liferay.fragment.util.comparator.FragmentCollectionNameComparator;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.model.Group;
@@ -63,7 +64,9 @@ public class SelectFragmentCollectionDisplayContext {
 		return _eventName;
 	}
 
-	public SearchContainer getFragmentCollectionsSearchContainer() {
+	public SearchContainer<FragmentCollection>
+		getFragmentCollectionsSearchContainer() {
+
 		if (_fragmentCollectionsSearchContainer != null) {
 			return _fragmentCollectionsSearchContainer;
 		}
@@ -72,7 +75,7 @@ public class SelectFragmentCollectionDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer fragmentCollectionsSearchContainer =
+		SearchContainer<FragmentCollection> fragmentCollectionsSearchContainer =
 			new SearchContainer(
 				_renderRequest, getPortletURL(), null,
 				"there-are-no-collections");
@@ -140,31 +143,45 @@ public class SelectFragmentCollectionDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/fragment/select_fragment_collection"
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/fragment/select_fragment_collection");
-		portletURL.setParameter("eventName", getEventName());
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = _getKeywords();
+				return null;
+			}
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = _getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = _getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = _getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = _getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private OrderByComparator<FragmentCollection>
@@ -231,7 +248,8 @@ public class SelectFragmentCollectionDisplayContext {
 	}
 
 	private String _eventName;
-	private SearchContainer _fragmentCollectionsSearchContainer;
+	private SearchContainer<FragmentCollection>
+		_fragmentCollectionsSearchContainer;
 	private final HttpServletRequest _httpServletRequest;
 	private String _keywords;
 	private String _orderByCol;

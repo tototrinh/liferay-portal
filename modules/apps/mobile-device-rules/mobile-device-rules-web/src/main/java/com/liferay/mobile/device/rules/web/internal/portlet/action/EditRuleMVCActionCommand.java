@@ -98,13 +98,6 @@ public class EditRuleMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	protected void updateRule(ActionRequest actionRequest) throws Exception {
-		long ruleId = ParamUtil.getLong(actionRequest, "ruleId");
-
-		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
-			actionRequest, "name");
-		Map<Locale, String> descriptionMap =
-			LocalizationUtil.getLocalizationMap(actionRequest, "description");
-
 		String type = ParamUtil.getString(actionRequest, "type");
 
 		RuleHandler ruleHandler = RuleGroupProcessorUtil.getRuleHandler(type);
@@ -113,8 +106,15 @@ public class EditRuleMVCActionCommand extends BaseMVCActionCommand {
 			throw new UnknownRuleHandlerException(type);
 		}
 
-		UnicodeProperties typeSettingsProperties =
-			ActionUtil.getTypeSettingsProperties(
+		long ruleId = ParamUtil.getLong(actionRequest, "ruleId");
+
+		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
+			actionRequest, "name");
+		Map<Locale, String> descriptionMap =
+			LocalizationUtil.getLocalizationMap(actionRequest, "description");
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			ActionUtil.getTypeSettingsUnicodeProperties(
 				actionRequest, ruleHandler.getPropertyNames());
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -125,12 +125,12 @@ public class EditRuleMVCActionCommand extends BaseMVCActionCommand {
 
 			_mdrRuleService.addRule(
 				ruleGroupId, nameMap, descriptionMap, type,
-				typeSettingsProperties, serviceContext);
+				typeSettingsUnicodeProperties, serviceContext);
 		}
 		else {
 			_mdrRuleService.updateRule(
-				ruleId, nameMap, descriptionMap, type, typeSettingsProperties,
-				serviceContext);
+				ruleId, nameMap, descriptionMap, type,
+				typeSettingsUnicodeProperties, serviceContext);
 		}
 	}
 

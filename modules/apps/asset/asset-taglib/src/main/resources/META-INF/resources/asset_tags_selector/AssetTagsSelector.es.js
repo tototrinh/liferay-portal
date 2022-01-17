@@ -15,9 +15,9 @@
 import ClayButton from '@clayui/button';
 import {useResource} from '@clayui/data-provider';
 import ClayForm, {ClayInput} from '@clayui/form';
-import ClayMultiSelect from '@clayui/multi-select';
-import {usePrevious} from 'frontend-js-react-web';
-import {ItemSelectorDialog} from 'frontend-js-web';
+import ClayMultiSelect, {itemLabelFilter} from '@clayui/multi-select';
+import {usePrevious} from '@liferay/frontend-js-react-web';
+import {openSelectionModal} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useEffect} from 'react';
 
@@ -25,7 +25,6 @@ const noop = () => {};
 
 function AssetTagsSelector({
 	addCallback,
-	eventName,
 	groupIds = [],
 	id,
 	inputName,
@@ -36,28 +35,28 @@ function AssetTagsSelector({
 	portletURL,
 	removeCallback,
 	selectedItems = [],
-	showSelectButton
+	showSelectButton,
 }) {
 	const {refetch, resource} = useResource({
 		fetchOptions: {
-			body: Liferay.Util.objectToFormData({
+			'body': Liferay.Util.objectToFormData({
 				cmd: JSON.stringify({
 					'/assettag/search': {
 						end: 20,
 						groupIds,
 						name: `%${inputValue === '*' ? '' : inputValue}%`,
 						start: 0,
-						tagProperties: ''
-					}
+						tagProperties: '',
+					},
 				}),
-				p_auth: Liferay.authToken
+				p_auth: Liferay.authToken,
 			}),
-			credentials: 'include',
-			method: 'POST',
-			'x-csrf-token': Liferay.authToken
+			'credentials': 'include',
+			'method': 'POST',
+			'x-csrf-token': Liferay.authToken,
 		},
 		link: `${window.location.origin}${themeDisplay.getPathContext()}
-				/api/jsonws/invoke`
+				/api/jsonws/invoke`,
 	});
 
 	const previousInputValue = usePrevious(inputValue);
@@ -75,15 +74,15 @@ function AssetTagsSelector({
 	};
 
 	const handleInputBlur = () => {
-		const filteredItems = resource && resource.map(tag => tag.value);
+		const filteredItems = resource && resource.map((tag) => tag.value);
 
 		if (!filteredItems || !filteredItems.length) {
 			if (inputValue) {
-				if (!selectedItems.find(item => item.label === inputValue)) {
+				if (!selectedItems.find((item) => item.label === inputValue)) {
 					onSelectedItemsChange(
 						selectedItems.concat({
 							label: inputValue,
-							value: inputValue
+							value: inputValue,
 						})
 					);
 				}
@@ -92,87 +91,85 @@ function AssetTagsSelector({
 		}
 	};
 
-	const handleItemsChange = items => {
+	const handleItemsChange = (items) => {
 		const addedItems = items.filter(
-			item =>
+			(item) =>
 				!selectedItems.find(
-					selectedItem => selectedItem.value === item.value
+					(selectedItem) => selectedItem.value === item.value
 				)
 		);
 
 		const removedItems = selectedItems.filter(
-			selectedItem =>
-				!items.find(item => item.value === selectedItem.value)
+			(selectedItem) =>
+				!items.find((item) => item.value === selectedItem.value)
 		);
 
 		const current = [...selectedItems, ...addedItems].filter(
-			item =>
+			(item) =>
 				!removedItems.find(
-					removedItem => removedItem.value === item.value
+					(removedItem) => removedItem.value === item.value
 				)
 		);
 
 		onSelectedItemsChange(current);
 
-		addedItems.forEach(item => callGlobalCallback(addCallback, item));
+		addedItems.forEach((item) => callGlobalCallback(addCallback, item));
 
-		removedItems.forEach(item => callGlobalCallback(removeCallback, item));
+		removedItems.forEach((item) =>
+			callGlobalCallback(removeCallback, item)
+		);
 	};
 
 	const handleSelectButtonClick = () => {
-		const sub = (str, obj) => str.replace(/\{([^}]+)\}/g, (_, m) => obj[m]);
+		const sub = (str, object) =>
+			str.replace(/\{([^}]+)\}/g, (_, m) => object[m]);
 
 		const url = sub(decodeURIComponent(portletURL), {
-			selectedTagNames: selectedItems.map(item => item.value).join()
+			selectedTagNames: selectedItems.map((item) => item.value).join(),
 		});
 
-		const itemSelectorDialog = new ItemSelectorDialog({
+		openSelectionModal({
 			buttonAddLabel: Liferay.Language.get('done'),
-			eventName,
-			title: Liferay.Language.get('tags'),
-			url
-		});
+			multiple: true,
+			onSelect: (dialogSelectedItems) => {
+				if (!dialogSelectedItems?.length) {
+					return;
+				}
 
-		itemSelectorDialog.open();
-
-		itemSelectorDialog.on('selectedItemChange', event => {
-			const dialogSelectedItems = event.selectedItem;
-
-			if (dialogSelectedItems && dialogSelectedItems.items.length) {
-				const newValues = dialogSelectedItems.items
-					.split(',')
-					.map(value => {
-						return {
-							label: value,
-							value
-						};
-					});
+				const newValues = dialogSelectedItems.map((item) => {
+					return {
+						label: item.value,
+						value: item.value,
+					};
+				});
 
 				const addedItems = newValues.filter(
-					newValue =>
+					(newValue) =>
 						!selectedItems.find(
-							selectedItem =>
+							(selectedItem) =>
 								selectedItem.label === newValue.label
 						)
 				);
 
 				const removedItems = selectedItems.filter(
-					selectedItem =>
+					(selectedItem) =>
 						!newValues.find(
-							newValue => newValue.label === selectedItem.label
+							(newValue) => newValue.label === selectedItem.label
 						)
 				);
 
 				onSelectedItemsChange(newValues);
 
-				addedItems.forEach(item =>
+				addedItems.forEach((item) =>
 					callGlobalCallback(addCallback, item)
 				);
 
-				removedItems.forEach(item =>
+				removedItems.forEach((item) =>
 					callGlobalCallback(removeCallback, item)
 				);
-			}
+			},
+			title: Liferay.Language.get('tags'),
+			url,
 		});
 	};
 
@@ -192,12 +189,15 @@ function AssetTagsSelector({
 							onItemsChange={handleItemsChange}
 							sourceItems={
 								resource
-									? resource.map(tag => {
-											return {
-												label: tag.text,
-												value: tag.value
-											};
-									  })
+									? itemLabelFilter(
+											resource.map((tag) => {
+												return {
+													label: tag.text,
+													value: tag.value,
+												};
+											}),
+											inputValue
+									  )
 									: []
 							}
 						/>
@@ -221,7 +221,6 @@ function AssetTagsSelector({
 
 AssetTagsSelector.propTypes = {
 	addCallback: PropTypes.string,
-	eventName: PropTypes.string,
 	groupIds: PropTypes.array,
 	id: PropTypes.string,
 	inputName: PropTypes.string,
@@ -231,7 +230,7 @@ AssetTagsSelector.propTypes = {
 	onSelectedItemsChange: PropTypes.func,
 	portletURL: PropTypes.string,
 	removeCallback: PropTypes.string,
-	selectedItems: PropTypes.array
+	selectedItems: PropTypes.array,
 };
 
 export default AssetTagsSelector;

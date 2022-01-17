@@ -29,22 +29,29 @@ MBThread thread = (MBThread)request.getAttribute("edit_message.jsp-thread");
 if (message.isAnonymous() || thread.isInTrash()) {
 	showRecentPosts = false;
 }
+
+User messageUser = UserLocalServiceUtil.fetchUser(message.getUserId());
 %>
 
 <a id="<portlet:namespace />message_<%= message.getMessageId() %>"></a>
 
 <div class="card panel">
 	<div class="panel-heading">
-		<div class="autofit-padded autofit-row card-body">
-			<div class="autofit-col">
+		<clay:content-row
+			cssClass="card-body"
+			padded="<%= true %>"
+		>
+			<clay:content-col>
 				<div class="list-group-card-icon">
 					<liferay-ui:user-portrait
 						userId="<%= !message.isAnonymous() ? message.getUserId() : 0 %>"
 					/>
 				</div>
-			</div>
+			</clay:content-col>
 
-			<div class="autofit-col autofit-col-expand">
+			<clay:content-col
+				expand="<%= true %>"
+			>
 
 				<%
 				String messageUserName = "anonymous";
@@ -60,9 +67,9 @@ if (message.isAnonymous() || thread.isInTrash()) {
 				String userDisplayText = LanguageUtil.format(request, "x-modified-x-ago", new Object[] {messageUserName, modifiedDateDescription});
 				%>
 
-				<h5 class="message-user-display text-default" title="<%= HtmlUtil.escapeAttribute(userDisplayText) %>">
+				<span class="message-user-display text-default" title="<%= HtmlUtil.escapeAttribute(userDisplayText) %>">
 					<%= HtmlUtil.escape(userDisplayText) %>
-				</h5>
+				</span>
 
 				<h4 title="<%= HtmlUtil.escape(message.getSubject()) %>">
 					<c:choose>
@@ -82,21 +89,19 @@ if (message.isAnonymous() || thread.isInTrash()) {
 				</h4>
 
 				<%
-				MBStatsUser statsUser = null;
+				int messageCount = 0;
 
 				if (!message.isAnonymous()) {
-					statsUser = MBStatsUserLocalServiceUtil.getStatsUser(scopeGroupId, message.getUserId());
+					messageCount = MBStatsUserLocalServiceUtil.getMessageCount(scopeGroupId, message.getUserId());
 				}
 
-				int posts = message.isAnonymous() ? 1 : statsUser.getMessageCount();
+				int posts = message.isAnonymous() ? 1 : messageCount;
 
 				String[] ranks = {StringPool.BLANK, StringPool.BLANK};
 
 				if (!message.isAnonymous()) {
-					ranks = MBUserRankUtil.getUserRank(mbGroupServiceSettings, themeDisplay.getLanguageId(), statsUser);
+					ranks = MBStatsUserLocalServiceUtil.getUserRank(themeDisplay.getSiteGroupId(), themeDisplay.getLanguageId(), message.getUserId());
 				}
-
-				User messageUser = UserLocalServiceUtil.fetchUser(message.getUserId());
 				%>
 
 				<c:if test="<%= (messageUser != null) && !messageUser.isDefaultUser() %>">
@@ -159,7 +164,7 @@ if (message.isAnonymous() || thread.isInTrash()) {
 					<div class="social-interaction">
 						<c:if test="<%= enableRatings %>">
 							<div id="<portlet:namespace />mbRatings">
-								<liferay-ui:ratings
+								<liferay-ratings:ratings
 									className="<%= MBMessage.class.getName() %>"
 									classPK="<%= message.getMessageId() %>"
 									inTrash="<%= message.isInTrash() %>"
@@ -181,9 +186,9 @@ if (message.isAnonymous() || thread.isInTrash()) {
 						</c:if>
 					</div>
 				</c:if>
-			</div>
+			</clay:content-col>
 
-			<div class="autofit-col">
+			<clay:content-col>
 				<c:if test="<%= editable %>">
 
 					<%
@@ -383,8 +388,8 @@ if (message.isAnonymous() || thread.isInTrash()) {
 						</liferay-ui:icon-menu>
 					</c:if>
 				</c:if>
-			</div>
-		</div>
+			</clay:content-col>
+		</clay:content-row>
 	</div>
 
 	<div class="divider"></div>
@@ -403,13 +408,9 @@ if (message.isAnonymous() || thread.isInTrash()) {
 			<%= msgBody %>
 		</div>
 
-		<%
-		String assetTagNames = (String)request.getAttribute("edit_message.jsp-assetTagNames");
-		%>
-
 		<div class="card-body tags">
 			<liferay-asset:asset-tags-summary
-				assetTagNames="<%= assetTagNames %>"
+				assetTagNames='<%= (String)request.getAttribute("edit_message.jsp-assetTagNames") %>'
 				className="<%= MBMessage.class.getName() %>"
 				classPK="<%= message.getMessageId() %>"
 				portletURL="<%= liferayPortletResponse.createRenderURL() %>"
@@ -444,7 +445,7 @@ if (message.isAnonymous() || thread.isInTrash()) {
 
 			<c:if test="<%= attachmentsFileEntriesCount > 0 %>">
 				<div class="card-body message-attachments">
-					<h3><liferay-ui:message key="attachments" />:</h3>
+					<p class="h3"><liferay-ui:message key="attachments" />:</p>
 
 					<ul>
 
@@ -472,7 +473,7 @@ if (message.isAnonymous() || thread.isInTrash()) {
 									icon="<%= assetRenderer.getIconCssClass() %>"
 									label="<%= true %>"
 									markupView="lexicon"
-									message="<%= sb.toString() %>"
+									message="<%= HtmlUtil.escape(sb.toString()) %>"
 									method="get"
 									url="<%= PortletFileRepositoryUtil.getDownloadPortletFileEntryURL(themeDisplay, fileEntry, StringPool.BLANK) %>"
 								/>

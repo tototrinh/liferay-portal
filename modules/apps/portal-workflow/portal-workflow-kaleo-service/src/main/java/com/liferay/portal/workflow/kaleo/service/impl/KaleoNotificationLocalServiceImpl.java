@@ -50,7 +50,7 @@ public class KaleoNotificationLocalServiceImpl
 
 	@Override
 	public KaleoNotification addKaleoNotification(
-			String kaleoClassName, long kaleoClassPK,
+			String kaleoClassName, long kaleoClassPK, long kaleoDefinitionId,
 			long kaleoDefinitionVersionId, String kaleoNodeName,
 			Notification notification, ServiceContext serviceContext)
 		throws PortalException {
@@ -58,7 +58,7 @@ public class KaleoNotificationLocalServiceImpl
 		// Kaleo notification
 
 		User user = userLocalService.getUser(serviceContext.getGuestOrUserId());
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoNotificationId = counterLocalService.increment();
 
@@ -68,10 +68,11 @@ public class KaleoNotificationLocalServiceImpl
 		kaleoNotification.setCompanyId(user.getCompanyId());
 		kaleoNotification.setUserId(user.getUserId());
 		kaleoNotification.setUserName(user.getFullName());
-		kaleoNotification.setCreateDate(now);
-		kaleoNotification.setModifiedDate(now);
+		kaleoNotification.setCreateDate(date);
+		kaleoNotification.setModifiedDate(date);
 		kaleoNotification.setKaleoClassName(kaleoClassName);
 		kaleoNotification.setKaleoClassPK(kaleoClassPK);
+		kaleoNotification.setKaleoDefinitionId(kaleoDefinitionId);
 		kaleoNotification.setKaleoDefinitionVersionId(kaleoDefinitionVersionId);
 		kaleoNotification.setKaleoNodeName(kaleoNodeName);
 		kaleoNotification.setName(notification.getName());
@@ -115,8 +116,8 @@ public class KaleoNotificationLocalServiceImpl
 			for (Recipient recipient : recipients) {
 				_kaleoNotificationRecipientLocalService.
 					addKaleoNotificationRecipient(
-						kaleoDefinitionVersionId, kaleoNotificationId,
-						recipient, serviceContext);
+						kaleoDefinitionId, kaleoDefinitionVersionId,
+						kaleoNotificationId, recipient, serviceContext);
 			}
 		}
 

@@ -23,7 +23,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
@@ -37,7 +36,6 @@ import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
 import javax.portlet.ActionRequest;
@@ -53,7 +51,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + KaleoDesignerPortletKeys.KALEO_DESIGNER,
-		"mvc.command.name=publishKaleoDefinitionVersion"
+		"mvc.command.name=/kaleo_designer/publish_kaleo_definition_version"
 	},
 	service = MVCActionCommand.class
 )
@@ -65,19 +63,22 @@ public class PublishKaleoDefinitionVersionMVCActionCommand
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		Map<Locale, String> titleMap = LocalizationUtil.getLocalizationMap(
 			actionRequest, "title");
 
-		validateTitle(titleMap);
+		validateTitle(actionRequest, titleMap);
 
 		String content = ParamUtil.getString(actionRequest, "content");
 
 		if (Validator.isNull(content)) {
-			throw new WorkflowDefinitionFileException();
+			throw new WorkflowDefinitionFileException(
+				"please-enter-a-valid-definition-before-publishing");
 		}
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		validateWorkflowDefinition(actionRequest, content.getBytes());
 
 		String name = ParamUtil.getString(actionRequest, "name");
 
@@ -94,7 +95,7 @@ public class PublishKaleoDefinitionVersionMVCActionCommand
 		WorkflowDefinition workflowDefinition =
 			unproxiedWorkflowDefinitionManager.deployWorkflowDefinition(
 				themeDisplay.getCompanyId(), themeDisplay.getUserId(),
-				getTitle(titleMap), name, content.getBytes());
+				getTitle(actionRequest, titleMap), name, content.getBytes());
 
 		KaleoDefinitionVersion kaleoDefinitionVersion =
 			kaleoDefinitionVersionLocalService.getLatestKaleoDefinitionVersion(
@@ -140,35 +141,32 @@ public class PublishKaleoDefinitionVersionMVCActionCommand
 			resourceBundle, "workflow-updated-successfully");
 	}
 
-	@Override
-	protected String getTitle(Map<Locale, String> titleMap)
-		throws WorkflowException {
-
-		String title = super.getTitle(titleMap);
-
-		if (Validator.isNull(title)) {
-			throw new WorkflowDefinitionTitleException();
-		}
-
-		return title;
-	}
-
-	protected void validateTitle(Map<Locale, String> titleMap)
+	protected void validateTitle(
+			ActionRequest actionRequest, Map<Locale, String> titleMap)
 		throws WorkflowDefinitionTitleException {
 
 		String title = titleMap.get(LocaleUtil.getDefault());
 
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			LocaleUtil.getDefault(),
-			"com.liferay.portal.workflow.kaleo.designer.web");
-
-		String defaultTitle = LanguageUtil.get(
-			resourceBundle, "untitled-workflow");
-
-		if (titleMap.isEmpty() || Validator.isNull(title) ||
-			Objects.equals(title, defaultTitle)) {
-
+		if (titleMap.isEmpty() || Validator.isNull(title)) {
 			throw new WorkflowDefinitionTitleException();
+		}
+	}
+
+	protected void validateWorkflowDefinition(
+			ActionRequest actionRequest, byte[] bytes)
+		throws WorkflowDefinitionFileException {
+
+		try {
+			unproxiedWorkflowDefinitionManager.validateWorkflowDefinition(
+				bytes);
+		}
+		catch (WorkflowException workflowException) {
+			String message = LanguageUtil.get(
+				getResourceBundle(actionRequest),
+				"please-enter-a-valid-definition-before-publishing");
+
+			throw new WorkflowDefinitionFileException(
+				message, workflowException);
 		}
 	}
 

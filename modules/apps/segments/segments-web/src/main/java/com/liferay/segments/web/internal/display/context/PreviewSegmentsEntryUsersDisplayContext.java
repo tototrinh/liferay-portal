@@ -14,6 +14,7 @@
 
 package com.liferay.segments.web.internal.display.context;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -68,12 +69,12 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 			WebKeys.THEME_DISPLAY);
 	}
 
-	public SearchContainer getSearchContainer() {
+	public SearchContainer<User> getSearchContainer() {
 		if (_userSearchContainer != null) {
 			return _userSearchContainer;
 		}
 
-		SearchContainer userSearchContainer = new SearchContainer(
+		SearchContainer<User> userSearchContainer = new SearchContainer(
 			_renderRequest, getPortletURL(), null,
 			"no-users-have-been-assigned-to-this-segment");
 
@@ -106,7 +107,7 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 					_themeDisplay.getLocale(), userSearchContainer.getStart(),
 					userSearchContainer.getEnd());
 			}
-			else if (segmentsEntry != null) {
+			else if ((criteria == null) && (segmentsEntry != null)) {
 				total =
 					_segmentsEntryProviderRegistry.
 						getSegmentsEntryClassPKsCount(
@@ -118,10 +119,10 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 						userSearchContainer.getStart(),
 						userSearchContainer.getEnd());
 
-				LongStream segmentsEntryClassPKsStream = Arrays.stream(
+				LongStream segmentsEntryClassPKsLongStream = Arrays.stream(
 					segmentsEntryClassPKs);
 
-				users = segmentsEntryClassPKsStream.boxed(
+				users = segmentsEntryClassPKsLongStream.boxed(
 				).map(
 					userId -> _userLocalService.fetchUser(userId)
 				).collect(
@@ -148,30 +149,27 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 	protected Criteria getCriteriaFromSession() {
 		PortletSession portletSession = _renderRequest.getPortletSession();
 
-		Criteria criteria = (Criteria)portletSession.getAttribute(
+		return (Criteria)portletSession.getAttribute(
 			SegmentsWebKeys.PREVIEW_SEGMENTS_ENTRY_CRITERIA);
-
-		portletSession.removeAttribute(
-			SegmentsWebKeys.PREVIEW_SEGMENTS_ENTRY_CRITERIA);
-
-		return criteria;
 	}
 
 	protected PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/segments/preview_segments_entry_users"
+		).setParameter(
+			"segmentsEntryId",
+			() -> {
+				SegmentsEntry segmentsEntry = getSegmentsEntry();
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "previewSegmentsEntryUsers");
+				if (segmentsEntry != null) {
+					return segmentsEntry.getSegmentsEntryId();
+				}
 
-		SegmentsEntry segmentsEntry = getSegmentsEntry();
-
-		if (segmentsEntry != null) {
-			portletURL.setParameter(
-				"segmentsEntryId",
-				String.valueOf(segmentsEntry.getSegmentsEntryId()));
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	protected SegmentsEntry getSegmentsEntry() {
@@ -211,6 +209,6 @@ public class PreviewSegmentsEntryUsersDisplayContext {
 	private final ThemeDisplay _themeDisplay;
 	private final UserLocalService _userLocalService;
 	private final ODataRetriever<User> _userODataRetriever;
-	private SearchContainer _userSearchContainer;
+	private SearchContainer<User> _userSearchContainer;
 
 }

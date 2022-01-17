@@ -14,6 +14,7 @@
 
 package com.liferay.site.memberships.web.internal.display.context;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -21,6 +22,7 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -32,6 +34,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.rolesadmin.search.RoleSearch;
 import com.liferay.portlet.rolesadmin.search.RoleSearchTerms;
 import com.liferay.portlet.sites.search.UserGroupRoleRoleChecker;
+import com.liferay.site.memberships.constants.SiteMembershipsPortletKeys;
+import com.liferay.site.memberships.web.internal.util.DepotRolesUtil;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
 import java.util.List;
@@ -61,8 +65,10 @@ public class UserRolesDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle", "icon");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest,
+			SiteMembershipsPortletKeys.SITE_MEMBERSHIPS_ADMIN,
+			"display-style-roles", "icon");
 
 		return _displayStyle;
 	}
@@ -79,7 +85,7 @@ public class UserRolesDisplayContext {
 		return _eventName;
 	}
 
-	public SearchContainer getRoleSearchSearchContainer()
+	public SearchContainer<Role> getRoleSearchSearchContainer()
 		throws PortalException {
 
 		if (_roleSearch != null) {
@@ -108,8 +114,14 @@ public class UserRolesDisplayContext {
 			new Integer[] {_getRoleType()}, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, roleSearch.getOrderByComparator());
 
-		roles = UsersAdminUtil.filterGroupRoles(
-			themeDisplay.getPermissionChecker(), _getGroupId(), roles);
+		if (group.isDepot()) {
+			roles = DepotRolesUtil.filterGroupRoles(
+				themeDisplay.getPermissionChecker(), _getGroupId(), roles);
+		}
+		else {
+			roles = UsersAdminUtil.filterGroupRoles(
+				themeDisplay.getPermissionChecker(), _getGroupId(), roles);
+		}
 
 		int rolesCount = roles.size();
 
@@ -142,44 +154,70 @@ public class UserRolesDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() throws PortalException {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/users_roles.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = ParamUtil.getString(
+					_renderRequest, "keywords");
 
-		portletURL.setParameter("p_u_i_d", String.valueOf(_getUserId()));
-		portletURL.setParameter("mvcPath", "/users_roles.jsp");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String displayStyle = getDisplayStyle();
+				return null;
+			}
+		).setParameter(
+			"displayStyle",
+			() -> {
+				String displayStyle = getDisplayStyle();
 
-		if (Validator.isNotNull(displayStyle)) {
-			portletURL.setParameter("displayStyle", displayStyle);
-		}
+				if (Validator.isNotNull(displayStyle)) {
+					return displayStyle;
+				}
 
-		String keywords = ParamUtil.getString(_renderRequest, "keywords");
+				return null;
+			}
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = ParamUtil.getString(
+					_renderRequest, "orderByCol", "title");
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = ParamUtil.getString(
-			_renderRequest, "orderByCol", "title");
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = ParamUtil.getString(
+					_renderRequest, "orderByType", "asc");
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = ParamUtil.getString(
-			_renderRequest, "orderByType", "asc");
+				return null;
+			}
+		).setParameter(
+			"p_u_i_d", _getUserId()
+		).setParameter(
+			"roleType",
+			() -> {
+				int roleType = _getRoleType();
 
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
+				if (roleType > 0) {
+					return roleType;
+				}
 
-		int roleType = _getRoleType();
-
-		if (roleType > 0) {
-			portletURL.setParameter("roleType", String.valueOf(roleType));
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private int _getRoleType() {

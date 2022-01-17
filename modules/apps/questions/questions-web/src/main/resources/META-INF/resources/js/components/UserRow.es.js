@@ -12,27 +12,42 @@
  * details.
  */
 
-import React, {useState} from 'react';
+import React from 'react';
+import {withRouter} from 'react-router-dom';
 
+import Link from '../components/Link.es';
+import UserIcon from './UserIcon.es';
 import UserPopover from './UserPopover.es';
 
-export default ({creator}) => {
-	const [showPopover, setShowPopover] = useState(false);
-
-	return (
-		<div
-			className="text-right"
-			onMouseLeave={() => setShowPopover(false)}
-			onMouseOver={() => setShowPopover(true)}
+export default withRouter(
+	({
+		creator = {},
+		match: {
+			params: {sectionTitle},
+		},
+		statistics,
+	}) => (
+		<Link
+			className="align-items-center border-0 btn btn-block btn-secondary d-flex position-relative questions-user text-left text-md-right"
+			to={`/questions/${sectionTitle}/creator/${creator.id}`}
 		>
-			<p className="mb-0">
-				<small>{Liferay.Language.get('answered-by')}</small>
-			</p>
-			<p>
-				<strong>{creator.name}</strong>
-			</p>
+			<UserIcon
+				fullName={creator.name}
+				portraitURL={creator.image}
+				userId={String(creator.id)}
+			/>
 
-			<UserPopover creator={creator} show={showPopover} />
-		</div>
-	);
-};
+			<div className="align align-items-start c-ml-3 d-flex flex-column">
+				<p className="c-mb-0 small">
+					{Liferay.Language.get('answered-by')}
+				</p>
+
+				<p className="c-mb-0 font-weight-bold text-dark">
+					{creator.name}
+				</p>
+			</div>
+
+			<UserPopover creator={creator} statistics={statistics} />
+		</Link>
+	)
+);

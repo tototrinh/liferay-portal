@@ -83,6 +83,16 @@ public class SegmentSerDes {
 			sb.append("\"");
 		}
 
+		if (segment.getCriteriaValue() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"criteriaValue\": ");
+
+			sb.append(_toJSON(segment.getCriteriaValue()));
+		}
+
 		if (segment.getDateCreated() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -195,13 +205,31 @@ public class SegmentSerDes {
 			map.put("criteria", String.valueOf(segment.getCriteria()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(segment.getDateCreated()));
+		if (segment.getCriteriaValue() == null) {
+			map.put("criteriaValue", null);
+		}
+		else {
+			map.put(
+				"criteriaValue", String.valueOf(segment.getCriteriaValue()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(segment.getDateModified()));
+		if (segment.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(segment.getDateCreated()));
+		}
+
+		if (segment.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(segment.getDateModified()));
+		}
 
 		if (segment.getId() == null) {
 			map.put("id", null);
@@ -261,6 +289,12 @@ public class SegmentSerDes {
 					segment.setCriteria((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "criteriaValue")) {
+				if (jsonParserFieldValue != null) {
+					segment.setCriteriaValue(
+						(Map)SegmentSerDes.toMap((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
 				if (jsonParserFieldValue != null) {
 					segment.setDateCreated(
@@ -294,10 +328,6 @@ public class SegmentSerDes {
 					segment.setSource((String)jsonParserFieldValue);
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -326,7 +356,7 @@ public class SegmentSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -352,14 +382,17 @@ public class SegmentSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

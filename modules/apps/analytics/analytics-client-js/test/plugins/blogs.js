@@ -12,8 +12,8 @@
  * details.
  */
 
+import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock';
-import dom from 'metal-dom';
 
 import AnalyticsClient from '../../src/analytics';
 
@@ -39,10 +39,12 @@ describe('Blogs Plugin', () => {
 	let Analytics;
 
 	beforeEach(() => {
+
 		// Force attaching DOM Content Loaded event
+
 		Object.defineProperty(document, 'readyState', {
 			value: 'loading',
-			writable: false
+			writable: false,
 		});
 
 		fetchMock.mock('*', () => 200);
@@ -65,7 +67,7 @@ describe('Blogs Plugin', () => {
 
 			document.dispatchEvent(domContentLoaded);
 
-			const events = Analytics.events.filter(
+			const events = Analytics.getEvents().filter(
 				({eventId}) => eventId === 'blogViewed'
 			);
 
@@ -76,8 +78,8 @@ describe('Blogs Plugin', () => {
 					applicationId,
 					eventId: 'blogViewed',
 					properties: expect.objectContaining({
-						entryId: 'assetId'
-					})
+						entryId: 'assetId',
+					}),
 				})
 			);
 
@@ -95,18 +97,18 @@ describe('Blogs Plugin', () => {
 
 			blogElement.appendChild(imageInsideBlog);
 
-			dom.triggerEvent(imageInsideBlog, 'click');
+			userEvent.click(imageInsideBlog);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'blogClicked',
 					properties: expect.objectContaining({
 						entryId: 'assetId',
 						src: googleUrl,
-						tagName: 'img'
-					})
-				})
+						tagName: 'img',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(blogElement);
@@ -125,9 +127,9 @@ describe('Blogs Plugin', () => {
 
 			blogElement.appendChild(linkInsideBlog);
 
-			dom.triggerEvent(linkInsideBlog, 'click');
+			userEvent.click(linkInsideBlog);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'blogClicked',
@@ -135,9 +137,9 @@ describe('Blogs Plugin', () => {
 						entryId: 'assetId',
 						href: googleUrl,
 						tagName: 'a',
-						text
-					})
-				})
+						text,
+					}),
+				}),
 			]);
 
 			document.body.removeChild(blogElement);
@@ -154,17 +156,17 @@ describe('Blogs Plugin', () => {
 
 			blogElement.appendChild(paragraphInsideBlog);
 
-			dom.triggerEvent(paragraphInsideBlog, 'click');
+			userEvent.click(paragraphInsideBlog);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'blogClicked',
 					properties: expect.objectContaining({
 						entryId: 'assetId',
-						tagName: 'p'
-					})
-				})
+						tagName: 'p',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(blogElement);

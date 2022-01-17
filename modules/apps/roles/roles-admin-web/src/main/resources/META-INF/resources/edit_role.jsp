@@ -41,9 +41,9 @@ portletDisplay.setURLBack(backURL);
 renderResponse.setTitle((role == null) ? LanguageUtil.get(request, "new-role") : role.getTitle(locale));
 %>
 
-<liferay-util:include page="/edit_role_tabs.jsp" servletContext="<%= application %>" />
-
 <c:if test="<%= role != null %>">
+	<liferay-util:include page="/edit_role_tabs.jsp" servletContext="<%= application %>" />
+
 	<c:choose>
 		<c:when test="<%= currentRoleTypeContributor.getType() == RoleConstants.TYPE_REGULAR %>">
 			<liferay-ui:success key="roleCreated" message='<%= LanguageUtil.format(request, "x-was-created-successfully.-you-can-now-define-its-permissions-and-assign-users", HtmlUtil.escape(roleName)) %>' />
@@ -83,9 +83,7 @@ renderResponse.setTitle((role == null) ? LanguageUtil.get(request, "new-role") :
 					<aui:select label="type" name="roleType">
 
 						<%
-						List<RoleTypeContributor> roleTypeContributors = RoleTypeContributorRetrieverUtil.getRoleTypeContributors(request);
-
-						for (RoleTypeContributor roleTypeContributor : roleTypeContributors) {
+						for (RoleTypeContributor roleTypeContributor : RoleTypeContributorRetrieverUtil.getRoleTypeContributors(request)) {
 						%>
 
 							<aui:option label="<%= roleTypeContributor.getName() %>" value="<%= roleTypeContributor.getType() %>" />
@@ -157,7 +155,7 @@ renderResponse.setTitle((role == null) ? LanguageUtil.get(request, "new-role") :
 			</c:choose>
 
 			<c:if test="<%= (role != null) && roleName.equals(RoleConstants.SITE_ADMINISTRATOR) %>">
-				<aui:input helpMessage="allow-subsite-management-help" label="allow-subsite-management" name="manageSubgroups" type="toggle-switch" value="<%= ResourcePermissionLocalServiceUtil.hasResourcePermission(company.getCompanyId(), Group.class.getName(), ResourceConstants.SCOPE_GROUP_TEMPLATE, String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID), roleId, ActionKeys.MANAGE_SUBGROUPS) %>" />
+				<aui:input helpMessage="allow-subsite-management-help" inlineLabel="right" label="allow-subsite-management" labelCssClass="simple-toggle-switch" name="manageSubgroups" type="toggle-switch" value="<%= ResourcePermissionLocalServiceUtil.hasResourcePermission(company.getCompanyId(), Group.class.getName(), ResourceConstants.SCOPE_GROUP_TEMPLATE, String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID), roleId, ActionKeys.MANAGE_SUBGROUPS) %>" />
 			</c:if>
 
 			<%
@@ -166,7 +164,7 @@ renderResponse.setTitle((role == null) ? LanguageUtil.get(request, "new-role") :
 			Map<String, Serializable> roleCustomAttributes = roleExpandoBridge.getAttributes();
 			%>
 
-			<c:if test="<%= roleCustomAttributes.size() > 0 %>">
+			<c:if test="<%= !roleCustomAttributes.isEmpty() %>">
 				<aui:fieldset-group markupView="lexicon">
 					<aui:fieldset>
 						<liferay-expando:custom-attribute-list
@@ -199,7 +197,7 @@ renderResponse.setTitle((role == null) ? LanguageUtil.get(request, "new-role") :
 			if (nameInput && titleInput) {
 				var debounce = debounceModule.default;
 
-				var handleOnTitleInput = function(event) {
+				var handleOnTitleInput = function (event) {
 					var value = event.target.value;
 
 					if (nameInput.hasAttribute('maxLength')) {

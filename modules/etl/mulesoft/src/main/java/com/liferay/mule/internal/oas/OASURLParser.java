@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-2021 Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 public class OASURLParser {
 
 	public OASURLParser(String oasURL) throws MalformedURLException {
-		Matcher matcher = _oasURLPattern.matcher(oasURL);
+		Matcher matcher = oasURLPattern.matcher(oasURL);
 
 		if (!matcher.matches()) {
 			throw new MalformedURLException(
@@ -33,63 +33,67 @@ public class OASURLParser {
 					oasURL);
 		}
 
-		_host = matcher.group(2);
-		_jaxRSAppBase = matcher.group(5);
+		host = matcher.group(2);
+		jaxRSAppBase = matcher.group(5);
 
 		if (matcher.group(4) == null) {
-			_port = "";
+			port = "";
 		}
 		else {
-			_port = matcher.group(4);
+			port = matcher.group(4);
 		}
 
-		_scheme = matcher.group(1);
+		scheme = matcher.group(1);
 	}
 
 	public String getAuthorityWithScheme() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(_scheme);
+		sb.append(scheme);
 		sb.append("://");
-		sb.append(_host);
+		sb.append(host);
 		sb.append(":");
-		sb.append(_port);
+		sb.append(port);
 
 		return sb.toString();
 	}
 
 	public String getHost() {
-		return _host;
+		return host;
 	}
 
 	public String getJaxRSAppBase() {
-		return _jaxRSAppBase;
+		return jaxRSAppBase;
 	}
 
 	public String getPort() {
-		return _port;
+		return port;
 	}
 
 	public String getScheme() {
-		return _scheme;
+		return scheme;
 	}
 
 	public String getServerBaseURL() {
+		return getServerBaseURL(jaxRSAppBase);
+	}
+
+	public String getServerBaseURL(String jaxRSAppBase) {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(getAuthorityWithScheme());
-		sb.append("/o/");
-		sb.append(_jaxRSAppBase);
+		sb.append("/o");
+		sb.append(jaxRSAppBase);
 
 		return sb.toString();
 	}
 
-	private static final Pattern _oasURLPattern = Pattern.compile(
-		"(.*)://(.+?)(:(\\d+))?/o/(.+)/v(.+)/openapi\\.(yaml|json)");
+	private static final Pattern oasURLPattern = Pattern.compile(
+		"(.*)://(.+?)(:(\\d+))?/o(/.+)/v(.+)/openapi\\.(yaml|json)");
 
-	private final String _host;
-	private final String _jaxRSAppBase;
-	private final String _port;
-	private final String _scheme;
+	private final String host;
+	private final String jaxRSAppBase;
+	private final String port;
+	private final String scheme;
 
 }

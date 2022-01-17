@@ -57,10 +57,17 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see WikiNodeServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class WikiNodeServiceSoap {
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addNode(String, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	public static com.liferay.wiki.model.WikiNodeSoap addNode(
 			String name, String description,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
@@ -69,6 +76,25 @@ public class WikiNodeServiceSoap {
 		try {
 			com.liferay.wiki.model.WikiNode returnValue =
 				WikiNodeServiceUtil.addNode(name, description, serviceContext);
+
+			return com.liferay.wiki.model.WikiNodeSoap.toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static com.liferay.wiki.model.WikiNodeSoap addNode(
+			String externalReferenceCode, String name, String description,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws RemoteException {
+
+		try {
+			com.liferay.wiki.model.WikiNode returnValue =
+				WikiNodeServiceUtil.addNode(
+					externalReferenceCode, name, description, serviceContext);
 
 			return com.liferay.wiki.model.WikiNodeSoap.toSoapModel(returnValue);
 		}
@@ -197,12 +223,13 @@ public class WikiNodeServiceSoap {
 	public static com.liferay.wiki.model.WikiNodeSoap[] getNodes(
 			long groupId, int status, int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
-				<com.liferay.wiki.model.WikiNode> obc)
+				<com.liferay.wiki.model.WikiNode> orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.wiki.model.WikiNode> returnValue =
-				WikiNodeServiceUtil.getNodes(groupId, status, start, end, obc);
+				WikiNodeServiceUtil.getNodes(
+					groupId, status, start, end, orderByComparator);
 
 			return com.liferay.wiki.model.WikiNodeSoap.toSoapModels(
 				returnValue);

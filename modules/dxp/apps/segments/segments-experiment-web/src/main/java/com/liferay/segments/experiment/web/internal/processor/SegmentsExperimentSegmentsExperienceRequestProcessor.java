@@ -57,22 +57,38 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	immediate = true,
 	property = "segments.experience.request.processor.priority:Integer=50",
-	service = SegmentsExperienceRequestProcessor.class
+	service = {
+		SegmentsExperienceRequestProcessor.class,
+		SegmentsExperimentSegmentsExperienceRequestProcessor.class
+	}
 )
 public class SegmentsExperimentSegmentsExperienceRequestProcessor
 	implements SegmentsExperienceRequestProcessor {
 
-	@Override
-	public long[] getSegmentsExperienceIds(
+	public void cleanCookieLogoutAction(
 		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse, long groupId, long classNameId,
-		long classPK, long[] segmentsEntryIds, long[] segmentsExperienceIds) {
+		HttpServletResponse httpServletResponse) {
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		if (!SegmentsExperimentUtil.isAnalyticsEnabled(
+		_unsetCookie(
+			httpServletRequest, httpServletResponse,
+			themeDisplay.getURLCurrent());
+	}
+
+	@Override
+	public long[] getSegmentsExperienceIds(
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, long groupId, long classNameId,
+		long classPK, long[] segmentsExperienceIds) {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		if (!SegmentsExperimentUtil.isAnalyticsSynced(
 				themeDisplay.getCompanyId(), themeDisplay.getScopeGroupId())) {
 
 			return segmentsExperienceIds;
@@ -131,9 +147,9 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 			httpServletRequest, httpServletResponse,
 			themeDisplay.getURLCurrent());
 
-		LongStream stream = Arrays.stream(segmentsExperienceIds);
+		LongStream longStream = Arrays.stream(segmentsExperienceIds);
 
-		segmentsExperienceId = stream.findFirst(
+		segmentsExperienceId = longStream.findFirst(
 		).orElse(
 			SegmentsExperienceConstants.ID_DEFAULT
 		);
@@ -187,6 +203,17 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 		return new long[] {segmentsExperienceId};
 	}
 
+	@Override
+	public long[] getSegmentsExperienceIds(
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, long groupId, long classNameId,
+		long classPK, long[] segmentsEntryIds, long[] segmentsExperienceIds) {
+
+		return getSegmentsExperienceIds(
+			httpServletRequest, httpServletResponse, groupId, classNameId,
+			classPK, segmentsExperienceIds);
+	}
+
 	protected long getSegmentsExperimentSegmentsExperienceId(
 		long controlSegmentsExperienceId,
 		List<SegmentsExperimentRel> segmentsExperimentRels) {
@@ -226,14 +253,14 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 	private long _getCurrentSegmentsExperienceId(
 		HttpServletRequest httpServletRequest, long groupId) {
 
-		Optional<Cookie> optionalCookie = _getCookieOptional(
+		Optional<Cookie> cookieOptional = _getCookieOptional(
 			httpServletRequest);
 
-		if (!optionalCookie.isPresent()) {
+		if (!cookieOptional.isPresent()) {
 			return -1;
 		}
 
-		Cookie cookie = optionalCookie.get();
+		Cookie cookie = cookieOptional.get();
 
 		return _getSegmentsExperienceId(groupId, cookie.getValue());
 	}

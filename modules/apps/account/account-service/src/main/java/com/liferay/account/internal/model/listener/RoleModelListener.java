@@ -18,14 +18,15 @@ import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.constants.AccountRoleConstants;
 import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.AccountRoleLocalService;
-import com.liferay.account.service.persistence.AccountRolePersistence;
 import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RequiredRoleException;
 import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.ModelListener;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
@@ -47,7 +48,8 @@ public class RoleModelListener extends BaseModelListener<Role> {
 	public void onAfterCreate(Role role) throws ModelListenerException {
 		if (!Objects.equals(
 				role.getClassNameId(),
-				_portal.getClassNameId(AccountRole.class))) {
+				_portal.getClassNameId(AccountRole.class)) ||
+			!Objects.equals(role.getType(), RoleConstants.TYPE_ACCOUNT)) {
 
 			return;
 		}
@@ -76,14 +78,20 @@ public class RoleModelListener extends BaseModelListener<Role> {
 
 	@Override
 	public void onAfterRemove(Role role) throws ModelListenerException {
+		if (role == null) {
+			return;
+		}
+
 		AccountRole accountRole =
 			_accountRoleLocalService.fetchAccountRoleByRoleId(role.getRoleId());
 
 		if (accountRole != null) {
-			_userGroupRoleLocalService.deleteUserGroupRolesByRoleId(
-				role.getRoleId());
-
-			_accountRolePersistence.remove(accountRole);
+			try {
+				_accountRoleLocalService.deleteAccountRole(accountRole);
+			}
+			catch (PortalException portalException) {
+				throw new ModelListenerException(portalException);
+			}
 		}
 	}
 
@@ -105,25 +113,26 @@ public class RoleModelListener extends BaseModelListener<Role> {
 		AccountRole accountRole =
 			_accountRoleLocalService.fetchAccountRoleByRoleId(role.getRoleId());
 
-		if ((accountRole != null) &&
-			!Objects.equals(
-				AccountConstants.ACCOUNT_ENTRY_ID_DEFAULT,
-				accountRole.getAccountEntryId())) {
+		if (accountRole != null) {
+			if (!Objects.equals(
+					AccountConstants.ACCOUNT_ENTRY_ID_DEFAULT,
+					accountRole.getAccountEntryId())) {
 
-			throw new ModelListenerException(
-				new RequiredRoleException(
-					StringBundler.concat(
-						"Role \"", role.getName(),
-						"\" is required by account role ",
-						accountRole.getAccountRoleId())));
+				throw new ModelListenerException(
+					new RequiredRoleException(
+						StringBundler.concat(
+							"Role \"", role.getName(),
+							"\" is required by account role ",
+							accountRole.getAccountRoleId())));
+			}
+
+			_userGroupRoleLocalService.deleteUserGroupRolesByRoleId(
+				role.getRoleId());
 		}
 	}
 
 	@Reference
 	private AccountRoleLocalService _accountRoleLocalService;
-
-	@Reference
-	private AccountRolePersistence _accountRolePersistence;
 
 	@Reference
 	private CounterLocalService _counterLocalService;

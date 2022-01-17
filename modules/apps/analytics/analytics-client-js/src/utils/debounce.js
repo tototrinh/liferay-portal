@@ -16,14 +16,14 @@
  * Debounces function execution.
  * @param {!function()} fn
  * @param {number} delay
- * @return {!function()}
+ * @returns {!function()}
  */
 function debounce(fn, delay) {
 	return function debounced() {
 		const args = arguments;
 		cancelDebounce(debounced);
 		debounced.id = setTimeout(() => {
-			fn(...(null, args));
+			fn.apply(null, args);
 		}, delay);
 	};
 }

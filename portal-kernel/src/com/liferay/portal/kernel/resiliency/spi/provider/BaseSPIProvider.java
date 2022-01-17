@@ -36,8 +36,10 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public abstract class BaseSPIProvider implements SPIProvider {
 
 	public abstract RemoteSPI createRemoteSPI(SPIConfiguration spiConfiguration)
@@ -133,15 +135,8 @@ public abstract class BaseSPIProvider implements SPIProvider {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("{name=");
-		sb.append(getName());
-		sb.append(", classPath=");
-		sb.append(getClassPath());
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{name=", getName(), ", classPath=", getClassPath(), "}");
 	}
 
 	protected static class WeldServerCallable

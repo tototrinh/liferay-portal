@@ -21,27 +21,49 @@ describe('BasicInformation', () => {
 
 	it('renders author, publish date and title', () => {
 		const testProps = {
-			authorName: 'John Tester',
-			publishDate: '13, July 2019',
-			title: 'A testing page'
+			author: {
+				authorId: '',
+				name: 'John Tester',
+				url: '',
+			},
+			canonicalURL:
+				'http://localhost:8080/en/web/guest/-/basic-web-content',
+			onSelectedLanguageClick: () => {},
+			publishDate: 'Thu Sep 20 08:17:57 GMT 2021',
+			title: 'A testing page',
+			viewURLs: [
+				{
+					default: true,
+					languageId: 'en-US',
+					languageLabel: 'English (United States)',
+					selected: true,
+					viewURL:
+						'http://localhost:8080/en/web/guest/-/basic-web-content',
+				},
+				{
+					default: false,
+					languageId: 'es-ES',
+					languageLabel: 'Spanish (Spain)',
+					selected: false,
+					viewURL:
+						'http://localhost:8080/es/web/guest/-/contenido-web-basico',
+				},
+			],
 		};
 
-		const {getByText} = render(
-			<BasicInformation
-				authorName={testProps.authorName}
-				publishDate={testProps.publishDate}
-				title={testProps.title}
-			/>
-		);
+		const {getByText} = render(<BasicInformation {...testProps} />);
 
 		expect(getByText(testProps.title)).toBeInTheDocument();
 
+		expect(getByText(testProps.canonicalURL)).toBeInTheDocument();
+
+		const formattedPublishDate = 'September 20, 2021';
 		expect(
-			getByText('authored-by-' + testProps.authorName)
+			getByText('published-on-' + formattedPublishDate)
 		).toBeInTheDocument();
 
 		expect(
-			getByText('published-on-' + testProps.publishDate)
+			getByText('authored-by-' + testProps.author.name)
 		).toBeInTheDocument();
 	});
 });

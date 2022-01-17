@@ -28,13 +28,13 @@ definition {
 
 		MenuItem.click(menuItem = "Add Child Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbChildArticleContent}",
-			title = "${kbChildArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbChildArticleTitle}");
+
+		CKEditor.addContent(content = "${kbChildArticleContent}");
 
 		PortletEntry.publish();
 	}
@@ -45,13 +45,13 @@ definition {
 			locator1 = "KnowledgeBase#KB_TOOLS",
 			value1 = "Add Child Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		Panel.expandPanel(panel = "Configuration");
 
@@ -93,19 +93,20 @@ definition {
 			LexiconEntry.gotoAddMenuItem(menuItem = "Basic Article");
 		}
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
 		if (isSet(specialCharacters)) {
 			Type.sendKeys(
-				key_editor = "title",
-				locator1 = "AlloyEditor#EDITOR",
+				locator1 = "TextInput#TITLE",
 				value1 = "${kbArticleTitle}");
 		}
 		else {
-			AlloyEditor.addTitle(title = "${kbArticleTitle}");
+			Type(
+				locator1 = "TextInput#TITLE",
+				value1 = "${kbArticleTitle}");
 		}
+
+		Click.clickAt(locator1 = "TextInput#TITLE");
 
 		Panel.expandPanel(panel = "Configuration");
 
@@ -127,10 +128,48 @@ definition {
 		}
 
 		if ("${kbArticleAddViaSource}" == "true") {
-			AlloyEditor.addSourceContent(content = "${kbArticleContentSource}");
+			CKEditor.addSourceContent(content = "${kbArticleContentSource}");
+		}
+		else if ("${kbArticleAddViaTemplate}" == "true") {
+			CKEditor.addContent(kbArticleContentEdit = "${kbArticleContent}");
 		}
 		else {
-			AlloyEditor.addContent(content = "${kbArticleContent}");
+			CKEditor.addContent(content = "${kbArticleContent}");
+		}
+
+		if (isSet(embedVideo)) {
+			WaitForLiferayEvent.initializeLiferayEventLog();
+
+			Click.pauseClickAt(locator1 = "CKEditor#TOOLBAR_VIDEO_BUTTON");
+
+			if ("${navTab}" == "Documents and Media") {
+				ItemSelector.addVideoFromDM(
+					depotName = "${depotName}",
+					navTab = "${navTab}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}");
+
+				if (isSet(viewInternalVideoPreview)) {
+					SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+					Pause(locator1 = "5000");
+
+					DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+				}
+			}
+			else if (isSet(videoURL)) {
+				ItemSelector.addVideo(
+					extractedVideoShortcutTitle = "${extractedVideoShortcutTitle}",
+					videoShortcutDescription = "${videoShortcutDescription}",
+					videoShortcutPreview = "${videoShortcutPreview}",
+					videoShortcutTitle = "${videoShortcutTitle}",
+					videoURL = "${videoURL}");
+			}
+			else {
+				ItemSelector.addVideoFromURL(
+					navTab = "${navTab}",
+					videoSourceURL = "${embedVideo}");
+			}
 		}
 
 		if (isSet(kbArticleAttachment)) {
@@ -209,13 +248,13 @@ definition {
 
 		MenuItem.click(menuItem = "Basic Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		KBArticle.selectAttachmentCP(kbArticleAttachment = "${kbArticleAttachment}");
 
@@ -231,23 +270,19 @@ definition {
 
 		MenuItem.click(menuItem = "Basic Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		AssertClick(
 			locator1 = "Button#PUBLISH",
 			value1 = "Publish");
 
-		AssertElementPresent(locator1 = "Message#ERROR");
-
-		AssertTextEquals.assertPartialText(
-			locator1 = "Message#ERROR_ENTER_A_VALID_TITLE",
-			value1 = "Please enter a valid title.");
+		Alert.viewRequiredField();
 	}
 
 	macro addCPWithTextFieldCustomField {
@@ -255,13 +290,13 @@ definition {
 
 		MenuItem.click(menuItem = "Basic Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		Panel.expandPanel(panel = "Custom Fields");
 
@@ -275,13 +310,13 @@ definition {
 	macro addPGViaAP {
 		AssetPublisherPortlet.addAsset(assetType = "Knowledge Base Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		AssertClick(
 			locator1 = "Button#PUBLISH",
@@ -291,13 +326,13 @@ definition {
 	macro cancelAddKBArticle {
 		LexiconEntry.gotoAddMenuItem(menuItem = "Basic Article");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContent}",
-			title = "${kbArticleTitle}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitle}");
+
+		CKEditor.addContent(content = "${kbArticleContent}");
 
 		Button.clickCancel();
 	}
@@ -307,7 +342,7 @@ definition {
 
 		MenuItem.click(menuItem = "Configuration");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		if (isSet(emailFrom)) {
 			AssertClick(
@@ -338,7 +373,7 @@ definition {
 
 			SelectFrame(value1 = "relative=top");
 
-			SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 			PortletEntry.save();
 		}
@@ -356,7 +391,7 @@ definition {
 
 			SelectFrame(value1 = "relative=top");
 
-			SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 			PortletEntry.save();
 		}
@@ -374,7 +409,7 @@ definition {
 
 			SelectFrame(value1 = "relative=top");
 
-			SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 			PortletEntry.save();
 		}
@@ -387,26 +422,23 @@ definition {
 			portletName = "${portletName}",
 			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
 		if (isSet(kbFolderName)) {
-			SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 			AssertClick(
 				key_kbFolderName = "${kbFolderName}",
 				locator1 = "KnowledgeBaseSelectParent#FOLDER_TITLE_LINK",
 				value1 = "${kbFolderName}");
-
-			SelectFrame(value1 = "relative=top");
 		}
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		else {
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+		}
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -414,7 +446,7 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		PortletEntry.save();
 
@@ -426,7 +458,7 @@ definition {
 			portletName = "${portletName}",
 			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			locator1 = "KnowledgeBaseConfiguration#NAVIGATION_TAB_DISPLAY_SETTINGS",
@@ -463,15 +495,13 @@ definition {
 			portletName = "${portletName}",
 			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			key_kbFolderName = "${kbFolderName}",
@@ -480,7 +510,7 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		PortletEntry.save();
 	}
@@ -490,7 +520,7 @@ definition {
 			portletName = "${portletName}",
 			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			locator1 = "KnowledgeBaseConfiguration#NAVIGATION_TAB_DISPLAY_SETTINGS",
@@ -578,13 +608,15 @@ definition {
 			locator1 = "Message#INFO",
 			value1 = "A new version is created automatically if this content is modified.");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContentEdit}",
-			title = "${kbArticleTitleEdit}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitleEdit}");
+
+		if (isSet(kbArticleContentEdit)) {
+			CKEditor.addContent(kbArticleContentEdit = "${kbArticleContentEdit}");
+		}
 
 		if (isSet(kbArticleAttachment)) {
 			KBArticle.selectAttachmentCP(kbArticleAttachment = "${kbArticleAttachment}");
@@ -619,13 +651,15 @@ definition {
 			locator1 = "Message#INFO",
 			value1 = "A new version is created automatically if this content is modified.");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContentEdit}",
-			title = "${kbArticleTitleEdit}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitleEdit}");
+
+		var kbArticleContentEdit = "${kbArticleContentEdit}";
+
+		CKEditor.addContent(kbArticleContentEdit = "${kbArticleContentEdit}");
 
 		if ("${cancel}" == "true") {
 			Button.clickCancel();
@@ -654,13 +688,15 @@ definition {
 			locator1 = "Portlet#H3_HEADER",
 			value1 = "${kbArticleTitle}");
 
-		AssertElementPresent(
-			key_editor = "title",
-			locator1 = "AlloyEditor#EDITOR");
+		AssertElementPresent(locator1 = "TextInput#TITLE");
 
-		AlloyEditor.addTitleAndContent(
-			content = "${kbArticleContentEdit}",
-			title = "${kbArticleTitleEdit}");
+		Type(
+			locator1 = "TextInput#TITLE",
+			value1 = "${kbArticleTitleEdit}");
+
+		var kbArticleContentEdit = "${kbArticleContentEdit}";
+
+		CKEditor.addContent(kbArticleContentEdit = "${kbArticleContentEdit}");
 
 		if (IsElementPresent(locator1 = "Home#PORTAL_LOCALIZATION_TRANSLATION_LANGUAGE_MESSAGE")) {
 			Click(locator1 = "Home#PORTAL_LOCALIZATION_IGNORE_BUTTON");
@@ -670,7 +706,7 @@ definition {
 			locator1 = "Button#PUBLISH_LOCALIZED",
 			value1 = "Publicar");
 
-		AssertElementPresent(locator1 = "Message#SUCCESS");
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
 	}
 
 	macro enableSocialBookmarkSites {
@@ -771,15 +807,13 @@ definition {
 			locator1 = "KnowledgeBase#HIERARCHY_NAVIGATION_PARENT",
 			value1 = "${kbArticleTitle}");
 
-		Pause(locator1 = "5000");
+		Pause(locator1 = "3000");
 	}
 
 	macro importCP {
 		LexiconEntry.gotoAddDropdownMenuItem(menuItem = "Import");
 
-		UploadCommonFile(
-			locator1 = "TextInput#UPLOAD_FILE",
-			value1 = "${kbZipFile}");
+		UploadDependencyFile.uploadFile(fileName = "${kbZipFile}");
 
 		if ("${applyNumericalPrefix}" == "true") {
 			Check(locator1 = "Checkbox#PRIORITIZATION_STRATEGY");
@@ -835,6 +869,8 @@ definition {
 	}
 
 	macro moveArticleViaKBDisplayPG {
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
 		AssertClick(
 			key_kbTool = "Move",
 			locator1 = "KnowledgeBase#KB_TOOLS",
@@ -869,28 +905,58 @@ definition {
 			value1 = "Select");
 	}
 
-	macro rateArticle1Star {
-		AssertTextEquals(
-			locator1 = "KnowledgeBase#DISPLAY_TITLE",
-			value1 = "${kbArticleTitle}");
+	macro openToAddKBArticle {
 
-		Click.clickWaitForInlineCKEditorNoMouseOver(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_1");
+		// You can use this navigation when you need to access the configuration quickly without checking the UI.
 
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_1");
+		var baseURL = "${baseURL}";
 
-		AssertElementNotPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_5");
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		var groupId = JSONWebcontentSetter.setGroupId(
+			site = "${site}",
+			groupName = "${groupName}");
+
+		var parentResourceClassNameId = JSONClassname._getClassNameId(value = "com.liferay.knowledge.base.model.KBFolder");
+
+		if (!(isSet(parentResourcePrimKey))) {
+			var parentResourcePrimKey = "0";
+		}
+
+		// Articles accessed in admin will stay in admin after publishing.
+
+		Open(locator1 = "${baseURL}/group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_knowledge_base_web_portlet_AdminPortlet&_com_liferay_knowledge_base_web_portlet_AdminPortlet_mvcPath=%2Fadmin%2Fedit_article.jsp&_com_liferay_knowledge_base_web_portlet_AdminPortlet_redirect=%2Fgroup%2F${siteURLKey}%2F~%2Fcontrol_panel%2Fmanage%3Fp_p_id%3Dcom_liferay_knowledge_base_web_portlet_AdminPortlet%26p_p_lifecycle%3D0%26p_p_state%3Dmaximized%26p_v_l_s_g_id%3D${groupId}%26p_p_auth%3D6eOinWLB&_com_liferay_knowledge_base_web_portlet_AdminPortlet_parentResourceClassNameId=${parentResourceClassNameId}&_com_liferay_knowledge_base_web_portlet_AdminPortlet_parentResourcePrimKey=${parentResourcePrimKey}");
 	}
 
-	macro rateArticleFrom1StarTo5Star {
-		AssertTextEquals(
-			locator1 = "KnowledgeBase#DISPLAY_TITLE",
-			value1 = "${kbArticleTitle}");
+	macro openToKBArticleInSite {
 
-		Click.clickWaitForInlineCKEditorNoMouseOver(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_4");
+		// You can use this navigation when you need to access the configuration quickly without checking the UI.
 
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_5");
+		var baseURL = "${baseURL}";
 
-		AssertElementNotPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_1");
+		if (contains("${baseURL}", "{baseURL}")) {
+			var baseURL = PropsUtil.get("portal.url");
+		}
+
+		if (isSet(folderName)) {
+			var resourcePrimKey = JSONKnowledgeBase._getKBResourcePrimKey(
+				folderName = "${folderName}",
+				groupName = "${groupName}",
+				kbArticleTitle = "${kbArticleTitle}",
+				site = "${site}");
+		}
+		else {
+			var resourcePrimKey = JSONKnowledgeBase._getKBResourcePrimKey(
+				groupName = "${groupName}",
+				kbArticleTitle = "${kbArticleTitle}",
+				site = "${site}");
+		}
+
+		var resourceClassNameId = JSONClassname._getClassNameId(value = "com.liferay.knowledge.base.model.KBArticle");
+
+		Open(locator1 = "${baseURL}/group/${siteURLKey}/~/control_panel/manage/-/knowledge_base_admin/article/${resourcePrimKey}/maximized?_com_liferay_knowledge_base_web_portlet_AdminPortlet_resourceClassNameId=${resourceClassNameId}");
 	}
 
 	macro selectAllCP {
@@ -920,7 +986,7 @@ definition {
 	}
 
 	macro selectParentArticleCP {
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -939,7 +1005,7 @@ definition {
 	}
 
 	macro selectParentViaKBDisplayPG {
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Click(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -964,15 +1030,13 @@ definition {
 			portletName = "${portletName}",
 			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			locator1 = "Button#SELECT",
 			value1 = "Select");
 
-		SelectFrame(value1 = "relative=top");
-
-		SelectFrame(locator1 = "KnowledgeBaseSelectParent#SELECT_PARENT_DISPLAY_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
 
 		AssertClick(
 			key_kbArticleTitle = "${kbArticleTitle}",
@@ -981,38 +1045,11 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Button.clickSave();
 
 		SelectFrame(value1 = "relative=top");
-	}
-
-	macro selectScopePG {
-		SelectFrame(locator1 = "KnowledgeBaseConfiguration#IFRAME");
-
-		Navigator.gotoNavItem(navItem = "Scope");
-
-		Select(
-			locator1 = "Select#SCOPE",
-			value1 = "${newKBPageScope}");
-
-		PortletEntry.save();
-
-		SelectFrame(value1 = "relative=top");
-	}
-
-	macro setScopeCP {
-		if (IsElementNotPresent(locator1 = "ProductMenu#PRODUCT_MENU_OPENED")) {
-			Click(locator1 = "ProductMenu#TOGGLE");
-		}
-
-		Click(locator1 = "ProductMenu#PRODUCT_MENU_PANEL_SCOPE_COG");
-
-		AssertClick.assertPartialTextClickAt(
-			key_menuItem = "${kbPageScope}",
-			locator1 = "MenuItem#ANY_MENU_ITEM",
-			value1 = "${kbPageScope}");
 	}
 
 	macro subscribeCP {
@@ -1026,7 +1063,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Content &amp; Data",
-			panel = "Site Administration",
 			portlet = "Knowledge Base");
 
 		if (IsElementPresent(locator1 = "KnowledgeBase#ARTICLE_DESCRIPTIVE_ARTICLE_TITLE_GENERIC")) {
@@ -1038,70 +1074,6 @@ definition {
 
 			Alert.viewSuccessMessage();
 		}
-	}
-
-	macro viewArticle1StarRatingPG {
-		AssertTextEquals(
-			locator1 = "Ratings#AVERAGE_LABEL",
-			value1 = "Average (1 Vote)");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_1");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_2");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_3");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_4");
-
-		AssertElementNotPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_5");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_1");
-
-		AssertElementNotPresent(locator1 = "Ratings#YOUR_RATING_STAR_2");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_1");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_2");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_3");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_4");
-
-		AssertElementNotPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_5");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_1");
-
-		AssertElementNotPresent(locator1 = "Ratings#AVERAGE_STAR_2");
-	}
-
-	macro viewArticle5StarRatingPG {
-		AssertTextEquals(
-			locator1 = "Ratings#AVERAGE_LABEL",
-			value1 = "Average (1 Vote)");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_1");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_2");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_3");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_4");
-
-		AssertElementPresent(locator1 = "Ratings#YOUR_RATING_STAR_5");
-
-		AssertElementNotPresent(locator1 = "Ratings#YOUR_RATING_STAR_EMPTY_1");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_1");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_2");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_3");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_4");
-
-		AssertElementPresent(locator1 = "Ratings#AVERAGE_STAR_5");
-
-		AssertElementNotPresent(locator1 = "Ratings#AVERAGE_STAR_EMPTY_1");
 	}
 
 	macro viewArticleHistoryPG {
@@ -1158,6 +1130,12 @@ definition {
 	}
 
 	macro viewBlogsEntryRelatedAsset {
+		var key_kbArticleRelatedAssetTitle = "${kbArticleRelatedAssetTitle}";
+
+		AssertClick.assertTextClickAt(
+			locator1 = "AssetRelatedAssets#KB_RELATED_ASSETS_LINKS",
+			value1 = "${kbArticleRelatedAssetTitle}");
+
 		AssertTextEquals(
 			locator1 = "BlogsEntry#CONTENT_GENERIC",
 			value1 = "Blogs Entry Content");
@@ -1250,6 +1228,36 @@ definition {
 		AssertTextEquals(
 			locator1 = "KnowledgeBaseArticle#CONTENT",
 			value1 = "${kbArticleContent}");
+
+		if (isSet(embedVideo)) {
+			Pause(locator1 = "5000");
+
+			if ("${service}" == "twitch") {
+				AssertVisible(
+					key_service = "${service}",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
+
+			else if ("${service}" == "facebook") {
+				AssertVisible(
+					key_service = "${service}",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+			}
+
+			else if ("${internalVideo}" == "true") {
+				DMDocument.viewInternalVideoPreview(videoName = "${videoName}");
+			}
+
+			else {
+				AssertElementPresent(
+					key_service = "youtube",
+					locator1 = "BlogsEntry#CONTENT_VIDEO");
+
+				SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EMBEDDED_VIDEO_IFRAME");
+
+				AssertElementPresent(locator1 = "CKEditor#VIDEO_BUTTON_PLAY");
+			}
+		}
 
 		if (isSet(kbChildArticleTitle)) {
 			AssertTextEquals(
@@ -1369,13 +1377,16 @@ definition {
 			value1 = "A new version is created automatically if this content is modified.");
 
 		AssertTextEquals(
-			locator1 = "KnowledgeBaseArticle#TITLE",
+			locator1 = "ControlMenu#HEADING",
 			value1 = "${kbArticleTitle}");
 
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
 		AssertTextEquals(
-			key_editor = "content",
-			locator1 = "AlloyEditor#EDITOR",
+			locator1 = "CKEditor#BODY",
 			value1 = "${kbArticleContent}");
+
+		SelectFrame(value1 = "relative=top");
 
 		if (IsElementNotPresent(locator1 = "KnowledgeBaseArticle#ATTACHMENTS_HEADER_EXPANDED")) {
 			Click(locator1 = "KnowledgeBaseArticle#ATTACHMENTS_HEADER_COLLAPSED");
@@ -1387,10 +1398,6 @@ definition {
 	}
 
 	macro viewKBDisplayPG {
-		if (isSet(kbArticleFriendlyURL)) {
-			AssertLocation(value1 = "http://localhost:8080/web/guest/knowledge-base-display/-/knowledge_base/${kbArticleFriendlyURL}");
-		}
-
 		if ("${sourceURL}" == "true") {
 			AssertClick(
 				locator1 = "KnowledgeBaseArticle#EDIT_ON_GITHUB",
@@ -1488,6 +1495,16 @@ definition {
 		AssertTextEquals(
 			locator1 = "KnowledgeBase#DISPLAY_CONTENT",
 			value1 = "${kbArticleContent}");
+
+		if (isSet(embedVideo)) {
+			AssertElementPresent(
+				key_service = "youtube",
+				locator1 = "BlogsEntry#CONTENT_VIDEO");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EMBEDDED_VIDEO_IFRAME");
+
+			AssertElementPresent(locator1 = "CKEditor#VIDEO_BUTTON_PLAY");
+		}
 
 		if (isSet(customFieldName)) {
 			AssertTextEquals(

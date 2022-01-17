@@ -14,7 +14,7 @@ definition {
 
 	macro disableAutoTagging {
 		if ("${disableAutoTaggingFor}" == "System Settings") {
-			ProductMenu.gotoPortlet(
+			ApplicationsMenu.gotoPortlet(
 				category = "Configuration",
 				panel = "Control Panel",
 				portlet = "System Settings");
@@ -25,7 +25,6 @@ definition {
 				configurationScope = "System Scope");
 
 			FormFields.disableCheckbox(fieldName = "enabled");
-
 		}
 
 		else if ("${disableAutoTaggingFor}" == "Instance Settings") {
@@ -34,16 +33,13 @@ definition {
 				configurationName = "Asset Auto Tagging",
 				configurationScope = "Virtual Instance Scope");
 
-			Uncheck(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
+			FormFields.disableCheckbox(fieldName = "enabled");
 		}
 
-		else if ("${disableAutoTaggingFor}" == "Settings") {
-			ProductMenu.gotoPortlet(
-				category = "Configuration",
-				panel = "Site Administration",
-				portlet = "Settings");
-
-			Panel.expandPanel(panel = "Asset Auto Tagging");
+		else if ("${disableAutoTaggingFor}" == "Site Settings") {
+			AutoTagging.openToAutoTaggingSiteSettings(
+				portlet = "Asset Auto Tagging",
+				siteURLKey = "${siteURLKey}");
 
 			Uncheck.uncheckToggleSwitch(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
 		}
@@ -59,15 +55,7 @@ definition {
 
 	macro enableAutoTagging {
 		if ("${enableAutoTaggingFor}" == "System Settings") {
-			ProductMenu.gotoPortlet(
-				category = "Configuration",
-				panel = "Control Panel",
-				portlet = "System Settings");
-
-			SystemSettings.gotoConfiguration(
-				configurationCategory = "Assets",
-				configurationName = "Asset Auto Tagging",
-				configurationScope = "System Scope");
+			AutoTagging.openToAssetAutoTagging(configurationScope = "System Settings");
 
 			FormFields.enableCheckbox(fieldName = "enabled");
 
@@ -79,10 +67,9 @@ definition {
 		}
 
 		else if ("${enableAutoTaggingFor}" == "Instance Settings") {
-			PortalSettings.gotoConfiguration(
-				configurationCategory = "Assets",
-				configurationName = "Asset Auto Tagging",
-				configurationScope = "Virtual Instance Scope");
+			AutoTagging.openToAssetAutoTagging(
+				configurationScope = "Instance Settings",
+				systemSettingsInstanceScope = "${systemSettingsInstanceScope}");
 
 			FormFields.enableCheckbox(fieldName = "enabled");
 
@@ -93,13 +80,17 @@ definition {
 			}
 		}
 
-		else if ("${enableAutoTaggingFor}" == "Settings") {
+		else if ("${enableAutoTaggingFor}" == "Site Settings") {
 			ProductMenu.gotoPortlet(
 				category = "Configuration",
-				panel = "Site Administration",
-				portlet = "Settings");
+				portlet = "Site Settings",
+				site = "${site}");
 
-			Panel.expandPanel(panel = "Asset Auto Tagging");
+			Click(
+				key_itemName = "Assets",
+				locator1 = "ListGroupItem#ITEM_TEXT");
+
+			Navigator.gotoNavTab(navTab = "Asset Auto Tagging");
 
 			Check.checkToggleSwitch(locator1 = "Checkbox#ENABLE_AUTO_TAGGING");
 		}
@@ -131,15 +122,7 @@ definition {
 	}
 
 	macro enableOpenNLP {
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "System Settings");
-
-		SystemSettings.gotoConfiguration(
-			configurationCategory = "Assets",
-			configurationName = "OpenNLP Text Auto Tagging",
-			configurationScope = "Virtual Instance Scope");
+		AutoTagging.openToOpenNLP();
 
 		if (isSet(confidenceThreshold)) {
 			SystemSettings.editTextSetting(
@@ -149,10 +132,7 @@ definition {
 
 		Click(locator1 = "Dropdown#TRIGGER");
 
-		AssertClick(
-			key_option = "${assetType}",
-			locator1 = "Dropdown#RESULT",
-			value1 = "${assetType}");
+		DropdownMenuItem.click(menuItem = "${assetType}");
 
 		if (IsElementPresent(locator1 = "Button#UPDATE")) {
 			PortletEntry.update();
@@ -164,15 +144,9 @@ definition {
 	}
 
 	macro enableTensorFlow {
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "System Settings");
+		AutoTagging.openToTensorFlow();
 
-		SystemSettings.gotoConfiguration(
-			configurationCategory = "Assets",
-			configurationName = "TensorFlow Image Auto Tagging",
-			configurationScope = "Virtual Instance Scope");
+		Alert.viewInfoMessageSpecific(infoMessage = "The TensorFlow model will be downloaded in the background. No tags will be created until the model is fully downloaded");
 
 		FormFields.enableCheckbox(fieldName = "enabled");
 
@@ -183,6 +157,62 @@ definition {
 		else if (IsElementPresent(locator1 = "Button#SAVE")) {
 			PortletEntry.save();
 		}
+
+		Alert.viewInfoMessageSpecific(infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded");
+
+		while (IsElementPresent(key_infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded", locator1 = "Message#INFO_SPECIFIC")) {
+			Pause(locator1 = "20000");
+
+			Refresh();
+		}
+
+		AssertElementNotPresent(
+			key_infoMessage = "The TensorFlow model will be downloaded in the background. No tags will be created until the model is fully downloaded",
+			locator1 = "Message#INFO_SPECIFIC");
+
+		AssertElementNotPresent(
+			key_infoMessage = "The TensorFlow model is being downloaded in the background. No tags will be created until the model is fully downloaded",
+			locator1 = "Message#INFO_SPECIFIC");
+	}
+
+	macro openToAssetAutoTagging {
+		var baseURL = PropsUtil.get("portal.url");
+
+		if ("${configurationScope}" == "System Settings") {
+			var pid = "com.liferay.asset.auto.tagger.internal.configuration.AssetAutoTaggerSystemConfiguration";
+
+			var portlet = "SystemSettingsPortlet";
+		}
+
+		if ("${configurationScope}" == "Instance Settings") {
+			var pid = "com.liferay.asset.auto.tagger.internal.configuration.AssetAutoTaggerCompanyConfiguration";
+
+			if (!(isSet(systemSettingsInstanceScope))) {
+				var portlet = "InstanceSettingsPortlet";
+			}
+		}
+
+		Open(locator1 = "${baseURL}/group/control_panel/manage?p_p_id=com_liferay_configuration_admin_web_portlet_${portlet}&_com_liferay_configuration_admin_web_portlet_${portlet}_factoryPid=${pid}&_com_liferay_configuration_admin_web_portlet_${portlet}_mvcRenderCommandName=%2Fconfiguration_admin%2Fedit_configuration");
+	}
+
+	macro openToAutoTaggingSiteSettings {
+		if ("${portlet}" == "Asset Auto Tagging") {
+			var configurationScreenKey = "site-configuration-asset-auto-tagger";
+		}
+
+		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage/-/site/settings?_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fview_configuration_screen&_com_liferay_site_admin_web_portlet_SiteSettingsPortlet_configurationScreenKey=${configurationScreenKey}");
+	}
+
+	macro openToOpenNLP {
+		var baseURL = PropsUtil.get("portal.url");
+
+		Open(locator1 = "${baseURL}/group/control_panel/manage?p_p_id=com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_factoryPid=com.liferay.asset.auto.tagger.opennlp.internal.configuration.OpenNLPDocumentAssetAutoTaggerCompanyConfiguration&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fedit_configuration");
+	}
+
+	macro openToTensorFlow {
+		var baseURL = PropsUtil.get("portal.url");
+
+		Open(locator1 = "${baseURL}/group/control_panel/manage?p_p_id=com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_factoryPid=com.liferay.document.library.asset.auto.tagger.tensorflow.internal.configuration.TensorFlowImageAssetAutoTagProviderCompanyConfiguration&_com_liferay_configuration_admin_web_portlet_SystemSettingsPortlet_mvcRenderCommandName=%2Fconfiguration_admin%2Fedit_configuration");
 	}
 
 }

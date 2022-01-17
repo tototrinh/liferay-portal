@@ -30,7 +30,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.impl.ImageImpl;
-import com.liferay.portal.module.framework.ModuleFrameworkUtilAdapter;
+import com.liferay.portal.module.framework.ModuleFrameworkUtil;
 import com.liferay.portal.util.FileImpl;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
@@ -77,6 +77,10 @@ import net.jmge.gif.Gif89Encoder;
 import org.im4java.core.IMOperation;
 
 import org.monte.media.jpeg.CMYKJPEGImageReaderSpi;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.launch.Framework;
 
 /**
  * @author Brian Wing Shun Chan
@@ -131,7 +135,7 @@ public class ImageToolImpl implements ImageTool {
 				return new FutureConverter<RenderedImage, Object>(future) {
 
 					@Override
-					protected RenderedImage convert(Object obj) {
+					protected RenderedImage convert(Object object) {
 						RenderedImage renderedImage = null;
 
 						try {
@@ -197,7 +201,8 @@ public class ImageToolImpl implements ImageTool {
 	}
 
 	@Override
-	public void encodeGIF(RenderedImage renderedImage, OutputStream os)
+	public void encodeGIF(
+			RenderedImage renderedImage, OutputStream outputStream)
 		throws IOException {
 
 		BufferedImage bufferedImage = getBufferedImage(renderedImage);
@@ -209,11 +214,12 @@ public class ImageToolImpl implements ImageTool {
 
 		Gif89Encoder encoder = new Gif89Encoder(bufferedImage);
 
-		encoder.encode(os);
+		encoder.encode(outputStream);
 	}
 
 	@Override
-	public void encodeWBMP(RenderedImage renderedImage, OutputStream os)
+	public void encodeWBMP(
+			RenderedImage renderedImage, OutputStream outputStream)
 		throws IOException {
 
 		BufferedImage bufferedImage = getBufferedImage(renderedImage);
@@ -238,14 +244,14 @@ public class ImageToolImpl implements ImageTool {
 			renderedImage = binaryImage;
 		}
 
-		if (!ImageIO.write(renderedImage, "wbmp", os)) {
+		if (!ImageIO.write(renderedImage, "wbmp", outputStream)) {
 
 			// See http://www.jguru.com/faq/view.jsp?EID=127723
 
-			os.write(0);
-			os.write(0);
-			os.write(toMultiByte(bufferedImage.getWidth()));
-			os.write(toMultiByte(bufferedImage.getHeight()));
+			outputStream.write(0);
+			outputStream.write(0);
+			outputStream.write(toMultiByte(bufferedImage.getWidth()));
+			outputStream.write(toMultiByte(bufferedImage.getHeight()));
 
 			Raster data = bufferedImage.getData();
 
@@ -254,7 +260,7 @@ public class ImageToolImpl implements ImageTool {
 			int size = dataBuffer.getSize();
 
 			for (int i = 0; i < size; i++) {
-				os.write((byte)dataBuffer.getElem(i));
+				outputStream.write((byte)dataBuffer.getElem(i));
 			}
 		}
 	}
@@ -324,11 +330,12 @@ public class ImageToolImpl implements ImageTool {
 	public byte[] getBytes(RenderedImage renderedImage, String contentType)
 		throws IOException {
 
-		UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream();
+		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream();
 
-		write(renderedImage, contentType, baos);
+		write(renderedImage, contentType, unsyncByteArrayOutputStream);
 
-		return baos.toByteArray();
+		return unsyncByteArrayOutputStream.toByteArray();
 	}
 
 	@Override
@@ -369,10 +376,17 @@ public class ImageToolImpl implements ImageTool {
 					inputStream = classLoader.getResourceAsStream(name);
 				}
 				else {
-					URL url = ModuleFrameworkUtilAdapter.getBundleResource(
-						bundleId, name);
+					Framework framework = ModuleFrameworkUtil.getFramework();
 
-					inputStream = url.openStream();
+					BundleContext bundleContext = framework.getBundleContext();
+
+					Bundle bundle = bundleContext.getBundle(bundleId);
+
+					if (bundle != null) {
+						URL url = bundle.getResource(name);
+
+						inputStream = url.openStream();
+					}
 				}
 			}
 
@@ -400,14 +414,14 @@ public class ImageToolImpl implements ImageTool {
 		ClassLoader classLoader = ImageToolImpl.class.getClassLoader();
 
 		try {
-			InputStream is = classLoader.getResourceAsStream(
+			InputStream inputStream = classLoader.getResourceAsStream(
 				PropsUtil.get(PropsKeys.IMAGE_DEFAULT_ORGANIZATION_LOGO));
 
-			if (is == null) {
+			if (inputStream == null) {
 				_log.error("Default organization logo is not available");
 			}
 
-			_defaultOrganizationLogo = getImage(is);
+			_defaultOrganizationLogo = getImage(inputStream);
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -454,14 +468,14 @@ public class ImageToolImpl implements ImageTool {
 		ClassLoader classLoader = ImageToolImpl.class.getClassLoader();
 
 		try {
-			InputStream is = classLoader.getResourceAsStream(
+			InputStream inputStream = classLoader.getResourceAsStream(
 				PropsUtil.get(PropsKeys.IMAGE_DEFAULT_USER_FEMALE_PORTRAIT));
 
-			if (is == null) {
+			if (inputStream == null) {
 				_log.error("Default user female portrait is not available");
 			}
 
-			_defaultUserFemalePortrait = getImage(is);
+			_defaultUserFemalePortrait = getImage(inputStream);
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -481,14 +495,14 @@ public class ImageToolImpl implements ImageTool {
 		ClassLoader classLoader = ImageToolImpl.class.getClassLoader();
 
 		try {
-			InputStream is = classLoader.getResourceAsStream(
+			InputStream inputStream = classLoader.getResourceAsStream(
 				PropsUtil.get(PropsKeys.IMAGE_DEFAULT_USER_MALE_PORTRAIT));
 
-			if (is == null) {
+			if (inputStream == null) {
 				_log.error("Default user male portrait is not available");
 			}
 
-			_defaultUserMalePortrait = getImage(is);
+			_defaultUserMalePortrait = getImage(inputStream);
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -508,14 +522,14 @@ public class ImageToolImpl implements ImageTool {
 		ClassLoader classLoader = ImageToolImpl.class.getClassLoader();
 
 		try {
-			InputStream is = classLoader.getResourceAsStream(
+			InputStream inputStream = classLoader.getResourceAsStream(
 				PropsUtil.get(PropsKeys.IMAGE_DEFAULT_USER_PORTRAIT));
 
-			if (is == null) {
+			if (inputStream == null) {
 				_log.error("Default user portrait is not available");
 			}
 
-			_defaultUserPortrait = getImage(is);
+			_defaultUserPortrait = getImage(inputStream);
 		}
 		catch (Exception exception) {
 			_log.error(
@@ -542,18 +556,14 @@ public class ImageToolImpl implements ImageTool {
 			throw new IOException("Unable to decode image");
 		}
 
-		String type = imageBag.getType();
-
-		int height = renderedImage.getHeight();
-		int width = renderedImage.getWidth();
 		int size = bytes.length;
 
 		Image image = new ImageImpl();
 
 		image.setTextObj(bytes);
-		image.setType(type);
-		image.setHeight(height);
-		image.setWidth(width);
+		image.setType(imageBag.getType());
+		image.setHeight(renderedImage.getHeight());
+		image.setWidth(renderedImage.getWidth());
 		image.setSize(size);
 
 		return image;
@@ -563,27 +573,21 @@ public class ImageToolImpl implements ImageTool {
 	public Image getImage(File file)
 		throws ImageResolutionException, IOException {
 
-		byte[] bytes = _fileImpl.getBytes(file);
-
-		return getImage(bytes);
+		return getImage(_fileImpl.getBytes(file));
 	}
 
 	@Override
-	public Image getImage(InputStream is)
+	public Image getImage(InputStream inputStream)
 		throws ImageResolutionException, IOException {
 
-		byte[] bytes = _fileImpl.getBytes(is, -1, true);
-
-		return getImage(bytes);
+		return getImage(_fileImpl.getBytes(inputStream, -1, true));
 	}
 
 	@Override
-	public Image getImage(InputStream is, boolean cleanUpStream)
+	public Image getImage(InputStream inputStream, boolean cleanUpStream)
 		throws ImageResolutionException, IOException {
 
-		byte[] bytes = _fileImpl.getBytes(is, -1, cleanUpStream);
-
-		return getImage(bytes);
+		return getImage(_fileImpl.getBytes(inputStream, -1, cleanUpStream));
 	}
 
 	@Override
@@ -629,24 +633,23 @@ public class ImageToolImpl implements ImageTool {
 						((PropsValues.IMAGE_TOOL_IMAGE_MAX_WIDTH > 0) &&
 						 (width > PropsValues.IMAGE_TOOL_IMAGE_MAX_WIDTH))) {
 
-						StringBundler sb = new StringBundler(9);
-
-						sb.append("Image's dimensions (");
-						sb.append(height);
-						sb.append(" px high and ");
-						sb.append(width);
-						sb.append(" px wide) exceed max dimensions (");
-						sb.append(PropsValues.IMAGE_TOOL_IMAGE_MAX_HEIGHT);
-						sb.append(" px high and ");
-						sb.append(PropsValues.IMAGE_TOOL_IMAGE_MAX_WIDTH);
-						sb.append(" px wide)");
-
-						throw new ImageResolutionException(sb.toString());
+						throw new ImageResolutionException(
+							StringBundler.concat(
+								"Image's dimensions (", height, " px high and ",
+								width, " px wide) exceed max dimensions (",
+								PropsValues.IMAGE_TOOL_IMAGE_MAX_HEIGHT,
+								" px high and ",
+								PropsValues.IMAGE_TOOL_IMAGE_MAX_WIDTH,
+								" px wide)"));
 					}
 
 					renderedImage = imageReader.read(0);
 				}
-				catch (IOException ioException) {
+				catch (ArrayIndexOutOfBoundsException | IOException exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception, exception);
+					}
+
 					continue;
 				}
 
@@ -795,27 +798,28 @@ public class ImageToolImpl implements ImageTool {
 
 	@Override
 	public void write(
-			RenderedImage renderedImage, String contentType, OutputStream os)
+			RenderedImage renderedImage, String contentType,
+			OutputStream outputStream)
 		throws IOException {
 
 		if (contentType.contains(TYPE_BMP)) {
-			ImageIO.write(renderedImage, "bmp", os);
+			ImageIO.write(renderedImage, "bmp", outputStream);
 		}
 		else if (contentType.contains(TYPE_GIF)) {
-			encodeGIF(renderedImage, os);
+			encodeGIF(renderedImage, outputStream);
 		}
 		else if (contentType.contains(TYPE_JPEG) ||
 				 contentType.contains("jpeg")) {
 
-			ImageIO.write(renderedImage, "jpeg", os);
+			ImageIO.write(renderedImage, "jpeg", outputStream);
 		}
 		else if (contentType.contains(TYPE_PNG)) {
-			ImageIO.write(renderedImage, TYPE_PNG, os);
+			ImageIO.write(renderedImage, TYPE_PNG, outputStream);
 		}
 		else if (contentType.contains(TYPE_TIFF) ||
 				 contentType.contains("tif")) {
 
-			ImageIO.write(renderedImage, "tiff", os);
+			ImageIO.write(renderedImage, "tiff", outputStream);
 		}
 	}
 
@@ -941,11 +945,11 @@ public class ImageToolImpl implements ImageTool {
 		ImageReaderSpi firstImageReaderSpi = null;
 		ImageReaderSpi secondImageReaderSpi = null;
 
-		Iterator<ImageReaderSpi> imageReaderSpis =
+		Iterator<ImageReaderSpi> iterator =
 			defaultIIORegistry.getServiceProviders(ImageReaderSpi.class, true);
 
-		while (imageReaderSpis.hasNext()) {
-			ImageReaderSpi imageReaderSpi = imageReaderSpis.next();
+		while (iterator.hasNext()) {
+			ImageReaderSpi imageReaderSpi = iterator.next();
 
 			if (imageReaderSpi instanceof CMYKJPEGImageReaderSpi) {
 				secondImageReaderSpi = imageReaderSpi;

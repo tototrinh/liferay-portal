@@ -17,23 +17,29 @@ package com.liferay.journal.model.impl;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
+import com.liferay.dynamic.data.mapping.service.DDMFieldLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil;
+import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
+import com.liferay.dynamic.data.mapping.storage.Fields;
+import com.liferay.dynamic.data.mapping.util.DDMFormValuesToFieldsConverter;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
 import com.liferay.friendly.url.model.FriendlyURLEntryLocalization;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalServiceUtil;
 import com.liferay.journal.constants.JournalConstants;
+import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.internal.transformer.JournalTransformerListenerRegistryUtil;
 import com.liferay.journal.internal.transformer.LocaleTransformerListener;
 import com.liferay.journal.internal.util.JournalHelperUtil;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.model.JournalArticleResource;
 import com.liferay.journal.model.JournalFolder;
-import com.liferay.journal.model.JournalFolderConstants;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.journal.service.JournalArticleResourceLocalServiceUtil;
 import com.liferay.journal.service.JournalFolderLocalServiceUtil;
+import com.liferay.journal.util.JournalConverter;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -79,6 +85,7 @@ import java.util.TreeSet;
  * @author Brian Wing Shun Chan
  * @author Wesley Gong
  */
+@JSON(strict = true)
 public class JournalArticleImpl extends JournalArticleBaseImpl {
 
 	public static String getContentByLocale(
@@ -100,6 +107,16 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		}
 
 		return document.asXML();
+	}
+
+	public static void setDDMFormValuesToFieldsConverter(
+		DDMFormValuesToFieldsConverter ddmFormValuesToFieldsConverter) {
+
+		_ddmFormValuesToFieldsConverter = ddmFormValuesToFieldsConverter;
+	}
+
+	public static void setJournalConverter(JournalConverter journalConverter) {
+		_journalConverter = journalConverter;
 	}
 
 	@Override
@@ -199,6 +216,38 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return availableLanguageIds.toArray(new String[0]);
 	}
 
+	@JSON
+	@Override
+	public String getContent() {
+		String content = null;
+
+		DDMStructure ddmStructure = getDDMStructure();
+
+		if (ddmStructure == null) {
+			return content;
+		}
+
+		DDMFormValues ddmFormValues = DDMFieldLocalServiceUtil.getDDMFormValues(
+			ddmStructure.getDDMForm(), getId());
+
+		if (ddmFormValues != null) {
+			try {
+				Fields fields = _ddmFormValuesToFieldsConverter.convert(
+					ddmStructure, ddmFormValues);
+
+				content = _journalConverter.getContent(
+					ddmStructure, fields, getGroupId());
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(exception, exception);
+				}
+			}
+		}
+
+		return content;
+	}
+
 	@Override
 	public String getContentByLocale(String languageId) {
 		Map<String, String> tokens = new HashMap<>();
@@ -287,6 +336,14 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return StringPool.BLANK;
 	}
 
+	@JSON
+	@Override
+	public String getDescriptionCurrentValue() {
+		Locale locale = LocaleThreadLocal.getThemeDisplayLocale();
+
+		return getDescription(locale, true);
+	}
+
 	@Override
 	public Map<Locale, String> getDescriptionMap() {
 		if (_descriptionMap != null) {
@@ -299,6 +356,7 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return _descriptionMap;
 	}
 
+	@JSON
 	@Override
 	public String getDescriptionMapAsXML() {
 		return LocalizationUtil.updateLocalization(
@@ -306,9 +364,13 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 			getDefaultLanguageId());
 	}
 
+	@JSON
 	@Override
 	public Date getDisplayDate() {
-		if (!PropsValues.SCHEDULER_ENABLED) {
+		if (!PropsValues.SCHEDULER_ENABLED &&
+			!ExportImportThreadLocal.isExportInProcess() &&
+			!ExportImportThreadLocal.isImportInProcess()) {
+
 			return null;
 		}
 
@@ -318,12 +380,16 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 	@Override
 	public Document getDocument() {
 		if (_document == null) {
-			try {
-				_document = SAXReaderUtil.read(getContent());
-			}
-			catch (DocumentException documentException) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(documentException, documentException);
+			String content = getContent();
+
+			if (content != null) {
+				try {
+					_document = SAXReaderUtil.read(getContent());
+				}
+				catch (DocumentException documentException) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(documentException, documentException);
+					}
 				}
 			}
 		}
@@ -331,9 +397,13 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return _document;
 	}
 
+	@JSON
 	@Override
 	public Date getExpirationDate() {
-		if (!PropsValues.SCHEDULER_ENABLED) {
+		if (!PropsValues.SCHEDULER_ENABLED &&
+			!ExportImportThreadLocal.isExportInProcess() &&
+			!ExportImportThreadLocal.isImportInProcess()) {
+
 			return null;
 		}
 
@@ -419,7 +489,7 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 
 	@Override
 	public List<FileEntry> getImagesFileEntries(
-			int start, int end, OrderByComparator obc)
+			int start, int end, OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
 		long imagesFolderId = getImagesFolderId();
@@ -430,7 +500,7 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 
 		return PortletFileRepositoryUtil.getPortletFileEntries(
 			getGroupId(), imagesFolderId, WorkflowConstants.STATUS_APPROVED,
-			start, end, obc);
+			start, end, orderByComparator);
 	}
 
 	@Override
@@ -469,7 +539,9 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug("Unable to get folder for " + getResourcePrimKey());
+				_log.debug(
+					"Unable to get folder for " + getResourcePrimKey(),
+					exception);
 			}
 		}
 
@@ -500,9 +572,13 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return _title;
 	}
 
+	@JSON
 	@Override
 	public Date getReviewDate() {
-		if (!PropsValues.SCHEDULER_ENABLED) {
+		if (!PropsValues.SCHEDULER_ENABLED &&
+			!ExportImportThreadLocal.isExportInProcess() &&
+			!ExportImportThreadLocal.isImportInProcess()) {
+
 			return null;
 		}
 
@@ -619,6 +695,7 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 		return _titleMap;
 	}
 
+	@JSON
 	@Override
 	public String getTitleMapAsXML() {
 		return LocalizationUtil.updateLocalization(
@@ -662,13 +739,6 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 	@Override
 	public boolean isTemplateDriven() {
 		return true;
-	}
-
-	@Override
-	public void setContent(String content) {
-		super.setContent(content);
-
-		_document = null;
 	}
 
 	/**
@@ -736,6 +806,10 @@ public class JournalArticleImpl extends JournalArticleBaseImpl {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		JournalArticleImpl.class);
+
+	private static volatile DDMFormValuesToFieldsConverter
+		_ddmFormValuesToFieldsConverter;
+	private static volatile JournalConverter _journalConverter;
 
 	/**
 	 * @deprecated As of Judson (7.1.x)

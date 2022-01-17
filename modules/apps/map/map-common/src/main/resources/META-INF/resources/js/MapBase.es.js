@@ -12,7 +12,7 @@
  * details.
  */
 
-import {buildFragment} from 'metal-dom';
+import {buildFragment} from 'frontend-js-web';
 import State, {Config} from 'metal-state';
 
 import GeoJSONBase from './GeoJSONBase.es';
@@ -63,6 +63,7 @@ const pendingCallbacks = {};
  * @review
  */
 class MapBase extends State {
+
 	/**
 	 * MapBase constructor
 	 * @param  {Array} args List of arguments to be sent to State constructor
@@ -104,7 +105,7 @@ class MapBase extends State {
 				? this.position.location
 				: {};
 
-		if (!geolocation.lat || !geolocation.lng) {
+		if (!geolocation.lat && !geolocation.lng) {
 			Liferay.Util.getGeolocation(
 				(lat, lng) => {
 					this._initializeLocation({lat, lng});
@@ -232,7 +233,7 @@ class MapBase extends State {
 			customControls[
 				this.constructor.CONTROLS.SEARCH
 			] = new this.constructor.SearchImpl({
-				inputNode: searchControl.querySelector('input')
+				inputNode: searchControl.querySelector('input'),
 			});
 			this.addControl(searchControl, this.constructor.POSITION.TOP_LEFT);
 		}
@@ -271,11 +272,11 @@ class MapBase extends State {
 	 */
 	_getControlsConfig() {
 		const config = {};
-		const availableControls = this.controls.map(item => {
+		const availableControls = this.controls.map((item) => {
 			return typeof item === 'string' ? item : item.name;
 		});
 
-		Object.keys(this.constructor.CONTROLS_MAP).forEach(key => {
+		Object.keys(this.constructor.CONTROLS_MAP).forEach((key) => {
 			const controlIndex = availableControls.indexOf(key);
 			const value = this.constructor.CONTROLS_MAP[key];
 
@@ -308,7 +309,7 @@ class MapBase extends State {
 	_getDialog() {
 		if (!this._dialog && this.constructor.DialogImpl) {
 			this._dialog = new this.constructor.DialogImpl({
-				map: this._map
+				map: this._map,
 			});
 		}
 
@@ -344,10 +345,12 @@ class MapBase extends State {
 	_handleGeoJSONLayerFeaturesAdded({features}) {
 		const bounds = this.getBounds();
 
-		const locations = features.map(feature => feature.getGeometry().get());
+		const locations = features.map((feature) =>
+			feature.getGeometry().get()
+		);
 
 		if (locations.length > 1) {
-			locations.forEach(location => bounds.extend(location));
+			locations.forEach((location) => bounds.extend(location));
 		}
 		else {
 			this.position = {location: locations[0]};
@@ -486,7 +489,7 @@ class MapBase extends State {
 			this.constructor.GeoJSONImpl !== GeoJSONBase
 		) {
 			this._geoJSONLayer = new this.constructor.GeoJSONImpl({
-				map: this._map
+				map: this._map,
 			});
 		}
 
@@ -557,7 +560,7 @@ class MapBase extends State {
 		) {
 			marker = new this.constructor.MarkerImpl({
 				location,
-				map: this._map
+				map: this._map,
 			});
 		}
 
@@ -621,8 +624,8 @@ class MapBase extends State {
 		this.emit('positionChange', {
 			newVal: {
 				address: position.address,
-				location: position.location
-			}
+				location: position.location,
+			},
 		});
 
 		return position;
@@ -637,7 +640,7 @@ class MapBase extends State {
  * @param {function} callback Callback being executed
  * @review
  */
-MapBase.get = function(id, callback) {
+MapBase.get = function (id, callback) {
 	const map = Liferay.component(id);
 
 	if (map) {
@@ -660,7 +663,7 @@ MapBase.get = function(id, callback) {
  * @param {string} portletId Id of the portlet that registers the map
  * @review
  */
-MapBase.register = function(id, map, portletId) {
+MapBase.register = function (id, map, portletId) {
 	const componentConfig = portletId ? {portletId} : {destroyOnNavigate: true};
 
 	Liferay.component(id, map, componentConfig);
@@ -668,7 +671,7 @@ MapBase.register = function(id, map, portletId) {
 	const idPendingCallbacks = pendingCallbacks[id];
 
 	if (idPendingCallbacks) {
-		idPendingCallbacks.forEach(callback => callback(map));
+		idPendingCallbacks.forEach((callback) => callback(map));
 
 		idPendingCallbacks.length = 0;
 	}
@@ -722,7 +725,7 @@ MapBase.CONTROLS = {
 	SEARCH: 'search',
 	STREETVIEW: 'streetview',
 	TYPE: 'type',
-	ZOOM: 'zoom'
+	ZOOM: 'zoom',
 };
 
 /**
@@ -752,7 +755,7 @@ MapBase.POSITION = {
 	TOP: 2,
 	TOP_CENTER: 2,
 	TOP_LEFT: 1,
-	TOP_RIGHT: 3
+	TOP_RIGHT: 3,
 };
 
 /**
@@ -768,6 +771,7 @@ MapBase.POSITION_MAP = {};
  * @type {!Object}
  */
 MapBase.STATE = {
+
 	/**
 	 * DOM node selector identifying the element that will be used
 	 * for rendering the map
@@ -787,7 +791,7 @@ MapBase.STATE = {
 	).value([
 		MapBase.CONTROLS.PAN,
 		MapBase.CONTROLS.TYPE,
-		MapBase.CONTROLS.ZOOM
+		MapBase.CONTROLS.ZOOM,
 	]),
 
 	/**
@@ -813,11 +817,11 @@ MapBase.STATE = {
 	position: Config.shapeOf({
 		location: Config.shapeOf({
 			lat: Config.number().value(0),
-			lng: Config.number().value(0)
-		})
+			lng: Config.number().value(0),
+		}),
 	})
 		.value({
-			location: {lat: 0, lng: 0}
+			location: {lat: 0, lng: 0},
 		})
 		.setter('setPosition'),
 
@@ -826,7 +830,7 @@ MapBase.STATE = {
 	 * @review
 	 * @type {number}
 	 */
-	zoom: Config.number().value(11)
+	zoom: Config.number().value(11),
 };
 
 Liferay.MapBase = MapBase;

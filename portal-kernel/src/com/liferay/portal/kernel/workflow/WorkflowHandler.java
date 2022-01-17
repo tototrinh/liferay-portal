@@ -16,7 +16,9 @@ package com.liferay.portal.kernel.workflow;
 
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.WorkflowDefinitionLink;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -51,6 +53,13 @@ public interface WorkflowHandler<T> {
 
 	public String getIconCssClass();
 
+	public default String getNotificationLink(
+			long workflowTaskId, ServiceContext serviceContext)
+		throws PortalException {
+
+		return StringPool.BLANK;
+	}
+
 	public String getSummary(
 		long classPK, PortletRequest portletRequest,
 		PortletResponse portletResponse);
@@ -63,6 +72,11 @@ public interface WorkflowHandler<T> {
 		long classPK, LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse);
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #getNotificationLink(long, ServiceContext)}}
+	 */
+	@Deprecated
 	public String getURLEditWorkflowTask(
 			long workflowTaskId, ServiceContext serviceContext)
 		throws PortalException;
@@ -90,6 +104,10 @@ public interface WorkflowHandler<T> {
 
 	public boolean isVisible();
 
+	public default boolean isVisible(Group group) {
+		return isVisible();
+	}
+
 	public void startWorkflowInstance(
 			long companyId, long groupId, long userId, long classPK, T model,
 			Map<String, Serializable> workflowContext)
@@ -97,5 +115,12 @@ public interface WorkflowHandler<T> {
 
 	public T updateStatus(int status, Map<String, Serializable> workflowContext)
 		throws PortalException;
+
+	public default T updateStatus(
+			T model, int status, Map<String, Serializable> workflowContext)
+		throws PortalException {
+
+		return updateStatus(status, workflowContext);
+	}
 
 }

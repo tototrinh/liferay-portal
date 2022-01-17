@@ -42,7 +42,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.spring.mock.web.portlet.MockActionResponse;
+import com.liferay.portletmvc4spring.test.mock.web.portlet.MockActionResponse;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -52,8 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.portlet.PortletException;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -85,10 +83,10 @@ public class EditEntryMVCActionCommandTest {
 	@Test
 	public void testCheckIn() throws PortalException, PortletException {
 		FileEntry initialFileEntry = _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null,
-			ServiceContextTestUtil.getServiceContext());
+			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null, null,
+			null, ServiceContextTestUtil.getServiceContext());
 
 		_dlAppService.checkOutFileEntry(
 			initialFileEntry.getFileEntryId(),
@@ -137,10 +135,10 @@ public class EditEntryMVCActionCommandTest {
 	@Test
 	public void testCheckInAll() throws PortalException, PortletException {
 		FileEntry initialFileEntry = _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null,
-			ServiceContextTestUtil.getServiceContext());
+			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null, null,
+			null, ServiceContextTestUtil.getServiceContext());
 
 		_dlAppService.checkOutFileEntry(
 			initialFileEntry.getFileEntryId(),
@@ -186,10 +184,10 @@ public class EditEntryMVCActionCommandTest {
 	@Test
 	public void testCheckOut() throws PortalException, PortletException {
 		FileEntry initialFileEntry = _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null,
-			ServiceContextTestUtil.getServiceContext());
+			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null, null,
+			null, ServiceContextTestUtil.getServiceContext());
 
 		Map<String, String[]> parameters = Stream.of(
 			new AbstractMap.SimpleEntry<>(
@@ -227,10 +225,10 @@ public class EditEntryMVCActionCommandTest {
 	@Test
 	public void testCheckOutAll() throws PortalException, PortletException {
 		FileEntry initialFileEntry = _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null,
-			ServiceContextTestUtil.getServiceContext());
+			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN, null, null,
+			null, ServiceContextTestUtil.getServiceContext());
 
 		Map<String, String[]> parameters = Stream.of(
 			new AbstractMap.SimpleEntry<>(
@@ -302,11 +300,6 @@ public class EditEntryMVCActionCommandTest {
 			}
 
 			return super.getAttribute(name);
-		}
-
-		@Override
-		public HttpServletRequest getHttpServletRequest() {
-			return new MockHttpServletRequest();
 		}
 
 		@Override

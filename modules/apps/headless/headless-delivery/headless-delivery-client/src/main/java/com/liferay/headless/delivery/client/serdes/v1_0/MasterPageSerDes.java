@@ -53,6 +53,20 @@ public class MasterPageSerDes {
 
 		sb.append("{");
 
+		if (masterPage.getKey() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"key\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(masterPage.getKey()));
+
+			sb.append("\"");
+		}
+
 		if (masterPage.getName() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -85,6 +99,13 @@ public class MasterPageSerDes {
 
 		Map<String, String> map = new TreeMap<>();
 
+		if (masterPage.getKey() == null) {
+			map.put("key", null);
+		}
+		else {
+			map.put("key", String.valueOf(masterPage.getKey()));
+		}
+
 		if (masterPage.getName() == null) {
 			map.put("name", null);
 		}
@@ -113,14 +134,15 @@ public class MasterPageSerDes {
 			MasterPage masterPage, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "name")) {
+			if (Objects.equals(jsonParserFieldName, "key")) {
+				if (jsonParserFieldValue != null) {
+					masterPage.setKey((String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "name")) {
 				if (jsonParserFieldValue != null) {
 					masterPage.setName((String)jsonParserFieldValue);
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -150,7 +172,7 @@ public class MasterPageSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -176,14 +198,17 @@ public class MasterPageSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

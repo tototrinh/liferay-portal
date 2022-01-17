@@ -18,8 +18,8 @@ import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.site.navigation.constants.SiteNavigationWebKeys;
 import com.liferay.site.navigation.menu.item.layout.constants.SiteNavigationMenuItemTypeConstants;
 import com.liferay.site.navigation.model.SiteNavigationMenuItem;
@@ -28,7 +28,6 @@ import com.liferay.site.navigation.type.SiteNavigationMenuItemType;
 import java.io.IOException;
 
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +41,10 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	immediate = true,
-	property = "site.navigation.menu.item.type=" + SiteNavigationMenuItemTypeConstants.NODE,
+	property = {
+		"service.ranking:Integer=100",
+		"site.navigation.menu.item.type=" + SiteNavigationMenuItemTypeConstants.NODE
+	},
 	service = SiteNavigationMenuItemType.class
 )
 public class NodeSiteNavigationMenuItemType
@@ -55,30 +57,28 @@ public class NodeSiteNavigationMenuItemType
 
 	@Override
 	public String getLabel(Locale locale) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			locale, NodeSiteNavigationMenuItemType.class);
-
-		return LanguageUtil.get(resourceBundle, "submenu");
+		return LanguageUtil.get(locale, "submenu");
 	}
 
 	@Override
 	public String getTitle(
 		SiteNavigationMenuItem siteNavigationMenuItem, Locale locale) {
 
-		UnicodeProperties typeSettingsProperties = new UnicodeProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.fastLoad(
+				siteNavigationMenuItem.getTypeSettings()
+			).build();
 
-		typeSettingsProperties.fastLoad(
-			siteNavigationMenuItem.getTypeSettings());
-
-		String defaultLanguageId = typeSettingsProperties.getProperty(
+		String defaultLanguageId = typeSettingsUnicodeProperties.getProperty(
 			Field.DEFAULT_LANGUAGE_ID,
 			LocaleUtil.toLanguageId(LocaleUtil.getMostRelevantLocale()));
 
-		String defaultTitle = typeSettingsProperties.getProperty(
+		String defaultTitle = typeSettingsUnicodeProperties.getProperty(
 			"name_" + defaultLanguageId,
-			typeSettingsProperties.getProperty("name", getLabel(locale)));
+			typeSettingsUnicodeProperties.getProperty(
+				"name", getLabel(locale)));
 
-		return typeSettingsProperties.getProperty(
+		return typeSettingsUnicodeProperties.getProperty(
 			"name_" + LocaleUtil.toLanguageId(locale), defaultTitle);
 	}
 

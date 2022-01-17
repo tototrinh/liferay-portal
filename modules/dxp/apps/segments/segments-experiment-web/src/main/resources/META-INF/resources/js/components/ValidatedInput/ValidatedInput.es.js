@@ -29,20 +29,20 @@ function ValidatedInput(props) {
 		onChange = () => {},
 		onFocus = () => {},
 		onValidationChange = () => {},
-		value = ''
+		value = '',
 	} = props;
 
 	const [invalid, setInvalid] = useState(false);
 
-	const node = useRef();
+	const nodeRef = useRef();
 	useEffect(() => {
-		if (node.current && autofocus) {
-			node.current.focus();
+		if (nodeRef.current && autofocus) {
+			nodeRef.current.focus();
 		}
 	}, [autofocus]);
 
 	const formGroupClasses = getCN('form-group w-100', {
-		'has-error': invalid
+		'has-error': invalid,
 	});
 
 	return (
@@ -51,7 +51,8 @@ function ValidatedInput(props) {
 				<>
 					{label}
 					<ClayIcon
-						className="ml-1 reference-mark text-warning"
+						className="lexicon-icon-sm ml-1 reference-mark text-warning"
+						style={{verticalAlign: 'super'}}
 						symbol="asterisk"
 					/>
 				</>
@@ -63,10 +64,11 @@ function ValidatedInput(props) {
 				onBlur={_handleNameInputBlur}
 				onChange={onChange}
 				onFocus={_handleNameInputFocus}
-				ref={node}
+				ref={nodeRef}
 				type="text"
 				value={value}
 			/>
+
 			{invalid && errorMessage && (
 				<div className="form-feedback-group">
 					<div className="form-feedback-item">
@@ -74,6 +76,7 @@ function ValidatedInput(props) {
 							className="mr-1 text-danger"
 							symbol="info-circle"
 						/>
+
 						{errorMessage}
 					</div>
 				</div>
@@ -108,7 +111,7 @@ ValidatedInput.propTypes = {
 	onChange: PropTypes.func,
 	onFocus: PropTypes.func,
 	onValidationChange: PropTypes.func,
-	value: PropTypes.string
+	value: PropTypes.string,
 };
 
 export default ValidatedInput;

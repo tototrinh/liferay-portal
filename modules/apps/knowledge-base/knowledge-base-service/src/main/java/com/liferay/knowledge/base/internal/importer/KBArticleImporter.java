@@ -113,7 +113,8 @@ public class KBArticleImporter {
 					WorkflowConstants.ACTION_SAVE_DRAFT);
 
 				kbArticle = _kbArticleLocalService.addKBArticle(
-					userId, parentResourceClassNameId, parentResourcePrimaryKey,
+					null, userId, parentResourceClassNameId,
+					parentResourcePrimaryKey,
 					kbArticleMarkdownConverter.getTitle(), urlTitle, markdown,
 					null, kbArticleMarkdownConverter.getSourceURL(), null, null,
 					serviceContext);
@@ -126,14 +127,11 @@ public class KBArticleImporter {
 				assetCategoryException);
 		}
 		catch (Exception exception) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Unable to add basic KB article for file entry ");
-			sb.append(fileEntryName);
-			sb.append(": ");
-			sb.append(exception.getLocalizedMessage());
-
-			throw new KBArticleImportException(sb.toString(), exception);
+			throw new KBArticleImportException(
+				StringBundler.concat(
+					"Unable to add basic KB article for file entry ",
+					fileEntryName, ": ", exception.getLocalizedMessage()),
+				exception);
 		}
 
 		try {
@@ -141,24 +139,19 @@ public class KBArticleImporter {
 				kbArticleMarkdownConverter.processAttachmentsReferences(
 					userId, kbArticle, zipReader, new HashMap<>());
 
-			kbArticle = _kbArticleLocalService.updateKBArticle(
+			return _kbArticleLocalService.updateKBArticle(
 				userId, kbArticle.getResourcePrimKey(),
 				kbArticleMarkdownConverter.getTitle(), html,
 				kbArticle.getDescription(),
 				kbArticleMarkdownConverter.getSourceURL(), null, null, null,
 				serviceContext);
-
-			return kbArticle;
 		}
 		catch (Exception exception) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Unable to update KB article for file entry ");
-			sb.append(fileEntryName);
-			sb.append(": ");
-			sb.append(exception.getLocalizedMessage());
-
-			throw new KBArticleImportException(sb.toString(), exception);
+			throw new KBArticleImportException(
+				StringBundler.concat(
+					"Unable to update KB article for file entry ",
+					fileEntryName, ": ", exception.getLocalizedMessage()),
+				exception);
 		}
 	}
 
@@ -220,9 +213,8 @@ public class KBArticleImporter {
 				Object value = entry.getValue();
 
 				if (value != null) {
-					Object key = entry.getKey();
-
-					metadata.put(key.toString(), value.toString());
+					metadata.put(
+						String.valueOf(entry.getKey()), value.toString());
 				}
 			}
 

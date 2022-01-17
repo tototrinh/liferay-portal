@@ -26,16 +26,16 @@ function PersonalMenu({
 	itemsURL,
 	label,
 	size,
-	userPortraitURL
+	userPortraitURL,
 }) {
 	const [items, setItems] = useState([]);
-	const preloadPromise = useRef();
+	const preloadPromiseRef = useRef();
 
 	function preloadItems() {
-		if (!preloadPromise.current) {
-			preloadPromise.current = fetch(itemsURL)
-				.then(response => response.json())
-				.then(items => setItems(items));
+		if (!preloadPromiseRef.current) {
+			preloadPromiseRef.current = fetch(itemsURL)
+				.then((response) => response.json())
+				.then((items) => setItems(items));
 		}
 	}
 
@@ -52,11 +52,15 @@ function PersonalMenu({
 					/>
 				) : (
 					<ClayButton
+						aria-label={Liferay.Language.get('personal-menu')}
+						className="rounded-circle"
 						displayType="unstyled"
 						onFocus={preloadItems}
 						onMouseOver={preloadItems}
 					>
-						<span className={`sticker sticker-${size}`}>
+						<span
+							className={`sticker sticker-user-icon sticker-${size}`}
+						>
 							<ClaySticker
 								className={`user-icon-color-${color}`}
 								shape="circle"
@@ -95,9 +99,7 @@ function PersonalMenu({
 }
 
 PersonalMenu.propTypes = {
-	itemsURL: PropTypes.string
+	itemsURL: PropTypes.string,
 };
 
-export default function(props) {
-	return <PersonalMenu {...props} />;
-}
+export default PersonalMenu;

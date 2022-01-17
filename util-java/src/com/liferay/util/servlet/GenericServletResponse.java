@@ -31,8 +31,6 @@ public class GenericServletResponse extends HttpServletResponseWrapper {
 
 	public GenericServletResponse(HttpServletResponse httpServletResponse) {
 		super(httpServletResponse);
-
-		_ubaos = new UnsyncByteArrayOutputStream();
 	}
 
 	public int getContentLength() {
@@ -53,12 +51,12 @@ public class GenericServletResponse extends HttpServletResponseWrapper {
 	}
 
 	public byte[] getData() {
-		return _ubaos.toByteArray();
+		return _unsyncByteArrayOutputStream.toByteArray();
 	}
 
 	@Override
 	public ServletOutputStream getOutputStream() {
-		return new ServletOutputStreamAdapter(_ubaos);
+		return new ServletOutputStreamAdapter(_unsyncByteArrayOutputStream);
 	}
 
 	@Override
@@ -74,6 +72,7 @@ public class GenericServletResponse extends HttpServletResponseWrapper {
 		_contentLength = length;
 	}
 
+	@Override
 	public void setContentLengthLong(long length) {
 		super.setContentLengthLong(length);
 
@@ -89,6 +88,7 @@ public class GenericServletResponse extends HttpServletResponseWrapper {
 
 	private long _contentLength;
 	private String _contentType;
-	private final UnsyncByteArrayOutputStream _ubaos;
+	private final UnsyncByteArrayOutputStream _unsyncByteArrayOutputStream =
+		new UnsyncByteArrayOutputStream();
 
 }

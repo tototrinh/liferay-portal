@@ -12,19 +12,21 @@
  * details.
  */
 
-import {CREATE_SEGMENTS_EXPERIENCE} from '../actions/types';
+import {CREATE_SEGMENTS_EXPERIENCE} from '../actions';
 
 export default function createExperience({
-	fragmentEntryLinkIds,
+	fragmentEntryLinks,
 	layoutData,
-	segmentsExperience
+	portletIds,
+	segmentsExperience,
 }) {
 	return {
 		payload: {
-			fragmentEntryLinkIds,
+			fragmentEntryLinks,
 			layoutData,
-			segmentsExperience
+			portletIds,
+			segmentsExperience,
 		},
-		type: CREATE_SEGMENTS_EXPERIENCE
+		type: CREATE_SEGMENTS_EXPERIENCE,
 	};
 }

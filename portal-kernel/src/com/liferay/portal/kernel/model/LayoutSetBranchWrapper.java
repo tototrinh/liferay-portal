@@ -185,6 +185,11 @@ public class LayoutSetBranchWrapper
 	}
 
 	@Override
+	public LayoutSetBranch cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public ColorScheme getColorScheme() {
 		return model.getColorScheme();
 	}
@@ -662,9 +667,10 @@ public class LayoutSetBranchWrapper
 
 	@Override
 	public void setSettingsProperties(
-		com.liferay.portal.kernel.util.UnicodeProperties settingsProperties) {
+		com.liferay.portal.kernel.util.UnicodeProperties
+			settingsUnicodeProperties) {
 
-		model.setSettingsProperties(settingsProperties);
+		model.setSettingsProperties(settingsUnicodeProperties);
 	}
 
 	/**

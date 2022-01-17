@@ -16,6 +16,9 @@ package com.liferay.portal.bundle.blacklist.internal;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.bundle.blacklist.BundleBlacklistManager;
+import com.liferay.portal.bundle.blacklist.internal.configuration.BundleBlacklistConfiguration;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -132,6 +135,9 @@ public class BundleBlacklistManagerImpl implements BundleBlacklistManager {
 			countDownLatch.await();
 		}
 		catch (InterruptedException interruptedException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(interruptedException, interruptedException);
+			}
 		}
 		finally {
 			bundleContext.removeServiceListener(serviceListener);
@@ -152,10 +158,18 @@ public class BundleBlacklistManagerImpl implements BundleBlacklistManager {
 			properties = new HashMapDictionary<>();
 		}
 		else {
-			String value = (String)properties.get(
-				"blacklistBundleSymbolicNames");
 
-			blacklistBundleSymbolicNames = StringUtil.split(value);
+			// LPS-114840
+
+			Object value = properties.get("blacklistBundleSymbolicNames");
+
+			if (value instanceof String) {
+				blacklistBundleSymbolicNames = StringUtil.split((String)value);
+			}
+			else {
+				blacklistBundleSymbolicNames = (String[])properties.get(
+					"blacklistBundleSymbolicNames");
+			}
 		}
 
 		blacklistBundleSymbolicNames = updateFunction.apply(
@@ -170,12 +184,14 @@ public class BundleBlacklistManagerImpl implements BundleBlacklistManager {
 		}
 		else {
 			properties.put(
-				"blacklistBundleSymbolicNames",
-				StringUtil.merge(blacklistBundleSymbolicNames));
+				"blacklistBundleSymbolicNames", blacklistBundleSymbolicNames);
 		}
 
 		_updateConfiguration(configuration, properties);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BundleBlacklistManagerImpl.class);
 
 	@Reference
 	private BundleBlacklist _bundleBlacklist;

@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-calendar-recurrence-util',
-	A => {
+	(A) => {
 		var STR_DASH = '-';
 
 		Liferay.RecurrenceUtil = {
@@ -27,11 +27,11 @@ AUI.add(
 						hideOn: [],
 						resizable: false,
 						toolbars: {
-							footer: footerContent
+							footer: footerContent,
 						},
-						width: 700
+						width: 700,
 					},
-					title
+					title,
 				});
 			},
 
@@ -40,18 +40,18 @@ AUI.add(
 
 				var contentNode = A.Node.create(
 					A.Lang.sub(instance.RECURRING_EVENT_MODAL_TEMPLATE, {
-						description
+						description,
 					})
 				);
 
-				A.each(options, option => {
+				A.each(options, (option) => {
 					var optionRow = A.Lang.sub(
 						instance.RECURRING_EVENT_MODAL_ITEM_TEMPLATE,
 						{
 							confirmationDescription:
 								option.confirmationDescription,
 							confirmationDescriptionComplement:
-								option.confirmationDescriptionComplement || ''
+								option.confirmationDescriptionComplement || '',
 						}
 					);
 
@@ -75,7 +75,7 @@ AUI.add(
 
 				var buttons;
 
-				var getButtonConfig = function(label, callback, cssClass) {
+				var getButtonConfig = function (label, callback, cssClass) {
 					return {
 						cssClass,
 						label,
@@ -86,8 +86,8 @@ AUI.add(
 								}
 
 								instance.confirmationPanel.hide();
-							}
-						}
+							},
+						},
 					};
 				};
 
@@ -101,7 +101,7 @@ AUI.add(
 							),
 							confirmationDescription: Liferay.Language.get(
 								'only-this-event-will-be-modified-the-rest-of-the-series-will-not-change'
-							)
+							),
 						},
 						{
 							button: getButtonConfig(
@@ -114,7 +114,7 @@ AUI.add(
 							),
 							confirmationDescriptionComplement: Liferay.Language.get(
 								'any-previous-edits-to-future-events-will-be-overwritten'
-							)
+							),
 						},
 						{
 							button: getButtonConfig(
@@ -127,14 +127,14 @@ AUI.add(
 							),
 							confirmationDescriptionComplement: Liferay.Language.get(
 								'any-events-edited-previously-will-not-be-affected-by-this-modification'
-							)
-						}
+							),
+						},
 					],
 					dismiss: getButtonConfig(
 						Liferay.Language.get('cancel'),
 						cancelFn,
 						'btn-link'
-					)
+					),
 				};
 
 				return buttons;
@@ -144,7 +144,7 @@ AUI.add(
 				DAILY: 'DAILY',
 				MONTHLY: 'MONTHLY',
 				WEEKLY: 'WEEKLY',
-				YEARLY: 'YEARLY'
+				YEARLY: 'YEARLY',
 			},
 
 			INTERVAL_UNITS: {},
@@ -175,7 +175,7 @@ AUI.add(
 				var params = [];
 				var parts = [];
 
-				if (recurrence.interval == 1) {
+				if (Number(recurrence.interval) === 1) {
 					parts.push(A.Lang.String.toLowerCase(recurrence.frequency));
 				}
 				else {
@@ -188,7 +188,7 @@ AUI.add(
 				}
 
 				if (recurrence.positionalWeekday) {
-					if (recurrence.frequency == instance.FREQUENCY.MONTHLY) {
+					if (recurrence.frequency === instance.FREQUENCY.MONTHLY) {
 						parts.push('on-x-x');
 
 						params.push(
@@ -223,12 +223,12 @@ AUI.add(
 					}
 				}
 				else if (
-					recurrence.frequency == instance.FREQUENCY.WEEKLY &&
+					recurrence.frequency === instance.FREQUENCY.WEEKLY &&
 					recurrence.weekdays.length > 0
 				) {
 					parts.push('on-x');
 
-					var weekdays = recurrence.weekdays.map(item => {
+					var weekdays = recurrence.weekdays.map((item) => {
 						return instance.WEEKDAY_LABELS[item];
 					});
 
@@ -305,11 +305,11 @@ AUI.add(
 				);
 
 				return instance.confirmationPanel.render().show();
-			}
+			},
 		};
 	},
 	'',
 	{
-		requires: ['aui-base', 'liferay-util-window']
+		requires: ['aui-base', 'liferay-util-window'],
 	}
 );

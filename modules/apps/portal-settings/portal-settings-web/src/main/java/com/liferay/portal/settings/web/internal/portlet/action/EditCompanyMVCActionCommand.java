@@ -20,11 +20,11 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.exception.AccountNameException;
 import com.liferay.portal.kernel.exception.AddressCityException;
 import com.liferay.portal.kernel.exception.AddressStreetException;
 import com.liferay.portal.kernel.exception.AddressZipException;
 import com.liferay.portal.kernel.exception.CompanyMxException;
+import com.liferay.portal.kernel.exception.CompanyNameException;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
 import com.liferay.portal.kernel.exception.CompanyWebIdException;
 import com.liferay.portal.kernel.exception.EmailAddressException;
@@ -38,7 +38,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.exception.WebsiteURLException;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.EmailAddress;
@@ -128,11 +127,11 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 
 				return;
 			}
-			else if (exception instanceof AccountNameException ||
-					 exception instanceof AddressCityException ||
+			else if (exception instanceof AddressCityException ||
 					 exception instanceof AddressStreetException ||
 					 exception instanceof AddressZipException ||
 					 exception instanceof CompanyMxException ||
+					 exception instanceof CompanyNameException ||
 					 exception instanceof CompanyVirtualHostException ||
 					 exception instanceof CompanyWebIdException ||
 					 exception instanceof EmailAddressException ||
@@ -195,14 +194,6 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 
 		Company company = _companyService.getCompanyById(companyId);
 
-		String virtualHostname = ParamUtil.getString(
-			actionRequest, "virtualHostname", company.getVirtualHostname());
-		String mx = ParamUtil.getString(actionRequest, "mx", company.getMx());
-		String homeURL = ParamUtil.getString(
-			actionRequest, "homeURL", company.getHomeURL());
-
-		boolean deleteLogo = ParamUtil.getBoolean(actionRequest, "deleteLogo");
-
 		byte[] logoBytes = null;
 
 		long fileEntryId = ParamUtil.getLong(actionRequest, "fileEntryId");
@@ -213,40 +204,13 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 			logoBytes = FileUtil.getBytes(fileEntry.getContentStream());
 		}
 
-		String name = ParamUtil.getString(
-			actionRequest, "name", company.getName());
-
-		Account account = company.getAccount();
-
-		String legalName = ParamUtil.getString(
-			actionRequest, "legalName", account.getLegalName());
-		String legalId = ParamUtil.getString(
-			actionRequest, "legalId", account.getLegalId());
-		String legalType = ParamUtil.getString(
-			actionRequest, "legalType", account.getLegalType());
-		String sicCode = ParamUtil.getString(
-			actionRequest, "sicCode", account.getSicCode());
-		String tickerSymbol = ParamUtil.getString(
-			actionRequest, "tickerSymbol", account.getTickerSymbol());
-		String industry = ParamUtil.getString(
-			actionRequest, "industry", account.getIndustry());
-		String type = ParamUtil.getString(
-			actionRequest, "type", account.getType());
-		String size = ParamUtil.getString(
-			actionRequest, "size", account.getSize());
-
 		User defaultUser = _userLocalService.getDefaultUser(companyId);
-
-		String languageId = ParamUtil.getString(
-			actionRequest, "languageId", defaultUser.getLanguageId());
-		String timeZoneId = ParamUtil.getString(
-			actionRequest, "timeZoneId", defaultUser.getTimeZoneId());
 
 		List<Address> addresses = UsersAdminUtil.getAddresses(actionRequest);
 
 		if (addresses.isEmpty()) {
 			addresses = _addressLocalService.getAddresses(
-				companyId, Account.class.getName(), company.getAccountId());
+				companyId, Company.class.getName(), company.getCompanyId());
 		}
 
 		List<EmailAddress> emailAddresses = UsersAdminUtil.getEmailAddresses(
@@ -254,29 +218,30 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 
 		if (emailAddresses.isEmpty()) {
 			emailAddresses = _emailAddressLocalService.getEmailAddresses(
-				companyId, Account.class.getName(), company.getAccountId());
+				companyId, Company.class.getName(), company.getCompanyId());
 		}
 
 		List<Phone> phones = UsersAdminUtil.getPhones(actionRequest);
 
 		if (phones.isEmpty()) {
 			phones = _phoneLocalService.getPhones(
-				companyId, Account.class.getName(), company.getAccountId());
+				companyId, Company.class.getName(), company.getCompanyId());
 		}
 
 		List<Website> websites = UsersAdminUtil.getWebsites(actionRequest);
 
 		if (websites.isEmpty()) {
 			websites = _websiteLocalService.getWebsites(
-				companyId, Account.class.getName(), company.getAccountId());
+				companyId, Company.class.getName(), company.getCompanyId());
 		}
 
-		UnicodeProperties properties = PropertiesParamUtil.getProperties(
+		UnicodeProperties unicodeProperties = PropertiesParamUtil.getProperties(
 			actionRequest, "settings--");
 
-		if (properties.containsKey(PropsKeys.ADMIN_EMAIL_FROM_ADDRESS) &&
+		if (unicodeProperties.containsKey(PropsKeys.ADMIN_EMAIL_FROM_ADDRESS) &&
 			!Validator.isEmailAddress(
-				properties.getProperty(PropsKeys.ADMIN_EMAIL_FROM_ADDRESS))) {
+				unicodeProperties.getProperty(
+					PropsKeys.ADMIN_EMAIL_FROM_ADDRESS))) {
 
 			throw new EmailAddressException();
 		}
@@ -287,16 +252,16 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 		PortletPreferences portletPreferences = _prefsProps.getPreferences(
 			companyId);
 
-		Enumeration<String> names = portletPreferences.getNames();
+		Enumeration<String> enumeration = portletPreferences.getNames();
 
 		try {
-			while (names.hasMoreElements()) {
-				String name2 = names.nextElement();
+			while (enumeration.hasMoreElements()) {
+				String curName = enumeration.nextElement();
 
 				for (String discardLegacyKey : discardLegacyKeys) {
-					if (name2.startsWith(discardLegacyKey + "_")) {
-						portletPreferences.reset(name2);
-						properties.remove(name2);
+					if (curName.startsWith(discardLegacyKey + "_")) {
+						portletPreferences.reset(curName);
+						unicodeProperties.remove(curName);
 					}
 				}
 			}
@@ -307,11 +272,43 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 			throw new SystemException(readOnlyException);
 		}
 
+		String name = ParamUtil.getString(
+			actionRequest, "name", company.getName());
+		String virtualHostname = ParamUtil.getString(
+			actionRequest, "virtualHostname", company.getVirtualHostname());
+		String mx = ParamUtil.getString(actionRequest, "mx", company.getMx());
+		String homeURL = ParamUtil.getString(
+			actionRequest, "homeURL", company.getHomeURL());
+
+		boolean deleteLogo = ParamUtil.getBoolean(actionRequest, "deleteLogo");
+
+		String legalName = ParamUtil.getString(
+			actionRequest, "legalName", company.getLegalName());
+		String legalId = ParamUtil.getString(
+			actionRequest, "legalId", company.getLegalId());
+		String legalType = ParamUtil.getString(
+			actionRequest, "legalType", company.getLegalType());
+		String sicCode = ParamUtil.getString(
+			actionRequest, "sicCode", company.getSicCode());
+		String tickerSymbol = ParamUtil.getString(
+			actionRequest, "tickerSymbol", company.getTickerSymbol());
+		String industry = ParamUtil.getString(
+			actionRequest, "industry", company.getIndustry());
+		String type = ParamUtil.getString(
+			actionRequest, "type", company.getType());
+		String size = ParamUtil.getString(
+			actionRequest, "size", company.getSize());
+
+		String languageId = ParamUtil.getString(
+			actionRequest, "languageId", defaultUser.getLanguageId());
+		String timeZoneId = ParamUtil.getString(
+			actionRequest, "timeZoneId", defaultUser.getTimeZoneId());
+
 		_companyService.updateCompany(
 			companyId, virtualHostname, mx, homeURL, !deleteLogo, logoBytes,
 			name, legalName, legalId, legalType, sicCode, tickerSymbol,
 			industry, type, size, languageId, timeZoneId, addresses,
-			emailAddresses, phones, websites, properties);
+			emailAddresses, phones, websites, unicodeProperties);
 
 		_portal.resetCDNHosts();
 	}
@@ -319,10 +316,11 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 	private void _validateAvailableLanguages(ActionRequest actionRequest)
 		throws PortalException {
 
-		UnicodeProperties properties = PropertiesParamUtil.getProperties(
+		UnicodeProperties unicodeProperties = PropertiesParamUtil.getProperties(
 			actionRequest, "settings--");
 
-		String newLanguageIds = properties.getProperty(PropsKeys.LOCALES);
+		String newLanguageIds = unicodeProperties.getProperty(
+			PropsKeys.LOCALES);
 
 		if (Validator.isNull(newLanguageIds)) {
 			return;
@@ -379,10 +377,11 @@ public class EditCompanyMVCActionCommand extends BaseFormMVCActionCommand {
 				"you-must-choose-a-default-language");
 		}
 
-		UnicodeProperties properties = PropertiesParamUtil.getProperties(
+		UnicodeProperties unicodeProperties = PropertiesParamUtil.getProperties(
 			actionRequest, "settings--");
 
-		String newLanguageIds = properties.getProperty(PropsKeys.LOCALES);
+		String newLanguageIds = unicodeProperties.getProperty(
+			PropsKeys.LOCALES);
 
 		if (Validator.isNull(newLanguageIds) ||
 			!StringUtil.contains(

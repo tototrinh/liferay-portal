@@ -293,10 +293,7 @@ public class WebFormPortlet extends MVCPortlet {
 		String cmd = ParamUtil.getString(resourceRequest, Constants.CMD);
 
 		try {
-			if (cmd.equals("captcha")) {
-				serveCaptcha(resourceRequest, resourceResponse);
-			}
-			else if (cmd.equals("export")) {
+			if (cmd.equals("export")) {
 				exportData(resourceRequest, resourceResponse);
 			}
 		}
@@ -416,14 +413,10 @@ public class WebFormPortlet extends MVCPortlet {
 	}
 
 	protected String getCSVFormattedValue(String value) {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(CharPool.QUOTE);
-		sb.append(
-			StringUtil.replace(value, CharPool.QUOTE, StringPool.DOUBLE_QUOTE));
-		sb.append(CharPool.QUOTE);
-
-		return sb.toString();
+		return StringBundler.concat(
+			CharPool.QUOTE,
+			StringUtil.replace(value, CharPool.QUOTE, StringPool.DOUBLE_QUOTE),
+			CharPool.QUOTE);
 	}
 
 	protected String getMailBody(Map<String, String> fieldsMap) {
@@ -546,13 +539,6 @@ public class WebFormPortlet extends MVCPortlet {
 
 			return false;
 		}
-	}
-
-	protected void serveCaptcha(
-			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
-		throws Exception {
-
-		CaptchaUtil.serveImage(resourceRequest, resourceResponse);
 	}
 
 	@Reference(unbind = "-")

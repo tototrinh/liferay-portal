@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -30,6 +29,8 @@ import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.search.document.DocumentBuilderFactory;
+import com.liferay.portal.search.model.uid.UIDFactory;
 import com.liferay.portal.search.test.util.FieldValuesAssert;
 import com.liferay.portal.search.test.util.IndexedFieldsFixture;
 import com.liferay.portal.search.test.util.IndexerFixture;
@@ -109,7 +110,7 @@ public class LayoutIndexerIndexedFieldsTest {
 
 	protected void setUpIndexedFieldsFixture() {
 		indexedFieldsFixture = new IndexedFieldsFixture(
-			resourcePermissionLocalService, searchEngineHelper);
+			resourcePermissionLocalService, uidFactory, documentBuilderFactory);
 	}
 
 	protected void setUpLayoutFixture() {
@@ -135,6 +136,10 @@ public class LayoutIndexerIndexedFieldsTest {
 	}
 
 	protected Locale defaultLocale;
+
+	@Inject
+	protected DocumentBuilderFactory documentBuilderFactory;
+
 	protected IndexedFieldsFixture indexedFieldsFixture;
 	protected LayoutFixture layoutFixture;
 	protected IndexerFixture<Layout> layoutIndexerFixture;
@@ -143,7 +148,7 @@ public class LayoutIndexerIndexedFieldsTest {
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 
 	@Inject
-	protected SearchEngineHelper searchEngineHelper;
+	protected UIDFactory uidFactory;
 
 	protected UserSearchFixture userSearchFixture;
 
@@ -182,8 +187,7 @@ public class LayoutIndexerIndexedFieldsTest {
 			"title_ja_JP", layout.getName(LocaleUtil.JAPAN)
 		).build();
 
-		indexedFieldsFixture.populateUID(
-			Layout.class.getName(), layout.getPrimaryKey(), map);
+		indexedFieldsFixture.populateUID(layout, map);
 
 		_populateName(layout, map);
 		_populateDates(layout, map);

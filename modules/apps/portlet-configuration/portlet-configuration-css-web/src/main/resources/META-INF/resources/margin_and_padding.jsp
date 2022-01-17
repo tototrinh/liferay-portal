@@ -16,10 +16,13 @@
 
 <%@ include file="/init.jsp" %>
 
-<aui:row>
-	<aui:col cssClass="lfr-padding use-for-all-column" width="<%= 50 %>">
+<clay:row>
+	<clay:col
+		cssClass="lfr-padding use-for-all-column"
+		md="6"
+	>
 		<aui:fieldset label="padding">
-			<aui:input checked='<%= portletConfigurationCSSPortletDisplayContext.isSpacingSameForAll("padding") %>' data-inputselector=".same-padding" label="same-for-all" name="useForAllPadding" type="toggle-switch" />
+			<aui:input checked='<%= portletConfigurationCSSPortletDisplayContext.isSpacingSameForAll("padding") %>' data-inputselector=".same-padding" inlineLabel="right" label="same-for-all" labelCssClass="simple-toggle-switch" name="useForAllPadding" type="toggle-switch" />
 
 			<span class="field-row">
 				<aui:input inlineField="<%= true %>" label="top" name="paddingTop" value='<%= portletConfigurationCSSPortletDisplayContext.getPaddingProperty("top", "value") %>' />
@@ -58,11 +61,14 @@
 				</aui:select>
 			</span>
 		</aui:fieldset>
-	</aui:col>
+	</clay:col>
 
-	<aui:col cssClass="lfr-margin use-for-all-column" last="<%= true %>" width="<%= 50 %>">
+	<clay:col
+		cssClass="lfr-margin use-for-all-column"
+		md="6"
+	>
 		<aui:fieldset label="margin">
-			<aui:input checked='<%= portletConfigurationCSSPortletDisplayContext.isSpacingSameForAll("margin") %>' data-inputselector=".same-margin" label="same-for-all" name="useForAllMargin" type="toggle-switch" />
+			<aui:input checked='<%= portletConfigurationCSSPortletDisplayContext.isSpacingSameForAll("margin") %>' data-inputselector=".same-margin" inlineLabel="right" label="same-for-all" labelCssClass="simple-toggle-switch" name="useForAllMargin" type="toggle-switch" />
 
 			<span class="field-row">
 				<aui:input inlineField="<%= true %>" label="top" name="marginTop" value='<%= portletConfigurationCSSPortletDisplayContext.getMarginProperty("top", "value") %>' />
@@ -101,5 +107,5 @@
 				</aui:select>
 			</span>
 		</aui:fieldset>
-	</aui:col>
-</aui:row>
+	</clay:col>
+</clay:row>

@@ -18,7 +18,6 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.DuplicateOpenIdException;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.UserSmsException;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.ContactConstants;
 import com.liferay.portal.kernel.model.User;
@@ -86,12 +85,6 @@ public class UpdateUserContactInformationFormMVCActionCommand
 			_saveContactInformation(
 				user, facebookSn, jabberSn, skypeSn, smsSn, twitterSn);
 
-			String openId = ParamUtil.getString(actionRequest, "openId");
-
-			_validateOpenId(user.getCompanyId(), user.getUserId(), openId);
-
-			_userLocalService.updateOpenId(user.getUserId(), openId);
-
 			String redirect = _portal.escapeRedirect(
 				ParamUtil.getString(actionRequest, "redirect"));
 
@@ -142,12 +135,6 @@ public class UpdateUserContactInformationFormMVCActionCommand
 			contact.setUserName(StringPool.BLANK);
 			contact.setClassName(User.class.getName());
 			contact.setClassPK(user.getUserId());
-
-			Company company = _companyLocalService.getCompany(
-				user.getCompanyId());
-
-			contact.setAccountId(company.getAccountId());
-
 			contact.setParentContactId(
 				ContactConstants.DEFAULT_PARENT_CONTACT_ID);
 		}
@@ -159,20 +146,6 @@ public class UpdateUserContactInformationFormMVCActionCommand
 		contact.setTwitterSn(twitterSn);
 
 		_contactLocalService.updateContact(contact);
-	}
-
-	private void _validateOpenId(long companyId, long userId, String openId)
-		throws Exception {
-
-		if (Validator.isNull(openId)) {
-			return;
-		}
-
-		User user = _userLocalService.fetchUserByOpenId(companyId, openId);
-
-		if ((user != null) && (user.getUserId() != userId)) {
-			throw new DuplicateOpenIdException("{userId=" + userId + "}");
-		}
 	}
 
 	@Reference

@@ -82,18 +82,17 @@ renderResponse.setTitle(LanguageUtil.get(request, "merge-tags"));
 	</liferay-frontend:edit-form-footer>
 </liferay-frontend:edit-form>
 
-<aui:script require="metal-dom/src/all/dom as dom">
+<aui:script sandbox="<%= true %>">
 	var targetTagNameSelect = document.getElementById(
 		'<portlet:namespace />targetTagName'
 	);
 
 	if (targetTagNameSelect) {
-		window['<portlet:namespace />onAddTag'] = function(item) {
+		window['<portlet:namespace />onAddTag'] = function (item) {
 			var value = item.value;
 
 			if (value !== undefined) {
-				dom.append(
-					targetTagNameSelect,
+				targetTagNameSelect.append(
 					Liferay.Util.sub(
 						'<option value="{0}">{1}</option>',
 						value,
@@ -103,7 +102,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "merge-tags"));
 			}
 		};
 
-		window['<portlet:namespace />onRemoveTag'] = function(item) {
+		window['<portlet:namespace />onRemoveTag'] = function (item) {
 			var value = item.value;
 
 			if (value !== undefined) {
@@ -111,7 +110,9 @@ renderResponse.setTitle(LanguageUtil.get(request, "merge-tags"));
 					'option[value="' + value + '"]'
 				);
 
-				dom.exitDocument(targetTagNameOption);
+				if (targetTagNameOption) {
+					targetTagNameOption.remove();
+				}
 			}
 		};
 	}
@@ -122,12 +123,12 @@ renderResponse.setTitle(LanguageUtil.get(request, "merge-tags"));
 	);
 
 	if (form && mergeTagNamesInputs && targetTagNameSelect) {
-		form.addEventListener('submit', function(event) {
-			var mergeTagNames = Array.from(mergeTagNamesInputs).map(function(
-				mergeTagNamesInput
-			) {
-				return mergeTagNamesInput.value;
-			});
+		form.addEventListener('submit', (event) => {
+			var mergeTagNames = Array.from(mergeTagNamesInputs).map(
+				(mergeTagNamesInput) => {
+					return mergeTagNamesInput.value;
+				}
+			);
 
 			if (mergeTagNames.length < 2) {
 				alert(

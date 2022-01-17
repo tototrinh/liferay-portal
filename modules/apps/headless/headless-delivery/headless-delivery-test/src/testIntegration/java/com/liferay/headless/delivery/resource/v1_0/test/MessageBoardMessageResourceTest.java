@@ -18,15 +18,17 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.headless.delivery.client.dto.v1_0.MessageBoardMessage;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.message.boards.model.MBThread;
+import com.liferay.message.boards.service.MBMessageLocalServiceUtil;
 import com.liferay.message.boards.test.util.MBTestUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,40 +49,28 @@ public class MessageBoardMessageResourceTest
 		serviceContext.setScopeGroupId(testGroup.getGroupId());
 	}
 
-	@Ignore
-	@Override
 	@Test
-	public void testGetMessageBoardMessageMessageBoardMessagesPageWithSortInteger() {
-	}
+	public void testPutSiteMessageBoardMessageWithoutParentMessageId()
+		throws Exception {
 
-	@Ignore
-	@Override
-	@Test
-	public void testGetMessageBoardThreadMessageBoardMessagesPageWithSortInteger() {
-	}
+		MessageBoardMessage randomMessageBoardMessage =
+			randomMessageBoardMessage();
 
-	@Ignore
-	@Override
-	@Test
-	public void testGetSiteMessageBoardMessagesPageWithSortInteger() {
-	}
+		randomMessageBoardMessage.setParentMessageBoardMessageId((Long)null);
 
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLDeleteMessageBoardMessage() {
-	}
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+					"WebApplicationExceptionMapper",
+				LoggerTestUtil.ERROR)) {
 
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLGetMessageBoardMessage() {
-	}
-
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLGetSiteMessageBoardMessagesPage() {
+			assertHttpResponseStatusCode(
+				400,
+				messageBoardMessageResource.
+					putSiteMessageBoardMessageByExternalReferenceCodeHttpResponse(
+						testGroup.getGroupId(),
+						randomMessageBoardMessage.getExternalReferenceCode(),
+						randomMessageBoardMessage));
+		}
 	}
 
 	@Override
@@ -90,7 +80,10 @@ public class MessageBoardMessageResourceTest
 
 	@Override
 	protected String[] getIgnoredEntityFieldNames() {
-		return new String[] {"creatorId", "messageBoardSectionId"};
+		return new String[] {
+			"creatorId", "messageBoardSectionId", "messageBoardThreadId",
+			"parentMessageBoardMessageId", "ratingValue"
+		};
 	}
 
 	@Override
@@ -114,6 +107,14 @@ public class MessageBoardMessageResourceTest
 	@Override
 	protected MessageBoardMessage
 			testDeleteMessageBoardMessageMyRating_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testDeleteSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
 		throws Exception {
 
 		return _addMessageBoardMessage();
@@ -153,11 +154,50 @@ public class MessageBoardMessageResourceTest
 
 	@Override
 	protected MessageBoardMessage
+			testGetSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testGetSiteMessageBoardMessageByFriendlyUrlPath_addMessageBoardMessage()
+		throws Exception {
+
+		return testPostMessageBoardMessageMessageBoardMessage_addMessageBoardMessage(
+			randomMessageBoardMessage());
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testGetSiteMessageBoardMessagePermissionsPage_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
 			testGetSiteMessageBoardMessagesPage_addMessageBoardMessage(
 				Long siteId, MessageBoardMessage messageBoardMessage)
 		throws Exception {
 
 		return _addMessageBoardMessage(messageBoardMessage, siteId);
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testGraphQLMessageBoardMessage_addMessageBoardMessage()
+		throws Exception {
+
+		MBMessage mbMessage = MBMessageLocalServiceUtil.addMessage(
+			TestPropsValues.getUserId(), "test", testGroup.getGroupId(), 0,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new ServiceContext());
+
+		return messageBoardMessageResource.getMessageBoardMessage(
+			mbMessage.getMessageId());
 	}
 
 	@Override
@@ -171,6 +211,14 @@ public class MessageBoardMessageResourceTest
 	@Override
 	protected MessageBoardMessage
 			testPutMessageBoardMessage_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testPutMessageBoardMessagePermissionsPage_addMessageBoardMessage()
 		throws Exception {
 
 		return _addMessageBoardMessage();
@@ -192,8 +240,39 @@ public class MessageBoardMessageResourceTest
 		return _addMessageBoardMessage();
 	}
 
+	@Override
+	protected MessageBoardMessage
+			testPutSiteMessageBoardMessageByExternalReferenceCode_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testPutSiteMessageBoardMessageByExternalReferenceCode_createMessageBoardMessage()
+		throws Exception {
+
+		MessageBoardMessage messageBoardMessage =
+			super.
+				testPutSiteMessageBoardMessageByExternalReferenceCode_createMessageBoardMessage();
+
+		messageBoardMessage.setParentMessageBoardMessageId(
+			_mbThread.getRootMessageId());
+
+		return messageBoardMessage;
+	}
+
+	@Override
+	protected MessageBoardMessage
+			testPutSiteMessageBoardMessagePermissionsPage_addMessageBoardMessage()
+		throws Exception {
+
+		return _addMessageBoardMessage();
+	}
+
 	private MBMessage _addMbMessage(Long siteId, String subject, String body)
-		throws PortalException {
+		throws Exception {
 
 		MBMessage mbMessage = MBTestUtil.addMessage(
 			siteId,

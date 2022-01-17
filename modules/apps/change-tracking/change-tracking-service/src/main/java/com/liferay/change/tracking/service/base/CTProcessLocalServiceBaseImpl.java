@@ -16,9 +16,9 @@ package com.liferay.change.tracking.service.base;
 
 import com.liferay.change.tracking.model.CTProcess;
 import com.liferay.change.tracking.service.CTProcessLocalService;
-import com.liferay.change.tracking.service.persistence.CTCollectionPersistence;
-import com.liferay.change.tracking.service.persistence.CTProcessFinder;
+import com.liferay.change.tracking.service.CTProcessLocalServiceUtil;
 import com.liferay.change.tracking.service.persistence.CTProcessPersistence;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -38,16 +38,20 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -68,11 +72,15 @@ public abstract class CTProcessLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>CTProcessLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.change.tracking.service.CTProcessLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>CTProcessLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>CTProcessLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the ct process to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect CTProcessLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param ctProcess the ct process
 	 * @return the ct process that was added
@@ -100,6 +108,10 @@ public abstract class CTProcessLocalServiceBaseImpl
 	/**
 	 * Deletes the ct process with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect CTProcessLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ctProcessId the primary key of the ct process
 	 * @return the ct process that was removed
 	 * @throws PortalException if a ct process with the primary key could not be found
@@ -113,6 +125,10 @@ public abstract class CTProcessLocalServiceBaseImpl
 	/**
 	 * Deletes the ct process from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect CTProcessLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ctProcess the ct process
 	 * @return the ct process that was removed
 	 */
@@ -120,6 +136,18 @@ public abstract class CTProcessLocalServiceBaseImpl
 	@Override
 	public CTProcess deleteCTProcess(CTProcess ctProcess) {
 		return ctProcessPersistence.remove(ctProcess);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return ctProcessPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -271,6 +299,7 @@ public abstract class CTProcessLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -285,6 +314,11 @@ public abstract class CTProcessLocalServiceBaseImpl
 		throws PortalException {
 
 		return ctProcessLocalService.deleteCTProcess((CTProcess)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<CTProcess> getBasePersistence() {
+		return ctProcessPersistence;
 	}
 
 	/**
@@ -326,6 +360,10 @@ public abstract class CTProcessLocalServiceBaseImpl
 	/**
 	 * Updates the ct process in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect CTProcessLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param ctProcess the ct process
 	 * @return the ct process that was updated
 	 */
@@ -333,6 +371,11 @@ public abstract class CTProcessLocalServiceBaseImpl
 	@Override
 	public CTProcess updateCTProcess(CTProcess ctProcess) {
 		return ctProcessPersistence.update(ctProcess);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
 	}
 
 	@Override
@@ -346,6 +389,8 @@ public abstract class CTProcessLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		ctProcessLocalService = (CTProcessLocalService)aopProxy;
+
+		_setLocalServiceUtilService(ctProcessLocalService);
 	}
 
 	/**
@@ -390,23 +435,29 @@ public abstract class CTProcessLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		CTProcessLocalService ctProcessLocalService) {
+
+		try {
+			Field field = CTProcessLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, ctProcessLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected CTProcessLocalService ctProcessLocalService;
 
 	@Reference
 	protected CTProcessPersistence ctProcessPersistence;
 
 	@Reference
-	protected CTProcessFinder ctProcessFinder;
-
-	@Reference
-	protected CTCollectionPersistence ctCollectionPersistence;
-
-	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.CompanyLocalService
-		companyLocalService;
 
 }

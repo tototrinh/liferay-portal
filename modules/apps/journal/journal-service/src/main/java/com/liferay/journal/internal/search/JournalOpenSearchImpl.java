@@ -16,11 +16,12 @@ package com.liferay.journal.internal.search;
 
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.model.JournalArticleConstants;
 import com.liferay.journal.model.JournalContentSearch;
 import com.liferay.journal.service.JournalArticleService;
 import com.liferay.journal.service.JournalContentSearchLocalService;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.search.Document;
@@ -123,13 +124,12 @@ public class JournalOpenSearchImpl extends HitsOpenSearchImpl {
 			String groupFriendlyURL = _portal.getGroupFriendlyURL(
 				_layoutSetLocalService.getLayoutSet(
 					article.getGroupId(), false),
-				themeDisplay);
+				themeDisplay, false, false);
 
-			return groupFriendlyURL.concat(
-				JournalArticleConstants.CANONICAL_URL_SEPARATOR
-			).concat(
-				article.getUrlTitle()
-			);
+			return StringBundler.concat(
+				groupFriendlyURL,
+				JournalArticleConstants.CANONICAL_URL_SEPARATOR,
+				article.getUrlTitle());
 		}
 
 		Layout layout = themeDisplay.getLayout();

@@ -10,18 +10,12 @@
  */
 
 import 'custom-event-polyfill';
+
+import 'dom4';
 import React from 'react';
 
 import App from './components/App.es';
-import client, {getClient} from './shared/rest/fetch.es';
 
-export default function(props) {
-	return (
-		<App
-			client={client}
-			companyId={Liferay.ThemeDisplay.getCompanyId()}
-			getClient={getClient}
-			{...props}
-		/>
-	);
+export default function (props) {
+	return <App companyId={Liferay.ThemeDisplay.getCompanyId()} {...props} />;
 }

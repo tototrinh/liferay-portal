@@ -15,8 +15,8 @@
 import React from 'react';
 
 export default React.createContext({
-	assetsPath: '',
+	imagesPath: '',
 	namespace: '',
 	requestFieldValueNameURL: '',
-	spritemap: ''
+	spritemap: '',
 });

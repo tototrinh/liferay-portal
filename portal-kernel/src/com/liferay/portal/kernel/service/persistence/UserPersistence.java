@@ -16,6 +16,7 @@ package com.liferay.portal.kernel.service.persistence;
 
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 
 import java.util.Date;
 
@@ -33,7 +34,8 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface UserPersistence extends BasePersistence<User> {
+public interface UserPersistence
+	extends BasePersistence<User>, CTPersistence<User> {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -714,7 +716,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param companyId the company ID
 	 * @return the matching users
 	 */
-	public java.util.List<User> findByU_C(long userId, long companyId);
+	public java.util.List<User> findByGtU_C(long userId, long companyId);
 
 	/**
 	 * Returns a range of all the users where userId &gt; &#63; and companyId = &#63;.
@@ -729,7 +731,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param end the upper bound of the range of users (not inclusive)
 	 * @return the range of matching users
 	 */
-	public java.util.List<User> findByU_C(
+	public java.util.List<User> findByGtU_C(
 		long userId, long companyId, int start, int end);
 
 	/**
@@ -746,7 +748,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching users
 	 */
-	public java.util.List<User> findByU_C(
+	public java.util.List<User> findByGtU_C(
 		long userId, long companyId, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<User>
 			orderByComparator);
@@ -766,7 +768,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the ordered range of matching users
 	 */
-	public java.util.List<User> findByU_C(
+	public java.util.List<User> findByGtU_C(
 		long userId, long companyId, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<User>
 			orderByComparator,
@@ -781,7 +783,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @return the first matching user
 	 * @throws NoSuchUserException if a matching user could not be found
 	 */
-	public User findByU_C_First(
+	public User findByGtU_C_First(
 			long userId, long companyId,
 			com.liferay.portal.kernel.util.OrderByComparator<User>
 				orderByComparator)
@@ -795,7 +797,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching user, or <code>null</code> if a matching user could not be found
 	 */
-	public User fetchByU_C_First(
+	public User fetchByGtU_C_First(
 		long userId, long companyId,
 		com.liferay.portal.kernel.util.OrderByComparator<User>
 			orderByComparator);
@@ -809,7 +811,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @return the last matching user
 	 * @throws NoSuchUserException if a matching user could not be found
 	 */
-	public User findByU_C_Last(
+	public User findByGtU_C_Last(
 			long userId, long companyId,
 			com.liferay.portal.kernel.util.OrderByComparator<User>
 				orderByComparator)
@@ -823,7 +825,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching user, or <code>null</code> if a matching user could not be found
 	 */
-	public User fetchByU_C_Last(
+	public User fetchByGtU_C_Last(
 		long userId, long companyId,
 		com.liferay.portal.kernel.util.OrderByComparator<User>
 			orderByComparator);
@@ -834,7 +836,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param userId the user ID
 	 * @param companyId the company ID
 	 */
-	public void removeByU_C(long userId, long companyId);
+	public void removeByGtU_C(long userId, long companyId);
 
 	/**
 	 * Returns the number of users where userId &gt; &#63; and companyId = &#63;.
@@ -843,7 +845,7 @@ public interface UserPersistence extends BasePersistence<User> {
 	 * @param companyId the company ID
 	 * @return the number of matching users
 	 */
-	public int countByU_C(long userId, long companyId);
+	public int countByGtU_C(long userId, long companyId);
 
 	/**
 	 * Returns the user where companyId = &#63; and userId = &#63; or throws a <code>NoSuchUserException</code> if it could not be found.

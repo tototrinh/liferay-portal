@@ -24,6 +24,8 @@ import com.liferay.batch.engine.internal.item.BatchEngineTaskItemDelegateExecuto
 import com.liferay.batch.engine.internal.reader.BatchEngineImportTaskItemReader;
 import com.liferay.batch.engine.internal.reader.BatchEngineImportTaskItemReaderFactory;
 import com.liferay.batch.engine.internal.reader.BatchEngineImportTaskItemReaderUtil;
+import com.liferay.batch.engine.internal.task.progress.BatchEngineTaskProgress;
+import com.liferay.batch.engine.internal.task.progress.BatchEngineTaskProgressFactory;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
 import com.liferay.batch.engine.service.BatchEngineImportTaskLocalService;
 import com.liferay.petra.string.StringPool;
@@ -64,6 +66,16 @@ public class BatchEngineImportTaskExecutorImpl
 				BatchEngineTaskExecuteStatus.STARTED.toString());
 			batchEngineImportTask.setStartTime(new Date());
 
+			BatchEngineTaskProgress batchEngineTaskProgress =
+				_batchEngineTaskProgressFactory.create(
+					BatchEngineTaskContentType.valueOf(
+						batchEngineImportTask.getContentType()));
+
+			batchEngineImportTask.setTotalItemsCount(
+				batchEngineTaskProgress.getTotalItemsCount(
+					_batchEngineImportTaskLocalService.openContentInputStream(
+						batchEngineImportTask.getBatchEngineImportTaskId())));
+
 			_batchEngineImportTaskLocalService.updateBatchEngineImportTask(
 				batchEngineImportTask);
 
@@ -75,15 +87,15 @@ public class BatchEngineImportTaskExecutorImpl
 				BatchEngineTaskExecuteStatus.COMPLETED, batchEngineImportTask,
 				null);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			_log.error(
 				"Unable to update batch engine import task " +
 					batchEngineImportTask,
-				t);
+				throwable);
 
 			_updateBatchEngineImportTask(
 				BatchEngineTaskExecuteStatus.FAILED, batchEngineImportTask,
-				t.getMessage());
+				throwable.getMessage());
 		}
 	}
 
@@ -100,6 +112,8 @@ public class BatchEngineImportTaskExecutorImpl
 				GetterUtil.getString(
 					batchEngineTaskConfiguration.csvFileColumnDelimiter(),
 					StringPool.COMMA));
+
+		_batchEngineTaskProgressFactory = new BatchEngineTaskProgressFactory();
 
 		_batchEngineTaskItemDelegateExecutorFactory =
 			new BatchEngineTaskItemDelegateExecutorFactory(
@@ -121,6 +135,10 @@ public class BatchEngineImportTaskExecutorImpl
 						batchEngineImportTask.getOperation()),
 					items);
 
+				batchEngineImportTask.setProcessedItemsCount(
+					batchEngineImportTask.getProcessedItemsCount() +
+						items.size());
+
 				_batchEngineImportTaskLocalService.updateBatchEngineImportTask(
 					batchEngineImportTask);
 
@@ -140,6 +158,7 @@ public class BatchEngineImportTaskExecutorImpl
 			BatchEngineTaskItemDelegateExecutor
 				batchEngineTaskItemDelegateExecutor =
 					_batchEngineTaskItemDelegateExecutorFactory.create(
+						batchEngineImportTask.getTaskItemDelegateName(),
 						batchEngineImportTask.getClassName(),
 						_companyLocalService.getCompany(
 							batchEngineImportTask.getCompanyId()),
@@ -222,6 +241,8 @@ public class BatchEngineImportTaskExecutorImpl
 
 	@Reference
 	private BatchEngineTaskMethodRegistry _batchEngineTaskMethodRegistry;
+
+	private BatchEngineTaskProgressFactory _batchEngineTaskProgressFactory;
 
 	@Reference
 	private CompanyLocalService _companyLocalService;

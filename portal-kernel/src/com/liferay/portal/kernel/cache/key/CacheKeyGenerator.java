@@ -24,14 +24,6 @@ import java.io.Serializable;
  */
 public interface CacheKeyGenerator extends Cloneable {
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #append(StringBundler)}
-	 */
-	@Deprecated
-	public CacheKeyGenerator append(
-		com.liferay.portal.kernel.util.StringBundler sb);
-
 	public CacheKeyGenerator append(String key);
 
 	public CacheKeyGenerator append(String[] keys);
@@ -40,17 +32,17 @@ public interface CacheKeyGenerator extends Cloneable {
 		return append(sb.getStrings());
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #append(StringBundler)}
+	 */
+	@Deprecated
+	public CacheKeyGenerator append(
+		com.liferay.portal.kernel.util.StringBundler sb);
+
 	public CacheKeyGenerator clone();
 
 	public Serializable finish();
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *			 #getCacheKey(StringBundler)}
-	 */
-	@Deprecated
-	public Serializable getCacheKey(
-		com.liferay.portal.kernel.util.StringBundler sb);
 
 	public Serializable getCacheKey(String key);
 
@@ -60,6 +52,18 @@ public interface CacheKeyGenerator extends Cloneable {
 		return getCacheKey(sb.getStrings());
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getCacheKey(StringBundler)}
+	 */
+	@Deprecated
+	public Serializable getCacheKey(
+		com.liferay.portal.kernel.util.StringBundler sb);
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public boolean isCallingGetCacheKeyThreadSafe();
 
 }

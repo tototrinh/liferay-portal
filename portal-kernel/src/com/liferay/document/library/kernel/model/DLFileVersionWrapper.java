@@ -22,6 +22,8 @@ import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -45,6 +47,7 @@ public class DLFileVersionWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("uuid", getUuid());
 		attributes.put("fileVersionId", getFileVersionId());
 		attributes.put("groupId", getGroupId());
@@ -68,6 +71,8 @@ public class DLFileVersionWrapper
 		attributes.put("version", getVersion());
 		attributes.put("size", getSize());
 		attributes.put("checksum", getChecksum());
+		attributes.put("expirationDate", getExpirationDate());
+		attributes.put("reviewDate", getReviewDate());
 		attributes.put("lastPublishDate", getLastPublishDate());
 		attributes.put("status", getStatus());
 		attributes.put("statusByUserId", getStatusByUserId());
@@ -83,6 +88,12 @@ public class DLFileVersionWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
 		}
 
 		String uuid = (String)attributes.get("uuid");
@@ -223,6 +234,18 @@ public class DLFileVersionWrapper
 			setChecksum(checksum);
 		}
 
+		Date expirationDate = (Date)attributes.get("expirationDate");
+
+		if (expirationDate != null) {
+			setExpirationDate(expirationDate);
+		}
+
+		Date reviewDate = (Date)attributes.get("reviewDate");
+
+		if (reviewDate != null) {
+			setReviewDate(reviewDate);
+		}
+
 		Date lastPublishDate = (Date)attributes.get("lastPublishDate");
 
 		if (lastPublishDate != null) {
@@ -259,6 +282,11 @@ public class DLFileVersionWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return model.buildTreePath();
+	}
+
+	@Override
+	public DLFileVersion cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -308,6 +336,16 @@ public class DLFileVersionWrapper
 		return model.getCreateDate();
 	}
 
+	/**
+	 * Returns the ct collection ID of this document library file version.
+	 *
+	 * @return the ct collection ID of this document library file version
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
+	}
+
 	@Override
 	public java.util.List<com.liferay.dynamic.data.mapping.kernel.DDMStructure>
 			getDDMStructures()
@@ -336,6 +374,16 @@ public class DLFileVersionWrapper
 	@Override
 	public ExpandoBridge getExpandoBridge() {
 		return model.getExpandoBridge();
+	}
+
+	/**
+	 * Returns the expiration date of this document library file version.
+	 *
+	 * @return the expiration date of this document library file version
+	 */
+	@Override
+	public Date getExpirationDate() {
+		return model.getExpirationDate();
 	}
 
 	/**
@@ -502,6 +550,16 @@ public class DLFileVersionWrapper
 	@Override
 	public long getRepositoryId() {
 		return model.getRepositoryId();
+	}
+
+	/**
+	 * Returns the review date of this document library file version.
+	 *
+	 * @return the review date of this document library file version
+	 */
+	@Override
+	public Date getReviewDate() {
+		return model.getReviewDate();
 	}
 
 	/**
@@ -760,6 +818,16 @@ public class DLFileVersionWrapper
 	}
 
 	/**
+	 * Sets the ct collection ID of this document library file version.
+	 *
+	 * @param ctCollectionId the ct collection ID of this document library file version
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
 	 * Sets the description of this document library file version.
 	 *
 	 * @param description the description of this document library file version
@@ -767,6 +835,16 @@ public class DLFileVersionWrapper
 	@Override
 	public void setDescription(String description) {
 		model.setDescription(description);
+	}
+
+	/**
+	 * Sets the expiration date of this document library file version.
+	 *
+	 * @param expirationDate the expiration date of this document library file version
+	 */
+	@Override
+	public void setExpirationDate(Date expirationDate) {
+		model.setExpirationDate(expirationDate);
 	}
 
 	/**
@@ -792,9 +870,9 @@ public class DLFileVersionWrapper
 	@Override
 	public void setExtraSettingsProperties(
 		com.liferay.portal.kernel.util.UnicodeProperties
-			extraSettingsProperties) {
+			extraSettingsUnicodeProperties) {
 
-		model.setExtraSettingsProperties(extraSettingsProperties);
+		model.setExtraSettingsProperties(extraSettingsUnicodeProperties);
 	}
 
 	/**
@@ -915,6 +993,16 @@ public class DLFileVersionWrapper
 	@Override
 	public void setRepositoryId(long repositoryId) {
 		model.setRepositoryId(repositoryId);
+	}
+
+	/**
+	 * Sets the review date of this document library file version.
+	 *
+	 * @param reviewDate the review date of this document library file version
+	 */
+	@Override
+	public void setReviewDate(Date reviewDate) {
+		model.setReviewDate(reviewDate);
 	}
 
 	/**
@@ -1050,6 +1138,20 @@ public class DLFileVersionWrapper
 	@Override
 	public void updateTreePath(String treePath) {
 		model.updateTreePath(treePath);
+	}
+
+	@Override
+	public Map<String, Function<DLFileVersion, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<DLFileVersion, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

@@ -24,8 +24,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -43,43 +46,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("DataDefinitionField")
+@GraphQLName(
+	description = "Represents the value of each field in data definition.",
+	value = "DataDefinitionField"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataDefinitionField")
-public class DataDefinitionField {
+public class DataDefinitionField implements Serializable {
 
-	@GraphQLName("IndexType")
-	public static enum IndexType {
+	public static DataDefinitionField toDTO(String json) {
+		return ObjectMapperUtil.readValue(DataDefinitionField.class, json);
+	}
 
-		ALL("all"), KEYWORD("keyword"), NONE("none"), TEXT("text");
-
-		@JsonCreator
-		public static IndexType create(String value) {
-			for (IndexType indexType : values()) {
-				if (Objects.equals(indexType.getValue(), value)) {
-					return indexType;
-				}
-			}
-
-			return null;
-		}
-
-		@JsonValue
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private IndexType(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static DataDefinitionField unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(
+			DataDefinitionField.class, json);
 	}
 
 	@Schema
@@ -345,7 +326,9 @@ public class DataDefinitionField {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String name;
 
-	@Schema
+	@Schema(
+		description = "A list of child data definition fields that depend on this resource."
+	)
 	@Valid
 	public DataDefinitionField[] getNestedDataDefinitionFields() {
 		return nestedDataDefinitionFields;
@@ -374,7 +357,9 @@ public class DataDefinitionField {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of child data definition fields that depend on this resource."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected DataDefinitionField[] nestedDataDefinitionFields;
 
@@ -762,15 +747,64 @@ public class DataDefinitionField {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataDefinitionField",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
+	@GraphQLName("IndexType")
+	public static enum IndexType {
+
+		ALL("all"), KEYWORD("keyword"), NONE("none"), TEXT("text");
+
+		@JsonCreator
+		public static IndexType create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (IndexType indexType : values()) {
+				if (Objects.equals(indexType.getValue(), value)) {
+					return indexType;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private IndexType(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 	private static String _escape(Object object) {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -787,13 +821,46 @@ public class DataDefinitionField {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

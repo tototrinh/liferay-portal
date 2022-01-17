@@ -29,25 +29,26 @@ public class UpgradeRatingsStats extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		if (!hasColumn("RatingsStats", "createDate")) {
 			alter(
-				RatingsStatsTable.class, new AlterTableAddColumn("createDate"));
+				RatingsStatsTable.class,
+				new AlterTableAddColumn("createDate", "DATE null"));
 		}
 
 		if (!hasColumn("RatingsStats", "modifiedDate")) {
 			alter(
 				RatingsStatsTable.class,
-				new AlterTableAddColumn("modifiedDate"));
+				new AlterTableAddColumn("modifiedDate", "DATE null"));
 		}
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				_getUpdateSQL("createDate", "min"))) {
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				_getUpdateSQL("modifiedDate", "max"))) {
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 	}
 

@@ -24,16 +24,20 @@ String[] tempFileNames = LayoutServiceUtil.getTempFileNames(groupId, ExportImpor
 
 portletDisplay.setShowBackIcon(true);
 
-PortletURL importProcessesURL = PortalUtil.getControlPanelPortletURL(request, ExportImportPortletKeys.IMPORT, PortletRequest.RENDER_PHASE);
-
-importProcessesURL.setParameter("mvcPath", "/import/view.jsp");
-
-portletDisplay.setURLBack(importProcessesURL.toString());
+portletDisplay.setURLBack(
+	PortletURLBuilder.create(
+		PortalUtil.getControlPanelPortletURL(request, ExportImportPortletKeys.IMPORT, PortletRequest.RENDER_PHASE)
+	).setMVCPath(
+		"/import/view_import_layouts.jsp"
+	).buildString());
 
 renderResponse.setTitle(LanguageUtil.get(request, "new-import-process"));
 %>
 
-<div class="container-fluid-1280 container-view" id="<portlet:namespace />exportImportOptions">
+<clay:container-fluid
+	cssClass="container-form-lg"
+	id='<%= liferayPortletResponse.getNamespace() + "exportImportOptions" %>'
+>
 
 	<%
 	int incompleteBackgroundTaskCount = BackgroundTaskManagerUtil.getBackgroundTasksCount(groupId, BackgroundTaskExecutorNames.LAYOUT_IMPORT_BACKGROUND_TASK_EXECUTOR, false);
@@ -53,4 +57,4 @@ renderResponse.setTitle(LanguageUtil.get(request, "new-import-process"));
 			<liferay-util:include page="/import/new_import/import_layouts_validation.jsp" servletContext="<%= application %>" />
 		</c:otherwise>
 	</c:choose>
-</div>
+</clay:container-fluid>

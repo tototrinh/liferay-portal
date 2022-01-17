@@ -25,10 +25,8 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionLogic;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.util.PropsValues;
-
-import java.util.Dictionary;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -45,12 +43,9 @@ public class KBFolderModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", KBFolder.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<KBFolder>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				KBFolder.class, KBFolder::getKbFolderId,
 				_kbFolderLocalService::getKBFolder, _portletResourcePermission,
@@ -61,7 +56,9 @@ public class KBFolderModelResourcePermissionRegistrar {
 								modelResourcePermission));
 					}
 				}),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", KBFolder.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -77,7 +74,8 @@ public class KBFolderModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<KBFolder>>
+		_serviceRegistration;
 
 	private class KBFolderDynamicInheritanceModelResourcePermissionLogic
 		implements ModelResourcePermissionLogic<KBFolder> {

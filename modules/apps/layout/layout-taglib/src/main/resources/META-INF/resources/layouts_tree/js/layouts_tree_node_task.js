@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-layouts-tree-node-task',
-	A => {
+	(A) => {
 		var LayoutsTreeNodeTask = A.Component.create({
 			EXTENDS: A.TreeNodeTask,
 
@@ -60,8 +60,8 @@ AUI.add(
 					else {
 						instance.check();
 					}
-				}
-			}
+				},
+			},
 		});
 
 		A.LayoutsTreeNodeTask = LayoutsTreeNodeTask;
@@ -70,6 +70,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-tree-node']
+		requires: ['aui-tree-node'],
 	}
 );

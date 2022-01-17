@@ -52,6 +52,7 @@ public class KaleoNotificationWrapper
 		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("kaleoClassName", getKaleoClassName());
 		attributes.put("kaleoClassPK", getKaleoClassPK());
+		attributes.put("kaleoDefinitionId", getKaleoDefinitionId());
 		attributes.put(
 			"kaleoDefinitionVersionId", getKaleoDefinitionVersionId());
 		attributes.put("kaleoNodeName", getKaleoNodeName());
@@ -127,6 +128,12 @@ public class KaleoNotificationWrapper
 			setKaleoClassPK(kaleoClassPK);
 		}
 
+		Long kaleoDefinitionId = (Long)attributes.get("kaleoDefinitionId");
+
+		if (kaleoDefinitionId != null) {
+			setKaleoDefinitionId(kaleoDefinitionId);
+		}
+
 		Long kaleoDefinitionVersionId = (Long)attributes.get(
 			"kaleoDefinitionVersionId");
 
@@ -175,6 +182,11 @@ public class KaleoNotificationWrapper
 		if (notificationTypes != null) {
 			setNotificationTypes(notificationTypes);
 		}
+	}
+
+	@Override
+	public KaleoNotification cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -245,6 +257,16 @@ public class KaleoNotificationWrapper
 	@Override
 	public long getKaleoClassPK() {
 		return model.getKaleoClassPK();
+	}
+
+	/**
+	 * Returns the kaleo definition ID of this kaleo notification.
+	 *
+	 * @return the kaleo definition ID of this kaleo notification
+	 */
+	@Override
+	public long getKaleoDefinitionId() {
+		return model.getKaleoDefinitionId();
 	}
 
 	/**
@@ -450,6 +472,16 @@ public class KaleoNotificationWrapper
 	@Override
 	public void setKaleoClassPK(long kaleoClassPK) {
 		model.setKaleoClassPK(kaleoClassPK);
+	}
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo notification.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo notification
+	 */
+	@Override
+	public void setKaleoDefinitionId(long kaleoDefinitionId) {
+		model.setKaleoDefinitionId(kaleoDefinitionId);
 	}
 
 	/**

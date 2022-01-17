@@ -14,18 +14,24 @@
 
 package com.liferay.fragment.internal.upgrade;
 
+import com.liferay.fragment.internal.upgrade.v1_1_0.PortletPreferencesUpgradeProcess;
 import com.liferay.fragment.internal.upgrade.v2_0_0.util.FragmentCollectionTable;
 import com.liferay.fragment.internal.upgrade.v2_0_0.util.FragmentEntryLinkTable;
 import com.liferay.fragment.internal.upgrade.v2_0_0.util.FragmentEntryTable;
-import com.liferay.fragment.internal.upgrade.v2_1_0.UpgradeSchema;
-import com.liferay.fragment.internal.upgrade.v2_2_1.UpgradeFragmentEntry;
-import com.liferay.portal.kernel.upgrade.BaseUpgradeSQLServerDatetime;
+import com.liferay.fragment.internal.upgrade.v2_1_0.SchemaUpgradeProcess;
+import com.liferay.fragment.internal.upgrade.v2_4_0.FragmentEntryLinkUpgradeProcess;
+import com.liferay.fragment.internal.upgrade.v2_6_0.FragmentEntryVersionUpgradeProcess;
+import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
-import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
+import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
+import com.liferay.portal.kernel.view.count.ViewCountManager;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.upgrade.step.util.UpgradeStepFactory;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author José Ángel Jiménez
@@ -49,28 +55,34 @@ public class FragmentServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register("1.0.1", "1.0.2", new DummyUpgradeStep());
 
 		registry.register(
-			"1.0.2", "2.0.0",
-			new BaseUpgradeSQLServerDatetime(
+			"1.0.2", "1.1.0",
+			new PortletPreferencesUpgradeProcess(_layoutLocalService));
+
+		registry.register(
+			"1.1.0", "2.0.0",
+			new BaseSQLServerDatetimeUpgradeProcess(
 				new Class<?>[] {
 					FragmentCollectionTable.class, FragmentEntryLinkTable.class,
 					FragmentEntryTable.class
 				}));
 
-		registry.register("2.0.0", "2.1.0", new UpgradeSchema());
+		registry.register("2.0.0", "2.1.0", new SchemaUpgradeProcess());
 
 		registry.register("2.1.0", "2.1.1", new DummyUpgradeStep());
 
 		registry.register(
 			"2.1.1", "2.1.2",
-			new com.liferay.fragment.internal.upgrade.v2_1_2.UpgradeSchema());
+			new com.liferay.fragment.internal.upgrade.v2_1_2.
+				SchemaUpgradeProcess());
 
 		registry.register(
 			"2.1.2", "2.1.3",
-			new com.liferay.fragment.internal.upgrade.v2_1_3.UpgradeSchema());
+			new com.liferay.fragment.internal.upgrade.v2_1_3.
+				SchemaUpgradeProcess());
 
 		registry.register(
 			"2.1.3", "2.2.0",
-			new UpgradeMVCCVersion() {
+			new MVCCVersionUpgradeProcess() {
 
 				@Override
 				protected String[] getModuleTableNames() {
@@ -83,14 +95,52 @@ public class FragmentServiceUpgrade implements UpgradeStepRegistrator {
 			});
 
 		registry.register(
-			"2.2.0", "2.2.1", new UpgradeFragmentEntry(),
-			new com.liferay.fragment.internal.upgrade.v2_2_1.UpgradeSchema());
+			"2.2.0", "2.2.1",
+			new com.liferay.fragment.internal.upgrade.v2_2_1.
+				SchemaUpgradeProcess());
 
 		registry.register(
 			"2.2.1", "2.3.0",
 			new com.liferay.fragment.internal.upgrade.v2_3_0.
-				UpgradeFragmentEntry(),
-			new com.liferay.fragment.internal.upgrade.v2_3_0.UpgradeSchema());
+				FragmentEntryUpgradeProcess(),
+			new com.liferay.fragment.internal.upgrade.v2_3_0.
+				SchemaUpgradeProcess());
+
+		registry.register(
+			"2.3.0", "2.4.0", new FragmentEntryLinkUpgradeProcess());
+
+		registry.register(
+			"2.4.0", "2.5.0",
+			new com.liferay.fragment.internal.upgrade.v2_5_0.
+				FragmentEntryLinkUpgradeProcess());
+
+		registry.register(
+			"2.5.0", "2.6.0",
+			new com.liferay.fragment.internal.upgrade.v2_6_0.
+				FragmentEntryUpgradeProcess(),
+			new FragmentEntryVersionUpgradeProcess());
+
+		registry.register(
+			"2.6.0", "2.7.0",
+			new CTModelUpgradeProcess(
+				"FragmentCollection", "FragmentComposition", "FragmentEntry",
+				"FragmentEntryLink", "FragmentEntryVersion"),
+			new MVCCVersionUpgradeProcess() {
+
+				@Override
+				protected String[] getModuleTableNames() {
+					return new String[] {"FragmentEntryVersion"};
+				}
+
+			});
+
+		registry.register("2.7.0", "2.7.1", new DummyUpgradeStep());
 	}
+
+	@Reference
+	private LayoutLocalService _layoutLocalService;
+
+	@Reference
+	private ViewCountManager _viewCountManager;
 
 }

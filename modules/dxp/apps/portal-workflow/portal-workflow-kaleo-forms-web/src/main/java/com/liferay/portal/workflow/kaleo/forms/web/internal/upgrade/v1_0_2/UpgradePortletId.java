@@ -16,10 +16,11 @@ package com.liferay.portal.workflow.kaleo.forms.web.internal.upgrade.v1_0_2;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.LayoutTypePortletConstants;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.workflow.kaleo.forms.constants.KaleoFormsPortletKeys;
 
 import java.sql.PreparedStatement;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * @author Inácio Nery
  */
-public class UpgradePortletId extends BaseUpgradePortletId {
+public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 
 	protected void deletePortletReferences(String portletId) throws Exception {
 		runSQL("delete from Portlet where portletId = '" + portletId + "'");
@@ -58,16 +59,19 @@ public class UpgradePortletId extends BaseUpgradePortletId {
 	protected String getNewTypeSettings(
 		String typeSettings, String oldRootPortletId) {
 
-		UnicodeProperties typeSettingsProperties = new UnicodeProperties(true);
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.create(
+				true
+			).fastLoad(
+				typeSettings
+			).build();
 
-		typeSettingsProperties.fastLoad(typeSettings);
+		Set<String> keys = typeSettingsUnicodeProperties.keySet();
 
-		Set<String> keys = typeSettingsProperties.keySet();
+		Iterator<String> iterator = keys.iterator();
 
-		Iterator<String> itr = keys.iterator();
-
-		while (itr.hasNext()) {
-			String key = itr.next();
+		while (iterator.hasNext()) {
+			String key = iterator.next();
 
 			if (StringUtil.startsWith(
 					key, LayoutTypePortletConstants.COLUMN_PREFIX) ||
@@ -75,7 +79,7 @@ public class UpgradePortletId extends BaseUpgradePortletId {
 					key, LayoutTypePortletConstants.NESTED_COLUMN_IDS)) {
 
 				String[] portletIds = StringUtil.split(
-					typeSettingsProperties.getProperty(key));
+					typeSettingsUnicodeProperties.getProperty(key));
 
 				if (!ArrayUtil.contains(portletIds, oldRootPortletId)) {
 					continue;
@@ -86,16 +90,16 @@ public class UpgradePortletId extends BaseUpgradePortletId {
 
 					String mergedPortletIds = StringUtil.merge(portletIds);
 
-					typeSettingsProperties.setProperty(
+					typeSettingsUnicodeProperties.setProperty(
 						key, mergedPortletIds.concat(StringPool.COMMA));
 				}
 				else {
-					itr.remove();
+					iterator.remove();
 				}
 			}
 		}
 
-		return typeSettingsProperties.toString();
+		return typeSettingsUnicodeProperties.toString();
 	}
 
 	@Override
@@ -112,13 +116,14 @@ public class UpgradePortletId extends BaseUpgradePortletId {
 			"select plid, typeSettings from Layout where " +
 				getTypeSettingsCriteria(oldRootPortletId);
 
-		try (PreparedStatement ps = connection.prepareStatement(sql);
-			ResultSet rs = ps.executeQuery()) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			while (rs.next()) {
-				long plid = rs.getLong("plid");
+			while (resultSet.next()) {
+				long plid = resultSet.getLong("plid");
 
-				String typeSettings = rs.getString("typeSettings");
+				String typeSettings = resultSet.getString("typeSettings");
 
 				String newTypeSettings = getNewTypeSettings(
 					typeSettings, oldRootPortletId);

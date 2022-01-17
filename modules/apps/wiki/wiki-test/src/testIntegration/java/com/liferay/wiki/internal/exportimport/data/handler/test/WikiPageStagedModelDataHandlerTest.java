@@ -196,12 +196,10 @@ public class WikiPageStagedModelDataHandlerTest
 
 		WikiNode node = (WikiNode)dependentStagedModels.get(0);
 
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(group.getGroupId());
-
 		WikiPage page = WikiTestUtil.addPage(
 			TestPropsValues.getUserId(), node.getNodeId(), name,
-			RandomTestUtil.randomString(), true, serviceContext);
+			RandomTestUtil.randomString(), true,
+			ServiceContextTestUtil.getServiceContext(group.getGroupId()));
 
 		WikiTestUtil.addWikiAttachment(
 			TestPropsValues.getUserId(), node.getNodeId(), page.getTitle(),
@@ -262,9 +260,10 @@ public class WikiPageStagedModelDataHandlerTest
 			Group group)
 		throws Exception {
 
-		StagedModelDataHandler stagedModelDataHandler =
-			StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
-				ExportImportClassedModelUtil.getClassName(stagedModel));
+		StagedModelDataHandler<StagedModel> stagedModelDataHandler =
+			(StagedModelDataHandler<StagedModel>)
+				StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
+					ExportImportClassedModelUtil.getClassName(stagedModel));
 
 		stagedModelDataHandler.deleteStagedModel(stagedModel);
 
@@ -274,10 +273,11 @@ public class WikiPageStagedModelDataHandlerTest
 			for (StagedModel dependentStagedModel : dependentStagedModels) {
 				try {
 					stagedModelDataHandler =
-						StagedModelDataHandlerRegistryUtil.
-							getStagedModelDataHandler(
-								ExportImportClassedModelUtil.getClassName(
-									dependentStagedModel));
+						(StagedModelDataHandler<StagedModel>)
+							StagedModelDataHandlerRegistryUtil.
+								getStagedModelDataHandler(
+									ExportImportClassedModelUtil.getClassName(
+										dependentStagedModel));
 
 					stagedModelDataHandler.deleteStagedModel(
 						dependentStagedModel);
@@ -363,6 +363,9 @@ public class WikiPageStagedModelDataHandlerTest
 		WikiPage page = (WikiPage)stagedModel;
 		WikiPage importedPage = (WikiPage)importedStagedModel;
 
+		Assert.assertEquals(
+			page.getExternalReferenceCode(),
+			importedPage.getExternalReferenceCode());
 		Assert.assertEquals(page.getTitle(), importedPage.getTitle());
 		Assert.assertEquals(page.getVersion(), importedPage.getVersion(), 0L);
 		Assert.assertEquals(page.isMinorEdit(), importedPage.isMinorEdit());

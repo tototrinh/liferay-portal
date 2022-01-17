@@ -2,11 +2,13 @@
 <head>
 <title>LexiconList</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">LexiconList</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>LIST_ENTRY</td>
@@ -29,6 +31,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>LIST_ENTRY_TITLE_LINK_SPECIFIC</td>
+	<td>//li[@data-qa-id='row'][${key_position}][contains(.,'${key_listEntry}')]//a</td>
+	<td></td>
+</tr>
+<tr>
 	<td>LIST_ENTRY_SUBTITLE</td>
 	<td>//li[@data-qa-id='row'][contains(.,'${key_listEntry}')]//h6[contains(.,'${key_listEntrySubtitle}')]</td>
 	<td></td>
@@ -39,8 +46,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>LIST_ENTRY_INFO</td>
+	<td>//li[contains(.,'${key_listEntry}')]//*[contains(@class,'label')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LIST_ENTRY_STATUS</td>
+	<td>//li[contains(.,'${key_listEntry}')]//*[contains(@class,'label-secondary')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>LIST_ENTRY_ELLIPSIS</td>
 	<td>//li[@data-qa-id='row'][contains(.,'${key_listEntry}')]//button[contains(@class,'dropdown-toggle')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>LIST_CUSTOM_LOGO</td>
+	<td>//li[@data-qa-id='row'][contains(.,'${key_listEntry}')]//div[contains(@class,'bg-cover')]</td>
 	<td></td>
 </tr>
 </tbody>

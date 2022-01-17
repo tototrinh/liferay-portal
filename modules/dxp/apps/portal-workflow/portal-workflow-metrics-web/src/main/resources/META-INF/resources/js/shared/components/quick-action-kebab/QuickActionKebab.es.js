@@ -12,44 +12,57 @@
 import ClayButton from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
-import React, {useState} from 'react';
+import React from 'react';
 
-import {IconItem} from './IconItem';
+const IconItem = ({icon, onClick}) => {
+	return (
+		<ClayButton
+			className="component-action quick-action-item"
+			displayType="unstyled"
+			onClick={onClick}
+			role="button"
+		>
+			<ClayIcon symbol={icon} />
+		</ClayButton>
+	);
+};
 
 const QuickActionKebab = ({
 	dropDownItems = [],
 	disabled = false,
 	iconItems = [],
-	items = []
+	items = [],
 }) => {
 	if (items.length > 0) {
 		dropDownItems = items;
 		iconItems = items.filter(({icon}) => icon);
 	}
 
+	dropDownItems = dropDownItems.map((item) => ({
+		...item,
+	}));
+
 	return (
 		<>
-			<div className={`quick-action-menu ${disabled ? 'disabled' : ''}`}>
-				{iconItems.map(({icon, onClick}, index) => (
-					<IconItem icon={icon} key={index} onClick={onClick} />
-				))}
-			</div>
+			{!disabled && iconItems.length > 0 && (
+				<div className="quick-action-menu">
+					{iconItems.map(({icon, onClick}, index) => (
+						<IconItem icon={icon} key={index} onClick={onClick} />
+					))}
+				</div>
+			)}
 
 			{dropDownItems.length > 0 && (
-				<KebabDropDown disabled={disabled} items={items} />
+				<KebabDropDown disabled={disabled} items={dropDownItems} />
 			)}
 		</>
 	);
 };
 
 const KebabDropDown = ({disabled, items}) => {
-	const [active, setActive] = useState(false);
-
 	return (
 		<ClayDropDownWithItems
-			active={active}
 			items={items}
-			onActiveChange={setActive}
 			trigger={
 				<ClayButton
 					className="component-action"

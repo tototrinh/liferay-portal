@@ -15,6 +15,7 @@
 package com.liferay.portal.security.service.access.policy.internal;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -86,19 +87,14 @@ public class SAPAccessControlPolicy extends BaseAccessControlPolicy {
 		Set<String> allowedServiceSignatures, String className,
 		String methodName) {
 
-		if (allowedServiceSignatures.contains(StringPool.STAR)) {
+		if (allowedServiceSignatures.contains(StringPool.STAR) ||
+			allowedServiceSignatures.contains(className)) {
+
 			return;
 		}
 
-		if (allowedServiceSignatures.contains(className)) {
-			return;
-		}
-
-		String classNameAndMethodName = className.concat(
-			StringPool.POUND
-		).concat(
-			methodName
-		);
+		String classNameAndMethodName = StringBundler.concat(
+			className, StringPool.POUND, methodName);
 
 		if (allowedServiceSignatures.contains(classNameAndMethodName)) {
 			return;
@@ -166,8 +162,6 @@ public class SAPAccessControlPolicy extends BaseAccessControlPolicy {
 	}
 
 	protected List<String> getSystemServiceAccessPolicyNames(long companyId) {
-		List<String> systemServiceAccessPolicyNames = new ArrayList<>(2);
-
 		SAPConfiguration sapConfiguration = null;
 
 		try {
@@ -181,6 +175,8 @@ public class SAPAccessControlPolicy extends BaseAccessControlPolicy {
 				"Unable to get service access policy configuration",
 				configurationException);
 		}
+
+		List<String> systemServiceAccessPolicyNames = new ArrayList<>(2);
 
 		if (!sapConfiguration.useSystemSAPEntries()) {
 			return systemServiceAccessPolicyNames;

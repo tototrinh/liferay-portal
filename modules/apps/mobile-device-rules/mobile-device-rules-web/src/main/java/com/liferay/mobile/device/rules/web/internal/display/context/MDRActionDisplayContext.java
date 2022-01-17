@@ -14,13 +14,17 @@
 
 package com.liferay.mobile.device.rules.web.internal.display.context;
 
+import com.liferay.mobile.device.rules.constants.MDRPortletKeys;
 import com.liferay.mobile.device.rules.model.MDRAction;
 import com.liferay.mobile.device.rules.service.MDRActionLocalServiceUtil;
 import com.liferay.mobile.device.rules.util.comparator.ActionCreateDateComparator;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.util.ResourceBundle;
 
@@ -42,16 +46,17 @@ public class MDRActionDisplayContext {
 		_resourceBundle = resourceBundle;
 	}
 
-	public SearchContainer getActionSearchContainer() {
+	public SearchContainer<MDRAction> getActionSearchContainer() {
 		if (_ruleActionSearchContainer != null) {
 			return _ruleActionSearchContainer;
 		}
 
 		long ruleGroupInstanceId = getRuleGroupInstanceId();
 
-		SearchContainer ruleActionSearchContainer = new SearchContainer(
-			_renderRequest, getPortletURL(), null,
-			"no-actions-are-configured-for-this-device-family");
+		SearchContainer<MDRAction> ruleActionSearchContainer =
+			new SearchContainer(
+				_renderRequest, getPortletURL(), null,
+				"no-actions-are-configured-for-this-device-family");
 
 		ruleActionSearchContainer.setOrderByCol(getOrderByCol());
 
@@ -87,8 +92,9 @@ public class MDRActionDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_renderRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			PortalUtil.getHttpServletRequest(_renderRequest),
+			MDRPortletKeys.MOBILE_DEVICE_RULES, "list");
 
 		return _displayStyle;
 	}
@@ -120,14 +126,15 @@ public class MDRActionDisplayContext {
 			return _portletURL;
 		}
 
-		String redirect = ParamUtil.getString(_renderRequest, "redirect");
-
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view_actions.jsp");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
-			"ruleGroupInstanceId", String.valueOf(getRuleGroupInstanceId()));
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view_actions.jsp"
+		).setRedirect(
+			ParamUtil.getString(_renderRequest, "redirect")
+		).setParameter(
+			"ruleGroupInstanceId", getRuleGroupInstanceId()
+		).buildPortletURL();
 
 		_portletURL = portletURL;
 
@@ -152,7 +159,7 @@ public class MDRActionDisplayContext {
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
 	private final ResourceBundle _resourceBundle;
-	private SearchContainer _ruleActionSearchContainer;
+	private SearchContainer<MDRAction> _ruleActionSearchContainer;
 	private Long _ruleGroupInstanceId;
 
 }

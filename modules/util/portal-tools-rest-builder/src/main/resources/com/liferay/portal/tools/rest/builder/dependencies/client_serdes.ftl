@@ -4,6 +4,10 @@ package ${configYAML.apiPackagePath}.client.serdes.${escapedVersion};
 	import ${configYAML.apiPackagePath}.client.constant.${escapedVersion}.${globalEnumSchemaName};
 </#list>
 
+<#list allExternalSchemas?keys as externalSchemaName>
+	import ${configYAML.apiPackagePath}.client.dto.${escapedVersion}.${externalSchemaName};
+</#list>
+
 <#list allSchemas?keys as schemaName>
 	import ${configYAML.apiPackagePath}.client.dto.${escapedVersion}.${schemaName};
 </#list>
@@ -86,6 +90,15 @@ public class ${schemaName}SerDes {
 
 				<#if allSchemas[propertyType]??>
 					sb.append(String.valueOf(${schemaVarName}.get${capitalizedPropertyName}()));
+				<#elseif stringUtil.equals(propertyType, "Object")>
+					if (${schemaVarName}.get${capitalizedPropertyName}() instanceof String) {
+						sb.append("\"");
+						sb.append((String)${schemaVarName}.get${capitalizedPropertyName}());
+						sb.append("\"");
+					}
+					else {
+						sb.append(${schemaVarName}.get${capitalizedPropertyName}());
+					}
 				<#else>
 					<#if propertyType?contains("[]")>
 						sb.append("[");
@@ -158,11 +171,6 @@ public class ${schemaName}SerDes {
 
 		Map<String, String> map = new TreeMap<>();
 
-		<#assign
-			enumSchemas = freeMarkerTool.getDTOEnumSchemas(openAPIYAML, schema)
-			properties = freeMarkerTool.getDTOProperties(configYAML, openAPIYAML, schema)
-		/>
-
 		<#list properties?keys as propertyName>
 			<#assign propertyType = properties[propertyName] />
 
@@ -180,23 +188,18 @@ public class ${schemaName}SerDes {
 				<#assign capitalizedPropertyName = properties[propertyName] />
 			</#if>
 
-			<#if allSchemas[properties[propertyName]]??>
-				if (${schemaVarName}.get${capitalizedPropertyName}() == null) {
-					map.put("${propertyName}", null);
-				}
-				else {
+			if (${schemaVarName}.get${capitalizedPropertyName}() == null) {
+				map.put("${propertyName}", null);
+			}
+			else {
+				<#if allSchemas[properties[propertyName]]??>
 					map.put("${propertyName}", String.valueOf(${schemaVarName}.get${capitalizedPropertyName}()));
-				}
-			<#elseif stringUtil.equals(properties[propertyName], "Date")>
-				map.put("${propertyName}", liferayToJSONDateFormat.format(${schemaVarName}.get${capitalizedPropertyName}()));
-			<#else>
-				if (${schemaVarName}.get${capitalizedPropertyName}() == null) {
-					map.put("${propertyName}", null);
-				}
-				else {
+				<#elseif stringUtil.equals(properties[propertyName], "Date")>
+					map.put("${propertyName}", liferayToJSONDateFormat.format(${schemaVarName}.get${capitalizedPropertyName}()));
+				<#else>
 					map.put("${propertyName}", String.valueOf(${schemaVarName}.get${capitalizedPropertyName}()));
-				}
-			</#if>
+				</#if>
+			}
 		</#list>
 
 		return map;
@@ -233,12 +236,16 @@ public class ${schemaName}SerDes {
 
 						<#assign propertyType = properties[propertyName] />
 
-						<#if stringUtil.equals(propertyType, "Date")>
+						<#if stringUtil.equals(propertyType, "BigDecimal")>
+							new BigDecimal((String)jsonParserFieldValue)
+						<#elseif stringUtil.equals(propertyType, "Date")>
 							toDate((String)jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "Date[]")>
 							toDates((Object[])jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "Double")>
 							Double.valueOf((String)jsonParserFieldValue)
+						<#elseif stringUtil.equals(propertyType, "Float")>
+							Float.valueOf((String)jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "Integer")>
 							Integer.valueOf((String)jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "Integer[]")>
@@ -255,9 +262,9 @@ public class ${schemaName}SerDes {
 							toIntegers((Object[])jsonParserFieldValue)
 						<#elseif stringUtil.equals(propertyType, "String[]")>
 							toStrings((Object[])jsonParserFieldValue)
-						<#elseif allSchemas?keys?seq_contains(propertyType)>
+						<#elseif allExternalSchemas?keys?seq_contains(propertyType) || allSchemas?keys?seq_contains(propertyType)>
 							${propertyType}SerDes.toDTO((String)jsonParserFieldValue)
-						<#elseif propertyType?ends_with("[]") && allSchemas?keys?seq_contains(propertyType?remove_ending("[]"))>
+						<#elseif propertyType?ends_with("[]") && (allExternalSchemas?keys?seq_contains(propertyType?remove_ending("[]")) || allSchemas?keys?seq_contains(propertyType?remove_ending("[]")))>
 							Stream.of(
 								toStrings((Object[])jsonParserFieldValue)
 							).map(
@@ -275,10 +282,6 @@ public class ${schemaName}SerDes {
 					}
 				}
 			</#list>
-
-			else {
-				throw new IllegalArgumentException("Unsupported field name " + jsonParserFieldName);
-			}
 		}
 	}
 
@@ -306,7 +309,7 @@ public class ${schemaName}SerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -332,14 +335,17 @@ public class ${schemaName}SerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -20,7 +20,7 @@ const DEFAULT_STATE = {
 	experimentHistory: [],
 	reviewExperimentModal: {active: false},
 	selectedExperienceId: null,
-	variants: []
+	variants: [],
 };
 
 export function getInitialState(firstState) {
@@ -29,15 +29,14 @@ export function getInitialState(firstState) {
 		initialSegmentsExperiment,
 		initialSegmentsVariants,
 		initialSelectedSegmentsExperienceId,
-		viewSegmentsExperimentDetailsURL,
-		winnerSegmentsVariantId
+		winnerSegmentsVariantId,
 	} = firstState;
 
 	const state = {
 		experiment: initialSegmentsExperiment,
 		experimentHistory: initialExperimentHistory || [],
 		selectedExperienceId: initialSelectedSegmentsExperienceId,
-		variants: initialSegmentsVariants.map(initialVariant => {
+		variants: initialSegmentsVariants.map((initialVariant) => {
 			if (
 				winnerSegmentsVariantId === initialVariant.segmentsExperienceId
 			) {
@@ -46,12 +45,12 @@ export function getInitialState(firstState) {
 
 			return initialVariant;
 		}),
-		viewExperimentURL: viewSegmentsExperimentDetailsURL
+		viewExperimentDetailsURL: initialSegmentsExperiment?.detailsURL || '',
 	};
 
 	return {
 		...DEFAULT_STATE,
-		...state
+		...state,
 	};
 }
 

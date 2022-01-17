@@ -10,24 +10,25 @@
  */
 
 import ClayButton from '@clayui/button';
+import ClayIcon from '@clayui/icon';
+import ClayLayout from '@clayui/layout';
 import React, {useCallback} from 'react';
 
 import {useFilter} from '../../hooks/useFilter.es';
 import {useRouter} from '../../hooks/useRouter.es';
 import {sub} from '../../util/lang.es';
-import Icon from '../Icon.es';
 import {
 	removeFilters,
 	removeItem,
-	replaceHistory
+	replaceHistory,
 } from '../filter/util/filterUtil.es';
 
 const ResultsBar = ({children}) => {
 	return (
 		<nav className="mt-0 subnav-tbar subnav-tbar-primary tbar tbar-inline-xs-down">
-			<div className="container-fluid container-fluid-max-xl">
+			<ClayLayout.ContainerFluid>
 				<ul className="tbar-nav tbar-nav-wrap">{children}</ul>
-			</div>
+			</ClayLayout.ContainerFluid>
 		</nav>
 	);
 };
@@ -37,14 +38,14 @@ const Clear = ({filters = [], filterKeys = [], withoutRouteParams}) => {
 	const routerProps = useRouter();
 
 	const handleClearAll = useCallback(() => {
-		filters.map(filter => {
-			filter.items.map(item => {
+		filters.map((filter) => {
+			filter.items.map((item) => {
 				item.active = false;
 			});
 		});
 
-		filterKeys.forEach(key => {
-			filterState[key] = undefined;
+		filterKeys.forEach((key) => {
+			delete filterState[key];
 		});
 
 		dispatch(filterState);
@@ -62,7 +63,6 @@ const Clear = ({filters = [], filterKeys = [], withoutRouteParams}) => {
 			<div className="tbar-section text-right">
 				<ClayButton
 					className="component-link tbar-link"
-					data-testid="clearAll"
 					displayType="link"
 					onClick={handleClearAll}
 					small
@@ -109,7 +109,7 @@ const FilterItem = ({filter, item, withoutRouteParams}) => {
 
 							<strong>
 								{filter.items[0].key !== 'custom'
-									? item.name
+									? item.label || item.name
 									: item.resultName}
 							</strong>
 						</div>
@@ -119,11 +119,10 @@ const FilterItem = ({filter, item, withoutRouteParams}) => {
 						<span className="label-item label-item-after">
 							<ClayButton
 								className="text-dark"
-								data-testid="removeFilter"
 								displayType="unstyled"
 								onClick={removeFilter}
 							>
-								<Icon iconName="times" />
+								<ClayIcon symbol="times" />
 							</ClayButton>
 						</span>
 					)}
@@ -133,12 +132,22 @@ const FilterItem = ({filter, item, withoutRouteParams}) => {
 	);
 };
 
-const FilterItems = ({filters = [], ...props}) => {
-	return filters.map(filter =>
-		filter.items.map((item, index) => (
-			<FilterItem filter={filter} item={item} key={index} {...props} />
-		))
-	);
+const FilterItems = ({filters = [], hideFilters = [], ...props}) => {
+	return filters
+		.filter(
+			(filterItem) =>
+				!hideFilters.find((hideItem) => filterItem.key === hideItem)
+		)
+		.map((filter) =>
+			filter.items.map((item, index) => (
+				<FilterItem
+					filter={filter}
+					item={item}
+					key={index}
+					{...props}
+				/>
+			))
+		);
 };
 
 const TotalCount = ({search, totalCount}) => {
@@ -152,7 +161,7 @@ const TotalCount = ({search, totalCount}) => {
 		<li className="tbar-item">
 			<div className="tbar-section">
 				<span className="component-text text-truncate-inline">
-					<span className="text-truncate" data-testid="totalCount">
+					<span className="text-truncate">
 						{sub(resultText, [totalCount, search])}
 					</span>
 				</span>

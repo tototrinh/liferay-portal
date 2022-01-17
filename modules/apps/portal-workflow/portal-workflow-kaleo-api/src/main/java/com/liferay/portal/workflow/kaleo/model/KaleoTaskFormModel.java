@@ -203,6 +203,20 @@ public interface KaleoTaskFormModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo task form.
+	 *
+	 * @return the kaleo definition ID of this kaleo task form
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo task form.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo task form
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo task form.
 	 *
 	 * @return the kaleo definition version ID of this kaleo task form
@@ -389,5 +403,8 @@ public interface KaleoTaskFormModel
 	 * @param priority the priority of this kaleo task form
 	 */
 	public void setPriority(int priority);
+
+	@Override
+	public KaleoTaskForm cloneWithOriginalValues();
 
 }

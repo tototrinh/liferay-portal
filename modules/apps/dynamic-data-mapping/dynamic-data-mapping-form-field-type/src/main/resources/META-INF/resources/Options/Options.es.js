@@ -12,602 +12,596 @@
  * details.
  */
 
-import '../FieldBase/FieldBase.es';
+import ClayIcon from '@clayui/icon';
+import {usePrevious} from '@liferay/frontend-js-react-web';
+import classNames from 'classnames';
+import {RulesSupport, useFormState} from 'data-engine-js-components-web';
+import {openModal} from 'frontend-js-web';
+import React, {useEffect, useRef, useState} from 'react';
+import {DndProvider} from 'react-dnd';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import '../KeyValue/KeyValue.es';
+import {FieldBase} from '../FieldBase/ReactFieldBase.es';
+import KeyValue from '../KeyValue/KeyValue.es';
+import DnD from './DnD.es';
+import DragPreview from './DragPreview.es';
+import {
+	compose,
+	dedupValue,
+	getDefaultOptionValue,
+	isOptionValueGenerated,
+	normalizeFields,
+	normalizeReference,
+	random,
+} from './util.es';
 
-import './OptionsRegister.soy';
+const Option = React.forwardRef(
+	({children, className, disabled, onClick, showCloseButton, style}, ref) => (
+		<div
+			className={classNames('ddm-field-options', className)}
+			style={style}
+		>
+			<span
+				className={classNames('ddm-options-drag', {
+					disabled,
+				})}
+				ref={disabled ? null : ref}
+			>
+				<ClayIcon symbol="drag" />
+			</span>
 
-import {normalizeFieldName} from 'dynamic-data-mapping-form-renderer';
-import Component from 'metal-component';
-import dom from 'metal-dom';
-import {Drag, DragDrop} from 'metal-drag-drop';
-import Soy from 'metal-soy';
-import {Config} from 'metal-state';
+			<div className="ddm-option-entry">
+				{children}
 
-import templates from './Options.soy';
+				{showCloseButton && (
+					<button
+						className="close close-modal"
+						onClick={onClick}
+						type="button"
+					>
+						<ClayIcon symbol="times" />
+					</button>
+				)}
+			</div>
+		</div>
+	)
+);
 
-/**
- * Options.
- * @extends Component
- */
+const getInitialOption = (generateOptionValueUsingOptionLabel) => {
+	const optionValue = getDefaultOptionValue(
+		generateOptionValueUsingOptionLabel,
+		''
+	);
 
-class Options extends Component {
-	attached() {
-		let defaultOption = false;
-		const defaultOptionLabel = Liferay.Language.get('option').toLowerCase();
+	const initalOption = {
+		id: random(),
+		label: '',
+		reference: optionValue,
+		value: '',
+	};
 
-		const options = this.getCurrentLocaleValue();
-
-		if (
-			options.length == 1 &&
-			options[0].label.toLowerCase() == defaultOptionLabel
-		) {
-			defaultOption = true;
-		}
-
-		this.setState({
-			defaultOption
-		});
-
-		this._createDragDrop();
+	if (!generateOptionValueUsingOptionLabel) {
+		initalOption.value = optionValue;
 	}
 
-	deleteOption(deletedIndex) {
-		let {value} = this;
+	return initalOption;
+};
 
-		Object.keys(value).forEach(languageId => {
-			value = {
-				...value,
-				[languageId]: value[languageId].filter(
-					(option, currentIndex) => currentIndex !== deletedIndex
-				)
-			};
-		});
-
-		this._handleFieldEdited({}, value);
-	}
-
-	disposeDragAndDrop() {
-		if (this._dragAndDrop) {
-			this._dragAndDrop.dispose();
-		}
-	}
-
-	disposeInternal() {
-		super.disposeInternal();
-
-		this.disposeDragAndDrop();
-	}
-
-	findOptionByValue(options, name, limit = options.length) {
-		return options.find(({value}, index) => {
-			return index < limit && value === name;
-		});
-	}
-
-	getCurrentLocaleValue(localizedValue = this.value) {
-		const {defaultLanguageId, editingLanguageId} = this;
-
-		if (localizedValue && localizedValue[editingLanguageId]) {
-			return localizedValue[editingLanguageId];
-		}
-		else if (localizedValue && localizedValue[defaultLanguageId]) {
-			return localizedValue[defaultLanguageId];
-		}
-
-		return [];
-	}
-
-	getFieldIndex(element) {
-		return parseInt(
-			dom.closest(element, '.ddm-field-options').dataset.index,
-			10
-		);
-	}
-
-	getItems(options = []) {
-		const items = [...options];
-		const newItems = items.map(option => {
-			return {
-				...option,
-				generateKeyword: this.shouldGenerateOptionValue(items, option)
-			};
-		});
-
-		const {defaultLanguageId, editingLanguageId} = this;
-
-		if (defaultLanguageId === editingLanguageId) {
-			newItems.push({
-				label: '',
-				value: ''
-			});
-		}
-
-		return newItems;
-	}
-
-	moveOption(sourceIndex, targetIndex) {
-		let {value} = this;
-
-		Object.keys(value).forEach(languageId => {
-			const options = [...value[languageId]];
-
-			if (sourceIndex < options.length) {
-				options.splice(targetIndex, 0, {
-					...options[sourceIndex]
-				});
-
-				value = {
-					...value,
-					[languageId]: options.filter((option, index) => {
-						return sourceIndex > targetIndex
-							? index != sourceIndex + 1
-							: index != sourceIndex;
-					})
-				};
-			}
-		});
-
-		this._handleFieldEdited({}, value);
-	}
-
-	normalizeOption(options, option, editedIndex, editedProperty) {
-		const {label, value} = option;
-		let desiredValue =
-			editedProperty === 'label' ? label : value ? value : label;
-		const optionIndex = options.indexOf(option);
-
-		if (!this.shouldGenerateOptionValue(options, option)) {
-			return option;
-		}
-
-		if (!desiredValue) {
-			desiredValue = Liferay.Language.get('option');
-		}
-
-		let normalizedValue = desiredValue;
-		let counter = 0;
-
-		do {
-			if (counter > 0) {
-				normalizedValue = desiredValue + counter;
-			}
-
-			counter++;
-		} while (this.findOptionByValue(options, normalizedValue, optionIndex));
-
-		normalizedValue = normalizeFieldName(normalizedValue);
-
-		return {
+const refreshFields = (
+	defaultLanguageId,
+	editingLanguageId,
+	generateOptionValueUsingOptionLabel,
+	initialOption,
+	options
+) => {
+	const refreshedFields = [
+		...options.map((option) => ({
+			generateKeyword: generateOptionValueUsingOptionLabel
+				? isOptionValueGenerated(
+						defaultLanguageId,
+						editingLanguageId,
+						options,
+						option
+				  )
+				: false,
 			...option,
-			value: normalizedValue
-		};
-	}
+			value: option.value
+				? option.value
+				: getDefaultOptionValue(
+						generateOptionValueUsingOptionLabel,
+						option.label
+				  ),
+		})),
+		{
+			generateKeyword: generateOptionValueUsingOptionLabel,
+			...initialOption,
+		},
+	].filter((field) => field && Object.keys(field).length > 0);
 
-	normalizeOptions(options, editedIndex, editedProperty) {
-		const normalizedOptions = [...options];
+	return normalizeFields(
+		refreshedFields,
+		generateOptionValueUsingOptionLabel
+	);
+};
 
-		normalizedOptions.forEach((option, index) => {
-			if (editedIndex !== index) {
-				return;
-			}
+const Options = ({
+	children,
+	defaultLanguageId,
+	disabled,
+	editingLanguageId,
+	generateOptionValueUsingOptionLabel,
+	onChange,
+	value = {},
+}) => {
+	const {builderRules} = useFormState();
 
-			normalizedOptions[index] = this.normalizeOption(
-				normalizedOptions,
-				normalizedOptions[index],
-				editedIndex,
-				editedProperty
-			);
-		});
+	const initialOptionRef = useRef(
+		getInitialOption(generateOptionValueUsingOptionLabel)
+	);
 
-		return normalizedOptions;
-	}
-
-	prepareStateForRender(state) {
-		const {editingLanguageId} = this;
-		const {value} = state;
-
-		return {
-			...state,
-			items: this.getItems(value[editingLanguageId])
-		};
-	}
-
-	shouldGenerateOptionValue(options, option) {
-		const {defaultLanguageId, editingLanguageId} = this;
-
-		if (defaultLanguageId !== editingLanguageId) {
-			return false;
-		}
-
-		if (option.value === '') {
-			return true;
-		}
-
-		const optionIndex = options.indexOf(option);
-		const duplicated = options.some(({value}, index) => {
-			return value === option.value && index !== optionIndex;
-		});
-
-		if (duplicated) {
-			return true;
-		}
-
-		if (option.edited) {
-			return false;
-		}
-
-		if (
-			new RegExp(`^${Liferay.Language.get('option')}\\d*$`).test(
-				option.value
-			)
-		) {
-			return true;
-		}
-
-		if (
-			new RegExp(`^${option.value.replace(/\d+$/, '')}\\d*`).test(
-				normalizeFieldName(option.label)
-			)
-		) {
-			return true;
-		}
-
-		return true;
-	}
-
-	syncEditingLanguageId(editingLanguageId) {
-		const {defaultLanguageId} = this;
-
-		if (
-			defaultLanguageId !== editingLanguageId &&
-			!this.value[editingLanguageId]
-		) {
-			this.setState({
-				value: {
-					...this.value,
-					[editingLanguageId]: this.value[defaultLanguageId].filter(
-						({value}) => !!value
-					)
-				}
-			});
-		}
-	}
-
-	syncValue(value) {
-		this.setState({
-			items: this.getCurrentLocaleValue(value)
-		});
-	}
-
-	_createDragDrop() {
-		this._dragAndDrop = new DragDrop({
-			container: this.element,
-			dragPlaceholder: Drag.Placeholder.CLONE,
-			handles: '.ddm-options-drag:not(.disabled)',
-			sources: '.ddm-field-options',
-			targets: '.ddm-options-target',
-			useShim: false
-		});
-
-		this._dragAndDrop.on(
-			DragDrop.Events.END,
-			this._handleDragDropEvent.bind(this)
-		);
-		this._dragAndDrop.on(
-			DragDrop.Events.DRAG,
-			this._handleDragEvent.bind(this)
-		);
-	}
-
-	_getOptionIndex({name}) {
-		return parseInt(name.replace(/[^\d]/gi, ''), 10);
-	}
-
-	_handleDragDropEvent({source, target}) {
-		const lastSource = document.querySelector('.ddm-source-dragging');
-		const sourceIndex = parseInt(source.dataset.index, 10);
-
-		if (lastSource) {
-			lastSource.classList.remove('ddm-source-dragging');
-		}
-
-		if (target) {
-			const targetIndex = parseInt(target.dataset.index, 10);
-
-			this.moveOption(sourceIndex, targetIndex);
-		}
-	}
-
-	_handleDragEvent({source}) {
-		source.classList.add('ddm-source-dragging');
-	}
-
-	_handleFieldEdited({originalEvent}, value) {
-		this.emit('fieldEdited', {
-			fieldInstance: this,
-			originalEvent,
-			value
-		});
-	}
-
-	_handleOptionDeleted(event) {
-		const {delegateTarget} = event;
-		const deletedIndex = this.getFieldIndex(delegateTarget);
-
-		this.deleteOption(deletedIndex);
-	}
-
-	_handleOptionEdited(event, property) {
-		const {defaultLanguageId, editingLanguageId} = this;
-		const {fieldInstance, value} = event;
-		let options = this.getCurrentLocaleValue();
-		const optionIndex = this._getOptionIndex(fieldInstance);
-
-		if (optionIndex < options.length) {
-			options = options.map((option, index) => {
-				return index === optionIndex
-					? {
-							...option,
-							edited:
-								option.edited ||
-								(value &&
-									value !== option.value &&
-									property === 'value'),
-							[property]: value
-					  }
-					: option;
-			});
-		}
-		else {
-			options = [
-				...options,
-				{
-					label: property === 'label' ? value : '',
-					value: property === 'value' ? value : ''
-				}
-			];
-		}
-
-		options = this.normalizeOptions(options, optionIndex, property);
-
-		let newValue = {
-			...this.value,
-			[editingLanguageId]: options
-		};
-
-		if (defaultLanguageId === editingLanguageId) {
-			const copyLanguageLabels = (languageId, options) => {
-				return options.map(({label, value}, index) => {
-					const option = newValue[languageId][index];
-
-					if (property === 'label') {
-						label = option.label;
-					}
-
-					return {
-						...option,
-						label,
-						value
-					};
-				});
-			};
-
-			Object.keys(this.value).forEach(languageId => {
-				if (defaultLanguageId === languageId) {
-					return;
-				}
-
-				newValue = {
-					...newValue,
-					[languageId]: copyLanguageLabels(languageId, options)
-				};
-			});
-		}
-
-		this.setState(
-			{
-				value: newValue
-			},
-			() => this._handleFieldEdited(event, newValue)
-		);
-	}
-
-	_handleOptionFocused({originalEvent: {target}}) {
-		if (this.defaultOption) {
-			target.value = '';
-
-			this.setState({
-				defaultOption: false
-			});
-		}
-	}
-
-	_handleOptionLabelEdited(event) {
-		this._handleOptionEdited(event, 'label');
-	}
-
-	_handleOptionValueBlurred({fieldInstance}) {
-		this._handleOptionEdited(
-			{fieldInstance, value: fieldInstance.keyword},
-			'value'
-		);
-	}
-
-	_setValue(value = {}) {
-		const {defaultLanguageId} = this;
+	const [normalizedValue] = useState(() => {
 		const formattedValue = {...value};
 
-		Object.keys(value).forEach(languageId => {
+		Object.keys(value).forEach((languageId) => {
 			if (defaultLanguageId !== languageId) {
 				formattedValue[languageId] = formattedValue[languageId].filter(
 					({value}) => !!value
 				);
 			}
+
+			formattedValue[languageId] = normalizeFields(
+				formattedValue[languageId].map((option) => {
+					let newOption = {
+						id: random(),
+						...option,
+					};
+
+					if (
+						!option.value &&
+						option.label.toLowerCase() ===
+							Liferay.Language.get('option').toLowerCase()
+					) {
+						const optionValue = getDefaultOptionValue(
+							generateOptionValueUsingOptionLabel,
+							option.label
+						);
+
+						newOption = {
+							...newOption,
+							reference: optionValue,
+							value: optionValue,
+						};
+					}
+
+					return newOption;
+				}),
+				generateOptionValueUsingOptionLabel
+			);
 		});
 
 		return formattedValue;
-	}
-}
+	});
 
-Options.STATE = {
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?string}
-	 */
+	const [fieldError, setFieldError] = useState(null);
 
-	defaultLanguageId: Config.string().value(themeDisplay.getLanguageId()),
+	const [fields, setFields] = useState(() => {
+		const options =
+			normalizedValue[editingLanguageId] ||
+			normalizedValue[defaultLanguageId] ||
+			[];
 
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Options
-	 * @type {?bool}
-	 */
+		return refreshFields(
+			defaultLanguageId,
+			editingLanguageId,
+			generateOptionValueUsingOptionLabel,
+			initialOptionRef.current,
+			options
+		);
+	});
 
-	defaultOption: Config.bool()
-		.internal()
-		.value(false),
+	const prevEditingLanguageId = usePrevious(editingLanguageId);
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?string}
-	 */
+	useEffect(() => {
+		const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-	editingLanguageId: Config.string().value(themeDisplay.getLanguageId()),
+		if (
+			prevEditingLanguageId !== editingLanguageId ||
+			(!hasOwnProperty.call(normalizedValue, editingLanguageId) &&
+				hasOwnProperty.call(value, editingLanguageId))
+		) {
+			const availableLanguageIds = Object.getOwnPropertyNames(value);
 
-	/**
-	 * @default 'boolean'
-	 * @instance
-	 * @memberof Options
-	 * @type {?(boolean|undefined)}
-	 */
+			availableLanguageIds.forEach((languageId) => {
+				normalizedValue[languageId] = normalizeFields(
+					value[languageId].map((option) => {
+						if (option.edited) {
+							return {
+								id: random(),
+								...option,
+							};
+						}
 
-	evaluable: Config.bool().value(false),
+						const {label} = value[languageId].find(
+							(defaultOption) =>
+								defaultOption.value === option.value
+						);
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?string}
-	 */
+						return {
+							id: random(),
+							...option,
+							label,
+						};
+					}),
+					generateOptionValueUsingOptionLabel
+				);
+			});
 
-	fieldName: Config.string(),
+			const options = normalizedValue[editingLanguageId] || [];
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string|undefined)}
-	 */
+			setFields(
+				refreshFields(
+					defaultLanguageId,
+					editingLanguageId,
+					generateOptionValueUsingOptionLabel,
+					initialOptionRef.current,
+					options
+				)
+			);
+		}
+	}, [
+		defaultLanguageId,
+		editingLanguageId,
+		generateOptionValueUsingOptionLabel,
+		normalizedValue,
+		prevEditingLanguageId,
+		value,
+	]);
 
-	items: Config.arrayOf(
-		Config.shapeOf({
-			disabled: Config.bool().value(false),
-			label: Config.string(),
-			name: Config.string(),
-			value: Config.string()
-		})
-	).internal(),
+	const defaultOptionRef = useRef(
+		fields.length === 2 &&
+			fields[0].label.toLowerCase() ===
+				Liferay.Language.get('option').toLowerCase()
+	);
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string|undefined)}
-	 */
+	const synchronizeValue = (fields, languageId) => {
+		if (editingLanguageId === languageId) {
+			return [...fields];
+		}
 
-	label: Config.string(),
+		return [...fields].map((field) => {
+			const existingValue = normalizedValue[languageId].find(
+				({value}) => value === field.value
+			);
 
-	/**
-	 * @default enter-an-option
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string)}
-	 */
+			if (existingValue) {
+				const {copyFrom} = existingValue;
 
-	placeholder: Config.string().value(Liferay.Language.get('enter-an-option')),
+				if (
+					copyFrom &&
+					copyFrom === editingLanguageId &&
+					!existingValue.edited
+				) {
+					return {
+						...existingValue,
+						label: field.label,
+						reference: field.reference,
+					};
+				}
 
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Options
-	 * @type {?bool}
-	 */
+				return {
+					...existingValue,
+					reference: field.reference,
+				};
+			}
 
-	readOnly: Config.bool().value(false),
+			let copyFrom = editingLanguageId;
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof FieldBase
-	 * @type {?(bool|undefined)}
-	 */
+			if (languageId !== defaultLanguageId) {
+				copyFrom = defaultLanguageId;
+			}
 
-	repeatable: Config.bool(),
+			return {
+				...field,
+				copyFrom,
+				edited: false,
+				label: field.label,
+			};
+		});
+	};
 
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Options
-	 * @type {?bool}
-	 */
+	const getSynchronizedValue = (fields) => {
+		const _fields = [...fields];
 
-	required: Config.bool().value(false),
+		_fields.pop();
 
-	/**
-	 * @default true
-	 * @instance
-	 * @memberof Options
-	 * @type {?bool}
-	 */
+		const availableLanguageIds = Object.getOwnPropertyNames(
+			normalizedValue
+		);
 
-	showLabel: Config.bool().value(true),
+		return availableLanguageIds.reduce(
+			(value, languageId) => ({
+				...value,
+				[languageId]: synchronizeValue(_fields, languageId),
+			}),
+			{[editingLanguageId]: [..._fields]}
+		);
+	};
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string|undefined)}
-	 */
+	const clone = (...args) => {
+		return [[...fields], ...args];
+	};
 
-	spritemap: Config.string(),
+	const clearError = () => {
+		setFieldError(null);
+	};
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string|undefined)}
-	 */
+	const checkValidReference = (fields, value, fieldName) => {
+		const field = fields
+			.filter(({value}) => value !== fieldName)
+			.find(
+				({reference}) =>
+					reference?.toLowerCase() === value?.toLowerCase()
+			);
 
-	tip: Config.string(),
+		return field ? fieldName : null;
+	};
 
-	/**
-	 * @default options
-	 * @instance
-	 * @memberof Options
-	 * @type {?(string|undefined)}
-	 */
+	const dedup = (fields, index, property, value) => {
+		const {generateKeyword, id} = fields[index];
 
-	type: Config.string().value('options'),
+		if (property === 'value' && generateKeyword) {
+			value = dedupValue(
+				fields,
+				value ? value : Liferay.Language.get('option'),
+				id,
+				generateOptionValueUsingOptionLabel
+			);
+		}
+		else if (property === 'reference') {
+			setFieldError(
+				checkValidReference(fields, value, fields[index].value)
+			);
+		}
 
-	/**
-	 * @default {}
-	 * @instance
-	 * @memberof Options
-	 * @type {?string}
-	 */
+		return [fields, index, property, value];
+	};
 
-	value: Config.object()
-		.setter('_setValue')
-		.value({})
+	const set = (fields) => {
+		setFields(fields);
+
+		const synchronizedNormalizedValue = getSynchronizedValue(fields);
+
+		onChange(synchronizedNormalizedValue);
+	};
+
+	const add = (fields, index, property, value) => {
+		fields[index][property] = value;
+
+		if (defaultLanguageId !== editingLanguageId) {
+			fields[index]['edited'] = true;
+		}
+
+		const initialOption = getInitialOption(
+			generateOptionValueUsingOptionLabel
+		);
+
+		fields.push({
+			generateKeyword: generateOptionValueUsingOptionLabel,
+			...initialOption,
+		});
+
+		initialOptionRef.current = initialOption;
+
+		return [fields, index, property, value];
+	};
+
+	const change = (fields, index, property, value) => {
+		const {edited, label} = fields[index];
+
+		fields[index][property] = value;
+		fields[index]['edited'] =
+			edited ||
+			(value && value !== label && property === 'value') ||
+			property === 'label';
+
+		if (property === 'label') {
+			fields[index]['copyFrom'] = undefined;
+		}
+
+		return [fields, index, property, value];
+	};
+
+	const handleDelete = (fields, index) => {
+		fields.splice(index, 1);
+
+		return [fields];
+	};
+
+	const move = (fields, data) => {
+		const {itemPosition, targetPosition} = data;
+
+		if (itemPosition === fields.length - 1) {
+			return [fields];
+		}
+
+		const item = {...fields[itemPosition]};
+		const newTargetPosition =
+			targetPosition > itemPosition ? targetPosition - 1 : targetPosition;
+
+		fields.splice(itemPosition, 1);
+		fields.splice(newTargetPosition, 0, item);
+
+		return [fields];
+	};
+
+	const normalize = (fields, index) => {
+		clearError();
+
+		fields[index]['reference'] = normalizeReference(
+			fields,
+			fields[index],
+			index
+		);
+
+		return [normalizeFields(fields, generateOptionValueUsingOptionLabel)];
+	};
+
+	const composedAdd = compose(clone, dedup, add, set);
+	const composedBlur = compose(clone, normalize, set);
+	const composedChange = compose(clone, dedup, change, set);
+	const composedDelete = compose(clone, handleDelete, set);
+	const composedMove = compose(clone, move, set);
+
+	const handleConfirmDelete = (index, option) => {
+		if (
+			builderRules &&
+			RulesSupport.findRuleByFieldName(option, null, builderRules)
+		) {
+			openModal({
+				bodyHTML: Liferay.Language.get(
+					'a-rule-is-applied-to-this-field'
+				),
+				buttons: [
+					{
+						displayType: 'secondary',
+						label: Liferay.Language.get('cancel'),
+						type: 'cancel',
+					},
+					{
+						displayType: 'danger',
+						label: Liferay.Language.get('confirm'),
+						onClick: () => {
+							composedDelete(index);
+						},
+						type: 'cancel',
+					},
+				],
+				size: 'md',
+				title: Liferay.Language.get('delete-field-with-rule-applied'),
+			});
+		}
+		else {
+			composedDelete(index);
+		}
+	};
+
+	return (
+		<div className="ddm-field-options-container">
+			<DragPreview component={Option}>{children}</DragPreview>
+
+			{fields.map((option, index) => (
+				<DnD
+					index={index}
+					key={option.id}
+					onDragEnd={composedMove}
+					option={option}
+				>
+					<Option
+						disabled={disabled}
+						onClick={() => handleConfirmDelete(index, option.value)}
+						showCloseButton={
+							!(fields.length - 1 === index) && !disabled
+						}
+					>
+						{children({
+							defaultOptionRef,
+							fieldError,
+							handleBlur: composedBlur.bind(this, index),
+							handleField: !(fields.length - 1 === index)
+								? composedChange.bind(this, index)
+								: composedAdd.bind(this, index),
+							index,
+							option,
+						})}
+					</Option>
+				</DnD>
+			))}
+		</div>
+	);
 };
 
-Soy.register(Options, templates);
+const Main = ({
+	defaultLanguageId = themeDisplay.getDefaultLanguageId(),
+	editingLanguageId = themeDisplay.getDefaultLanguageId(),
+	generateOptionValueUsingOptionLabel = false,
+	onChange,
+	keywordReadOnly,
+	placeholder = Liferay.Language.get('enter-an-option'),
+	readOnly,
+	required,
+	showKeyword,
+	value = {},
+	visible,
+	...otherProps
+}) => (
+	<DndProvider backend={HTML5Backend} context={window}>
+		<FieldBase {...otherProps} readOnly={readOnly} visible={visible}>
+			<Options
+				defaultLanguageId={defaultLanguageId}
+				disabled={readOnly}
+				editingLanguageId={editingLanguageId}
+				generateOptionValueUsingOptionLabel={
+					generateOptionValueUsingOptionLabel
+				}
+				onChange={(value) => onChange({}, value)}
+				value={value}
+			>
+				{({
+					defaultOptionRef,
+					fieldError,
+					handleBlur,
+					handleField,
+					index,
+					option,
+				}) =>
+					option && (
+						<KeyValue
+							displayErrors={
+								fieldError && fieldError === option.value
+							}
+							editingLanguageId={editingLanguageId}
+							errorMessage={Liferay.Language.get(
+								'this-reference-is-already-being-used'
+							)}
+							generateKeyword={option.generateKeyword}
+							keyword={option.value}
+							keywordReadOnly={keywordReadOnly}
+							name={`option${index}`}
+							onBlur={handleBlur}
+							onChange={(event) =>
+								handleField('label', event.target.value)
+							}
+							onFocus={() => {
+								if (defaultOptionRef.current) {
+									handleField('label', '');
+									defaultOptionRef.current = false;
+								}
+							}}
+							onKeywordBlur={handleBlur}
+							onKeywordChange={(event, value, generate) => {
+								handleField('generateKeyword', generate);
+								handleField('value', value);
+							}}
+							onReferenceBlur={handleBlur}
+							onReferenceChange={(event) => {
+								handleField('reference', event.target.value);
+							}}
+							placeholder={placeholder}
+							readOnly={option.disabled}
+							reference={option.reference}
+							required={required}
+							showKeyword={showKeyword}
+							showLabel={false}
+							value={option.label}
+							visible={visible}
+						/>
+					)
+				}
+			</Options>
+		</FieldBase>
+	</DndProvider>
+);
 
-export default Options;
+Main.displayName = 'Options';
+
+export default Main;

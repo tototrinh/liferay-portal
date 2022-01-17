@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.web.internal.portlet.action;
 
 import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
+import com.liferay.dynamic.data.mapping.form.web.internal.portlet.action.helper.SaveFormInstanceMVCCommandHelper;
 import com.liferay.dynamic.data.mapping.form.web.internal.portlet.action.util.BaseDDMFormMVCResourceCommand;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
@@ -39,7 +40,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + DDMPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN,
-		"mvc.command.name=saveFormInstance"
+		"mvc.command.name=/dynamic_data_mapping_form/save_form_instance"
 	},
 	service = MVCResourceCommand.class
 )
@@ -57,7 +58,7 @@ public class SaveFormInstanceMVCResourceCommand
 
 			writeResponse(resourceRequest, resourceResponse, formInstance);
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			resourceResponse.setProperty(
 				ResourceResponse.HTTP_STATUS_CODE,
 				String.valueOf(HttpServletResponse.SC_BAD_REQUEST));
@@ -65,8 +66,7 @@ public class SaveFormInstanceMVCResourceCommand
 	}
 
 	protected DDMFormInstance saveFormInstanceInTransaction(
-			final ResourceRequest resourceRequest,
-			final ResourceResponse resourceResponse)
+			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Throwable {
 
 		return TransactionInvokerUtil.invoke(

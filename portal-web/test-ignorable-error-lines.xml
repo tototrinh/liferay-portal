@@ -17,10 +17,6 @@
 			<matches>.*The web application \[.*\] appears to have started a thread.*\[Thread-[0-9]+\].*</matches>
 		</ignore-error>
 		<ignore-error description="">
-			<contains></contains>
-			<matches>.*The web application \[.*\] appears to have started a thread.*\[TrueZIP InputStream Reader\].*</matches>
-		</ignore-error>
-		<ignore-error description="">
 			<contains>[antelope:post]</contains>
 			<matches></matches>
 		</ignore-error>
@@ -53,7 +49,7 @@
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="">
-			<contains>Do NOT use embedded Elasticsearch in production</contains>
+			<contains>Do NOT use sidecar in production</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="">
@@ -66,6 +62,10 @@
 		</ignore-error>
 		<ignore-error description="">
 			<contains>No theme found for specified theme id userdashboard_WAR_userdashboardtheme</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="COMMERCE-5588 - temporarily ignore until fixed">
+			<contains>IX_1B108A04</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LPS-22821">
@@ -172,10 +172,6 @@
 			<contains></contains>
 			<matches>.*Table.*does not exist.*</matches>
 		</ignore-error>
-		<ignore-error description="LPS-65878, temporary workaround until Tina Tian fixes it">
-			<contains>The addSearchEngineConfigurator method has thrown an exception</contains>
-			<matches></matches>
-		</ignore-error>
 		<ignore-error description="LPS-68846 and LPS-66321">
 			<contains>Unable to call .* of /documents</contains>
 			<matches></matches>
@@ -191,10 +187,6 @@
 		<ignore-error description="LPS-88391, LPS-88417">
 			<contains></contains>
 			<matches>Successfully recreated and upgraded table .*</matches>
-		</ignore-error>
-		<ignore-error description="LPS-88395 - temporarily ignore until fixed">
-			<contains>IX_CED31606</contains>
-			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LPS-88412 - temporarily ignore until fixed">
 			<contains>drop table if exists Kaleo</contains>
@@ -228,20 +220,56 @@
 			<contains>IX_717B97E1</contains>
 			<matches></matches>
 		</ignore-error>
-		<ignore-error description="LPS-88553 - temporarily ignore until fixed">
+		<ignore-error description="LPS-88553">
 			<contains>Returning the default theme</contains>
 			<matches></matches>
 		</ignore-error>
-		<ignore-error description="LPS-97522 - temporarily ignore until fixed">
-			<contains>IX_14E638B0</contains>
+		<ignore-error description="LPS-100651">
+			<contains>Unable to connect to a valid mail server. Please make sure one is properly configured: Couldn't connect to host, port: localhost, 25; timeout -1</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-105385 - temporarily ignore until fixed">
+			<contains>Unable to deserialize com.liferay.portal.kernel.util.EscapableLocalizableFunction due to security restrictions</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-111433 - temporarily ignore until fixed">
+			<contains>IX_EE41CBEB</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-119128">
+			<contains>already is datetime</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-123610">
+			<contains>No default user was found for company</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-127275 - temporarily ignore until fixed">
+			<contains>com.liferay.analytics.message.sender.impl</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-127285 - temporarily ignore until fixed">
+			<contains>StyleBookEntryVersion</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains></contains>
+			<matches>bundle com.liferay.portal.properties.swapper.*The activate method has thrown an exception</matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains>Store is not available</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-136151 - temporarily ignore until fixed">
+			<contains>Unable to register portal instance</contains>
+			<matches></matches>
+		</ignore-error>
+		<ignore-error description="LPS-141846 - temporarily ignore until fixed">
+			<contains>/o/frontend-editor-ckeditor-web/ckeditor/skins/moono-lexicon/skin.js</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="LRQA-24859">
 			<contains>No binary licenses found</contains>
-			<matches></matches>
-		</ignore-error>
-		<ignore-error description="LRQA-46637, temporarily ignore metadata errors">
-			<contains>Unable to save metadata for file version</contains>
 			<matches></matches>
 		</ignore-error>
 		<ignore-error description="WCM-202">

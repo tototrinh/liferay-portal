@@ -30,7 +30,7 @@ const TranslationManager = ({
 	defaultLanguageId: initialDefaultLanguageId,
 	id,
 	locales,
-	readOnly
+	readOnly,
 }) => {
 	const compId = componentId ? componentId : id;
 
@@ -51,17 +51,17 @@ const TranslationManager = ({
 		states: {
 			availableLocales,
 			defaultLocale,
-			editingLocale
-		}
+			editingLocale,
+		},
 	});
 
 	const {observer, onClose} = useModal({
-		onClose: () => setVisibleModal(false)
+		onClose: () => setVisibleModal(false),
 	});
 
-	const localeToBeRemoved = React.useRef(null);
+	const localeToBeRemovedRef = React.useRef(null);
 
-	const removeLocale = locale => {
+	const removeLocale = (locale) => {
 		if (defaultLocale === locale.id) {
 			setDefaultLocale(editingLocale);
 		}
@@ -83,18 +83,18 @@ const TranslationManager = ({
 				<DeleteLocaleModal
 					observer={observer}
 					onCancel={() => {
-						localeToBeRemoved.current = null;
+						localeToBeRemovedRef.current = null;
 						onClose();
 					}}
 					onConfirm={() => {
-						removeLocale(localeToBeRemoved.current);
+						removeLocale(localeToBeRemovedRef.current);
 						onClose();
 					}}
 				/>
 			)}
 
 			<div className="autofit-row">
-				<div className="autofit-col">
+				<div className="autofit-col autofit-col-expand">
 					<LocalesContainer
 						className={cssClass}
 						id={id}
@@ -107,31 +107,34 @@ const TranslationManager = ({
 							}
 							defaultLocale={defaultLocale}
 							editingLocale={editingLocale}
-							onLocaleClicked={locale => {
+							onLocaleClicked={(locale) => {
 								if (changeableDefaultLanguage) {
 									setDefaultLocale(locale.id);
 								}
 								setEditingLocale(locale.id);
 							}}
-							onLocaleRemoved={locale => {
-								localeToBeRemoved.current = locale;
+							onLocaleRemoved={(locale) => {
+								localeToBeRemovedRef.current = locale;
 								setVisibleModal(true);
 							}}
 						/>
+
+						<div className="autofit-col">
+							<LocaleSelector
+								locales={locales}
+								onItemClick={(locale) => {
+									setAvailableLocales(
+										new Map(availableLocales).set(
+											locale.id,
+											locale
+										)
+									);
+
+									setEditingLocale(locale.id);
+								}}
+							/>
+						</div>
 					</LocalesContainer>
-				</div>
-
-				<div className="autofit-col">
-					<LocaleSelector
-						locales={locales}
-						onItemClick={locale => {
-							setAvailableLocales(
-								new Map(availableLocales).set(locale.id, locale)
-							);
-
-							setEditingLocale(locale.id);
-						}}
-					/>
 				</div>
 			</div>
 		</>
@@ -144,12 +147,12 @@ TranslationManager.propTypes = {
 	defaultLanguageId: PropTypes.string,
 	defaultLocale: PropTypes.string,
 	editingLocale: PropTypes.string,
-	locales: PropTypes.array
+	locales: PropTypes.array,
 };
 
-export default function(props) {
+export default function (props) {
 	const availableLocales = new Map(
-		props.availableLocales.map(locale => [locale.id, locale])
+		props.availableLocales.map((locale) => [locale.id, locale])
 	);
 
 	return (

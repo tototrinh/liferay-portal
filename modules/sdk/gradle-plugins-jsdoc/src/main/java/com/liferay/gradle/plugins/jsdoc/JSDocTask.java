@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.jsdoc;
 
 import com.liferay.gradle.plugins.node.tasks.ExecuteNodeScriptTask;
 import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.GradleUtil;
 
 import java.io.File;
@@ -33,17 +34,20 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.resources.TextResource;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.util.GUtil;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class JSDocTask extends ExecuteNodeScriptTask {
 
 	public JSDocTask() {
@@ -85,17 +89,20 @@ public class JSDocTask extends ExecuteNodeScriptTask {
 
 	@InputFile
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getPackageJsonFile() {
 		return GradleUtil.toFile(getProject(), _packageJsonFile);
 	}
 
 	@InputFile
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getReadmeFile() {
 		return GradleUtil.toFile(getProject(), _readmeFile);
 	}
 
 	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getSourceDirs() {
 		Project project = getProject();
 
@@ -104,6 +111,7 @@ public class JSDocTask extends ExecuteNodeScriptTask {
 
 	@InputDirectory
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getTutorialsDir() {
 		return GradleUtil.toFile(getProject(), _tutorialsDir);
 	}

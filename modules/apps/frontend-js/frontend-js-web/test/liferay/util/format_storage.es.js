@@ -12,8 +12,6 @@
  * details.
  */
 
-'use strict';
-
 import formatStorage from '../../../src/main/resources/META-INF/resources/liferay/util/format_storage.es';
 
 describe('Liferay.Util.formatStorage', () => {
@@ -38,7 +36,7 @@ describe('Liferay.Util.formatStorage', () => {
 			formatStorage(1048576, {
 				addSpaceBeforeSuffix: true,
 				decimalSeparator: ',',
-				suffixMB: 'megabytes'
+				suffixMB: 'megabytes',
 			})
 		).toEqual('1,0 megabytes');
 	});

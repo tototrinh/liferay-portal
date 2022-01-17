@@ -15,6 +15,7 @@
 package com.liferay.saml.opensaml.integration.internal.credential;
 
 import com.liferay.document.library.kernel.exception.NoSuchFileException;
+import com.liferay.document.library.kernel.store.DLStoreRequest;
 import com.liferay.document.library.kernel.store.DLStoreUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
@@ -27,6 +28,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+
+import java.nio.file.Files;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -48,9 +51,7 @@ public class DLKeyStoreManagerImpl extends BaseKeyStoreManagerImpl {
 
 	@Override
 	public KeyStore getKeyStore() throws KeyStoreException {
-		KeyStore keyStore = null;
-
-		keyStore = KeyStore.getInstance(getSamlKeyStoreType());
+		KeyStore keyStore = KeyStore.getInstance(getSamlKeyStoreType());
 
 		try (InputStream inputStream = DLStoreUtil.getFileAsStream(
 				getCompanyId(), CompanyConstants.SYSTEM, _SAML_KEYSTORE_PATH)) {
@@ -113,7 +114,13 @@ public class DLKeyStoreManagerImpl extends BaseKeyStoreManagerImpl {
 			}
 
 			DLStoreUtil.addFile(
-				getCompanyId(), CompanyConstants.SYSTEM, _SAML_KEYSTORE_PATH,
+				DLStoreRequest.builder(
+					getCompanyId(), CompanyConstants.SYSTEM, _SAML_KEYSTORE_PATH
+				).className(
+					this
+				).size(
+					Files.size(tempFile.toPath())
+				).build(),
 				new FileInputStream(tempFile));
 		}
 		finally {

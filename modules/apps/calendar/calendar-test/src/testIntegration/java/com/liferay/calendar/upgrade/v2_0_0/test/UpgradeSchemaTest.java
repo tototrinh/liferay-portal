@@ -17,7 +17,7 @@ package com.liferay.calendar.upgrade.v2_0_0.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
-import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
+import com.liferay.calendar.service.CalendarBookingLocalService;
 import com.liferay.calendar.test.util.CalendarBookingTestUtil;
 import com.liferay.calendar.test.util.CalendarTestUtil;
 import com.liferay.calendar.test.util.CalendarUpgradeTestUtil;
@@ -27,11 +27,13 @@ import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.SynchronousMailTestRule;
+import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -44,6 +46,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Adam Brandizzi
  */
+@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class UpgradeSchemaTest {
 
@@ -61,8 +64,10 @@ public class UpgradeSchemaTest {
 
 		_upgradeDatabaseTestHelper =
 			CalendarUpgradeTestUtil.getUpgradeDatabaseTestHelper();
-		_upgradeProcess = CalendarUpgradeTestUtil.getServiceUpgradeStep(
-			"com.liferay.calendar.internal.upgrade.v2_0_0.UpgradeSchema");
+		_upgradeProcess = CalendarUpgradeTestUtil.getUpgradeStep(
+			_upgradeStepRegistrator,
+			"com.liferay.calendar.internal.upgrade.v2_0_0." +
+				"SchemaUpgradeProcess");
 
 		CheckBookingsMessageListenerTestUtil.setUp();
 	}
@@ -124,7 +129,7 @@ public class UpgradeSchemaTest {
 		Assert.assertNotEquals(
 			0, calendarBooking.getRecurringCalendarBookingId());
 
-		calendarBooking = CalendarBookingLocalServiceUtil.getCalendarBooking(
+		calendarBooking = _calendarBookingLocalService.getCalendarBooking(
 			calendarBooking.getCalendarBookingId());
 
 		Assert.assertEquals(
@@ -139,13 +144,18 @@ public class UpgradeSchemaTest {
 			"CalendarBooking", "recurringCalendarBookingId");
 	}
 
-	@DeleteAfterTestRun
 	private Calendar _calendar;
 
-	@DeleteAfterTestRun
-	private Group _group;
+	@Inject
+	private CalendarBookingLocalService _calendarBookingLocalService;
 
+	private Group _group;
 	private UpgradeDatabaseTestHelper _upgradeDatabaseTestHelper;
 	private UpgradeProcess _upgradeProcess;
+
+	@Inject(
+		filter = "component.name=com.liferay.calendar.internal.upgrade.CalendarServiceUpgrade"
+	)
+	private UpgradeStepRegistrator _upgradeStepRegistrator;
 
 }

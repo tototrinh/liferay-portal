@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.kernel.workflow.WorkflowException;
 import com.liferay.portal.kernel.workflow.WorkflowInstance;
+import com.liferay.portal.kernel.workflow.search.WorkflowModelSearchResult;
 
 import java.io.InputStream;
 import java.io.Serializable;
@@ -43,13 +44,10 @@ public interface WorkflowEngine {
 			long workflowInstanceId, ServiceContext serviceContext)
 		throws WorkflowException;
 
-	public default WorkflowDefinition deployWorkflowDefinition(
-			String title, String name, InputStream inputStream,
+	public WorkflowDefinition deployWorkflowDefinition(
+			String title, String name, String scope, InputStream inputStream,
 			ServiceContext serviceContext)
-		throws WorkflowException {
-
-		throw new UnsupportedOperationException();
-	}
+		throws WorkflowException;
 
 	public ExecutionContext executeTimerWorkflowInstance(
 			long kaleoTimerInstanceTokenId, ServiceContext serviceContext,
@@ -99,24 +97,8 @@ public interface WorkflowEngine {
 			ServiceContext serviceContext)
 		throws WorkflowException;
 
-	public default WorkflowDefinition saveWorkflowDefinition(
-			String title, String name, byte[] bytes,
-			ServiceContext serviceContext)
-		throws WorkflowException {
-
-		throw new UnsupportedOperationException();
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #search(Long,
-	 *             String, String, String, String, String, Boolean, int, int,
-	 *             OrderByComparator, ServiceContext)}
-	 */
-	@Deprecated
-	public List<WorkflowInstance> search(
-			Long userId, String assetClassName, String nodeName,
-			String kaleoDefinitionName, Boolean completed, int start, int end,
-			OrderByComparator<WorkflowInstance> orderByComparator,
+	public WorkflowDefinition saveWorkflowDefinition(
+			String title, String name, String scope, byte[] bytes,
 			ServiceContext serviceContext)
 		throws WorkflowException;
 
@@ -131,23 +113,24 @@ public interface WorkflowEngine {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #searchCount(Long,
-	 *             String, String, String, String, String, Boolean,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	public int searchCount(
-			Long userId, String assetClassName, String nodeName,
-			String kaleoDefinitionName, Boolean completed,
-			ServiceContext serviceContext)
-		throws WorkflowException;
-
 	public default int searchCount(
 			Long userId, String assetClassName, String assetTitle,
 			String assetDescription, String nodeName,
 			String kaleoDefinitionName, Boolean completed,
 			ServiceContext serviceContext)
+		throws WorkflowException {
+
+		throw new UnsupportedOperationException();
+	}
+
+	public default WorkflowModelSearchResult<WorkflowInstance>
+			searchWorkflowInstances(
+				Long userId, String assetClassName, String assetTitle,
+				String assetDescription, String nodeName,
+				String kaleoDefinitionName, Boolean completed,
+				boolean searchByActiveWorkflowHandlers, int start, int end,
+				OrderByComparator<WorkflowInstance> orderByComparator,
+				ServiceContext serviceContext)
 		throws WorkflowException {
 
 		throw new UnsupportedOperationException();
@@ -159,10 +142,22 @@ public interface WorkflowEngine {
 			ServiceContext serviceContext)
 		throws WorkflowException;
 
+	public WorkflowInstance signalWorkflowInstance(
+			long workflowInstanceId, String transitionName,
+			Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext, boolean waitForCompletion)
+		throws WorkflowException;
+
 	public WorkflowInstance startWorkflowInstance(
 			String workflowDefinitionName, Integer workflowDefinitionVersion,
 			String transitionName, Map<String, Serializable> workflowContext,
 			ServiceContext serviceContext)
+		throws WorkflowException;
+
+	public WorkflowInstance startWorkflowInstance(
+			String workflowDefinitionName, Integer workflowDefinitionVersion,
+			String transitionName, Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext, boolean waitForCompletion)
 		throws WorkflowException;
 
 	public WorkflowInstance updateContext(

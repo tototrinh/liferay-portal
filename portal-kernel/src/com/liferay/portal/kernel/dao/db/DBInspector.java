@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.dao.db;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
@@ -29,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,9 +51,9 @@ public class DBInspector {
 		try {
 			return _connection.getSchema();
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(t, t);
+				_log.debug(throwable, throwable);
 			}
 
 			return null;
@@ -63,11 +65,11 @@ public class DBInspector {
 
 		DatabaseMetaData databaseMetaData = _connection.getMetaData();
 
-		try (ResultSet rs = databaseMetaData.getColumns(
+		try (ResultSet resultSet = databaseMetaData.getColumns(
 				getCatalog(), getSchema(), normalizeName(tableName),
 				normalizeName(columnName))) {
 
-			if (!rs.next()) {
+			if (!resultSet.next()) {
 				return false;
 			}
 
@@ -101,18 +103,18 @@ public class DBInspector {
 
 		DatabaseMetaData databaseMetaData = _connection.getMetaData();
 
-		try (ResultSet rs = databaseMetaData.getColumns(
+		try (ResultSet resultSet = databaseMetaData.getColumns(
 				getCatalog(), getSchema(),
 				normalizeName(tableName, databaseMetaData),
 				normalizeName(columnName, databaseMetaData))) {
 
-			if (!rs.next()) {
+			if (!resultSet.next()) {
 				return false;
 			}
 
 			int expectedColumnSize = _getColumnSize(columnType);
 
-			int actualColumnSize = rs.getInt("COLUMN_SIZE");
+			int actualColumnSize = resultSet.getInt("COLUMN_SIZE");
 
 			if ((expectedColumnSize != -1) &&
 				(expectedColumnSize != actualColumnSize)) {
@@ -122,7 +124,7 @@ public class DBInspector {
 
 			Integer expectedColumnDataType = _getColumnDataType(columnType);
 
-			int actualColumnDataType = rs.getInt("DATA_TYPE");
+			int actualColumnDataType = resultSet.getInt("DATA_TYPE");
 
 			if ((expectedColumnDataType == null) ||
 				(expectedColumnDataType != actualColumnDataType)) {
@@ -132,7 +134,7 @@ public class DBInspector {
 
 			boolean expectedColumnNullable = _isColumnNullable(columnType);
 
-			int actualColumnNullable = rs.getInt("NULLABLE");
+			int actualColumnNullable = resultSet.getInt("NULLABLE");
 
 			if ((expectedColumnNullable &&
 				 (actualColumnNullable != DatabaseMetaData.columnNullable)) ||
@@ -146,13 +148,38 @@ public class DBInspector {
 		}
 	}
 
-	public boolean hasRows(String tableName) {
-		try (PreparedStatement ps = _connection.prepareStatement(
-				"select count(*) from " + tableName);
-			ResultSet rs = ps.executeQuery()) {
+	public boolean hasIndex(String tableName, String indexName)
+		throws Exception {
 
-			while (rs.next()) {
-				int count = rs.getInt(1);
+		DatabaseMetaData databaseMetaData = _connection.getMetaData();
+
+		try (ResultSet resultSet = databaseMetaData.getIndexInfo(
+				_connection.getCatalog(), _connection.getSchema(),
+				normalizeName(tableName, databaseMetaData), false, false)) {
+
+			while (resultSet.next()) {
+				if (Objects.equals(
+						normalizeName(indexName, databaseMetaData),
+						resultSet.getString("index_name"))) {
+
+					return true;
+				}
+			}
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+		}
+
+		return false;
+	}
+
+	public boolean hasRows(String tableName) {
+		try (PreparedStatement preparedStatement = _connection.prepareStatement(
+				"select count(*) from " + tableName);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				int count = resultSet.getInt(1);
 
 				if (count > 0) {
 					return true;
@@ -188,6 +215,33 @@ public class DBInspector {
 		}
 
 		return false;
+	}
+
+	public boolean isNullable(String tableName, String columnName)
+		throws SQLException {
+
+		DatabaseMetaData databaseMetaData = _connection.getMetaData();
+
+		try (ResultSet resultSet = databaseMetaData.getColumns(
+				getCatalog(), getSchema(),
+				normalizeName(tableName, databaseMetaData),
+				normalizeName(columnName, databaseMetaData))) {
+
+			if (!resultSet.next()) {
+				throw new SQLException(
+					StringBundler.concat(
+						"Column ", tableName, StringPool.PERIOD, columnName,
+						" does not exist"));
+			}
+
+			if (resultSet.getInt("NULLABLE") ==
+					DatabaseMetaData.columnNullable) {
+
+				return true;
+			}
+
+			return false;
+		}
 	}
 
 	public String normalizeName(String name) throws SQLException {
@@ -248,10 +302,10 @@ public class DBInspector {
 	private boolean _hasTable(String tableName) throws Exception {
 		DatabaseMetaData metadata = _connection.getMetaData();
 
-		try (ResultSet rs = metadata.getTables(
+		try (ResultSet resultSet = metadata.getTables(
 				getCatalog(), getSchema(), tableName, null)) {
 
-			while (rs.next()) {
+			while (resultSet.next()) {
 				return true;
 			}
 		}

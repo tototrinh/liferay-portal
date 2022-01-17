@@ -53,12 +53,10 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -94,22 +92,18 @@ public class DDMStructureStagedModelDataHandlerTest
 	public static void setUpClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", true);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", true
+			).build());
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
 		ConfigurationTestUtil.saveConfiguration(
 			DDMDataProviderConfiguration.class.getName(),
-			new HashMapDictionary() {
-				{
-					put("accessLocalNetwork", false);
-				}
-			});
+			HashMapDictionaryBuilder.<String, Object>put(
+				"accessLocalNetwork", false
+			).build());
 	}
 
 	@Before
@@ -120,11 +114,10 @@ public class DDMStructureStagedModelDataHandlerTest
 		_availableLocales = LanguageUtil.getAvailableLocales(
 			TestPropsValues.getCompanyId());
 		_defaultLocale = LocaleUtil.getDefault();
-
-		setUpDDMDataProvider();
 	}
 
 	@After
+	@Override
 	public void tearDown() throws Exception {
 		LanguageUtil.init();
 
@@ -134,9 +127,8 @@ public class DDMStructureStagedModelDataHandlerTest
 
 	@Test
 	public void testImportStructureToGlobalSite() throws Exception {
-		long companyId = stagingGroup.getCompanyId();
-
-		Company company = CompanyLocalServiceUtil.getCompany(companyId);
+		Company company = CompanyLocalServiceUtil.getCompany(
+			stagingGroup.getCompanyId());
 
 		Group companyGroup = company.getGroup();
 
@@ -459,16 +451,6 @@ public class DDMStructureStagedModelDataHandlerTest
 		}
 	}
 
-	protected void setUpDDMDataProvider() throws Exception {
-		Registry registry = RegistryUtil.getRegistry();
-
-		DDMDataProvider[] ddmDataProviders = registry.getServices(
-			"com.liferay.dynamic.data.mapping.data.provider.DDMDataProvider",
-			"(ddm.data.provider.type=rest)");
-
-		_ddmDataProvider = ddmDataProviders[0];
-	}
-
 	@Override
 	protected void validateImport(
 			Map<String, List<StagedModel>> dependentStagedModelsMap,
@@ -556,12 +538,9 @@ public class DDMStructureStagedModelDataHandlerTest
 		DDMDataProviderInstanceLink dataProviderInstanceLink =
 			dataProviderInstanceLinks.get(0);
 
-		long dataProviderInstanceId =
-			dataProviderInstanceLink.getDataProviderInstanceId();
-
 		DDMDataProviderInstance dataProviderInstance =
 			DDMDataProviderInstanceLocalServiceUtil.getDataProviderInstance(
-				dataProviderInstanceId);
+				dataProviderInstanceLink.getDataProviderInstanceId());
 
 		DDMDataProviderInstanceLink importedDataProviderInstanceLink =
 			importedDataProviderInstanceLinks.get(0);
@@ -587,6 +566,7 @@ public class DDMStructureStagedModelDataHandlerTest
 	@Inject(filter = "ddm.form.values.deserializer.type=json")
 	private static DDMFormValuesDeserializer _jsonDDMFormValuesDeserializer;
 
+	@Inject(filter = "ddm.data.provider.type=rest")
 	private DDMDataProvider _ddmDataProvider;
 
 	@DeleteAfterTestRun

@@ -83,10 +83,10 @@ public class AssetCategoryFinderImpl
 			queryPos.add(name);
 			queryPos.add(name);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -126,10 +126,10 @@ public class AssetCategoryFinderImpl
 			queryPos.add(name);
 			queryPos.add(name);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -211,15 +211,10 @@ public class AssetCategoryFinderImpl
 			closeSession(session);
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("No AssetCategory exists with the key {groupId=");
-		sb.append(groupId);
-		sb.append(", name=");
-		sb.append(name);
-		sb.append("}");
-
-		throw new NoSuchCategoryException(sb.toString());
+		throw new NoSuchCategoryException(
+			StringBundler.concat(
+				"No AssetCategory exists with the key {groupId=", groupId,
+				", name=", name, "}"));
 	}
 
 	@Override
@@ -300,10 +295,10 @@ public class AssetCategoryFinderImpl
 			queryPos.add(classNameId);
 			queryPos.add(classPK);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -362,7 +357,8 @@ public class AssetCategoryFinderImpl
 			return StringPool.BLANK;
 		}
 
-		StringBundler sb = new StringBundler(categoryProperties.length * 3 + 2);
+		StringBundler sb = new StringBundler(
+			(categoryProperties.length * 3) + 2);
 
 		sb.append(" INNER JOIN AssetCategoryProperty ON ");
 		sb.append("(AssetCategoryProperty.categoryId = ");

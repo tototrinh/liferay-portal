@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.geolocation;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRenderer;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.petra.string.StringBundler;
@@ -32,7 +33,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Marcela Cunha
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=geolocation",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.GEOLOCATION,
 	service = {
 		DDMFormFieldValueRenderer.class,
 		GeolocationDDMFormFieldValueRenderer.class
@@ -57,15 +59,9 @@ public class GeolocationDDMFormFieldValueRenderer
 				return StringPool.BLANK;
 			}
 
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("Latitude: ");
-			sb.append(jsonObject.get("lat"));
-			sb.append(StringPool.COMMA_AND_SPACE);
-			sb.append("Longitude: ");
-			sb.append(jsonObject.get("lng"));
-
-			return sb.toString();
+			return StringBundler.concat(
+				"Latitude: ", jsonObject.get("lat"), ", Longitude: ",
+				jsonObject.get("lng"));
 		}
 
 		return StringPool.BLANK;

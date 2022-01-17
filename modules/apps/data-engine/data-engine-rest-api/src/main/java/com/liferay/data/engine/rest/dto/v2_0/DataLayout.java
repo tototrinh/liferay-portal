@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -48,7 +51,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 @GraphQLName("DataLayout")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "DataLayout")
-public class DataLayout {
+public class DataLayout implements Serializable {
+
+	public static DataLayout toDTO(String json) {
+		return ObjectMapperUtil.readValue(DataLayout.class, json);
+	}
+
+	public static DataLayout unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(DataLayout.class, json);
+	}
 
 	@Schema
 	public String getContentType() {
@@ -107,6 +118,36 @@ public class DataLayout {
 	protected Long dataDefinitionId;
 
 	@Schema
+	@Valid
+	public Map<String, Object> getDataLayoutFields() {
+		return dataLayoutFields;
+	}
+
+	public void setDataLayoutFields(Map<String, Object> dataLayoutFields) {
+		this.dataLayoutFields = dataLayoutFields;
+	}
+
+	@JsonIgnore
+	public void setDataLayoutFields(
+		UnsafeSupplier<Map<String, Object>, Exception>
+			dataLayoutFieldsUnsafeSupplier) {
+
+		try {
+			dataLayoutFields = dataLayoutFieldsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Map<String, Object> dataLayoutFields;
+
+	@Schema
 	public String getDataLayoutKey() {
 		return dataLayoutKey;
 	}
@@ -163,6 +204,35 @@ public class DataLayout {
 	@GraphQLField
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected DataLayoutPage[] dataLayoutPages;
+
+	@Schema
+	@Valid
+	public DataRule[] getDataRules() {
+		return dataRules;
+	}
+
+	public void setDataRules(DataRule[] dataRules) {
+		this.dataRules = dataRules;
+	}
+
+	@JsonIgnore
+	public void setDataRules(
+		UnsafeSupplier<DataRule[], Exception> dataRulesUnsafeSupplier) {
+
+		try {
+			dataRules = dataRulesUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected DataRule[] dataRules;
 
 	@Schema
 	public Date getDateCreated() {
@@ -443,6 +513,16 @@ public class DataLayout {
 			sb.append(dataDefinitionId);
 		}
 
+		if (dataLayoutFields != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dataLayoutFields\": ");
+
+			sb.append(_toJSON(dataLayoutFields));
+		}
+
 		if (dataLayoutKey != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -470,6 +550,26 @@ public class DataLayout {
 				sb.append(String.valueOf(dataLayoutPages[i]));
 
 				if ((i + 1) < dataLayoutPages.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (dataRules != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dataRules\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < dataRules.length; i++) {
+				sb.append(String.valueOf(dataRules[i]));
+
+				if ((i + 1) < dataRules.length) {
 					sb.append(", ");
 				}
 			}
@@ -575,6 +675,7 @@ public class DataLayout {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataLayout",
 		name = "x-class-name"
 	)
@@ -584,6 +685,16 @@ public class DataLayout {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -600,13 +711,46 @@ public class DataLayout {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

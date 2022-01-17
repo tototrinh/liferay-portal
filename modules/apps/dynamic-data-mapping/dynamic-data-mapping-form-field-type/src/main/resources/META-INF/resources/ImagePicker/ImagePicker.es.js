@@ -12,160 +12,315 @@
  * details.
  */
 
-import '../FieldBase/FieldBase.es';
+import ClayButton from '@clayui/button';
+import ClayForm, {ClayInput} from '@clayui/form';
+import ClayModal, {useModal} from '@clayui/modal';
+import React, {useState} from 'react';
 
-import './ImagePickerAdapter.soy';
+import {FieldBase} from '../FieldBase/ReactFieldBase.es';
+import {useSyncValue} from '../hooks/useSyncValue.es';
 
-import './ImagePickerRegister.soy';
+const defaultValue = {description: '', title: '', url: ''};
 
-import './ReactImagePickerAdapter.es';
+const ImagePicker = ({
+	editingLanguageId,
+	id,
+	inputValue,
+	itemSelectorURL,
+	message,
+	name,
+	onBlur,
+	onClearClick,
+	onDescriptionChange,
+	onFieldChanged,
+	onFocus,
+	portletNamespace,
+	readOnly,
+}) => {
+	const [imageValues, setImageValues] = useSyncValue(inputValue);
+	const [modalVisible, setModalVisible] = useState(false);
 
-import Component from 'metal-component';
-import Soy from 'metal-soy';
-import {Config} from 'metal-state';
+	const {observer, onClose} = useModal({
+		onClose: () => setModalVisible(false),
+	});
 
-import templates from './ImagePicker.soy';
+	const dispatchValue = ({clear, value}, callback = () => {}) =>
+		setImageValues((oldValues) => {
+			let mergedValues = {...oldValues, ...value};
+			mergedValues = clear ? {} : mergedValues;
+			mergedValues.alt = mergedValues.description || '';
 
-class ImagePicker extends Component {
-	dispatchEvent(event, name, value) {
-		this.emit(name, {
-			fieldInstance: this,
-			originalEvent: event,
-			value
+			callback(mergedValues);
+
+			return mergedValues;
 		});
-	}
 
-	_handleOnDispatch(event) {
-		switch (event.type) {
-			case 'value':
-				this.dispatchEvent(event, 'fieldEdited', event.payload);
-				break;
-			default:
-				console.error(new TypeError(`There is no type ${event.type}`));
-				break;
+	const handleFieldChanged = (selectedItem) => {
+		if (selectedItem?.value) {
+			const selectedImage = new Image();
+			const selectedItemValue = JSON.parse(selectedItem.value);
+
+			selectedImage.addEventListener('load', (event) => {
+				const {
+					target: {height, width},
+				} = event;
+
+				const imageData = {
+					...{
+						description: '',
+						event,
+						height,
+						title: '',
+						url: '',
+						width,
+					},
+					...selectedItemValue,
+				};
+
+				dispatchValue({value: imageData}, (mergedValues) =>
+					onFieldChanged(mergedValues)
+				);
+			});
+			selectedImage.src = selectedItemValue.url;
 		}
-	}
-}
+	};
 
-ImagePicker.STATE = {
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
+	const handleItemSelectorTriggerClick = (event) => {
+		event.preventDefault();
 
-	errorMessage: Config.string(),
+		Liferay.Util.openSelectionModal({
+			onSelect: handleFieldChanged,
+			selectEventName: `${portletNamespace}selectDocumentLibrary`,
+			title: Liferay.Util.sub(
+				Liferay.Language.get('select-x'),
+				Liferay.Language.get('image')
+			),
+			url: itemSelectorURL,
+		});
+	};
 
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?bool}
-	 */
+	const placeholder = readOnly
+		? ''
+		: Liferay.Language.get('add-image-description');
 
-	evaluable: Config.bool().value(false),
+	return (
+		<>
+			<ClayForm.Group style={{marginBottom: '0.5rem'}}>
+				<input
+					name={name}
+					type="hidden"
+					value={JSON.stringify(imageValues)}
+				/>
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
+				<ClayInput.Group>
+					<ClayInput.GroupItem className="d-none d-sm-block" prepend>
+						<ClayInput
+							className="field"
+							dir={Liferay.Language.direction[editingLanguageId]}
+							disabled={readOnly}
+							id={id}
+							lang={editingLanguageId}
+							onBlur={onBlur}
+							onClick={handleItemSelectorTriggerClick}
+							onFocus={onFocus}
+							type="text"
+							value={imageValues.title || ''}
+						/>
+					</ClayInput.GroupItem>
 
-	fieldName: Config.string(),
+					<ClayInput.GroupItem append shrink>
+						<ClayButton
+							disabled={readOnly}
+							displayType="secondary"
+							onClick={handleItemSelectorTriggerClick}
+							type="button"
+						>
+							{Liferay.Language.get('select')}
+						</ClayButton>
+					</ClayInput.GroupItem>
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
+					{imageValues.url && (
+						<ClayInput.GroupItem shrink>
+							<ClayButton
+								disabled={readOnly}
+								displayType="secondary"
+								onClick={(event) =>
+									dispatchValue(
+										{
+											clear: true,
+											value: {
+												description: '',
+												event,
+												title: '',
+												url: '',
+											},
+										},
+										(mergedValues) =>
+											onClearClick(mergedValues)
+									)
+								}
+								type="button"
+							>
+								{Liferay.Language.get('clear')}
+							</ClayButton>
+						</ClayInput.GroupItem>
+					)}
+				</ClayInput.Group>
 
-	label: Config.string(),
+				{message && <div className="form-feedback-item">{message}</div>}
+			</ClayForm.Group>
 
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
+			{imageValues.url && modalVisible ? (
+				<ClayModal
+					className="image-picker-preview-modal"
+					observer={observer}
+					size="full-screen"
+				>
+					<ClayModal.Header />
 
-	name: Config.string().required(),
+					<ClayModal.Body>
+						<img
+							alt={imageValues.description}
+							className="d-block img-fluid mb-2 mx-auto rounded"
+							onClick={onClose}
+							src={imageValues.url}
+							style={{cursor: 'zoom-out', maxHeight: '95%'}}
+						/>
 
-	/**
-	 * @default '000000'
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
+						<p
+							className="font-weight-light text-center"
+							style={{color: '#FFFFFF'}}
+						>
+							{imageValues.description}
+						</p>
+					</ClayModal.Body>
+				</ClayModal>
+			) : (
+				imageValues.url && (
+					<>
+						<div className="image-picker-preview">
+							<img
+								alt={imageValues.description}
+								className="d-block img-fluid mb-2 rounded"
+								onClick={() => setModalVisible(true)}
+								src={imageValues.url}
+								style={{
+									cursor: 'pointer',
+								}}
+							/>
+						</div>
 
-	predefinedValue: Config.string(),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?bool}
-	 */
-
-	readOnly: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof FieldBase
-	 * @type {?(bool|undefined)}
-	 */
-
-	repeatable: Config.bool().value(false),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(bool|undefined)}
-	 */
-
-	required: Config.bool().value(false),
-
-	/**
-	 * @default true
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(bool|undefined)}
-	 */
-
-	showLabel: Config.bool().value(true),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
-
-	spritemap: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
-
-	tip: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof ImagePicker
-	 * @type {?(string|undefined)}
-	 */
-
-	value: Config.string()
+						<ClayForm.Group>
+							<ClayInput
+								dir={
+									Liferay.Language.direction[
+										editingLanguageId
+									]
+								}
+								disabled={readOnly}
+								lang={editingLanguageId}
+								name={`${name}-description`}
+								onChange={({event, target: {value}}) =>
+									dispatchValue(
+										{value: {description: value, event}},
+										(mergedValues) =>
+											onDescriptionChange(mergedValues)
+									)
+								}
+								placeholder={placeholder}
+								type="text"
+								value={imageValues.description}
+							/>
+						</ClayForm.Group>
+					</>
+				)
+			)}
+		</>
+	);
 };
 
-Soy.register(ImagePicker, templates);
-export {ImagePicker};
-export default ImagePicker;
+const Main = ({
+	displayErrors,
+	editingLanguageId,
+	errorMessage,
+	id,
+	inputValue,
+	itemSelectorURL,
+	message,
+	name,
+	onBlur,
+	onChange,
+	onFocus,
+	portletNamespace,
+	readOnly,
+	valid,
+	value,
+	...otherProps
+}) => {
+	const getErrorMessages = (errorMessage, isSignedIn) => {
+		const errorMessages = [errorMessage];
+
+		if (!isSignedIn) {
+			errorMessages.push(
+				Liferay.Language.get(
+					'you-need-to-be-signed-in-to-edit-this-field'
+				)
+			);
+		}
+
+		return errorMessages.join(' ');
+	};
+
+	const isSignedIn = Liferay.ThemeDisplay.isSignedIn();
+
+	const transformValue = (sourceValue) => {
+		if (sourceValue) {
+			if (typeof sourceValue === 'string') {
+				return JSON.parse(sourceValue);
+			}
+			else if (typeof sourceValue === 'object') {
+				return sourceValue;
+			}
+		}
+
+		return null;
+	};
+
+	return (
+		<FieldBase
+			{...otherProps}
+			displayErrors={isSignedIn ? displayErrors : true}
+			errorMessage={getErrorMessages(errorMessage, isSignedIn)}
+			id={id}
+			name={name}
+			readOnly={isSignedIn ? readOnly : true}
+			valid={isSignedIn ? valid : false}
+		>
+			<ImagePicker
+				editingLanguageId={editingLanguageId}
+				id={id}
+				inputValue={
+					transformValue(inputValue) ??
+					transformValue(value) ??
+					defaultValue
+				}
+				itemSelectorURL={itemSelectorURL}
+				message={message}
+				name={name}
+				onBlur={onBlur}
+				onClearClick={({event, ...data}) => onChange(event, data)}
+				onDescriptionChange={({event, ...data}) =>
+					onChange(event, data)
+				}
+				onFieldChanged={({event, ...data}) => onChange(event, data)}
+				onFocus={onFocus}
+				portletNamespace={portletNamespace}
+				readOnly={isSignedIn ? readOnly : true}
+			/>
+		</FieldBase>
+	);
+};
+
+Main.displayName = 'ImagePicker';
+
+export default Main;

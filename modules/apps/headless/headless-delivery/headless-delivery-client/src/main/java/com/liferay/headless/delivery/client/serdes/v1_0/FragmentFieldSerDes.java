@@ -76,11 +76,14 @@ public class FragmentFieldSerDes {
 
 			sb.append("\"value\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(fragmentField.getValue()));
-
-			sb.append("\"");
+			if (fragmentField.getValue() instanceof String) {
+				sb.append("\"");
+				sb.append((String)fragmentField.getValue());
+				sb.append("\"");
+			}
+			else {
+				sb.append(fragmentField.getValue());
+			}
 		}
 
 		sb.append("}");
@@ -147,10 +150,6 @@ public class FragmentFieldSerDes {
 					fragmentField.setValue((Object)jsonParserFieldValue);
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -179,7 +178,7 @@ public class FragmentFieldSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -205,14 +204,17 @@ public class FragmentFieldSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -15,16 +15,25 @@
 package com.liferay.portal.workflow.web.internal.portlet.action;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.NoSuchRoleException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.kernel.workflow.WorkflowDefinitionManager;
 import com.liferay.portal.kernel.workflow.WorkflowException;
 
@@ -35,6 +44,7 @@ import java.util.ResourceBundle;
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletException;
+import javax.portlet.PortletRequest;
 
 import org.osgi.service.component.annotations.Reference;
 
@@ -54,37 +64,35 @@ public abstract class BaseWorkflowDefinitionMVCActionCommand
 
 			addSuccessMessage(actionRequest, actionResponse);
 
+			setCloseRedirect(actionRequest);
+
+			sendRedirect(actionRequest, actionResponse);
+
 			return SessionErrors.isEmpty(actionRequest);
 		}
 		catch (WorkflowException workflowException) {
+			Throwable rootThrowable = getRootThrowable(workflowException);
+
+			if (_log.isWarnEnabled()) {
+				_log.warn(workflowException, workflowException);
+			}
+
 			hideDefaultErrorMessage(actionRequest);
 
 			SessionErrors.add(
-				actionRequest, workflowException.getClass(), workflowException);
+				actionRequest, rootThrowable.getClass(), rootThrowable);
 
 			return false;
 		}
 		catch (PortletException portletException) {
+			_log.error(portletException, portletException);
+
 			throw portletException;
 		}
 		catch (Exception exception) {
+			_log.error(exception, exception);
+
 			throw new PortletException(exception);
-		}
-	}
-
-	protected void addDefaultTitle(
-		ActionRequest actionRequest, Map<Locale, String> titleMap) {
-
-		Locale defaultLocale = LocaleUtil.getDefault();
-
-		if (Validator.isNull(titleMap.get(defaultLocale))) {
-			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-				defaultLocale, BaseWorkflowDefinitionMVCActionCommand.class);
-
-			String defaultTitle = LanguageUtil.get(
-				resourceBundle, "untitled-workflow");
-
-			titleMap.put(defaultLocale, defaultTitle);
 		}
 	}
 
@@ -97,18 +105,26 @@ public abstract class BaseWorkflowDefinitionMVCActionCommand
 			getSuccessMessage(actionRequest));
 	}
 
-	@Override
-	protected abstract void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception;
-
 	protected ResourceBundle getResourceBundle(ActionRequest actionRequest) {
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		return ResourceBundleUtil.getBundle(
-			themeDisplay.getLocale(),
-			BaseWorkflowDefinitionMVCActionCommand.class);
+		return ResourceBundleUtil.getModuleAndPortalResourceBundle(
+			themeDisplay.getLocale(), getClass());
+	}
+
+	protected Throwable getRootThrowable(WorkflowException workflowException) {
+		if (workflowException.getCause() instanceof IllegalArgumentException ||
+			workflowException.getCause() instanceof NoSuchRoleException ||
+			workflowException.getCause() instanceof
+				PrincipalException.MustBeCompanyAdmin ||
+			workflowException.getCause() instanceof
+				PrincipalException.MustBeOmniadmin) {
+
+			return workflowException.getCause();
+		}
+
+		return workflowException;
 	}
 
 	protected String getSuccessMessage(ActionRequest actionRequest) {
@@ -120,10 +136,8 @@ public abstract class BaseWorkflowDefinitionMVCActionCommand
 		ActionRequest actionRequest, Map<Locale, String> titleMap) {
 
 		if (titleMap == null) {
-			return null;
+			return StringPool.BLANK;
 		}
-
-		addDefaultTitle(actionRequest, titleMap);
 
 		String value = StringPool.BLANK;
 
@@ -144,7 +158,58 @@ public abstract class BaseWorkflowDefinitionMVCActionCommand
 		return value;
 	}
 
+	protected void setCloseRedirect(ActionRequest actionRequest) {
+		String closeRedirect = ParamUtil.getString(
+			actionRequest, "closeRedirect");
+
+		if (Validator.isNull(closeRedirect)) {
+			return;
+		}
+
+		SessionMessages.add(
+			actionRequest,
+			portal.getPortletId(actionRequest) +
+				SessionMessages.KEY_SUFFIX_CLOSE_REDIRECT,
+			closeRedirect);
+	}
+
+	protected void setRedirectAttribute(
+			ActionRequest actionRequest, WorkflowDefinition workflowDefinition)
+		throws Exception {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		LiferayPortletURL portletURL = PortletURLFactoryUtil.create(
+			actionRequest, themeDisplay.getPpid(), PortletRequest.RENDER_PHASE);
+
+		portletURL.setParameter(
+			"mvcPath", "/definition/edit_workflow_definition.jsp");
+
+		String redirect = ParamUtil.getString(actionRequest, "redirect");
+
+		portletURL.setParameter("redirect", redirect, false);
+
+		String closeRedirect = ParamUtil.getString(
+			actionRequest, "closeRedirect");
+
+		portletURL.setParameter("closeRedirect", closeRedirect, false);
+
+		portletURL.setParameter("name", workflowDefinition.getName(), false);
+		portletURL.setParameter(
+			"version", String.valueOf(workflowDefinition.getVersion()), false);
+		portletURL.setWindowState(actionRequest.getWindowState());
+
+		actionRequest.setAttribute(WebKeys.REDIRECT, portletURL.toString());
+	}
+
+	@Reference
+	protected Portal portal;
+
 	@Reference
 	protected WorkflowDefinitionManager workflowDefinitionManager;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseWorkflowDefinitionMVCActionCommand.class);
 
 }

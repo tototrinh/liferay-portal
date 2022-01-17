@@ -17,11 +17,12 @@ package com.liferay.source.formatter.util;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.ExcludeSyntax;
 import com.liferay.source.formatter.ExcludeSyntaxPattern;
 import com.liferay.source.formatter.SourceFormatterExcludes;
@@ -178,6 +179,27 @@ public class SourceFormatterUtil {
 			recentChangesFileNames, pathMatchers);
 	}
 
+	public static String getDocumentationURLString(Class<?> checkClass) {
+		String documentationURLString = _getDocumentationURLString(
+			checkClass.getSimpleName());
+
+		if (documentationURLString != null) {
+			return documentationURLString;
+		}
+
+		Class<?> superclass = checkClass.getSuperclass();
+
+		String className = superclass.getSimpleName();
+
+		documentationURLString = _getDocumentationURLString(className);
+
+		if ((documentationURLString != null) || !className.startsWith("Base")) {
+			return documentationURLString;
+		}
+
+		return _getDocumentationURLString(className.substring(4));
+	}
+
 	public static File getFile(String baseDirName, String fileName, int level) {
 		for (int i = 0; i < level; i++) {
 			File file = new File(baseDirName + fileName);
@@ -203,11 +225,19 @@ public class SourceFormatterUtil {
 			return StringUtil.read(url.openStream());
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return null;
 		}
 	}
 
 	public static String getMarkdownFileName(String camelCaseName) {
+		camelCaseName = StringUtil.replace(camelCaseName, "OSGi", "OSGI");
+
+		camelCaseName = camelCaseName.replaceAll("([A-Z])s([A-Z])", "$1S$2");
+
 		String markdownFileName = TextFormatter.format(
 			camelCaseName, TextFormatter.K);
 
@@ -217,24 +247,8 @@ public class SourceFormatterUtil {
 		return markdownFileName + ".markdown";
 	}
 
-	public static String getMarkdownURLString(String checkName) {
-		String markdownFileName = getMarkdownFileName(checkName);
-
-		ClassLoader classLoader = SourceFormatterUtil.class.getClassLoader();
-
-		InputStream inputStream = classLoader.getResourceAsStream(
-			"documentation/checks/" + markdownFileName);
-
-		if (inputStream != null) {
-			return _DOCUMENTATION_URL + markdownFileName;
-		}
-
-		return null;
-	}
-
-	public static File getPortalDir(String baseDirName) {
-		File portalImplDir = getFile(
-			baseDirName, "portal-impl", ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+	public static File getPortalDir(String baseDirName, int maxDirLevel) {
+		File portalImplDir = getFile(baseDirName, "portal-impl", maxDirLevel);
 
 		if (portalImplDir == null) {
 			return null;
@@ -257,6 +271,10 @@ public class SourceFormatterUtil {
 					portalBranchName, StringPool.SLASH, fileName));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -273,37 +291,31 @@ public class SourceFormatterUtil {
 
 	public static List<File> getSuppressionsFiles(
 		String baseDirName, List<String> allFileNames,
-		SourceFormatterExcludes sourceFormatterExcludes, String... fileNames) {
+		SourceFormatterExcludes sourceFormatterExcludes, int maxDirLevel) {
 
 		List<File> suppressionsFiles = new ArrayList<>();
 
-		String[] includes = new String[fileNames.length];
+		// Find suppressions files in any parent directory
 
-		for (int i = 0; i < fileNames.length; i++) {
-			String fileName = fileNames[i];
+		String parentDirName = baseDirName;
 
-			includes[i] = "**/" + fileName;
+		for (int j = 0; j < maxDirLevel; j++) {
+			File suppressionsFile = new File(
+				parentDirName + _SUPPRESSIONS_FILE_NAME);
 
-			// Find suppressions files in any parent directory
-
-			String parentDirName = baseDirName;
-
-			for (int j = 0; j < ToolsUtil.PORTAL_MAX_DIR_LEVEL; j++) {
-				File suppressionsFile = new File(parentDirName + fileName);
-
-				if (suppressionsFile.exists()) {
-					suppressionsFiles.add(suppressionsFile);
-				}
-
-				parentDirName += "../";
+			if (suppressionsFile.exists()) {
+				suppressionsFiles.add(suppressionsFile);
 			}
+
+			parentDirName += "../";
 		}
 
 		// Find suppressions files in any child directory
 
 		List<String> moduleSuppressionsFileNames = filterFileNames(
-			allFileNames, new String[0], includes, sourceFormatterExcludes,
-			true);
+			allFileNames, new String[0],
+			new String[] {"**/" + _SUPPRESSIONS_FILE_NAME},
+			sourceFormatterExcludes, true);
 
 		for (String moduleSuppressionsFileName : moduleSuppressionsFileNames) {
 			moduleSuppressionsFileName = StringUtil.replace(
@@ -495,6 +507,21 @@ public class SourceFormatterUtil {
 		}
 	}
 
+	private static String _getDocumentationURLString(String checkName) {
+		String markdownFileName = getMarkdownFileName(checkName);
+
+		ClassLoader classLoader = SourceFormatterUtil.class.getClassLoader();
+
+		InputStream inputStream = classLoader.getResourceAsStream(
+			"documentation/checks/" + markdownFileName);
+
+		if (inputStream != null) {
+			return _DOCUMENTATION_URL + markdownFileName;
+		}
+
+		return null;
+	}
+
 	private static PathMatchers _getPathMatchers(
 		String[] excludes, String[] includes,
 		SourceFormatterExcludes sourceFormatterExcludes) {
@@ -569,6 +596,9 @@ public class SourceFormatterUtil {
 									}
 								}
 								catch (Exception exception) {
+									if (_log.isDebugEnabled()) {
+										_log.debug(exception, exception);
+									}
 								}
 							}
 						}
@@ -663,6 +693,12 @@ public class SourceFormatterUtil {
 	private static final String _DOCUMENTATION_URL =
 		"https://github.com/liferay/liferay-portal/blob/master/modules/util" +
 			"/source-formatter/src/main/resources/documentation/checks/";
+
+	private static final String _SUPPRESSIONS_FILE_NAME =
+		"source-formatter-suppressions.xml";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SourceFormatterUtil.class);
 
 	private static class PathMatchers {
 

@@ -47,8 +47,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see DLAppServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class DLAppServiceSoap {
 
 	/**
@@ -68,20 +70,24 @@ public class DLAppServiceSoap {
 	 * @param folderId the primary key of the file entry's parent folder
 	 * @param sourceFileName the original file's name
 	 * @param mimeType the file's MIME type
-	 * @param title the name to be assigned to the file (optionally <code>null
-	 </code>)
+	 * @param title the name to be assigned to the file (optionally
+	 <code>null </code>)
 	 * @param description the file's description
 	 * @param changeLog the file's version change log
 	 * @param bytes the file's data (optionally <code>null</code>)
 	 * @param serviceContext the service context to be applied. Can set the
 	 asset category IDs, asset tag names, and expando bridge
-	 attributes for the file entry. In a Liferay repository, it may
-	 include:  <ul> <li> fileEntryTypeId - ID for a custom file entry
-	 type </li> <li> fieldsMap - mapping for fields associated with a
-	 custom file entry type </li> </ul>
+	 attributes for the file entry. In a Liferay repository, it
+	 may include:  <ul> <li> fileEntryTypeId - ID for a custom
+	 file entry type </li> <li> fieldsMap - mapping for fields
+	 associated with a custom file entry type </li> </ul>
 	 * @return the file entry
 	 * @throws PortalException if a portal exception occurred
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addFileEntry(String, long, long, String, String, String,
+	 String, String, byte[], Date, Date, ServiceContext)}
 	 */
+	@Deprecated
 	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
 			addFileEntry(
 				long repositoryId, long folderId, String sourceFileName,
@@ -95,6 +101,67 @@ public class DLAppServiceSoap {
 				DLAppServiceUtil.addFileEntry(
 					repositoryId, folderId, sourceFileName, mimeType, title,
 					description, changeLog, bytes, serviceContext);
+
+			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	/**
+	 * Adds a file entry and associated metadata. It is created based on a byte
+	 * array.
+	 *
+	 * <p>
+	 * This method takes two file names, the <code>sourceFileName</code> and the
+	 * <code>title</code>. The <code>sourceFileName</code> corresponds to the
+	 * name of the actual file being uploaded. The <code>title</code>
+	 * corresponds to a name the client wishes to assign this file after it has
+	 * been uploaded to the portal. If it is <code>null</code>, the <code>
+	 * sourceFileName</code> will be used.
+	 * </p>
+	 *
+	 * @param externalReferenceCode the file entry's external reference code
+	 * @param repositoryId the primary key of the repository
+	 * @param folderId the primary key of the file entry's parent folder
+	 * @param sourceFileName the original file's name
+	 * @param mimeType the file's MIME type
+	 * @param title the name to be assigned to the file (optionally <code>null
+	 </code>)
+	 * @param description the file's description
+	 * @param changeLog the file's version change log
+	 * @param bytes the file's data (optionally <code>null</code>)
+	 * @param expirationDate the file's expiration date (optionally <code>null
+	 </code>)
+	 * @param reviewDate the file's review Date (optionally <code>null</code>)
+	 * @param serviceContext the service context to be applied. Can set the
+	 asset category IDs, asset tag names, and expando bridge
+	 attributes for the file entry. In a Liferay repository, it may
+	 include:  <ul> <li> fileEntryTypeId - ID for a custom file entry
+	 type </li> <li> fieldsMap - mapping for fields associated with a
+	 custom file entry type </li> </ul>
+	 * @return the file entry
+	 * @throws PortalException if a portal exception occurred
+	 */
+	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
+			addFileEntry(
+				String externalReferenceCode, long repositoryId, long folderId,
+				String sourceFileName, String mimeType, String title,
+				String description, String changeLog, byte[] bytes,
+				java.util.Date expirationDate, java.util.Date reviewDate,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws RemoteException {
+
+		try {
+			com.liferay.portal.kernel.repository.model.FileEntry returnValue =
+				DLAppServiceUtil.addFileEntry(
+					externalReferenceCode, repositoryId, folderId,
+					sourceFileName, mimeType, title, description, changeLog,
+					bytes, expirationDate, reviewDate, serviceContext);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModel(returnValue);
@@ -626,23 +693,24 @@ public class DLAppServiceSoap {
 	 * @param folderId the primary key of the file entry's folder
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the file entries (optionally
-	 <code>null</code>)
+	 * @param orderByComparator the comparator to order the file entries
+	 (optionally <code>null</code>)
 	 * @return the range of file entries in the folder ordered by comparator
-	 <code>obc</code>
+	 <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FileEntrySoap[]
 			getFileEntries(
 				long repositoryId, long folderId, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getFileEntries(
-					repositoryId, folderId, start, end, obc);
+					repositoryId, folderId, start, end, orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -725,8 +793,8 @@ public class DLAppServiceSoap {
 	 * @param fileEntryTypeId the primary key of the file entry type
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the results by (optionally
-	 <code>null</code>)
+	 * @param orderByComparator the comparator to order the results by
+	 (optionally <code>null</code>)
 	 * @return the range of file entries with the file entry type in the folder
 	 ordered by <code>null</code>
 	 * @throws PortalException if a portal exception occurred
@@ -736,13 +804,15 @@ public class DLAppServiceSoap {
 				long repositoryId, long folderId, long fileEntryTypeId,
 				int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getFileEntries(
-					repositoryId, folderId, fileEntryTypeId, start, end, obc);
+					repositoryId, folderId, fileEntryTypeId, start, end,
+					orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -778,13 +848,15 @@ public class DLAppServiceSoap {
 				long repositoryId, long folderId, String[] mimeTypes, int start,
 				int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getFileEntries(
-					repositoryId, folderId, mimeTypes, start, end, obc);
+					repositoryId, folderId, mimeTypes, start, end,
+					orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -960,6 +1032,62 @@ public class DLAppServiceSoap {
 		try {
 			com.liferay.portal.kernel.repository.model.FileEntry returnValue =
 				DLAppServiceUtil.getFileEntry(groupId, folderId, title);
+
+			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	/**
+	 * Returns the file entry with the external reference code.
+	 *
+	 * @param groupId the primary key of the file entry's group
+	 * @param externalReferenceCode the file entry's external reference code
+	 * @return the file entry with the external reference code
+	 * @throws PortalException if a portal exception occurred
+	 */
+	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
+			getFileEntryByExternalReferenceCode(
+				long groupId, String externalReferenceCode)
+		throws RemoteException {
+
+		try {
+			com.liferay.portal.kernel.repository.model.FileEntry returnValue =
+				DLAppServiceUtil.getFileEntryByExternalReferenceCode(
+					groupId, externalReferenceCode);
+
+			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	/**
+	 * Returns the file entry with the file name in the folder.
+	 *
+	 * @param groupId the primary key of the file entry's group
+	 * @param folderId the primary key of the file entry's folder
+	 * @param fileName the file entry's file name
+	 * @return the file entry with the file name in the folder
+	 * @throws PortalException if a portal exception occurred
+	 */
+	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
+			getFileEntryByFileName(long groupId, long folderId, String fileName)
+		throws RemoteException {
+
+		try {
+			com.liferay.portal.kernel.repository.model.FileEntry returnValue =
+				DLAppServiceUtil.getFileEntryByFileName(
+					groupId, folderId, fileName);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModel(returnValue);
@@ -1173,10 +1301,10 @@ public class DLAppServiceSoap {
 	 third-party repositories
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the folders (optionally
+	 * @param orderByComparator the comparator to order the folders (optionally
 	 <code>null</code>)
 	 * @return the range of immediate subfolders of the parent folder ordered by
-	 comparator <code>obc</code>
+	 comparator <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FolderSoap[]
@@ -1184,14 +1312,15 @@ public class DLAppServiceSoap {
 				long repositoryId, long parentFolderId,
 				boolean includeMountFolders, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.Folder> obc)
+					<com.liferay.portal.kernel.repository.model.Folder>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.Folder>
 				returnValue = DLAppServiceUtil.getFolders(
 					repositoryId, parentFolderId, includeMountFolders, start,
-					end, obc);
+					end, orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FolderSoap.
 				toSoapModels(returnValue);
@@ -1223,10 +1352,10 @@ public class DLAppServiceSoap {
 	 third-party repositories
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the folders (optionally
+	 * @param orderByComparator the comparator to order the folders (optionally
 	 <code>null</code>)
 	 * @return the range of immediate subfolders of the parent folder ordered by
-	 comparator <code>obc</code>
+	 comparator <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FolderSoap[]
@@ -1234,14 +1363,15 @@ public class DLAppServiceSoap {
 				long repositoryId, long parentFolderId, int status,
 				boolean includeMountFolders, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.Folder> obc)
+					<com.liferay.portal.kernel.repository.model.Folder>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.Folder>
 				returnValue = DLAppServiceUtil.getFolders(
 					repositoryId, parentFolderId, status, includeMountFolders,
-					start, end, obc);
+					start, end, orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FolderSoap.
 				toSoapModels(returnValue);
@@ -1311,23 +1441,25 @@ public class DLAppServiceSoap {
 	 * @param parentFolderId the primary key of the folder's parent folder
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the folders (optionally
+	 * @param orderByComparator the comparator to order the folders (optionally
 	 <code>null</code>)
 	 * @return the range of immediate subfolders of the parent folder ordered by
-	 comparator <code>obc</code>
+	 comparator <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FolderSoap[]
 			getFolders(
 				long repositoryId, long parentFolderId, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.Folder> obc)
+					<com.liferay.portal.kernel.repository.model.Folder>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.Folder>
 				returnValue = DLAppServiceUtil.getFolders(
-					repositoryId, parentFolderId, start, end, obc);
+					repositoryId, parentFolderId, start, end,
+					orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FolderSoap.
 				toSoapModels(returnValue);
@@ -1585,23 +1717,24 @@ public class DLAppServiceSoap {
 	 (optionally <code>0</code>)
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the file entries (optionally
-	 <code>null</code>)
+	 * @param orderByComparator the comparator to order the file entries
+	 (optionally <code>null</code>)
 	 * @return the range of matching file entries ordered by comparator
-	 <code>obc</code>
+	 <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FileEntrySoap[]
 			getGroupFileEntries(
 				long groupId, long userId, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getGroupFileEntries(
-					groupId, userId, start, end, obc);
+					groupId, userId, start, end, orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -1681,10 +1814,10 @@ public class DLAppServiceSoap {
 	 search
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the file entries (optionally
-	 <code>null</code>)
+	 * @param orderByComparator the comparator to order the file entries
+	 (optionally <code>null</code>)
 	 * @return the range of matching file entries ordered by comparator
-	 <code>obc</code>
+	 <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FileEntrySoap[]
@@ -1692,13 +1825,15 @@ public class DLAppServiceSoap {
 				long groupId, long userId, long rootFolderId, int start,
 				int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getGroupFileEntries(
-					groupId, userId, rootFolderId, start, end, obc);
+					groupId, userId, rootFolderId, start, end,
+					orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -1715,14 +1850,15 @@ public class DLAppServiceSoap {
 				long groupId, long userId, long rootFolderId,
 				String[] mimeTypes, int status, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 				returnValue = DLAppServiceUtil.getGroupFileEntries(
 					groupId, userId, rootFolderId, mimeTypes, status, start,
-					end, obc);
+					end, orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
 				toSoapModels(returnValue);
@@ -1901,24 +2037,26 @@ public class DLAppServiceSoap {
 	 * @param parentFolderId the primary key of the folder's parent folder
 	 * @param start the lower bound of the range of results
 	 * @param end the upper bound of the range of results (not inclusive)
-	 * @param obc the comparator to order the folders (optionally
+	 * @param orderByComparator the comparator to order the folders (optionally
 	 <code>null</code>)
 	 * @return the range of immediate subfolders of the parent folder that are
 	 used for mounting third-party repositories ordered by comparator
-	 <code>obc</code>
+	 <code>orderByComparator</code>
 	 * @throws PortalException if a portal exception occurred
 	 */
 	public static com.liferay.portal.kernel.repository.model.FolderSoap[]
 			getMountFolders(
 				long repositoryId, long parentFolderId, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.Folder> obc)
+					<com.liferay.portal.kernel.repository.model.Folder>
+						orderByComparator)
 		throws RemoteException {
 
 		try {
 			java.util.List<com.liferay.portal.kernel.repository.model.Folder>
 				returnValue = DLAppServiceUtil.getMountFolders(
-					repositoryId, parentFolderId, start, end, obc);
+					repositoryId, parentFolderId, start, end,
+					orderByComparator);
 
 			return com.liferay.portal.kernel.repository.model.FolderSoap.
 				toSoapModels(returnValue);
@@ -2415,6 +2553,9 @@ public class DLAppServiceSoap {
 	 * @param dlVersionNumberIncrease the kind of version number increase to
 	 apply for these changes.
 	 * @param bytes the file's data (optionally <code>null</code>)
+	 * @param expirationDate the file's expiration date (optionally <code>null
+	 </code>)
+	 * @param reviewDate the file's review date (optionally <code>null</code>)
 	 * @param serviceContext the service context to be applied. Can set the
 	 asset category IDs, asset tag names, and expando bridge
 	 attributes for the file entry. In a Liferay repository, it may
@@ -2424,6 +2565,74 @@ public class DLAppServiceSoap {
 	 * @return the file entry
 	 * @throws PortalException if a portal exception occurred
 	 */
+	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
+			updateFileEntry(
+				long fileEntryId, String sourceFileName, String mimeType,
+				String title, String description, String changeLog,
+				com.liferay.document.library.kernel.model.
+					DLVersionNumberIncrease dlVersionNumberIncrease,
+				byte[] bytes, java.util.Date expirationDate,
+				java.util.Date reviewDate,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws RemoteException {
+
+		try {
+			com.liferay.portal.kernel.repository.model.FileEntry returnValue =
+				DLAppServiceUtil.updateFileEntry(
+					fileEntryId, sourceFileName, mimeType, title, description,
+					changeLog, dlVersionNumberIncrease, bytes, expirationDate,
+					reviewDate, serviceContext);
+
+			return com.liferay.portal.kernel.repository.model.FileEntrySoap.
+				toSoapModel(returnValue);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	/**
+	 * Updates a file entry and associated metadata based on a byte array
+	 * object. If the file data is <code>null</code>, then only the associated
+	 * metadata (i.e., <code>title</code>, <code>description</code>, and
+	 * parameters in the <code>serviceContext</code>) will be updated.
+	 *
+	 * <p>
+	 * This method takes two file names, the <code>sourceFileName</code> and the
+	 * <code>title</code>. The <code>sourceFileName</code> corresponds to the
+	 * name of the actual file being uploaded. The <code>title</code>
+	 * corresponds to a name the client wishes to assign this file after it has
+	 * been uploaded to the portal.
+	 * </p>
+	 *
+	 * @param fileEntryId the primary key of the file entry
+	 * @param sourceFileName the original file's name (optionally
+	 <code>null</code>)
+	 * @param mimeType the file's MIME type (optionally <code>null</code>)
+	 * @param title the new name to be assigned to the file (optionally <code>
+	 <code>null</code></code>)
+	 * @param description the file's new description
+	 * @param changeLog the file's version change log (optionally
+	 <code>null</code>)
+	 * @param dlVersionNumberIncrease the kind of version number increase to
+	 apply for these changes.
+	 * @param bytes the file's data (optionally <code>null</code>)
+	 * @param serviceContext the service context to be applied. Can set the
+	 asset category IDs, asset tag names, and expando bridge
+	 attributes for the file entry. In a Liferay repository, it may
+	 include:  <ul> <li> fileEntryTypeId - ID for a custom file entry
+	 type </li> <li> fieldsMap - mapping for fields associated with a
+	 custom file entry type </li> </ul>
+	 * @return the file entry
+	 * @throws PortalException if a portal exception occurred
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #updateFileEntry(long, String, String, String, String,
+	 String, DLVersionNumberIncrease, byte[],
+	 Date, Date, ServiceContext)}
+	 */
+	@Deprecated
 	public static com.liferay.portal.kernel.repository.model.FileEntrySoap
 			updateFileEntry(
 				long fileEntryId, String sourceFileName, String mimeType,

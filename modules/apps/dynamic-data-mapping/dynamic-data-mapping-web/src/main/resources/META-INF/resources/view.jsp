@@ -53,7 +53,9 @@ List<DDMDisplayTabItem> ddmDisplayTabItems = ddmDisplay.getTabItems();
 	<aui:input name="redirect" type="hidden" value="<%= ddmDisplayContext.getStructureSearchActionURL() %>" />
 	<aui:input name="deleteStructureIds" type="hidden" />
 
-	<div class="container-fluid container-fluid-max-xl" id="<portlet:namespace />entriesContainer">
+	<clay:container-fluid
+		id='<%= liferayPortletResponse.getNamespace() + "entriesContainer" %>'
+	>
 		<liferay-ui:search-container
 			id="ddmStructures"
 			rowChecker="<%= new DDMStructureRowChecker(renderResponse) %>"
@@ -69,14 +71,17 @@ List<DDMDisplayTabItem> ddmDisplayTabItems = ddmDisplay.getTabItems();
 				String rowHREF = StringPool.BLANK;
 
 				if (DDMStructurePermission.contains(permissionChecker, structure, ActionKeys.UPDATE)) {
-					PortletURL rowURL = renderResponse.createRenderURL();
-
-					rowURL.setParameter("mvcPath", "/edit_structure.jsp");
-					rowURL.setParameter("redirect", currentURL);
-					rowURL.setParameter("classNameId", String.valueOf(PortalUtil.getClassNameId(DDMStructure.class)));
-					rowURL.setParameter("classPK", String.valueOf(structure.getStructureId()));
-
-					rowHREF = rowURL.toString();
+					rowHREF = PortletURLBuilder.createRenderURL(
+						renderResponse
+					).setMVCPath(
+						"/edit_structure.jsp"
+					).setRedirect(
+						currentURL
+					).setParameter(
+						"classNameId", PortalUtil.getClassNameId(DDMStructure.class)
+					).setParameter(
+						"classPK", structure.getStructureId()
+					).buildString();
 				}
 				%>
 
@@ -148,5 +153,5 @@ List<DDMDisplayTabItem> ddmDisplayTabItems = ddmDisplay.getTabItems();
 				markupView="lexicon"
 			/>
 		</liferay-ui:search-container>
-	</div>
+	</clay:container-fluid>
 </aui:form>

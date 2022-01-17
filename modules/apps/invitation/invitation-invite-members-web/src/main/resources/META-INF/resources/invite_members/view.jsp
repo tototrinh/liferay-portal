@@ -36,32 +36,28 @@ Group group = GroupLocalServiceUtil.getGroup(scopeGroupId);
 				'<portlet:namespace />inviteMembersButton'
 			);
 
-			<portlet:namespace />inviteMembersButton.addEventListener('click', function(
-				event
-			) {
+			<portlet:namespace />inviteMembersButton.addEventListener('click', (event) => {
 				Liferay.Util.openWindow({
 					dialog: {
 						cssClass: 'so-portlet-invite-members',
 						destroyOnHide: true,
-						width: 700
+						width: 700,
 					},
 					dialogIframe: {
-						bodyCssClass: 'dialog-with-footer'
+						bodyCssClass: 'dialog-with-footer',
 					},
 					title: '<%= portletDisplay.getTitle() %>',
-					uri: '<%= HtmlUtil.escapeJS(inviteURL) %>'
+					uri: '<%= HtmlUtil.escapeJS(inviteURL) %>',
 				});
 			});
 		</aui:script>
 	</c:when>
 	<c:otherwise>
-		<aui:script require="metal-dom/src/dom">
-			var dom = metalDomSrcDom.default;
-
+		<aui:script>
 			var portlet = document.getElementById('p_p_id<portlet:namespace />');
 
 			if (portlet) {
-				dom.addClasses(portlet, 'hide');
+				portlet.classList.add('hide');
 			}
 		</aui:script>
 	</c:otherwise>

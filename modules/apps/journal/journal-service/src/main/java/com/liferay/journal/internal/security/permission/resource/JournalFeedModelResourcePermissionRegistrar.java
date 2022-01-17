@@ -23,9 +23,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
-
-import java.util.Dictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -42,12 +40,9 @@ public class JournalFeedModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", JournalFeed.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<JournalFeed>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				JournalFeed.class, JournalFeed::getId,
 				_journalFeedLocalService::getJournalFeed,
@@ -56,7 +51,9 @@ public class JournalFeedModelResourcePermissionRegistrar {
 					new StagedModelPermissionLogic<>(
 						_stagingPermission, JournalPortletKeys.JOURNAL,
 						JournalFeed::getId))),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", JournalFeed.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -72,7 +69,8 @@ public class JournalFeedModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<JournalFeed>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

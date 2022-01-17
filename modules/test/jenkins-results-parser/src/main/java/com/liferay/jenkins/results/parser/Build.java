@@ -14,8 +14,13 @@
 
 package com.liferay.jenkins.results.parser;
 
+import java.io.IOException;
+
+import java.net.URL;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.dom4j.Element;
 
@@ -34,6 +39,8 @@ public interface Build {
 
 	public String getArchivePath();
 
+	public URL getArtifactsBaseURL();
+
 	public long getAverageDelayTime();
 
 	public List<String> getBadBuildURLs();
@@ -48,9 +55,16 @@ public interface Build {
 
 	public String getBuildDescription();
 
+	public String getBuildDirPath();
+
 	public JSONObject getBuildJSONObject();
 
 	public int getBuildNumber();
+
+	public Job.BuildProfile getBuildProfile();
+
+	public JSONObject getBuildResultsJSONObject(
+		String[] buildResults, String[] testStatuses, String[] dataTypes);
 
 	public String getBuildURL();
 
@@ -76,11 +90,16 @@ public interface Build {
 
 	public long getDuration();
 
+	public String getFailureMessage();
+
 	public Element getGitHubMessageBuildAnchorElement();
 
 	public Element getGitHubMessageElement();
 
 	public Element getGitHubMessageUpstreamJobFailureElement();
+
+	public Map<String, String> getInjectedEnvironmentVariablesMap()
+		throws IOException;
 
 	public String getInvocationURL();
 
@@ -92,7 +111,11 @@ public interface Build {
 
 	public JenkinsSlave getJenkinsSlave();
 
+	public Job getJob();
+
 	public String getJobName();
+
+	public Properties getJobProperties();
 
 	public String getJobURL();
 
@@ -146,9 +169,17 @@ public interface Build {
 
 	public Map<String, String> getStopPropertiesTempMap();
 
-	public JSONObject getTestReportJSONObject();
+	public TestClassResult getTestClassResult(String testClassName);
+
+	public List<TestClassResult> getTestClassResults();
+
+	public JSONObject getTestReportJSONObject(boolean checkCache);
+
+	public List<TestResult> getTestResults();
 
 	public List<TestResult> getTestResults(String testStatus);
+
+	public String getTestSuiteName();
 
 	public TopLevelBuild getTopLevelBuild();
 
@@ -162,6 +193,10 @@ public interface Build {
 	public int getTotalSlavesUsedCount(
 		String status, boolean modifiedBuildsOnly, boolean ignoreCurrentBuild);
 
+	public List<TestResult> getUniqueFailureTestResults();
+
+	public List<TestResult> getUpstreamJobFailureTestResults();
+
 	public boolean hasBuildURL(String buildURL);
 
 	public boolean hasGenericCIFailure();
@@ -170,13 +205,23 @@ public interface Build {
 
 	public boolean isBuildModified();
 
+	public boolean isCompareToUpstream();
+
+	public boolean isCompleted();
+
+	public boolean isFailing();
+
 	public boolean isFromArchive();
 
 	public boolean isFromCompletedBuild();
 
+	public boolean isUniqueFailure();
+
 	public void reinvoke();
 
 	public void reinvoke(ReinvokeRule reinvokeRule);
+
+	public void removeDownstreamBuild(Build build);
 
 	public String replaceBuildURL(String text);
 
@@ -185,5 +230,31 @@ public interface Build {
 	public void takeSlaveOffline(SlaveOfflineRule slaveOfflineRule);
 
 	public void update();
+
+	public interface BranchInformation {
+
+		public String getCachedRemoteGitRefName();
+
+		public String getOriginName();
+
+		public Integer getPullRequestNumber();
+
+		public String getReceiverUsername();
+
+		public String getRepositoryName();
+
+		public String getSenderBranchName();
+
+		public String getSenderBranchSHA();
+
+		public RemoteGitRef getSenderRemoteGitRef();
+
+		public String getSenderUsername();
+
+		public String getUpstreamBranchName();
+
+		public String getUpstreamBranchSHA();
+
+	}
 
 }

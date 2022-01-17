@@ -17,7 +17,7 @@
 <%@ include file="/init.jsp" %>
 
 <%
-JournalEditDDMTemplateDisplayContext journalEditDDMTemplateDisplayContext = new JournalEditDDMTemplateDisplayContext(request);
+JournalEditDDMTemplateDisplayContext journalEditDDMTemplateDisplayContext = new JournalEditDDMTemplateDisplayContext(request, renderResponse);
 
 DDMTemplate ddmTemplate = journalEditDDMTemplateDisplayContext.getDDMTemplate();
 
@@ -45,7 +45,7 @@ renderResponse.setTitle(journalEditDDMTemplateDisplayContext.getTitle());
 	<aui:model-context bean="<%= ddmTemplate %>" model="<%= DDMTemplate.class %>" />
 
 	<nav class="component-tbar subnav-tbar-light tbar tbar-article">
-		<div class="container-fluid container-fluid-max-xl">
+		<clay:container-fluid>
 			<ul class="tbar-nav">
 				<li class="tbar-item tbar-item-expand">
 					<aui:input cssClass="form-control-inline" defaultLanguageId="<%= (ddmTemplate == null) ? LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault()): ddmTemplate.getDefaultLanguageId() %>" label="" name="name" placeholder='<%= LanguageUtil.format(request, "untitled-x", "template") %>' wrapperCssClass="article-content-title mb-0" />
@@ -65,96 +65,44 @@ renderResponse.setTitle(journalEditDDMTemplateDisplayContext.getTitle());
 						%>
 
 						<aui:button cssClass="btn-sm mr-3" onClick="<%= taglibOnClickSaveTemplate %>" type="submit" value="save" />
-
-						<clay:button
-							icon="cog"
-							id='<%= renderResponse.getNamespace() + "contextualSidebarButton" %>'
-							monospaced="<%= true %>"
-							size="sm"
-							style="borderless"
-						/>
 					</div>
 				</li>
 			</ul>
-		</div>
+		</clay:container-fluid>
 	</nav>
 
-	<div class="contextual-sidebar edit-article-sidebar sidebar-light sidebar-sm" id="<portlet:namespace />contextualSidebarContainer">
-		<div class="sidebar-header">
-			<h4 class="component-title">
-				<liferay-ui:message key="properties" />
-			</h4>
+	<liferay-ui:error exception="<%= TemplateNameException.class %>" message="please-enter-a-valid-name" />
+	<liferay-ui:error exception="<%= TemplateScriptException.class %>" message="please-enter-a-valid-script" />
+
+	<c:if test="<%= (ddmTemplate != null) && (journalEditDDMTemplateDisplayContext.getGroupId() != scopeGroupId) %>">
+		<div class="alert alert-warning">
+			<liferay-ui:message key="this-template-does-not-belong-to-this-site.-you-may-affect-other-sites-if-you-edit-this-template" />
 		</div>
+	</c:if>
 
-		<div class="sidebar-body">
-			<liferay-frontend:form-navigator
-				fieldSetCssClass="panel-group-flush"
-				formModelBean="<%= ddmTemplate %>"
-				id="<%= JournalWebConstants.FORM_NAVIGATOR_ID_JOURNAL_DDM_TEMPLATE %>"
-				showButtons="<%= false %>"
-			/>
-		</div>
-	</div>
-
-	<div class="contextual-sidebar-content">
-		<div class="container-fluid container-fluid-max-xl container-view">
-			<div class="sheet">
-				<liferay-ui:error exception="<%= TemplateNameException.class %>" message="please-enter-a-valid-name" />
-				<liferay-ui:error exception="<%= TemplateScriptException.class %>" message="please-enter-a-valid-script" />
-
-				<c:if test="<%= (ddmTemplate != null) && (journalEditDDMTemplateDisplayContext.getGroupId() != scopeGroupId) %>">
-					<div class="alert alert-warning">
-						<liferay-ui:message key="this-template-does-not-belong-to-this-site.-you-may-affect-other-sites-if-you-edit-this-template" />
-					</div>
-				</c:if>
-
-				<liferay-util:include page="/edit_ddm_template_display.jsp" servletContext="<%= application %>" />
+	<div>
+		<div id="<portlet:namespace />ddmTemplateEditor">
+			<div class="inline-item my-5 p-5 w-100">
+				<span aria-hidden="true" class="loading-animation"></span>
 			</div>
+
+			<react:component
+				componentId="ddmTemplateEditor"
+				module="ddm_template_editor/components/TemplateEditor"
+				props="<%= journalEditDDMTemplateDisplayContext.getDDMTemplateEditorContext() %>"
+			/>
 		</div>
 	</div>
 </aui:form>
 
 <aui:script>
-	Liferay.after('<portlet:namespace />saveAndContinue', function() {
+	Liferay.after('<portlet:namespace />saveAndContinue', () => {
 		document.<portlet:namespace />fm.<portlet:namespace />saveAndContinue.value = true;
 
 		Liferay.fire('<portlet:namespace />saveTemplate');
 	});
 
-	Liferay.after('<portlet:namespace />saveTemplate', function() {
+	Liferay.after('<portlet:namespace />saveTemplate', () => {
 		submitForm(document.<portlet:namespace />fm);
 	});
-
-	var contextualSidebarButton = document.getElementById(
-		'<portlet:namespace />contextualSidebarButton'
-	);
-	var contextualSidebarContainer = document.getElementById(
-		'<portlet:namespace />contextualSidebarContainer'
-	);
-
-	if (
-		contextualSidebarContainer &&
-		window.innerWidth > Liferay.BREAKPOINTS.PHONE
-	) {
-		contextualSidebarContainer.classList.add('contextual-sidebar-visible');
-	}
-
-	if (contextualSidebarButton) {
-		contextualSidebarButton.addEventListener('click', function(event) {
-			if (
-				contextualSidebarContainer.classList.contains(
-					'contextual-sidebar-visible'
-				)
-			) {
-				contextualSidebarContainer.classList.remove(
-					'contextual-sidebar-visible'
-				);
-			}
-			else {
-				contextualSidebarContainer.classList.add(
-					'contextual-sidebar-visible'
-				);
-			}
-		});
-	}
 </aui:script>

@@ -35,17 +35,17 @@ public class PortalPreferencesCacheModel
 	implements CacheModel<PortalPreferences>, Externalizable, MVCCModel {
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof PortalPreferencesCacheModel)) {
+		if (!(object instanceof PortalPreferencesCacheModel)) {
 			return false;
 		}
 
 		PortalPreferencesCacheModel portalPreferencesCacheModel =
-			(PortalPreferencesCacheModel)obj;
+			(PortalPreferencesCacheModel)object;
 
 		if ((portalPreferencesId ==
 				portalPreferencesCacheModel.portalPreferencesId) &&
@@ -82,12 +82,12 @@ public class PortalPreferencesCacheModel
 		sb.append(mvccVersion);
 		sb.append(", portalPreferencesId=");
 		sb.append(portalPreferencesId);
+		sb.append(", companyId=");
+		sb.append(companyId);
 		sb.append(", ownerId=");
 		sb.append(ownerId);
 		sb.append(", ownerType=");
 		sb.append(ownerType);
-		sb.append(", preferences=");
-		sb.append(preferences);
 		sb.append("}");
 
 		return sb.toString();
@@ -100,15 +100,9 @@ public class PortalPreferencesCacheModel
 
 		portalPreferencesImpl.setMvccVersion(mvccVersion);
 		portalPreferencesImpl.setPortalPreferencesId(portalPreferencesId);
+		portalPreferencesImpl.setCompanyId(companyId);
 		portalPreferencesImpl.setOwnerId(ownerId);
 		portalPreferencesImpl.setOwnerType(ownerType);
-
-		if (preferences == null) {
-			portalPreferencesImpl.setPreferences("");
-		}
-		else {
-			portalPreferencesImpl.setPreferences(preferences);
-		}
 
 		portalPreferencesImpl.resetOriginalValues();
 
@@ -121,10 +115,11 @@ public class PortalPreferencesCacheModel
 
 		portalPreferencesId = objectInput.readLong();
 
+		companyId = objectInput.readLong();
+
 		ownerId = objectInput.readLong();
 
 		ownerType = objectInput.readInt();
-		preferences = objectInput.readUTF();
 	}
 
 	@Override
@@ -133,22 +128,17 @@ public class PortalPreferencesCacheModel
 
 		objectOutput.writeLong(portalPreferencesId);
 
+		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(ownerId);
 
 		objectOutput.writeInt(ownerType);
-
-		if (preferences == null) {
-			objectOutput.writeUTF("");
-		}
-		else {
-			objectOutput.writeUTF(preferences);
-		}
 	}
 
 	public long mvccVersion;
 	public long portalPreferencesId;
+	public long companyId;
 	public long ownerId;
 	public int ownerType;
-	public String preferences;
 
 }

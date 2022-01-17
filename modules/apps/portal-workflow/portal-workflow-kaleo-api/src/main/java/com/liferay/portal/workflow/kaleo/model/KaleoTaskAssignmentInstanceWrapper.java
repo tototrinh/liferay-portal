@@ -55,6 +55,7 @@ public class KaleoTaskAssignmentInstanceWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("kaleoDefinitionId", getKaleoDefinitionId());
 		attributes.put(
 			"kaleoDefinitionVersionId", getKaleoDefinitionVersionId());
 		attributes.put("kaleoInstanceId", getKaleoInstanceId());
@@ -122,6 +123,12 @@ public class KaleoTaskAssignmentInstanceWrapper
 			setModifiedDate(modifiedDate);
 		}
 
+		Long kaleoDefinitionId = (Long)attributes.get("kaleoDefinitionId");
+
+		if (kaleoDefinitionId != null) {
+			setKaleoDefinitionId(kaleoDefinitionId);
+		}
+
 		Long kaleoDefinitionVersionId = (Long)attributes.get(
 			"kaleoDefinitionVersionId");
 
@@ -184,6 +191,11 @@ public class KaleoTaskAssignmentInstanceWrapper
 		if (completionDate != null) {
 			setCompletionDate(completionDate);
 		}
+	}
+
+	@Override
+	public KaleoTaskAssignmentInstance cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -254,6 +266,16 @@ public class KaleoTaskAssignmentInstanceWrapper
 	@Override
 	public long getGroupId() {
 		return model.getGroupId();
+	}
+
+	/**
+	 * Returns the kaleo definition ID of this kaleo task assignment instance.
+	 *
+	 * @return the kaleo definition ID of this kaleo task assignment instance
+	 */
+	@Override
+	public long getKaleoDefinitionId() {
+		return model.getKaleoDefinitionId();
 	}
 
 	/**
@@ -469,6 +491,16 @@ public class KaleoTaskAssignmentInstanceWrapper
 	@Override
 	public void setGroupId(long groupId) {
 		model.setGroupId(groupId);
+	}
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo task assignment instance.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo task assignment instance
+	 */
+	@Override
+	public void setKaleoDefinitionId(long kaleoDefinitionId) {
+		model.setKaleoDefinitionId(kaleoDefinitionId);
 	}
 
 	/**

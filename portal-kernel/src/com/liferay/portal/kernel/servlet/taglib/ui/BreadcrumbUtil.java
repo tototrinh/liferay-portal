@@ -16,7 +16,7 @@ package com.liferay.portal.kernel.servlet.taglib.ui;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.model.Account;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Layout;
@@ -128,9 +128,9 @@ public class BreadcrumbUtil {
 
 		BreadcrumbEntry breadcrumbEntry = new BreadcrumbEntry();
 
-		Account account = themeDisplay.getAccount();
+		Company company = themeDisplay.getCompany();
 
-		breadcrumbEntry.setTitle(account.getName());
+		breadcrumbEntry.setTitle(company.getName());
 
 		String layoutSetFriendlyURL = PortalUtil.getLayoutSetFriendlyURL(
 			layoutSet, themeDisplay);
@@ -226,10 +226,10 @@ public class BreadcrumbUtil {
 			if (Validator.isNotNull(url) &&
 				!CookieKeys.hasSessionId(httpServletRequest)) {
 
-				HttpSession session = httpServletRequest.getSession();
+				HttpSession httpSession = httpServletRequest.getSession();
 
 				portletBreadcrumbEntry.setURL(
-					PortalUtil.getURLWithSessionId(url, session.getId()));
+					PortalUtil.getURLWithSessionId(url, httpSession.getId()));
 			}
 		}
 
@@ -283,7 +283,7 @@ public class BreadcrumbUtil {
 			layoutsPageCount = group.getPublicLayoutsPageCount();
 		}
 
-		if ((layoutsPageCount > 0) && !_isGuestSite(group)) {
+		if ((layoutsPageCount > 0) && !_isGuestGroup(group)) {
 			String layoutSetFriendlyURL = PortalUtil.getLayoutSetFriendlyURL(
 				layoutSet, themeDisplay);
 
@@ -381,7 +381,7 @@ public class BreadcrumbUtil {
 		return null;
 	}
 
-	private static boolean _isGuestSite(Group group) {
+	private static boolean _isGuestGroup(Group group) {
 		if (group.isGuest()) {
 			return true;
 		}

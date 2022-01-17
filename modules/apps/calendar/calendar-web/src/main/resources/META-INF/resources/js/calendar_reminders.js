@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-calendar-reminders',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var STR_BLANK = '';
@@ -38,7 +38,7 @@ AUI.add(
 		var Reminders = A.Component.create({
 			ATTRS: {
 				portletNamespace: {
-					value: ''
+					value: '',
 				},
 
 				strings: {
@@ -47,8 +47,8 @@ AUI.add(
 						email: Liferay.Language.get('email'),
 						hours: Liferay.Language.get('hours'),
 						minutes: Liferay.Language.get('minutes'),
-						weeks: Liferay.Language.get('weeks')
-					}
+						weeks: Liferay.Language.get('weeks'),
+					},
 				},
 
 				values: {
@@ -56,14 +56,16 @@ AUI.add(
 					value: [
 						{
 							interval: 10,
-							type: Liferay.CalendarUtil.NOTIFICATION_DEFAULT_TYPE
+							type:
+								Liferay.CalendarUtil.NOTIFICATION_DEFAULT_TYPE,
 						},
 						{
 							interval: 60,
-							type: Liferay.CalendarUtil.NOTIFICATION_DEFAULT_TYPE
-						}
-					]
-				}
+							type:
+								Liferay.CalendarUtil.NOTIFICATION_DEFAULT_TYPE,
+						},
+					],
+				},
 			},
 
 			NAME: 'reminders',
@@ -99,16 +101,15 @@ AUI.add(
 						var value = val[i];
 
 						buffer.push(
-							tplReminder.parse(
-								A.merge(strings, {
-									disabled: !value.interval,
-									i,
-									portletNamespace,
-									time: Liferay.Time.getDescription(
-										value.interval
-									)
-								})
-							)
+							tplReminder.parse({
+								...strings,
+								disabled: !value.interval,
+								i,
+								portletNamespace,
+								time: Liferay.Time.getDescription(
+									value.interval
+								),
+							})
 						);
 					}
 
@@ -132,8 +133,8 @@ AUI.add(
 					var instance = this;
 
 					instance.tplReminder = new A.Template(TPL_REMINDER_SECTION);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Reminders = Reminders;
@@ -143,7 +144,7 @@ AUI.add(
 		requires: [
 			'aui-base',
 			'aui-template-deprecated',
-			'liferay-calendar-util'
-		]
+			'liferay-calendar-util',
+		],
 	}
 );

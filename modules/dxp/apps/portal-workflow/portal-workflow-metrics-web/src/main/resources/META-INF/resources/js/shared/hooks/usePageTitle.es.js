@@ -13,11 +13,12 @@ import {useContext, useEffect} from 'react';
 
 import {AppContext} from '../../components/AppContext.es';
 
-const usePageTitle = pageTitle => {
+const usePageTitle = (pageTitle) => {
 	const {setTitle} = useContext(AppContext);
 
 	useEffect(() => {
 		setTitle(pageTitle);
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [pageTitle]);
 };

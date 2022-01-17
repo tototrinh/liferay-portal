@@ -152,6 +152,20 @@ public class KnowledgeBaseFolderSerDes {
 			sb.append("\"");
 		}
 
+		if (knowledgeBaseFolder.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(knowledgeBaseFolder.getExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
 		if (knowledgeBaseFolder.getId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -291,15 +305,25 @@ public class KnowledgeBaseFolderSerDes {
 				String.valueOf(knowledgeBaseFolder.getCustomFields()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(
-				knowledgeBaseFolder.getDateCreated()));
+		if (knowledgeBaseFolder.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(
+					knowledgeBaseFolder.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(
-				knowledgeBaseFolder.getDateModified()));
+		if (knowledgeBaseFolder.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(
+					knowledgeBaseFolder.getDateModified()));
+		}
 
 		if (knowledgeBaseFolder.getDescription() == null) {
 			map.put("description", null);
@@ -308,6 +332,15 @@ public class KnowledgeBaseFolderSerDes {
 			map.put(
 				"description",
 				String.valueOf(knowledgeBaseFolder.getDescription()));
+		}
+
+		if (knowledgeBaseFolder.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(knowledgeBaseFolder.getExternalReferenceCode()));
 		}
 
 		if (knowledgeBaseFolder.getId() == null) {
@@ -444,6 +477,14 @@ public class KnowledgeBaseFolderSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					knowledgeBaseFolder.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "id")) {
 				if (jsonParserFieldValue != null) {
 					knowledgeBaseFolder.setId(
@@ -501,10 +542,6 @@ public class KnowledgeBaseFolderSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -533,7 +570,7 @@ public class KnowledgeBaseFolderSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -559,14 +596,17 @@ public class KnowledgeBaseFolderSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

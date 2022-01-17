@@ -23,17 +23,15 @@ import javax.servlet.http.HttpSession;
  */
 public class CompoundSessionIdHttpSession extends HttpSessionWrapper {
 
-	public CompoundSessionIdHttpSession(HttpSession session) {
-		super(session);
+	public CompoundSessionIdHttpSession(HttpSession httpSession) {
+		super(httpSession);
 	}
 
 	@Override
 	public String getId() {
 		String sessionId = super.getId();
 
-		sessionId = CompoundSessionIdSplitterUtil.parseSessionId(sessionId);
-
-		return sessionId;
+		return CompoundSessionIdSplitterUtil.parseSessionId(sessionId);
 	}
 
 }

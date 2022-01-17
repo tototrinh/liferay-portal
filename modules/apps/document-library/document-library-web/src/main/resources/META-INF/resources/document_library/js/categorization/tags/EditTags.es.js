@@ -31,7 +31,7 @@ function EditTags(props) {
 	};
 
 	const {observer, onClose} = useModal({
-		onClose: handleOnClose
+		onClose: handleOnClose,
 	});
 
 	if (!Liferay.component(bridgeComponentId)) {
@@ -43,10 +43,10 @@ function EditTags(props) {
 					setSelectAll(selectAll);
 					setFolderId(folderId);
 					setShowModal(true);
-				}
+				},
 			},
 			{
-				destroyOnNavigate: true
+				destroyOnNavigate: true,
 			}
 		);
 	}
@@ -67,7 +67,7 @@ function EditTags(props) {
 	);
 }
 
-export default function({context, props}) {
+export default function ({context, props}) {
 	return (
 		<EditTagsContext.Provider value={context}>
 			<EditTags {...props} />

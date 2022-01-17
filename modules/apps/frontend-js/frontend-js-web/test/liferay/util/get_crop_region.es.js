@@ -12,10 +12,7 @@
  * details.
  */
 
-'use strict';
-
-import dom from 'metal-dom';
-
+import buildFragment from '../../../src/main/resources/META-INF/resources/liferay/util/build_fragment';
 import getCropRegion from '../../../src/main/resources/META-INF/resources/liferay/util/get_crop_region.es';
 
 describe('Liferay.Util.getCropRegion', () => {
@@ -25,7 +22,7 @@ describe('Liferay.Util.getCropRegion', () => {
 			naturalWidth: 558,
 			offsetHeight: 438,
 			offsetWidth: 558,
-			tagName: 'IMG'
+			tagName: 'IMG',
 		};
 
 		const region = {};
@@ -34,18 +31,18 @@ describe('Liferay.Util.getCropRegion', () => {
 			height: 438,
 			width: 558,
 			x: 0,
-			y: 0
+			y: 0,
 		});
 	});
 
 	it('throws an error if image parameter is not an image element', () => {
-		const image = dom.buildFragment('<div />');
+		const image = buildFragment('<div />');
 
 		const region = {
 			height: 100,
 			width: 100,
 			x: 0,
-			y: 0
+			y: 0,
 		};
 
 		const testFn = () => {
@@ -61,7 +58,7 @@ describe('Liferay.Util.getCropRegion', () => {
 			naturalWidth: 558,
 			offsetHeight: 438,
 			offsetWidth: 558,
-			tagName: 'IMG'
+			tagName: 'IMG',
 		};
 
 		const region = 'foo';
@@ -79,21 +76,21 @@ describe('Liferay.Util.getCropRegion', () => {
 			naturalWidth: 558,
 			offsetHeight: 400,
 			offsetWidth: 500,
-			tagName: 'IMG'
+			tagName: 'IMG',
 		};
 
 		const region = {
 			height: 235,
 			width: 300,
 			x: -1,
-			y: -1
+			y: -1,
 		};
 
 		expect(getCropRegion(image, region)).toEqual({
 			height: 257.325,
 			width: 334.8,
 			x: 0,
-			y: 0
+			y: 0,
 		});
 	});
 
@@ -103,21 +100,21 @@ describe('Liferay.Util.getCropRegion', () => {
 			naturalWidth: 558,
 			offsetHeight: 400,
 			offsetWidth: 500,
-			tagName: 'IMG'
+			tagName: 'IMG',
 		};
 
 		const region = {
 			height: 235,
 			width: 300,
 			x: 0,
-			y: 0
+			y: 0,
 		};
 
 		expect(getCropRegion(image, region)).toEqual({
 			height: 257.325,
 			width: 334.8,
 			x: 0,
-			y: 0
+			y: 0,
 		});
 	});
 });

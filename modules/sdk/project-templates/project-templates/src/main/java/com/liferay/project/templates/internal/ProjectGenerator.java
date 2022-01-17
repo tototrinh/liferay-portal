@@ -14,20 +14,16 @@
 
 package com.liferay.project.templates.internal;
 
-import aQute.bnd.version.Version;
-import aQute.bnd.version.VersionRange;
-
 import com.liferay.project.templates.extensions.ProjectTemplateCustomizer;
 import com.liferay.project.templates.extensions.ProjectTemplatesArgs;
-import com.liferay.project.templates.extensions.ProjectTemplatesConstants;
+import com.liferay.project.templates.extensions.constants.ProjectTemplatesConstants;
 import com.liferay.project.templates.extensions.util.FileUtil;
 import com.liferay.project.templates.extensions.util.ProjectTemplatesUtil;
 import com.liferay.project.templates.extensions.util.Validator;
+import com.liferay.project.templates.extensions.util.VersionUtil;
 import com.liferay.project.templates.extensions.util.WorkspaceUtil;
 
 import java.io.File;
-
-import java.net.MalformedURLException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -58,6 +54,7 @@ public class ProjectGenerator {
 		String groupId = projectTemplatesArgs.getGroupId();
 		String liferayVersion = projectTemplatesArgs.getLiferayVersion();
 		String packageName = projectTemplatesArgs.getPackageName();
+		String product = projectTemplatesArgs.getProduct();
 
 		String template = projectTemplatesArgs.getTemplate();
 
@@ -72,14 +69,7 @@ public class ProjectGenerator {
 			templateFile, "Liferay-Versions");
 
 		if ((liferayVersions != null) &&
-			!_isInVersionRange(liferayVersion, liferayVersions)) {
-
-			if (template.startsWith("npm-")) {
-				throw new IllegalArgumentException(
-					"NPM portlet project templates generated from this tool " +
-						"are not supported for specified Liferay version. " +
-							"See LPS-97950 for full details.");
-			}
+			!VersionUtil.isLiferayVersion(liferayVersion)) {
 
 			throw new IllegalArgumentException(
 				"Specified Liferay version is invalid. Must be in range " +
@@ -128,6 +118,19 @@ public class ProjectGenerator {
 			buildType = "maven";
 		}
 
+		if (buildType.equals("maven") && template.contains("-ext")) {
+			throw new IllegalArgumentException(
+				"EXT project is not supported for Maven");
+		}
+
+		if (buildType.equals("maven") && template.equals("form-field") &&
+			!liferayVersion.startsWith("7.0") &&
+			!liferayVersion.startsWith("7.1")) {
+
+			throw new IllegalArgumentException(
+				"Form Field project in Maven is only supported in 7.0 and 7.1");
+		}
+
 		Properties properties = new Properties();
 
 		_setProperty(properties, "author", author);
@@ -138,6 +141,7 @@ public class ProjectGenerator {
 			String.valueOf(dependencyManagementEnabled));
 		_setProperty(properties, "liferayVersion", liferayVersion);
 		_setProperty(properties, "package", packageName);
+		_setProperty(properties, "product", product);
 		_setProperty(properties, "projectType", projectType);
 
 		archetypeGenerationRequest.setProperties(properties);
@@ -169,19 +173,9 @@ public class ProjectGenerator {
 		return archetypeGenerationResult;
 	}
 
-	private static boolean _isInVersionRange(
-		String versionString, String range) {
-
-		Version version = new Version(versionString);
-
-		VersionRange versionRange = new VersionRange(range);
-
-		return versionRange.includes(version);
-	}
-
 	private ProjectTemplateCustomizer _getProjectTemplateCustomizer(
 			String templateName)
-		throws MalformedURLException {
+		throws Exception {
 
 		ServiceLoader<ProjectTemplateCustomizer> serviceLoader =
 			ServiceLoader.load(ProjectTemplateCustomizer.class);

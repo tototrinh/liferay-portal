@@ -15,8 +15,11 @@
 package com.liferay.notifications.web.internal.portlet.configuration.icon;
 
 import com.liferay.notifications.web.internal.constants.NotificationsPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
@@ -59,10 +62,9 @@ public class DeliveryPortletConfigurationIcon
 	public String getOnClick(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		StringBundler sb = new StringBundler(12);
+		StringBundler sb = new StringBundler(11);
 
-		sb.append("Liferay.Portlet.openWindow({bodyCssClass: ");
-		sb.append("'dialog-with-footer', namespace: '");
+		sb.append("Liferay.Portlet.openModal({namespace: '");
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -71,18 +73,15 @@ public class DeliveryPortletConfigurationIcon
 
 		sb.append(portletDisplay.getNamespace());
 
-		sb.append("', portlet: '#p_p_id_");
+		sb.append("', portletSelector: '#p_p_id_");
 		sb.append(portletDisplay.getId());
 		sb.append("_', portletId: '");
 		sb.append(portletDisplay.getId());
 		sb.append("', title: '");
 		sb.append(LanguageUtil.get(themeDisplay.getLocale(), "configuration"));
-		sb.append("', uri: '");
-
-		PortletURL deliveryURL = getDeliveryURL(portletRequest);
-
-		sb.append(HtmlUtil.escapeJS(deliveryURL.toString()));
-
+		sb.append("', url: '");
+		sb.append(
+			HtmlUtil.escapeJS(String.valueOf(getDeliveryURL(portletRequest))));
 		sb.append("'}); return false;");
 
 		return sb.toString();
@@ -92,9 +91,7 @@ public class DeliveryPortletConfigurationIcon
 	public String getURL(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		PortletURL deliveryURL = getDeliveryURL(portletRequest);
-
-		return deliveryURL.toString();
+		return String.valueOf(getDeliveryURL(portletRequest));
 	}
 
 	@Override
@@ -113,19 +110,27 @@ public class DeliveryPortletConfigurationIcon
 	}
 
 	protected PortletURL getDeliveryURL(PortletRequest portletRequest) {
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			portletRequest, NotificationsPortletKeys.NOTIFICATIONS,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/notifications/configuration.jsp");
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				portletRequest, NotificationsPortletKeys.NOTIFICATIONS,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/notifications/configuration.jsp"
+		).buildPortletURL();
 
 		try {
 			portletURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		catch (WindowStateException windowStateException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(windowStateException, windowStateException);
+			}
 		}
 
 		return portletURL;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DeliveryPortletConfigurationIcon.class);
 
 }

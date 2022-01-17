@@ -24,8 +24,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -48,47 +51,29 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("MessageBoardThread")
+@GraphQLName(
+	description = "Represents a discussion thread in a message board.",
+	value = "MessageBoardThread"
+)
 @JsonFilter("Liferay.Vulcan")
-@Schema(requiredProperties = {"headline"})
+@Schema(
+	description = "Represents a discussion thread in a message board.",
+	requiredProperties = {"headline"}
+)
 @XmlRootElement(name = "MessageBoardThread")
-public class MessageBoardThread {
+public class MessageBoardThread implements Serializable {
 
-	@GraphQLName("ViewableBy")
-	public static enum ViewableBy {
-
-		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
-
-		@JsonCreator
-		public static ViewableBy create(String value) {
-			for (ViewableBy viewableBy : values()) {
-				if (Objects.equals(viewableBy.getValue(), value)) {
-					return viewableBy;
-				}
-			}
-
-			return null;
-		}
-
-		@JsonValue
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ViewableBy(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static MessageBoardThread toDTO(String json) {
+		return ObjectMapperUtil.readValue(MessageBoardThread.class, json);
 	}
 
-	@Schema
+	public static MessageBoardThread unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(MessageBoardThread.class, json);
+	}
+
+	@Schema(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@Valid
 	public Map<String, Map<String, String>> getActions() {
 		return actions;
@@ -114,7 +99,9 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "Block of actions allowed by the user making the request."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, Map<String, String>> actions;
 
@@ -209,7 +196,43 @@ public class MessageBoardThread {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator creator;
 
-	@Schema
+	@Schema(
+		description = "The thread's creator statistics (rank, join date, number of posts, ...)"
+	)
+	@Valid
+	public CreatorStatistics getCreatorStatistics() {
+		return creatorStatistics;
+	}
+
+	public void setCreatorStatistics(CreatorStatistics creatorStatistics) {
+		this.creatorStatistics = creatorStatistics;
+	}
+
+	@JsonIgnore
+	public void setCreatorStatistics(
+		UnsafeSupplier<CreatorStatistics, Exception>
+			creatorStatisticsUnsafeSupplier) {
+
+		try {
+			creatorStatistics = creatorStatisticsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The thread's creator statistics (rank, join date, number of posts, ...)"
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected CreatorStatistics creatorStatistics;
+
+	@Schema(
+		description = "A list of the custom fields associated with the thread."
+	)
 	@Valid
 	public CustomField[] getCustomFields() {
 		return customFields;
@@ -234,7 +257,9 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A list of the custom fields associated with the thread."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected CustomField[] customFields;
 
@@ -328,6 +353,66 @@ public class MessageBoardThread {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String encodingFormat;
 
+	@Schema
+	public String getFriendlyUrlPath() {
+		return friendlyUrlPath;
+	}
+
+	public void setFriendlyUrlPath(String friendlyUrlPath) {
+		this.friendlyUrlPath = friendlyUrlPath;
+	}
+
+	@JsonIgnore
+	public void setFriendlyUrlPath(
+		UnsafeSupplier<String, Exception> friendlyUrlPathUnsafeSupplier) {
+
+		try {
+			friendlyUrlPath = friendlyUrlPathUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String friendlyUrlPath;
+
+	@Schema(
+		description = "A flag that indicates whether this thread has a message considered as valid"
+	)
+	public Boolean getHasValidAnswer() {
+		return hasValidAnswer;
+	}
+
+	public void setHasValidAnswer(Boolean hasValidAnswer) {
+		this.hasValidAnswer = hasValidAnswer;
+	}
+
+	@JsonIgnore
+	public void setHasValidAnswer(
+		UnsafeSupplier<Boolean, Exception> hasValidAnswerUnsafeSupplier) {
+
+		try {
+			hasValidAnswer = hasValidAnswerUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A flag that indicates whether this thread has a message considered as valid"
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean hasValidAnswer;
+
 	@Schema(description = "The thread's main title.")
 	public String getHeadline() {
 		return headline;
@@ -411,7 +496,41 @@ public class MessageBoardThread {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String[] keywords;
 
-	@Schema
+	@Schema(
+		description = "A flag that indicates whether this thread is locked."
+	)
+	public Boolean getLocked() {
+		return locked;
+	}
+
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
+	}
+
+	@JsonIgnore
+	public void setLocked(
+		UnsafeSupplier<Boolean, Exception> lockedUnsafeSupplier) {
+
+		try {
+			locked = lockedUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A flag that indicates whether this thread is locked."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Boolean locked;
+
+	@Schema(
+		description = "The ID of the Message Board Section to which this message is scoped."
+	)
 	public Long getMessageBoardSectionId() {
 		return messageBoardSectionId;
 	}
@@ -435,7 +554,9 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The ID of the Message Board Section to which this message is scoped."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Long messageBoardSectionId;
 
@@ -503,7 +624,7 @@ public class MessageBoardThread {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Integer numberOfMessageBoardMessages;
 
-	@Schema
+	@Schema(description = "A list of related contents to this thread.")
 	@Valid
 	public RelatedContent[] getRelatedContents() {
 		return relatedContents;
@@ -529,9 +650,39 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "A list of related contents to this thread.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected RelatedContent[] relatedContents;
+
+	@Schema(
+		description = "A flag that indicates whether this thread has been seen."
+	)
+	public Boolean getSeen() {
+		return seen;
+	}
+
+	public void setSeen(Boolean seen) {
+		this.seen = seen;
+	}
+
+	@JsonIgnore
+	public void setSeen(UnsafeSupplier<Boolean, Exception> seenUnsafeSupplier) {
+		try {
+			seen = seenUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "A flag that indicates whether this thread has been seen."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean seen;
 
 	@Schema(
 		description = "A flag that indicates whether this thread was posted as a question that can receive approved answers."
@@ -595,7 +746,37 @@ public class MessageBoardThread {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long siteId;
 
-	@Schema
+	@Schema(description = "The thread's status.")
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	@JsonIgnore
+	public void setStatus(
+		UnsafeSupplier<String, Exception> statusUnsafeSupplier) {
+
+		try {
+			status = statusUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The thread's status.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String status;
+
+	@Schema(
+		description = "A flag that indicates whether the user making the requests is subscribed to this thread."
+	)
 	public Boolean getSubscribed() {
 		return subscribed;
 	}
@@ -619,27 +800,31 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@GraphQLField(
+		description = "A flag that indicates whether the user making the requests is subscribed to this thread."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Boolean subscribed;
 
-	@Schema
+	@Schema(description = "The categories associated with this thread.")
 	@Valid
-	public TaxonomyCategory[] getTaxonomyCategories() {
-		return taxonomyCategories;
+	public TaxonomyCategoryBrief[] getTaxonomyCategoryBriefs() {
+		return taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(TaxonomyCategory[] taxonomyCategories) {
-		this.taxonomyCategories = taxonomyCategories;
+	public void setTaxonomyCategoryBriefs(
+		TaxonomyCategoryBrief[] taxonomyCategoryBriefs) {
+
+		this.taxonomyCategoryBriefs = taxonomyCategoryBriefs;
 	}
 
 	@JsonIgnore
-	public void setTaxonomyCategories(
-		UnsafeSupplier<TaxonomyCategory[], Exception>
-			taxonomyCategoriesUnsafeSupplier) {
+	public void setTaxonomyCategoryBriefs(
+		UnsafeSupplier<TaxonomyCategoryBrief[], Exception>
+			taxonomyCategoryBriefsUnsafeSupplier) {
 
 		try {
-			taxonomyCategories = taxonomyCategoriesUnsafeSupplier.get();
+			taxonomyCategoryBriefs = taxonomyCategoryBriefsUnsafeSupplier.get();
 		}
 		catch (RuntimeException re) {
 			throw re;
@@ -649,11 +834,13 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The categories associated with this thread.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	protected TaxonomyCategory[] taxonomyCategories;
+	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
-	@Schema
+	@Schema(
+		description = "A write-only field that adds `TaxonomyCategory` instances to the thread."
+	)
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
 	}
@@ -677,7 +864,9 @@ public class MessageBoardThread {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "A write-only field that adds `TaxonomyCategory` instances to the thread."
+	)
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	protected Long[] taxonomyCategoryIds;
 
@@ -853,6 +1042,16 @@ public class MessageBoardThread {
 			sb.append(String.valueOf(creator));
 		}
 
+		if (creatorStatistics != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"creatorStatistics\": ");
+
+			sb.append(String.valueOf(creatorStatistics));
+		}
+
 		if (customFields != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -915,6 +1114,30 @@ public class MessageBoardThread {
 			sb.append("\"");
 		}
 
+		if (friendlyUrlPath != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"friendlyUrlPath\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(friendlyUrlPath));
+
+			sb.append("\"");
+		}
+
+		if (hasValidAnswer != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"hasValidAnswer\": ");
+
+			sb.append(hasValidAnswer);
+		}
+
 		if (headline != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -961,6 +1184,16 @@ public class MessageBoardThread {
 			}
 
 			sb.append("]");
+		}
+
+		if (locked != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"locked\": ");
+
+			sb.append(locked);
 		}
 
 		if (messageBoardSectionId != null) {
@@ -1013,6 +1246,16 @@ public class MessageBoardThread {
 			sb.append("]");
 		}
 
+		if (seen != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"seen\": ");
+
+			sb.append(seen);
+		}
+
 		if (showAsQuestion != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -1033,6 +1276,20 @@ public class MessageBoardThread {
 			sb.append(siteId);
 		}
 
+		if (status != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"status\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(status));
+
+			sb.append("\"");
+		}
+
 		if (subscribed != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -1043,19 +1300,19 @@ public class MessageBoardThread {
 			sb.append(subscribed);
 		}
 
-		if (taxonomyCategories != null) {
+		if (taxonomyCategoryBriefs != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"taxonomyCategories\": ");
+			sb.append("\"taxonomyCategoryBriefs\": ");
 
 			sb.append("[");
 
-			for (int i = 0; i < taxonomyCategories.length; i++) {
-				sb.append(String.valueOf(taxonomyCategories[i]));
+			for (int i = 0; i < taxonomyCategoryBriefs.length; i++) {
+				sb.append(String.valueOf(taxonomyCategoryBriefs[i]));
 
-				if ((i + 1) < taxonomyCategories.length) {
+				if ((i + 1) < taxonomyCategoryBriefs.length) {
 					sb.append(", ");
 				}
 			}
@@ -1127,15 +1384,64 @@ public class MessageBoardThread {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.MessageBoardThread",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
+	@GraphQLName("ViewableBy")
+	public static enum ViewableBy {
+
+		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
+
+		@JsonCreator
+		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (ViewableBy viewableBy : values()) {
+				if (Objects.equals(viewableBy.getValue(), value)) {
+					return viewableBy;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ViewableBy(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 	private static String _escape(Object object) {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -1152,13 +1458,46 @@ public class MessageBoardThread {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

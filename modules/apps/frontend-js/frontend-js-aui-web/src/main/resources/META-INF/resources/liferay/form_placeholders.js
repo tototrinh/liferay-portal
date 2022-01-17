@@ -15,13 +15,13 @@
 /**
  * The Form Placeholders Component.
  *
- * @deprecated since 7.2, unused
+ * @deprecated As of Mueller (7.2.x), with no direct replacement
  * @module liferay-form-placeholders
  */
 
 AUI.add(
 	'liferay-form-placeholders',
-	A => {
+	(A) => {
 		var ANode = A.Node;
 
 		var CSS_PLACEHOLDER = 'text-placeholder';
@@ -29,7 +29,7 @@ AUI.add(
 		var MAP_IGNORE_ATTRS = {
 			id: 1,
 			name: 1,
-			type: 1
+			type: 1,
 		};
 
 		var SELECTOR_PLACEHOLDER_INPUTS =
@@ -97,8 +97,8 @@ AUI.add(
 						SELECTOR_PLACEHOLDER_INPUTS
 					);
 
-					placeholderInputs.each(item => {
-						if (item.val() == item.attr(STR_PLACEHOLDER)) {
+					placeholderInputs.each((item) => {
+						if (item.val() === item.attr(STR_PLACEHOLDER)) {
 							item.val(STR_BLANK);
 						}
 					});
@@ -214,7 +214,7 @@ AUI.add(
 							SELECTOR_PLACEHOLDER_INPUTS
 						);
 
-						placeholderInputs.each(item => {
+						placeholderInputs.each((item) => {
 							if (!item.val()) {
 								if (item.attr(STR_TYPE) === STR_PASSWORD) {
 									instance._initializePasswordNode(item);
@@ -240,8 +240,8 @@ AUI.add(
 							instance
 						);
 					}
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Form.Placeholders = Placeholders;
@@ -250,6 +250,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['liferay-form', 'plugin']
+		requires: ['liferay-form', 'plugin'],
 	}
 );

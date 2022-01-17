@@ -46,7 +46,6 @@ import com.liferay.wiki.service.WikiNodeService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -120,11 +119,11 @@ public class EditNodeMVCActionCommand extends BaseMVCActionCommand {
 		}
 
 		if (moveToTrash && !trashedModels.isEmpty()) {
-			Map<String, Object> data = HashMapBuilder.<String, Object>put(
-				"trashedModels", trashedModels
-			).build();
-
-			addDeleteSuccessData(actionRequest, data);
+			addDeleteSuccessData(
+				actionRequest,
+				HashMapBuilder.<String, Object>put(
+					"trashedModels", trashedModels
+				).build());
 		}
 	}
 
@@ -203,23 +202,6 @@ public class EditNodeMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	@Reference(unbind = "-")
-	protected void setTrashEntryService(TrashEntryService trashEntryService) {
-		_trashEntryService = trashEntryService;
-	}
-
-	@Reference(unbind = "-")
-	protected void setWikiNodeLocalService(
-		WikiNodeLocalService wikiNodeLocalService) {
-
-		_wikiNodeLocalService = wikiNodeLocalService;
-	}
-
-	@Reference(unbind = "-")
-	protected void setWikiNodeService(WikiNodeService wikiNodeService) {
-		_wikiNodeService = wikiNodeService;
-	}
-
 	protected void subscribeNode(ActionRequest actionRequest) throws Exception {
 		long nodeId = ParamUtil.getLong(actionRequest, "nodeId");
 
@@ -273,35 +255,40 @@ public class EditNodeMVCActionCommand extends BaseMVCActionCommand {
 			"hiddenNodes", null);
 
 		if (hiddenNodes != null) {
-			if (newName.isEmpty()) {
-				ArrayUtil.remove(hiddenNodes, oldName);
-			}
-			else {
-				ArrayUtil.replace(hiddenNodes, oldName, newName);
-			}
-
-			modifiableSettings.setValues("hiddenNodes", hiddenNodes);
+			modifiableSettings.setValues(
+				"hiddenNodes", _replace(hiddenNodes, oldName, newName));
 		}
 
-		if (hiddenNodes != null) {
-			String[] visibleNodes = modifiableSettings.getValues(
-				"visibleNodes", null);
+		String[] visibleNodes = modifiableSettings.getValues(
+			"visibleNodes", null);
 
-			if (newName.isEmpty()) {
-				ArrayUtil.remove(visibleNodes, oldName);
-			}
-			else {
-				ArrayUtil.replace(visibleNodes, oldName, newName);
-			}
-
-			modifiableSettings.setValues("visibleNodes", visibleNodes);
+		if (visibleNodes != null) {
+			modifiableSettings.setValues(
+				"visibleNodes", _replace(visibleNodes, oldName, newName));
 		}
 
 		modifiableSettings.store();
 	}
 
+	private String[] _replace(
+		String[] values, String oldValue, String newValue) {
+
+		if (newValue.isEmpty()) {
+			return ArrayUtil.remove(values, oldValue);
+		}
+
+		ArrayUtil.replace(values, oldValue, newValue);
+
+		return values;
+	}
+
+	@Reference
 	private TrashEntryService _trashEntryService;
+
+	@Reference
 	private WikiNodeLocalService _wikiNodeLocalService;
+
+	@Reference
 	private WikiNodeService _wikiNodeService;
 
 }

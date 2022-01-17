@@ -48,15 +48,9 @@ public class DateRangeFactory {
 	}
 
 	public String getRangeString(String from, String to) {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("[");
-		sb.append(_normalizeRangeBoundary(from, "000000"));
-		sb.append(" TO ");
-		sb.append(_normalizeRangeBoundary(to, "235959"));
-		sb.append("]");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"[", _normalizeRangeBoundary(from, "000000"), " TO ",
+			_normalizeRangeBoundary(to, "235959"), "]");
 	}
 
 	public Map<String, String> getRangeStrings(Calendar calendar) {
@@ -119,7 +113,7 @@ public class DateRangeFactory {
 		DateFormat dateFormat = _dateFormatFactory.getSimpleDateFormat(
 			"yyyyMMddHHmmss");
 
-		rangeString = StringUtil.replace(
+		return StringUtil.replace(
 			rangeString, _ALIASES,
 			new String[] {
 				dateFormat.format(pastHour.getTime()),
@@ -129,8 +123,6 @@ public class DateRangeFactory {
 				dateFormat.format(pastYear.getTime()),
 				dateFormat.format(now.getTime())
 			});
-
-		return rangeString;
 	}
 
 	public void validateRange(String ranges)
@@ -160,10 +152,10 @@ public class DateRangeFactory {
 	}
 
 	protected void validateDateFormat(String date) throws ParseException {
-		DateFormat dateFormat = _dateFormatFactory.getSimpleDateFormat(
-			"yyyyMMddHHmmss");
-
 		if (!ArrayUtil.contains(_ALIASES, date)) {
+			DateFormat dateFormat = _dateFormatFactory.getSimpleDateFormat(
+				"yyyyMMddHHmmss");
+
 			dateFormat.parse(date);
 		}
 	}

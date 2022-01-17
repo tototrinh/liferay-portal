@@ -18,12 +18,11 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.search.web.internal.util.PortletPreferencesHelper;
+import com.liferay.portal.search.web.internal.helper.PortletPreferencesHelper;
 
 import java.util.Optional;
 
@@ -35,10 +34,10 @@ import javax.portlet.PortletPreferences;
 public class SortPortletPreferencesImpl implements SortPortletPreferences {
 
 	public SortPortletPreferencesImpl(
-		Optional<PortletPreferences> portletPreferences) {
+		Optional<PortletPreferences> portletPreferencesOptional) {
 
 		_portletPreferencesHelper = new PortletPreferencesHelper(
-			portletPreferences);
+			portletPreferencesOptional);
 	}
 
 	@Override
@@ -76,13 +75,12 @@ public class SortPortletPreferencesImpl implements SortPortletPreferences {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (Preset preset : _presets) {
-			JSONObject jsonObject = JSONUtil.put(
-				"field", preset._field
-			).put(
-				"label", preset._label
-			);
-
-			jsonArray.put(jsonObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"field", preset._field
+				).put(
+					"label", preset._label
+				));
 		}
 
 		return jsonArray;

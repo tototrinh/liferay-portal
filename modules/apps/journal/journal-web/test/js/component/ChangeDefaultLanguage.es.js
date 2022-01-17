@@ -17,7 +17,7 @@ import {
 	cleanup,
 	fireEvent,
 	render,
-	waitForElement
+	waitForElement,
 } from '@testing-library/react';
 import React from 'react';
 
@@ -26,19 +26,19 @@ import ChangeDefaultLanguage from '../../../src/main/resources/META-INF/resource
 const defaultStrings = {
 	ca_ES: 'Catalan (ES)',
 	en_US: 'English (US)',
-	es_ES: 'Spanish (ES)'
+	es_ES: 'Spanish (ES)',
 };
 
 const defaultLanguages = [
 	{icon: 'en-US', label: 'en_US'},
 	{icon: 'es-ES', label: 'es_ES'},
-	{icon: 'ca-ES', label: 'ca_ES'}
+	{icon: 'ca-ES', label: 'ca_ES'},
 ];
 
 function _renderChangeDefaultLanguageComponent({
 	defaultLanguage = 'en_US',
 	languages = defaultLanguages,
-	strings = defaultStrings
+	strings = defaultStrings,
 } = {}) {
 	return render(
 		<ChangeDefaultLanguage
@@ -47,7 +47,7 @@ function _renderChangeDefaultLanguageComponent({
 			strings={strings}
 		/>,
 		{
-			baseElement: document.body
+			baseElement: document.body,
 		}
 	);
 }
@@ -61,15 +61,15 @@ describe('ChangeDefaultLanguage', () => {
 	it('render', () => {
 		const {getByText} = _renderChangeDefaultLanguageComponent();
 
-		expect(getByText('change'));
+		expect(getByText('change')).toBeTruthy();
 	});
 
 	it('render the default language', () => {
 		const {getByText} = _renderChangeDefaultLanguageComponent({
-			defaultLanguage: 'es_ES'
+			defaultLanguage: 'es_ES',
 		});
 
-		expect(getByText('Spanish (ES)'));
+		expect(getByText('Spanish (ES)')).toBeTruthy();
 	});
 
 	it('change default language', async () => {
@@ -79,7 +79,7 @@ describe('ChangeDefaultLanguage', () => {
 
 		await waitForElement(() => getByText('Spanish (ES)'));
 
-		expect(getByText('Spanish (ES)'));
+		expect(getByText('Spanish (ES)')).toBeTruthy();
 	});
 
 	it('to fire default locale changed event', () => {

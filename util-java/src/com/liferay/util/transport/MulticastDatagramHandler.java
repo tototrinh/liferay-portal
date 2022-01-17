@@ -39,8 +39,8 @@ public class MulticastDatagramHandler implements DatagramHandler {
 	}
 
 	@Override
-	public void errorReceived(Throwable t) {
-		_log.error(t, t);
+	public void errorReceived(Throwable throwable) {
+		_log.error(throwable, throwable);
 	}
 
 	@Override
@@ -64,23 +64,18 @@ public class MulticastDatagramHandler implements DatagramHandler {
 			bytes = temp;
 		}
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append("[");
-		sb.append(packet.getSocketAddress());
-		sb.append("] ");
-		sb.append(new String(bytes));
-
 		if (_log.isInfoEnabled()) {
-			_log.info(sb.toString());
+			_log.info(
+				StringBundler.concat(
+					"[", packet.getSocketAddress(), "] ", new String(bytes)));
 		}
 	}
 
 	protected byte[] getUnzippedBytes(byte[] bytes) throws Exception {
-		UnsyncByteArrayOutputStream ubaos = new UnsyncByteArrayOutputStream(
-			bytes.length);
+		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream(bytes.length);
 
-		try (InputStream is = new GZIPInputStream(
+		try (InputStream inputStream = new GZIPInputStream(
 				new UnsyncByteArrayInputStream(bytes))) {
 
 			byte[] buffer = new byte[1500];
@@ -91,18 +86,18 @@ public class MulticastDatagramHandler implements DatagramHandler {
 					break;
 				}
 
-				c = is.read(buffer, 0, 1500);
+				c = inputStream.read(buffer, 0, 1500);
 
 				if (c != -1) {
-					ubaos.write(buffer, 0, c);
+					unsyncByteArrayOutputStream.write(buffer, 0, c);
 				}
 			}
 		}
 
-		ubaos.flush();
-		ubaos.close();
+		unsyncByteArrayOutputStream.flush();
+		unsyncByteArrayOutputStream.close();
 
-		return ubaos.toByteArray();
+		return unsyncByteArrayOutputStream.toByteArray();
 	}
 
 	private static final Log _log = LogFactory.getLog(

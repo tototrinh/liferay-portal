@@ -961,6 +961,26 @@
 					"name": "RelatedProduct"
 				}
 			},
+			"SchemaBuilderBreaker": {
+				"properties": {
+					"id": {
+						"format": "int64",
+						"readOnly": true,
+						"type": "integer"
+					},
+					"property": {
+						"$ref": "#/components/schemas/NonexistingSchema",
+						"description": "Example of property that refer to non existing schema that would break schema builder"
+					}
+				},
+				"required": [
+					"id"
+				],
+				"type": "object",
+				"xml": {
+					"name": "SchemaBuilderBreaker"
+				}
+			},
 			"Sku": {
 				"properties": {
 					"cost": {
@@ -1150,8 +1170,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1222,8 +1244,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1249,8 +1273,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1321,8 +1347,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1740,8 +1768,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/yaml": {}
+							"application/json": {
+							},
+							"application/yaml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1764,8 +1794,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1836,8 +1868,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1863,8 +1897,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -1935,8 +1971,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2060,8 +2098,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2132,8 +2172,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2257,8 +2299,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2329,8 +2373,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2454,8 +2500,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2526,8 +2574,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2671,8 +2721,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -2745,8 +2797,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3124,8 +3178,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3296,8 +3352,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3370,8 +3428,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3446,8 +3506,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3518,8 +3580,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3712,8 +3776,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -3786,8 +3852,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4165,8 +4233,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4337,8 +4407,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4411,8 +4483,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4438,8 +4512,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4482,6 +4558,26 @@
 				]
 			}
 		},
+		"/v1.0/schema_builder_breaker": {
+			"get": {
+				"operationId": "getSchemaBuilderBreaker",
+				"responses": {
+					"default": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SchemaBuilderBreaker"
+								}
+							}
+						},
+						"description": "default response"
+					}
+				},
+				"tags": [
+					"Breaker"
+				]
+			}
+		},
 		"/v1.0/skus/by-externalReferenceCode/{externalReferenceCode}": {
 			"delete": {
 				"operationId": "deleteSkuByExternalReferenceCode",
@@ -4498,8 +4594,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4570,8 +4668,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4597,8 +4697,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4669,8 +4771,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4696,8 +4800,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}
@@ -4768,8 +4874,10 @@
 				"responses": {
 					"default": {
 						"content": {
-							"application/json": {},
-							"application/xml": {}
+							"application/json": {
+							},
+							"application/xml": {
+							}
 						},
 						"description": "default response"
 					}

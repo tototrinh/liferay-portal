@@ -12,20 +12,22 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
+import ClayLayout from '@clayui/layout';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import getCN from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {DndProvider} from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 
 import {
 	conjunctionShape,
 	contributorShape,
 	operatorShape,
 	propertyGroupShape,
-	propertyTypesShape
+	propertyTypesShape,
 } from '../../utils/types.es';
 import {getPluralMessage} from '../../utils/utils.es';
 import CriteriaSidebar from '../criteria_sidebar/CriteriaSidebar.es';
@@ -40,23 +42,27 @@ class ContributorBuilder extends React.Component {
 		emptyContributors: PropTypes.bool.isRequired,
 		membersCount: PropTypes.number,
 		membersCountLoading: PropTypes.bool,
+		onAlertClose: PropTypes.func,
 		onConjunctionChange: PropTypes.func,
 		onPreviewMembers: PropTypes.func,
 		onQueryChange: PropTypes.func,
 		previewMembersURL: PropTypes.string,
 		propertyGroups: PropTypes.arrayOf(propertyGroupShape),
+		renderEmptyValuesErrors: PropTypes.bool,
 		supportedConjunctions: PropTypes.arrayOf(conjunctionShape).isRequired,
 		supportedOperators: PropTypes.arrayOf(operatorShape).isRequired,
-		supportedPropertyTypes: propertyTypesShape.isRequired
+		supportedPropertyTypes: propertyTypesShape.isRequired,
 	};
 
 	static defaultProps = {
 		contributors: [],
 		membersCount: 0,
 		membersCountLoading: false,
+		onAlertClose: () => {},
 		onConjunctionChange: () => {},
 		onPreviewMembers: () => {},
-		onQueryChange: () => {}
+		onQueryChange: () => {},
+		renderEmptyValuesErrors: false,
 	};
 
 	constructor(props) {
@@ -65,7 +71,7 @@ class ContributorBuilder extends React.Component {
 		const {contributors, propertyGroups} = props;
 
 		const firstContributorNotEmpty = contributors.find(
-			contributor => contributor.query !== ''
+			(contributor) => contributor.query !== ''
 		);
 
 		const propertyKey = firstContributorNotEmpty
@@ -73,7 +79,7 @@ class ContributorBuilder extends React.Component {
 			: propertyGroups[0].propertyKey;
 
 		this.state = {
-			editingId: propertyKey
+			editingId: propertyKey,
 		};
 	}
 
@@ -85,7 +91,7 @@ class ContributorBuilder extends React.Component {
 
 	_handleCriteriaEdit = (id, editing) => {
 		this.setState({
-			editingId: editing ? undefined : id
+			editingId: editing ? undefined : id,
 		});
 	};
 
@@ -96,18 +102,20 @@ class ContributorBuilder extends React.Component {
 			emptyContributors,
 			membersCount,
 			membersCountLoading,
+			onAlertClose,
 			onConjunctionChange,
 			onPreviewMembers,
 			propertyGroups,
+			renderEmptyValuesErrors,
 			supportedConjunctions,
 			supportedOperators,
-			supportedPropertyTypes
+			supportedPropertyTypes,
 		} = this.props;
 
 		const {editingId} = this.state;
 
 		const rootClasses = getCN('contributor-builder-root', {
-			editing
+			editing,
 		});
 
 		return (
@@ -123,9 +131,26 @@ class ContributorBuilder extends React.Component {
 
 					<div className="criteria-builder-section-main">
 						<div className="contributor-container">
-							<div className="container-fluid container-fluid-max-xl">
+							{renderEmptyValuesErrors && (
+								<section className="alert-danger criteria-builder-empty-errors-alert">
+									<div className="criteria-builder-empty-errors-alert__inner">
+										<ClayAlert
+											className="border-bottom-0"
+											displayType="danger"
+											onClose={onAlertClose}
+											variant="stripe"
+										>
+											{Liferay.Language.get(
+												'values-need-to-be-added-to-properties-for-the-segment-to-be-saved'
+											)}
+										</ClayAlert>
+									</div>
+								</section>
+							)}
+
+							<ClayLayout.ContainerFluid>
 								<div className="content-wrapper">
-									<div className="sheet">
+									<ClayLayout.Sheet>
 										<div className="d-flex flex-wrap justify-content-between mb-4">
 											<h2 className="mb-2 sheet-title">
 												{Liferay.Language.get(
@@ -148,6 +173,7 @@ class ContributorBuilder extends React.Component {
 																{Liferay.Language.get(
 																	'conditions-match'
 																)}
+
 																<b className="ml-2 text-dark">
 																	{getPluralMessage(
 																		Liferay.Language.get(
@@ -186,7 +212,7 @@ class ContributorBuilder extends React.Component {
 											)}
 
 										{contributors
-											.filter(criteria => {
+											.filter((criteria) => {
 												const editingCriteria =
 													editingId ===
 														criteria.propertyKey &&
@@ -243,6 +269,9 @@ class ContributorBuilder extends React.Component {
 															propertyKey={
 																criteria.propertyKey
 															}
+															renderEmptyValuesErrors={
+																renderEmptyValuesErrors
+															}
 															supportedConjunctions={
 																supportedConjunctions
 															}
@@ -259,9 +288,9 @@ class ContributorBuilder extends React.Component {
 													</React.Fragment>
 												);
 											})}
-									</div>
+									</ClayLayout.Sheet>
 								</div>
-							</div>
+							</ClayLayout.ContainerFluid>
 						</div>
 					</div>
 				</div>

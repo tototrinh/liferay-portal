@@ -18,6 +18,8 @@ import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
@@ -75,7 +77,7 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 
 		String type = ParamUtil.getString(actionRequest, "type");
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			SiteNavigationMenuItemUtil.getSiteNavigationMenuItemProperties(
 				actionRequest, "TypeSettingsProperties--");
 
@@ -83,7 +85,7 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 			actionRequest);
 
 		List<String> layoutUUIDs = StringUtil.split(
-			typeSettingsProperties.getProperty("layoutUuid"));
+			typeSettingsUnicodeProperties.getProperty("layoutUuid"));
 
 		Map<Long, SiteNavigationMenuItem> layoutSiteNavigationMenuItemMap =
 			new HashMap<>();
@@ -93,9 +95,9 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 		try {
 			for (String layoutUuid : layoutUUIDs) {
 				long groupId = GetterUtil.getLong(
-					typeSettingsProperties.get("groupId"));
+					typeSettingsUnicodeProperties.get("groupId"));
 				boolean privateLayout = GetterUtil.getBoolean(
-					typeSettingsProperties.get("privateLayout"));
+					typeSettingsUnicodeProperties.get("privateLayout"));
 
 				Layout layout = _layoutLocalService.fetchLayoutByUuidAndGroupId(
 					layoutUuid, groupId, privateLayout);
@@ -104,21 +106,22 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 					continue;
 				}
 
-				UnicodeProperties curTypeSettingsProperties =
+				UnicodeProperties curTypeSettingsUnicodeProperties =
 					new UnicodeProperties(true);
 
-				curTypeSettingsProperties.setProperty(
+				curTypeSettingsUnicodeProperties.setProperty(
 					"groupId", String.valueOf(groupId));
-				curTypeSettingsProperties.setProperty("layoutUuid", layoutUuid);
-				curTypeSettingsProperties.setProperty(
+				curTypeSettingsUnicodeProperties.setProperty(
+					"layoutUuid", layoutUuid);
+				curTypeSettingsUnicodeProperties.setProperty(
 					"privateLayout", String.valueOf(privateLayout));
-				curTypeSettingsProperties.setProperty(
+				curTypeSettingsUnicodeProperties.setProperty(
 					"title", layout.getName(themeDisplay.getLocale()));
 
 				SiteNavigationMenuItem siteNavigationMenuItem =
 					_siteNavigationMenuItemService.addSiteNavigationMenuItem(
 						themeDisplay.getScopeGroupId(), siteNavigationMenuId, 0,
-						type, curTypeSettingsProperties.toString(),
+						type, curTypeSettingsUnicodeProperties.toString(),
 						serviceContext);
 
 				layoutSiteNavigationMenuItemMap.put(
@@ -166,6 +169,12 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 		catch (SiteNavigationMenuItemNameException
 					siteNavigationMenuItemNameException) {
 
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					siteNavigationMenuItemNameException,
+					siteNavigationMenuItemNameException);
+			}
+
 			jsonObject.put(
 				"errorMessage",
 				LanguageUtil.get(
@@ -176,6 +185,9 @@ public class AddLayoutSiteNavigationMenuItemMVCActionCommand
 		JSONPortletResponseUtil.writeJSON(
 			actionRequest, actionResponse, jsonObject);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AddLayoutSiteNavigationMenuItemMVCActionCommand.class);
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

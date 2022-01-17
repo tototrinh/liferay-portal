@@ -24,13 +24,14 @@ const PREVENT = 'prevent';
  * AOP class
  */
 class AOP {
+
 	/**
 	 * Constructor for AOP class.
 	 * @param {!Object} obj The object containing the displaced function.
 	 * @param {!string} fnName The name of the displaced function.
-	 * @constructor
 	 */
-	constructor(obj, fnName) {
+	constructor(object, fnName) {
+
 		/**
 		 * Array of listeners that will invoke after the displaced function.
 		 * @type {!Array}
@@ -57,14 +58,14 @@ class AOP {
 		 * @type {Function}
 		 * @protected
 		 */
-		this.fn_ = obj[fnName];
+		this.fn_ = object[fnName];
 
 		/**
 		 * The object hosting the method to displace.
 		 * @type {Object}
 		 * @protected
 		 */
-		this.obj_ = obj;
+		this.obj_ = object;
 	}
 
 	/**
@@ -75,7 +76,7 @@ class AOP {
 	 */
 	createHandle(fn, before) {
 		return {
-			detach: this.detach_.bind(this, fn, before)
+			detach: this.detach_.bind(this, fn, before),
 		};
 	}
 
@@ -164,8 +165,8 @@ class AOP {
 	 * @param {!string} fnName the name of the method to displace.
 	 * @return {EventHandle} Can be used to remove the listener.
 	 */
-	static after(fn, obj, fnName) {
-		return AOP.inject(false, fn, obj, fnName);
+	static after(fn, object, fnName) {
+		return AOP.inject(false, fn, object, fnName);
 	}
 
 	/**
@@ -188,8 +189,8 @@ class AOP {
 	 * @param {!string} fnName the name of the method to displace.
 	 * @return {EventHandle} Can be used to remove the listener.
 	 */
-	static before(fn, obj, fnName) {
-		return AOP.inject(true, fn, obj, fnName);
+	static before(fn, object, fnName) {
+		return AOP.inject(true, fn, object, fnName);
 	}
 
 	/**
@@ -214,17 +215,17 @@ class AOP {
 	 * @param {!string} fnName the name of the method to displace.
 	 * @return {EventHandle} Can be used to remove the listener.
 	 */
-	static inject(before, fn, obj, fnName) {
-		let aopObj = obj[METAL_AOP];
+	static inject(before, fn, object, fnName) {
+		let aopObj = object[METAL_AOP];
 
 		if (!aopObj) {
-			aopObj = obj[METAL_AOP] = {};
+			aopObj = object[METAL_AOP] = {};
 		}
 
 		if (!aopObj[fnName]) {
-			aopObj[fnName] = new AOP(obj, fnName);
+			aopObj[fnName] = new AOP(object, fnName);
 
-			obj[fnName] = function(...args) {
+			object[fnName] = function (...args) {
 				return aopObj[fnName].exec(...args);
 			};
 		}
@@ -244,7 +245,7 @@ class AOP {
 	static modify_(type, value) {
 		return {
 			type,
-			value
+			value,
 		};
 	}
 

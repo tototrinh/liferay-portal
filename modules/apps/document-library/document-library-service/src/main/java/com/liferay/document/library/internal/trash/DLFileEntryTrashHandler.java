@@ -47,7 +47,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
@@ -73,7 +73,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = "model.class.name=com.liferay.document.library.kernel.model.DLFileEntry",
 	service = TrashHandler.class
 )
-public class DLFileEntryTrashHandler extends DLBaseTrashHandler {
+public class DLFileEntryTrashHandler extends BaseDLTrashHandler {
 
 	@Override
 	public void checkRestorableEntry(
@@ -134,6 +134,13 @@ public class DLFileEntryTrashHandler extends DLBaseTrashHandler {
 		long parentFolderId = dlFileEntry.getFolderId();
 
 		if (parentFolderId <= 0) {
+			return null;
+		}
+
+		DLFolder parentFolder = _dlFolderLocalService.fetchDLFolder(
+			parentFolderId);
+
+		if (parentFolder == null) {
 			return null;
 		}
 
@@ -208,7 +215,7 @@ public class DLFileEntryTrashHandler extends DLBaseTrashHandler {
 		throws PortalException {
 
 		if (trashActionId.equals(TrashActionKeys.MOVE)) {
-			return ModelResourcePermissionHelper.contains(
+			return ModelResourcePermissionUtil.contains(
 				_folderModelResourcePermission, permissionChecker, groupId,
 				classPK, ActionKeys.ADD_DOCUMENT);
 		}

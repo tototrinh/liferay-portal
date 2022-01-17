@@ -14,8 +14,8 @@
 
 package com.liferay.portlet.internal;
 
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.servlet.TransferHeadersHelperUtil;
 import com.liferay.portal.kernel.servlet.URLEncoder;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -382,7 +383,7 @@ public abstract class PortletResponseImpl implements LiferayPortletResponse {
 		}
 
 		if (_urlEncoder != null) {
-			return _urlEncoder.encodeURL(response, path);
+			return _urlEncoder.encodeURL(httpServletResponse, path);
 		}
 
 		return path;
@@ -398,7 +399,7 @@ public abstract class PortletResponseImpl implements LiferayPortletResponse {
 
 	@Override
 	public HttpServletResponse getHttpServletResponse() {
-		return response;
+		return httpServletResponse;
 	}
 
 	@Override
@@ -501,7 +502,7 @@ public abstract class PortletResponseImpl implements LiferayPortletResponse {
 		HttpServletResponse httpServletResponse) {
 
 		this.portletRequestImpl = portletRequestImpl;
-		response = httpServletResponse;
+		this.httpServletResponse = httpServletResponse;
 
 		_portlet = portletRequestImpl.getPortlet();
 
@@ -592,7 +593,7 @@ public abstract class PortletResponseImpl implements LiferayPortletResponse {
 		List<Element> elements = _markupHeadElements.get(
 			MimeResponse.MARKUP_HEAD_ELEMENT);
 
-		if ((elements == null) || elements.isEmpty()) {
+		if (ListUtil.isEmpty(elements)) {
 			return;
 		}
 
@@ -657,9 +658,9 @@ public abstract class PortletResponseImpl implements LiferayPortletResponse {
 		return themeDisplay.getStrictLayoutPortletSetup(layout, portletName);
 	}
 
+	protected HttpServletResponse httpServletResponse;
 	protected String portletName;
 	protected PortletRequestImpl portletRequestImpl;
-	protected HttpServletResponse response;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortletResponseImpl.class);

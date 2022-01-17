@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.util;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.net.URI;
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -105,15 +106,21 @@ public interface Http {
 
 	public String getProtocol(String url);
 
+	public String getQueryString(HttpServletRequest httpServletRequest);
+
 	public String getQueryString(String url);
 
 	public String getRequestURL(HttpServletRequest httpServletRequest);
+
+	public URI getURI(String uriString);
 
 	public boolean hasDomain(String url);
 
 	public boolean hasProtocol(String url);
 
 	public boolean hasProxyConfig();
+
+	public boolean isForwarded(HttpServletRequest httpServletRequest);
 
 	public boolean isNonProxyHost(String host);
 
@@ -372,6 +379,14 @@ public interface Http {
 			return _fileParts;
 		}
 
+		public String getHeader(String name) {
+			if (_headers == null) {
+				return null;
+			}
+
+			return _headers.get(name);
+		}
+
 		public Map<String, String> getHeaders() {
 			return _headers;
 		}
@@ -513,6 +528,12 @@ public interface Http {
 
 		public void setLocation(String location) {
 			_location = location;
+		}
+
+		public void setMethod(Method method) {
+			if (method != null) {
+				_method = method;
+			}
 		}
 
 		public void setParts(Map<String, String> parts) {

@@ -17,8 +17,8 @@ package com.liferay.exportimport.web.internal.portlet.action;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.dynamic.data.mapping.exception.StructureDuplicateStructureKeyException;
 import com.liferay.exportimport.constants.ExportImportPortletKeys;
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationSettingsMapFactory;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.exception.LARFileException;
 import com.liferay.exportimport.kernel.exception.LARFileNameException;
 import com.liferay.exportimport.kernel.exception.LARFileSizeException;
@@ -33,10 +33,10 @@ import com.liferay.exportimport.kernel.staging.Staging;
 import com.liferay.portal.kernel.exception.LocaleException;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortletIdException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
@@ -47,6 +47,7 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -70,7 +71,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ExportImportPortletKeys.EXPORT_IMPORT,
-		"mvc.command.name=exportImport"
+		"mvc.command.name=/export_import/export_import"
 	},
 	service = MVCActionCommand.class
 )
@@ -145,12 +146,6 @@ public class ExportImportMVCActionCommand extends BaseMVCActionCommand {
 					actionRequest,
 					ExportImportHelper.TEMP_FOLDER_NAME +
 						portlet.getPortletId());
-
-				SessionMessages.add(
-					actionRequest,
-					_portal.getPortletId(actionRequest) +
-						SessionMessages.KEY_SUFFIX_CLOSE_REFRESH_PORTLET,
-					portlet.getPortletId());
 
 				sendRedirect(actionRequest, actionResponse);
 			}
@@ -251,7 +246,19 @@ public class ExportImportMVCActionCommand extends BaseMVCActionCommand {
 			_exportImportConfigurationSettingsMapFactory.
 				buildImportPortletSettingsMap(
 					themeDisplay.getUserId(), plid, groupId,
-					portlet.getPortletId(), actionRequest.getParameterMap(),
+					portlet.getPortletId(),
+					HashMapBuilder.putAll(
+						actionRequest.getParameterMap()
+					).put(
+						"stagingSite",
+						() -> {
+							Group group = themeDisplay.getScopeGroup();
+
+							return new String[] {
+								String.valueOf(group.isStagingGroup())
+							};
+						}
+					).build(),
 					themeDisplay.getLocale(), themeDisplay.getTimeZone());
 
 		ExportImportConfiguration exportImportConfiguration =
@@ -342,19 +349,21 @@ public class ExportImportMVCActionCommand extends BaseMVCActionCommand {
 				return;
 			}
 
-			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-			if ((weakMissingReferences != null) &&
-				!weakMissingReferences.isEmpty()) {
-
-				jsonObject.put(
-					"warningMessages",
-					_staging.getWarningMessagesJSONArray(
-						themeDisplay.getLocale(), weakMissingReferences));
-			}
-
 			JSONPortletResponseUtil.writeJSON(
-				actionRequest, actionResponse, jsonObject);
+				actionRequest, actionResponse,
+				JSONUtil.put(
+					"warningMessages",
+					() -> {
+						if ((weakMissingReferences != null) &&
+							!weakMissingReferences.isEmpty()) {
+
+							return _staging.getWarningMessagesJSONArray(
+								themeDisplay.getLocale(),
+								weakMissingReferences);
+						}
+
+						return null;
+					}));
 		}
 	}
 

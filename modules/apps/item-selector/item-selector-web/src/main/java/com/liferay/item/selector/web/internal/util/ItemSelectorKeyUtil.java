@@ -16,13 +16,10 @@ package com.liferay.item.selector.web.internal.util;
 
 import com.liferay.item.selector.ItemSelectorCriterion;
 import com.liferay.item.selector.ItemSelectorReturnType;
-import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Alejandro Tardín
@@ -45,10 +42,12 @@ public class ItemSelectorKeyUtil {
 		String key = _itemSelectorKeysMap.get(clazz.getName());
 
 		if (key == null) {
-			key = StringBundler.concat(
-				StringUtil.lowerCase(
-					StringUtil.removeSubstring(clazz.getSimpleName(), suffix)),
-				StringPool.UNDERLINE, _atomicInteger.incrementAndGet());
+			key = StringUtil.lowerCase(
+				StringUtil.removeSubstring(clazz.getSimpleName(), suffix));
+
+			if (_itemSelectorKeysMap.containsValue(key)) {
+				key = clazz.getName();
+			}
 
 			String oldKey = _itemSelectorKeysMap.putIfAbsent(
 				clazz.getName(), key);
@@ -61,7 +60,6 @@ public class ItemSelectorKeyUtil {
 		return key;
 	}
 
-	private static final AtomicInteger _atomicInteger = new AtomicInteger();
 	private static final Map<String, String> _itemSelectorKeysMap =
 		new ConcurrentHashMap<>();
 

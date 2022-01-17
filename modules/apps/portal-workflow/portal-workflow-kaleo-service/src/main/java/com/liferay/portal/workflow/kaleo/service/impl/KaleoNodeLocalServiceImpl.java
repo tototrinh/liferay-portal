@@ -48,14 +48,14 @@ public class KaleoNodeLocalServiceImpl extends KaleoNodeLocalServiceBaseImpl {
 
 	@Override
 	public KaleoNode addKaleoNode(
-			long kaleoDefinitionVersionId, Node node,
+			long kaleoDefinitionId, long kaleoDefinitionVersionId, Node node,
 			ServiceContext serviceContext)
 		throws PortalException {
 
 		// Kaleo node
 
 		User user = userLocalService.getUser(serviceContext.getGuestOrUserId());
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoNodeId = counterLocalService.increment();
 
@@ -64,8 +64,9 @@ public class KaleoNodeLocalServiceImpl extends KaleoNodeLocalServiceBaseImpl {
 		kaleoNode.setCompanyId(user.getCompanyId());
 		kaleoNode.setUserId(user.getUserId());
 		kaleoNode.setUserName(user.getFullName());
-		kaleoNode.setCreateDate(now);
-		kaleoNode.setModifiedDate(now);
+		kaleoNode.setCreateDate(date);
+		kaleoNode.setModifiedDate(date);
+		kaleoNode.setKaleoDefinitionId(kaleoDefinitionId);
 		kaleoNode.setKaleoDefinitionVersionId(kaleoDefinitionVersionId);
 		kaleoNode.setName(node.getName());
 		kaleoNode.setMetadata(node.getMetadata());
@@ -96,7 +97,7 @@ public class KaleoNodeLocalServiceImpl extends KaleoNodeLocalServiceBaseImpl {
 
 		for (Action action : actions) {
 			_kaleoActionLocalService.addKaleoAction(
-				KaleoNode.class.getName(), kaleoNodeId,
+				KaleoNode.class.getName(), kaleoNodeId, kaleoDefinitionId,
 				kaleoDefinitionVersionId, node.getName(), action,
 				serviceContext);
 		}
@@ -107,7 +108,7 @@ public class KaleoNodeLocalServiceImpl extends KaleoNodeLocalServiceBaseImpl {
 
 		for (Notification notification : notifications) {
 			_kaleoNotificationLocalService.addKaleoNotification(
-				KaleoNode.class.getName(), kaleoNodeId,
+				KaleoNode.class.getName(), kaleoNodeId, kaleoDefinitionId,
 				kaleoDefinitionVersionId, node.getName(), notification,
 				serviceContext);
 		}
@@ -118,7 +119,7 @@ public class KaleoNodeLocalServiceImpl extends KaleoNodeLocalServiceBaseImpl {
 
 		for (Timer timer : timers) {
 			_kaleoTimerLocalService.addKaleoTimer(
-				KaleoNode.class.getName(), kaleoNodeId,
+				KaleoNode.class.getName(), kaleoNodeId, kaleoDefinitionId,
 				kaleoDefinitionVersionId, timer, serviceContext);
 		}
 

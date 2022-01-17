@@ -39,6 +39,10 @@ public class AssetListEntryUsageLocalServiceWrapper
 	/**
 	 * Adds the asset list entry usage to the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetListEntryUsage the asset list entry usage
 	 * @return the asset list entry usage that was added
 	 */
@@ -50,6 +54,12 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryUsage);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addAssetListEntryUsage(long, long, long, long, long, String,
+	 ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public AssetListEntryUsage addAssetListEntryUsage(
 			long userId, long groupId, long assetListEntryId, long classNameId,
@@ -60,6 +70,18 @@ public class AssetListEntryUsageLocalServiceWrapper
 		return _assetListEntryUsageLocalService.addAssetListEntryUsage(
 			userId, groupId, assetListEntryId, classNameId, classPK, portletId,
 			serviceContext);
+	}
+
+	@Override
+	public AssetListEntryUsage addAssetListEntryUsage(
+			long userId, long groupId, long classNameId, String containerKey,
+			long containerType, String key, long plid,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetListEntryUsageLocalService.addAssetListEntryUsage(
+			userId, groupId, classNameId, containerKey, containerType, key,
+			plid, serviceContext);
 	}
 
 	/**
@@ -91,6 +113,10 @@ public class AssetListEntryUsageLocalServiceWrapper
 	/**
 	 * Deletes the asset list entry usage from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetListEntryUsage the asset list entry usage
 	 * @return the asset list entry usage that was removed
 	 */
@@ -105,6 +131,10 @@ public class AssetListEntryUsageLocalServiceWrapper
 	/**
 	 * Deletes the asset list entry usage with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetListEntryUsageId the primary key of the asset list entry usage
 	 * @return the asset list entry usage that was removed
 	 * @throws PortalException if a asset list entry usage with the primary key could not be found
@@ -118,6 +148,14 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryUsageId);
 	}
 
+	@Override
+	public void deleteAssetListEntryUsages(
+		String containerKey, long containerType, long plid) {
+
+		_assetListEntryUsageLocalService.deleteAssetListEntryUsages(
+			containerKey, containerType, plid);
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -128,6 +166,18 @@ public class AssetListEntryUsageLocalServiceWrapper
 
 		return _assetListEntryUsageLocalService.deletePersistedModel(
 			persistedModel);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _assetListEntryUsageLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _assetListEntryUsageLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -229,12 +279,26 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryUsageId);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsages(String, long, long)}
+	 */
+	@Deprecated
 	@Override
 	public AssetListEntryUsage fetchAssetListEntryUsage(
 		long classNameId, long classPK, String portletId) {
 
 		return _assetListEntryUsageLocalService.fetchAssetListEntryUsage(
 			classNameId, classPK, portletId);
+	}
+
+	@Override
+	public AssetListEntryUsage fetchAssetListEntryUsage(
+		long groupId, long classNameId, String containerKey, long containerType,
+		String key, long plid) {
+
+		return _assetListEntryUsageLocalService.fetchAssetListEntryUsage(
+			groupId, classNameId, containerKey, containerType, key, plid);
 	}
 
 	/**
@@ -257,6 +321,14 @@ public class AssetListEntryUsageLocalServiceWrapper
 		getActionableDynamicQuery() {
 
 		return _assetListEntryUsageLocalService.getActionableDynamicQuery();
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetEntryListUsagesByPlid(
+		long plid) {
+
+		return _assetListEntryUsageLocalService.getAssetEntryListUsagesByPlid(
+			plid);
 	}
 
 	/**
@@ -311,6 +383,11 @@ public class AssetListEntryUsageLocalServiceWrapper
 			start, end);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsages(long, long, String)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
 		long assetListEntryId) {
@@ -319,6 +396,12 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryId);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsages(long, long, String, int, int,
+	 OrderByComparator)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
 		long assetListEntryId, int start, int end,
@@ -329,6 +412,11 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryId, start, end, orderByComparator);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsages(long, long, String, int)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
 		long assetListEntryId, long classNameId) {
@@ -337,6 +425,12 @@ public class AssetListEntryUsageLocalServiceWrapper
 			assetListEntryId, classNameId);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsages(long, long, String, int, int, int,
+	 OrderByComparator)}
+	 */
+	@Deprecated
 	@Override
 	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
 		long assetListEntryId, long classNameId, int start, int end,
@@ -345,6 +439,51 @@ public class AssetListEntryUsageLocalServiceWrapper
 
 		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
 			assetListEntryId, classNameId, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
+		long groupId, long classNameId, String key) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
+			groupId, classNameId, key);
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
+		long groupId, long classNameId, String key, int type) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
+			groupId, classNameId, key, type);
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
+		long groupId, long classNameId, String key, int type, int start,
+		int end,
+		com.liferay.portal.kernel.util.OrderByComparator<AssetListEntryUsage>
+			orderByComparator) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
+			groupId, classNameId, key, type, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
+		long groupId, long classNameId, String key, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<AssetListEntryUsage>
+			orderByComparator) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
+			groupId, classNameId, key, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetListEntryUsage> getAssetListEntryUsages(
+		String containerKey, long containerType, long plid) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsages(
+			containerKey, containerType, plid);
 	}
 
 	/**
@@ -394,18 +533,44 @@ public class AssetListEntryUsageLocalServiceWrapper
 		return _assetListEntryUsageLocalService.getAssetListEntryUsagesCount();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsagesCount(long, long, String)}
+	 */
+	@Deprecated
 	@Override
 	public int getAssetListEntryUsagesCount(long assetListEntryId) {
 		return _assetListEntryUsageLocalService.getAssetListEntryUsagesCount(
 			assetListEntryId);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #getAssetListEntryUsagesCount(long, long, String, int)}
+	 */
+	@Deprecated
 	@Override
 	public int getAssetListEntryUsagesCount(
 		long assetListEntryId, long classNameId) {
 
 		return _assetListEntryUsageLocalService.getAssetListEntryUsagesCount(
 			assetListEntryId, classNameId);
+	}
+
+	@Override
+	public int getAssetListEntryUsagesCount(
+		long groupId, long classNameId, String key) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsagesCount(
+			groupId, classNameId, key);
+	}
+
+	@Override
+	public int getAssetListEntryUsagesCount(
+		long groupId, long classNameId, String key, int type) {
+
+		return _assetListEntryUsageLocalService.getAssetListEntryUsagesCount(
+			groupId, classNameId, key, type);
 	}
 
 	@Override
@@ -450,6 +615,10 @@ public class AssetListEntryUsageLocalServiceWrapper
 
 	/**
 	 * Updates the asset list entry usage in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetListEntryUsage the asset list entry usage
 	 * @return the asset list entry usage that was updated

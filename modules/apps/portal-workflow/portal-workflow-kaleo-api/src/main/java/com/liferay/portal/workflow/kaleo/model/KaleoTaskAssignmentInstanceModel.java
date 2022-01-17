@@ -205,6 +205,20 @@ public interface KaleoTaskAssignmentInstanceModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo task assignment instance.
+	 *
+	 * @return the kaleo definition ID of this kaleo task assignment instance
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo task assignment instance.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo task assignment instance
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo task assignment instance.
 	 *
 	 * @return the kaleo definition version ID of this kaleo task assignment instance
@@ -352,5 +366,8 @@ public interface KaleoTaskAssignmentInstanceModel
 	 * @param completionDate the completion date of this kaleo task assignment instance
 	 */
 	public void setCompletionDate(Date completionDate);
+
+	@Override
+	public KaleoTaskAssignmentInstance cloneWithOriginalValues();
 
 }

@@ -57,8 +57,10 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see SiteNavigationMenuItemServiceHttp
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class SiteNavigationMenuItemServiceSoap {
 
 	public static com.liferay.site.navigation.model.SiteNavigationMenuItemSoap
@@ -113,6 +115,25 @@ public class SiteNavigationMenuItemServiceSoap {
 		try {
 			SiteNavigationMenuItemServiceUtil.deleteSiteNavigationMenuItems(
 				siteNavigationMenuId);
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static Long[] getParentSiteNavigationMenuItemIds(
+			long siteNavigationMenuId, String typeSettingsKeyword)
+		throws RemoteException {
+
+		try {
+			java.util.List<Long> returnValue =
+				SiteNavigationMenuItemServiceUtil.
+					getParentSiteNavigationMenuItemIds(
+						siteNavigationMenuId, typeSettingsKeyword);
+
+			return returnValue.toArray(new Long[returnValue.size()]);
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);

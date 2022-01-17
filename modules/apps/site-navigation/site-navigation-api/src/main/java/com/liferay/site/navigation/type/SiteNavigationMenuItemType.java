@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.site.navigation.model.SiteNavigationMenuItem;
 
@@ -59,6 +60,12 @@ public interface SiteNavigationMenuItemType {
 		return "magic";
 	}
 
+	public default String getItemSelectorURL(
+		HttpServletRequest httpServletRequest) {
+
+		return null;
+	}
+
 	public String getLabel(Locale locale);
 
 	public default Layout getLayout(
@@ -68,11 +75,12 @@ public interface SiteNavigationMenuItemType {
 	}
 
 	public default String getName(String typeSettings) {
-		UnicodeProperties typeSettingsProperties = new UnicodeProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.fastLoad(
+				typeSettings
+			).build();
 
-		typeSettingsProperties.fastLoad(typeSettings);
-
-		return typeSettingsProperties.get("name");
+		return typeSettingsUnicodeProperties.get("name");
 	}
 
 	public default String getRegularURL(
@@ -172,6 +180,10 @@ public interface SiteNavigationMenuItemType {
 			Layout curLayout)
 		throws PortalException {
 
+		return false;
+	}
+
+	public default boolean isItemSelector() {
 		return false;
 	}
 

@@ -19,9 +19,49 @@ import java.io.File;
 /**
  * @author Michael Hashimoto
  */
-public abstract class PortalBatchBuildRunner
-	<T extends PortalBatchBuildData, S extends PortalWorkspace>
-		extends BatchBuildRunner<T, S> {
+public abstract class PortalBatchBuildRunner<T extends PortalBatchBuildData>
+	extends BatchBuildRunner<T> {
+
+	@Override
+	public Workspace getWorkspace() {
+		if (_workspace != null) {
+			return _workspace;
+		}
+
+		PortalBatchBuildData portalBatchBuildData = getBuildData();
+
+		_workspace = WorkspaceFactory.newWorkspace(
+			portalBatchBuildData.getPortalGitHubRepositoryName(),
+			portalBatchBuildData.getPortalUpstreamBranchName());
+
+		WorkspaceGitRepository workspaceGitRepository =
+			_workspace.getPrimaryWorkspaceGitRepository();
+
+		workspaceGitRepository.addPropertyOption(
+			portalBatchBuildData.getBatchName());
+		workspaceGitRepository.addPropertyOption(
+			String.valueOf(portalBatchBuildData.getBuildProfile()));
+		workspaceGitRepository.addPropertyOption(
+			portalBatchBuildData.getPortalUpstreamBranchName());
+
+		String dockerEnabled = System.getenv("DOCKER_ENABLED");
+
+		if ((dockerEnabled != null) && dockerEnabled.equals("true")) {
+			workspaceGitRepository.addPropertyOption("docker");
+		}
+
+		if (JenkinsResultsParserUtil.isWindows()) {
+			workspaceGitRepository.addPropertyOption("windows");
+		}
+		else {
+			workspaceGitRepository.addPropertyOption("unix");
+		}
+
+		workspaceGitRepository.setSenderBranchSHA(
+			portalBatchBuildData.getPortalBranchSHA());
+
+		return _workspace;
+	}
 
 	@Override
 	public void run() {
@@ -40,23 +80,6 @@ public abstract class PortalBatchBuildRunner
 		super(portalBatchBuildData);
 	}
 
-	@Override
-	protected void initWorkspace() {
-		PortalBatchBuildData portalBatchBuildData = getBuildData();
-
-		Workspace batchWorkspace = WorkspaceFactory.newBatchWorkspace(
-			portalBatchBuildData.getPortalGitHubURL(),
-			portalBatchBuildData.getPortalUpstreamBranchName(),
-			portalBatchBuildData.getBatchName(),
-			portalBatchBuildData.getPortalBranchSHA());
-
-		if (!(batchWorkspace instanceof PortalWorkspace)) {
-			throw new RuntimeException("Invalid workspace");
-		}
-
-		setWorkspace((S)batchWorkspace);
-	}
-
 	protected void publishArtifacts() {
 		PortalBatchBuildData portalBatchBuildData = getBuildData();
 
@@ -73,5 +96,7 @@ public abstract class PortalBatchBuildRunner
 
 		testBatch.run();
 	}
+
+	private Workspace _workspace;
 
 }

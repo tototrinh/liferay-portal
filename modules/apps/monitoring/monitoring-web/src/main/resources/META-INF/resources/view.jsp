@@ -29,40 +29,28 @@ if (PropsValues.LIVE_USERS_ENABLED && PropsValues.SESSION_TRACKER_MEMORY_ENABLED
 	userTrackers = ListUtil.sort(userTrackers, new UserTrackerModifiedDateComparator(orderByType.equals("asc")));
 }
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/monitoring/view");
-
-PortletURL sortingURL = PortletURLUtil.clone(portletURL, renderResponse);
-
-sortingURL.setParameter("orderByType", orderByType.equals("asc") ? "desc" : "asc");
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/monitoring/view"
+).buildPortletURL();
 %>
-
-<clay:navigation-bar
-	inverted="<%= true %>"
-	navigationItems='<%=
-		new JSPNavigationItemList(pageContext) {
-			{
-				add(
-					navigationItem -> {
-						navigationItem.setActive(true);
-						navigationItem.setHref(StringPool.BLANK);
-						navigationItem.setLabel(LanguageUtil.get(request, "live-sessions"));
-					});
-			}
-		}
-	%>'
-/>
 
 <clay:management-toolbar
 	disabled="<%= ListUtil.isEmpty(userTrackers) %>"
 	selectable="<%= false %>"
 	showSearch="<%= false %>"
 	sortingOrder="<%= orderByType %>"
-	sortingURL="<%= sortingURL.toString() %>"
+	sortingURL='<%=
+		PortletURLBuilder.create(
+			PortletURLUtil.clone(portletURL, renderResponse)
+		).setParameter(
+			"orderByType", orderByType.equals("asc") ? "desc" : "asc"
+		).buildString()
+	%>'
 />
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<c:choose>
 		<c:when test="<%= userTrackers != null %>">
 			<liferay-ui:search-container
@@ -147,4 +135,4 @@ sortingURL.setParameter("orderByType", orderByType.equals("asc") ? "desc" : "asc
 			<liferay-ui:message arguments="<%= PropsKeys.SESSION_TRACKER_MEMORY_ENABLED %>" key="display-of-live-session-data-is-disabled" translateArguments="<%= false %>" />
 		</c:otherwise>
 	</c:choose>
-</div>
+</clay:container-fluid>

@@ -47,7 +47,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param ctCollectionId the ct collection ID
 	 * @return the matching ct auto resolution infos
 	 */
-	public java.util.List<CTAutoResolutionInfo> findByCTCollectionId(
+	public java.util.List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId);
 
 	/**
@@ -62,7 +62,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
 	 * @return the range of matching ct auto resolution infos
 	 */
-	public java.util.List<CTAutoResolutionInfo> findByCTCollectionId(
+	public java.util.List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end);
 
 	/**
@@ -78,7 +78,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching ct auto resolution infos
 	 */
-	public java.util.List<CTAutoResolutionInfo> findByCTCollectionId(
+	public java.util.List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
 			orderByComparator);
@@ -97,7 +97,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the ordered range of matching ct auto resolution infos
 	 */
-	public java.util.List<CTAutoResolutionInfo> findByCTCollectionId(
+	public java.util.List<CTAutoResolutionInfo> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
 			orderByComparator,
@@ -111,7 +111,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @return the first matching ct auto resolution info
 	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
 	 */
-	public CTAutoResolutionInfo findByCTCollectionId_First(
+	public CTAutoResolutionInfo findByCtCollectionId_First(
 			long ctCollectionId,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<CTAutoResolutionInfo> orderByComparator)
@@ -124,7 +124,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
 	 */
-	public CTAutoResolutionInfo fetchByCTCollectionId_First(
+	public CTAutoResolutionInfo fetchByCtCollectionId_First(
 		long ctCollectionId,
 		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
 			orderByComparator);
@@ -137,7 +137,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @return the last matching ct auto resolution info
 	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
 	 */
-	public CTAutoResolutionInfo findByCTCollectionId_Last(
+	public CTAutoResolutionInfo findByCtCollectionId_Last(
 			long ctCollectionId,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<CTAutoResolutionInfo> orderByComparator)
@@ -150,7 +150,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
 	 */
-	public CTAutoResolutionInfo fetchByCTCollectionId_Last(
+	public CTAutoResolutionInfo fetchByCtCollectionId_Last(
 		long ctCollectionId,
 		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
 			orderByComparator);
@@ -164,7 +164,7 @@ public interface CTAutoResolutionInfoPersistence
 	 * @return the previous, current, and next ct auto resolution info
 	 * @throws NoSuchAutoResolutionInfoException if a ct auto resolution info with the primary key could not be found
 	 */
-	public CTAutoResolutionInfo[] findByCTCollectionId_PrevAndNext(
+	public CTAutoResolutionInfo[] findByCtCollectionId_PrevAndNext(
 			long ctAutoResolutionInfoId, long ctCollectionId,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<CTAutoResolutionInfo> orderByComparator)
@@ -175,7 +175,7 @@ public interface CTAutoResolutionInfoPersistence
 	 *
 	 * @param ctCollectionId the ct collection ID
 	 */
-	public void removeByCTCollectionId(long ctCollectionId);
+	public void removeByCtCollectionId(long ctCollectionId);
 
 	/**
 	 * Returns the number of ct auto resolution infos where ctCollectionId = &#63;.
@@ -183,7 +183,267 @@ public interface CTAutoResolutionInfoPersistence
 	 * @param ctCollectionId the ct collection ID
 	 * @return the number of matching ct auto resolution infos
 	 */
-	public int countByCTCollectionId(long ctCollectionId);
+	public int countByCtCollectionId(long ctCollectionId);
+
+	/**
+	 * Returns all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @return the matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK);
+
+	/**
+	 * Returns a range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @return the range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end);
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator);
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator,
+		boolean useFinderCache);
+
+	/**
+	 * Returns the first ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
+	 */
+	public CTAutoResolutionInfo findByC_MCNI_SMCPK_First(
+			long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException;
+
+	/**
+	 * Returns the first ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
+	 */
+	public CTAutoResolutionInfo fetchByC_MCNI_SMCPK_First(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator);
+
+	/**
+	 * Returns the last ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a matching ct auto resolution info could not be found
+	 */
+	public CTAutoResolutionInfo findByC_MCNI_SMCPK_Last(
+			long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException;
+
+	/**
+	 * Returns the last ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct auto resolution info, or <code>null</code> if a matching ct auto resolution info could not be found
+	 */
+	public CTAutoResolutionInfo fetchByC_MCNI_SMCPK_Last(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator);
+
+	/**
+	 * Returns the ct auto resolution infos before and after the current ct auto resolution info in the ordered set where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctAutoResolutionInfoId the primary key of the current ct auto resolution info
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next ct auto resolution info
+	 * @throws NoSuchAutoResolutionInfoException if a ct auto resolution info with the primary key could not be found
+	 */
+	public CTAutoResolutionInfo[] findByC_MCNI_SMCPK_PrevAndNext(
+			long ctAutoResolutionInfoId, long ctCollectionId,
+			long modelClassNameId, long sourceModelClassPK,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<CTAutoResolutionInfo> orderByComparator)
+		throws NoSuchAutoResolutionInfoException;
+
+	/**
+	 * Returns all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @return the matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs);
+
+	/**
+	 * Returns a range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @return the range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end);
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator);
+
+	/**
+	 * Returns an ordered range of all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;, optionally using the finder cache.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTAutoResolutionInfoModelImpl</code>.
+	 * </p>
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @param start the lower bound of the range of ct auto resolution infos
+	 * @param end the upper bound of the range of ct auto resolution infos (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching ct auto resolution infos
+	 */
+	public java.util.List<CTAutoResolutionInfo> findByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs,
+		int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<CTAutoResolutionInfo>
+			orderByComparator,
+		boolean useFinderCache);
+
+	/**
+	 * Removes all the ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63; from the database.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 */
+	public void removeByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK);
+
+	/**
+	 * Returns the number of ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPK the source model class pk
+	 * @return the number of matching ct auto resolution infos
+	 */
+	public int countByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long sourceModelClassPK);
+
+	/**
+	 * Returns the number of ct auto resolution infos where ctCollectionId = &#63; and modelClassNameId = &#63; and sourceModelClassPK = any &#63;.
+	 *
+	 * @param ctCollectionId the ct collection ID
+	 * @param modelClassNameId the model class name ID
+	 * @param sourceModelClassPKs the source model class pks
+	 * @return the number of matching ct auto resolution infos
+	 */
+	public int countByC_MCNI_SMCPK(
+		long ctCollectionId, long modelClassNameId, long[] sourceModelClassPKs);
 
 	/**
 	 * Caches the ct auto resolution info in the entity cache if it is enabled.

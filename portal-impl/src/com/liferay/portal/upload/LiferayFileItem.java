@@ -71,6 +71,10 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 				getInputStream(), getFileName());
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return ContentTypes.APPLICATION_OCTET_STREAM;
 		}
 	}
@@ -113,10 +117,10 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 	public String getHeader(String name) {
 		FileItemHeaders fileItemHeaders = getHeaders();
 
-		Iterator<String> itr = fileItemHeaders.getHeaders(name);
+		Iterator<String> iterator = fileItemHeaders.getHeaders(name);
 
-		if (itr.hasNext()) {
-			return itr.next();
+		if (iterator.hasNext()) {
+			return iterator.next();
 		}
 
 		return null;
@@ -128,9 +132,9 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 
 		FileItemHeaders fileItemHeaders = getHeaders();
 
-		Iterator<String> itr = fileItemHeaders.getHeaderNames();
+		Iterator<String> iterator = fileItemHeaders.getHeaderNames();
 
-		itr.forEachRemaining(headerNames::add);
+		iterator.forEachRemaining(headerNames::add);
 
 		return headerNames;
 	}
@@ -141,9 +145,9 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 
 		FileItemHeaders fileItemHeaders = getHeaders();
 
-		Iterator<String> itr = fileItemHeaders.getHeaders(name);
+		Iterator<String> iterator = fileItemHeaders.getHeaders(name);
 
-		itr.forEachRemaining(headers::add);
+		iterator.forEachRemaining(headers::add);
 
 		return headers;
 	}
@@ -194,10 +198,10 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		}
 
 		try {
-			DeferredFileOutputStream dfos =
+			DeferredFileOutputStream deferredFileOutputStream =
 				(DeferredFileOutputStream)getOutputStream();
 
-			return dfos.getFile();
+			return deferredFileOutputStream.getFile();
 		}
 		catch (IOException ioException) {
 			_log.error(ioException, ioException);
@@ -252,7 +256,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		return tempFile;
 	}
 
-	private static String _getUniqueId() {
+	private String _getUniqueId() {
 		int current = 0;
 
 		synchronized (LiferayFileItem.class) {
@@ -262,7 +266,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		String id = String.valueOf(current);
 
 		if (current < 100000000) {
-			id = ("00000000" + id).substring(id.length());
+			return "00000000".substring(id.length()) + id;
 		}
 
 		return id;

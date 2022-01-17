@@ -64,9 +64,7 @@ public class ThemePreviewFilter extends BasePortalFilter {
 
 		Matcher imageMatcher = imagePattern.matcher(content);
 
-		content = imageMatcher.replaceAll("images");
-
-		return content;
+		return imageMatcher.replaceAll("images");
 	}
 
 	protected boolean isThemePreview(HttpServletRequest httpServletRequest) {
@@ -94,9 +92,8 @@ public class ThemePreviewFilter extends BasePortalFilter {
 
 		String content = bufferCacheServletResponse.getString();
 
-		content = getContent(httpServletRequest, content);
-
-		ServletResponseUtil.write(httpServletResponse, content);
+		ServletResponseUtil.write(
+			httpServletResponse, getContent(httpServletRequest, content));
 	}
 
 	private static final String _THEME_PREVIEW = "themePreview";

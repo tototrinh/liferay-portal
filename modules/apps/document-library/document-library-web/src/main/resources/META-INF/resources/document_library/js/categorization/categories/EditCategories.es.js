@@ -31,7 +31,7 @@ function EditCategories(props) {
 	};
 
 	const {observer, onClose} = useModal({
-		onClose: handleOnClose
+		onClose: handleOnClose,
 	});
 
 	if (!Liferay.component(bridgeComponentId)) {
@@ -43,10 +43,10 @@ function EditCategories(props) {
 					setSelectAll(selectAll);
 					setFolderId(folderId);
 					setShowModal(true);
-				}
+				},
 			},
 			{
-				destroyOnNavigate: true
+				destroyOnNavigate: true,
 			}
 		);
 	}
@@ -67,7 +67,7 @@ function EditCategories(props) {
 	);
 }
 
-export default function({context, props}) {
+export default function ({context, props}) {
 	return (
 		<EditCategoriesContext.Provider value={context}>
 			<EditCategories {...props} />

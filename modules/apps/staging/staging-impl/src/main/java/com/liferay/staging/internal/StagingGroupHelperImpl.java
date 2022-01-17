@@ -305,6 +305,10 @@ public class StagingGroupHelperImpl implements StagingGroupHelper {
 					group.getCompanyId(), true);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return true;
 		}
 
@@ -360,10 +364,10 @@ public class StagingGroupHelperImpl implements StagingGroupHelper {
 	}
 
 	private String _getTypeSettingsProperty(Group group, String key) {
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
-		return typeSettingsProperties.getProperty(key);
+		return typeSettingsUnicodeProperties.getProperty(key);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -34,6 +34,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class CookieKeys {
 
+	public static final String COMMERCE_CONTINUE_AS_GUEST =
+		"COMMERCE_CONTINUE_AS_GUEST";
+
 	public static final String COMPANY_ID = "COMPANY_ID";
 
 	public static final String COOKIE_SUPPORT = "COOKIE_SUPPORT";
@@ -101,9 +104,11 @@ public class CookieKeys {
 
 		httpServletResponse.addCookie(cookie);
 
-		Map<String, Cookie> cookieMap = _getCookieMap(httpServletRequest);
+		if (httpServletRequest != null) {
+			Map<String, Cookie> cookieMap = _getCookieMap(httpServletRequest);
 
-		cookieMap.put(StringUtil.toUpperCase(name), cookie);
+			cookieMap.put(StringUtil.toUpperCase(name), cookie);
+		}
 	}
 
 	public static void addSupportCookie(
@@ -115,7 +120,9 @@ public class CookieKeys {
 		cookieSupportCookie.setPath(StringPool.SLASH);
 		cookieSupportCookie.setMaxAge(MAX_AGE);
 
-		addCookie(httpServletRequest, httpServletResponse, cookieSupportCookie);
+		addCookie(
+			null, httpServletResponse, cookieSupportCookie,
+			httpServletRequest.isSecure());
 	}
 
 	public static void deleteCookies(

@@ -20,10 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -41,10 +45,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("ContentSetElement")
+@GraphQLName(
+	description = "Represents each member of a content set and can contain different types of assets.",
+	value = "ContentSetElement"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "ContentSetElement")
-public class ContentSetElement {
+public class ContentSetElement implements Serializable {
+
+	public static ContentSetElement toDTO(String json) {
+		return ObjectMapperUtil.readValue(ContentSetElement.class, json);
+	}
+
+	public static ContentSetElement unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(ContentSetElement.class, json);
+	}
 
 	@Schema(description = "The content's fields.")
 	@Valid
@@ -157,7 +172,7 @@ public class ContentSetElement {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String title;
 
-	@Schema
+	@Schema(description = "The localized content's titles.")
 	@Valid
 	public Map<String, String> getTitle_i18n() {
 		return title_i18n;
@@ -183,7 +198,7 @@ public class ContentSetElement {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized content's titles.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Map<String, String> title_i18n;
 
@@ -221,11 +236,17 @@ public class ContentSetElement {
 
 			sb.append("\"content\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(content));
-
-			sb.append("\"");
+			if (content instanceof Map) {
+				sb.append(JSONFactoryUtil.createJSONObject((Map<?, ?>)content));
+			}
+			else if (content instanceof String) {
+				sb.append("\"");
+				sb.append((String)content);
+				sb.append("\"");
+			}
+			else {
+				sb.append(content);
+			}
 		}
 
 		if (contentType != null) {
@@ -282,6 +303,7 @@ public class ContentSetElement {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.ContentSetElement",
 		name = "x-class-name"
 	)
@@ -291,6 +313,16 @@ public class ContentSetElement {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -307,13 +339,46 @@ public class ContentSetElement {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

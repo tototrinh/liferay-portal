@@ -16,13 +16,18 @@ package com.liferay.portal.action;
 
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.exportimport.kernel.staging.StagingUtil;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutRevision;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.portlet.AddPortletProvider;
 import com.liferay.portal.kernel.portlet.PortletJSONUtil;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
@@ -52,8 +57,6 @@ import com.liferay.portal.struts.Action;
 import com.liferay.portal.struts.JSONAction;
 import com.liferay.portal.util.LayoutClone;
 import com.liferay.portal.util.LayoutCloneFactory;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerMap;
 
 import javax.portlet.PortletPreferences;
 
@@ -93,8 +96,22 @@ public class UpdateLayoutAction extends JSONAction {
 			int columnPos = ParamUtil.getInteger(
 				httpServletRequest, "p_p_col_pos", -1);
 
+			if (portletId == null) {
+				throw new IllegalArgumentException("Portlet ID is null");
+			}
+
+			String originalPortletId = portletId;
+
 			portletId = layoutTypePortlet.addPortletId(
 				userId, portletId, columnId, columnPos);
+
+			if (portletId == null) {
+				throw new PortalException(
+					StringBundler.concat(
+						"Portlet ", originalPortletId,
+						" cannot be added to layout ", layout.getPlid(),
+						" by user ", userId));
+			}
 
 			storeAddContentPortletPreferences(
 				httpServletRequest, layout, portletId, themeDisplay);
@@ -178,14 +195,15 @@ public class UpdateLayoutAction extends JSONAction {
 			updateLayout = false;
 		}
 		else if (cmd.equals("update_type_settings")) {
-			UnicodeProperties layoutTypeSettingsProperties =
+			UnicodeProperties layoutTypeSettingsUnicodeProperties =
 				layout.getTypeSettingsProperties();
 
-			UnicodeProperties formTypeSettingsProperties =
+			UnicodeProperties formTypeSettingsUnicodeProperties =
 				PropertiesParamUtil.getProperties(
 					httpServletRequest, "TypeSettingsProperties--");
 
-			layoutTypeSettingsProperties.putAll(formTypeSettingsProperties);
+			layoutTypeSettingsUnicodeProperties.putAll(
+				formTypeSettingsUnicodeProperties);
 		}
 		else if (cmd.equals("undo_layout_revision")) {
 			long layoutRevisionId = ParamUtil.getLong(
@@ -341,7 +359,8 @@ public class UpdateLayoutAction extends JSONAction {
 	}
 
 	private static final ServiceTrackerMap<String, AddPortletProvider>
-		_serviceTrackerMap = ServiceTrackerCollections.openSingleValueMap(
-			AddPortletProvider.class, "model.class.name");
+		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
+			SystemBundleUtil.getBundleContext(), AddPortletProvider.class,
+			"model.class.name");
 
 }

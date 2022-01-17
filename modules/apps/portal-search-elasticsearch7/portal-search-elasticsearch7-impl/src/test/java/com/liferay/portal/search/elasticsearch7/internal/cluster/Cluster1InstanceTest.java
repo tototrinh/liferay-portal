@@ -14,13 +14,18 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.cluster;
 
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchFixture;
+import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionFixture;
+import com.liferay.portal.search.elasticsearch7.internal.connection.HealthExpectations;
 import com.liferay.portal.search.elasticsearch7.internal.connection.Index;
 import com.liferay.portal.search.elasticsearch7.internal.connection.IndexCreator;
 import com.liferay.portal.search.elasticsearch7.internal.connection.IndexName;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -29,6 +34,10 @@ import org.junit.rules.TestName;
  * @author André de Oliveira
  */
 public class Cluster1InstanceTest {
+
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -42,20 +51,34 @@ public class Cluster1InstanceTest {
 
 	@Test
 	public void test1PrimaryShardByDefault() throws Exception {
-		ElasticsearchFixture elasticsearchFixture = _testCluster.getNode(0);
+		ElasticsearchConnectionFixture elasticsearchConnectionFixture =
+			_testCluster.getNode(1);
 
-		createIndex(elasticsearchFixture);
+		createIndex(elasticsearchConnectionFixture);
 
-		ClusterAssert.assert1PrimaryShardOnly(elasticsearchFixture);
+		ClusterAssert.assertHealth(
+			elasticsearchConnectionFixture,
+			new HealthExpectations() {
+				{
+					setActivePrimaryShards(1);
+					setActiveShards(1);
+					setNumberOfDataNodes(1);
+					setNumberOfNodes(1);
+					setStatus(ClusterHealthStatus.GREEN);
+					setUnassignedShards(0);
+				}
+			});
 	}
 
 	@Rule
 	public TestName testName = new TestName();
 
-	protected Index createIndex(ElasticsearchFixture elasticsearchFixture) {
+	protected Index createIndex(
+		ElasticsearchConnectionFixture elasticsearchConnectionFixture) {
+
 		IndexCreator indexCreator = new IndexCreator() {
 			{
-				setElasticsearchClientResolver(elasticsearchFixture);
+				setElasticsearchClientResolver(elasticsearchConnectionFixture);
 			}
 		};
 

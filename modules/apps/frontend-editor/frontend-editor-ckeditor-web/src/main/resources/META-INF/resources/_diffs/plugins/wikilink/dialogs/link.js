@@ -12,18 +12,18 @@
  * details.
  */
 
-CKEDITOR.dialog.add('link', editor => {
+CKEDITOR.dialog.add('link', (editor) => {
 	var LANG_COMMON = editor.lang.common;
 
 	var LANG_LINK = editor.lang.link;
 
 	var PLUGIN = CKEDITOR.plugins.link;
 
-	var parseLink = function(editor, element) {
+	var parseLink = function (editor, element) {
 		var instance = this;
 
 		var data = {
-			address: ''
+			address: '',
 		};
 
 		if (element) {
@@ -93,7 +93,7 @@ CKEDITOR.dialog.add('link', editor => {
 									);
 
 									return func.apply(instance);
-								}
+								},
 							},
 							{
 								id: 'linkBrowse',
@@ -128,18 +128,18 @@ CKEDITOR.dialog.add('link', editor => {
 									);
 								},
 								required: true,
-								type: 'button'
-							}
+								type: 'button',
+							},
 						],
 						id: 'linkOptions',
 						padding: 1,
-						type: 'vbox'
-					}
+						type: 'vbox',
+					},
 				],
 				id: 'info',
 				label: LANG_LINK.info,
-				title: LANG_LINK.info
-			}
+				title: LANG_LINK.info,
+			},
 		],
 
 		minHeight: 100,
@@ -174,7 +174,7 @@ CKEDITOR.dialog.add('link', editor => {
 
 				var ranges = selection.getRanges(true);
 
-				if (ranges.length == 1 && ranges[0].collapsed) {
+				if (ranges.length === 1 && ranges[0].collapsed) {
 					var text = new CKEDITOR.dom.text(
 						data.text,
 						editor.document
@@ -188,7 +188,7 @@ CKEDITOR.dialog.add('link', editor => {
 
 				var style = new CKEDITOR.style({
 					attributes,
-					element: 'a'
+					element: 'a',
 				});
 
 				style.type = CKEDITOR.STYLE_INLINE;
@@ -226,6 +226,6 @@ CKEDITOR.dialog.add('link', editor => {
 			instance.setupContent(parseLink.apply(instance, [editor, element]));
 		},
 
-		title: LANG_LINK.title
+		title: LANG_LINK.title,
 	};
 });

@@ -25,11 +25,10 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.sharing.constants.SharingPortletKeys;
 import com.liferay.sharing.model.SharingEntry;
+import com.liferay.sharing.notifications.internal.helper.SharingNotificationHelper;
 import com.liferay.sharing.notifications.internal.util.SharingNotificationSubcriptionSender;
-import com.liferay.sharing.notifications.internal.util.SharingNotificationUtil;
 import com.liferay.sharing.security.permission.SharingEntryAction;
 import com.liferay.sharing.service.SharingEntryLocalService;
 import com.liferay.sharing.service.SharingEntryLocalServiceWrapper;
@@ -129,14 +128,14 @@ public class NotificationsSharingEntryLocalServiceWrapper
 					new SharingNotificationSubcriptionSender();
 
 			sharingNotificationSubcriptionSender.setSubject(
-				_sharingNotificationUtil.getNotificationMessage(
+				_sharingNotificationHelper.getNotificationMessage(
 					sharingEntry, user.getLocale()));
 
-			String entryURL = _sharingNotificationUtil.getNotificationURL(
+			String entryURL = _sharingNotificationHelper.getNotificationURL(
 				sharingEntry, serviceContext.getLiferayPortletRequest());
 
 			sharingNotificationSubcriptionSender.setBody(
-				_sharingNotificationUtil.getNotificationEmailBody(
+				_sharingNotificationHelper.getNotificationEmailBody(
 					sharingEntry, serviceContext.getLiferayPortletRequest()));
 
 			sharingNotificationSubcriptionSender.setClassName(
@@ -148,6 +147,7 @@ public class NotificationsSharingEntryLocalServiceWrapper
 			sharingNotificationSubcriptionSender.setCurrentUserId(
 				serviceContext.getUserId());
 			sharingNotificationSubcriptionSender.setEntryURL(entryURL);
+
 			String fromName = PrefsPropsUtil.getString(
 				user.getCompanyId(), PropsKeys.ADMIN_EMAIL_FROM_NAME);
 			String fromAddress = PrefsPropsUtil.getString(
@@ -183,13 +183,8 @@ public class NotificationsSharingEntryLocalServiceWrapper
 	private static final Log _log = LogFactoryUtil.getLog(
 		NotificationsSharingEntryLocalServiceWrapper.class);
 
-	@Reference(
-		target = "(bundle.symbolic.name=com.liferay.sharing.notifications)"
-	)
-	private ResourceBundleLoader _resourceBundleLoader;
-
 	@Reference
-	private SharingNotificationUtil _sharingNotificationUtil;
+	private SharingNotificationHelper _sharingNotificationHelper;
 
 	@Reference
 	private UserLocalService _userLocalService;

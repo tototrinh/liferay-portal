@@ -25,31 +25,39 @@ String emptyResultsMessage = ParamUtil.getString(request, "emptyResultsMessage")
 List<Website> websites = WebsiteServiceUtil.getWebsites(className, classPK);
 %>
 
-<h3 class="autofit-row sheet-subtitle">
-	<span class="autofit-col autofit-col-expand">
+<clay:content-row
+	containerElement="h3"
+	cssClass="sheet-subtitle"
+>
+	<clay:content-col
+		expand="<%= true %>"
+	>
 		<span class="heading-text"><liferay-ui:message key="websites" /></span>
-	</span>
-	<span class="autofit-col">
+	</clay:content-col>
+
+	<clay:content-col>
 		<span class="heading-end">
-
-			<%
-			PortletURL editURL = liferayPortletResponse.createRenderURL();
-
-			editURL.setParameter("mvcPath", "/common/edit_website.jsp");
-			editURL.setParameter("redirect", currentURL);
-			editURL.setParameter("className", className);
-			editURL.setParameter("classPK", String.valueOf(classPK));
-			%>
-
 			<liferay-ui:icon
 				label="<%= true %>"
 				linkCssClass="add-website-link btn btn-secondary btn-sm"
 				message="add"
-				url="<%= editURL.toString() %>"
+				url='<%=
+					PortletURLBuilder.createRenderURL(
+						liferayPortletResponse
+					).setMVCPath(
+						"/common/edit_website.jsp"
+					).setRedirect(
+						currentURL
+					).setParameter(
+						"className", className
+					).setParameter(
+						"classPK", classPK
+					).buildString()
+				%>'
 			/>
 		</span>
-	</span>
-</h3>
+	</clay:content-col>
+</clay:content-row>
 
 <liferay-ui:search-container
 	compactEmptyResultsMessage="<%= true %>"
@@ -94,9 +102,10 @@ List<Website> websites = WebsiteServiceUtil.getWebsites(className, classPK);
 			cssClass="table-cell-expand-smaller"
 		>
 			<c:if test="<%= website.isPrimary() %>">
-				<span class="label label-primary">
-					<span class="label-item label-item-expand"><%= StringUtil.toUpperCase(LanguageUtil.get(request, "primary"), locale) %></span>
-				</span>
+				<clay:label
+					displayType="primary"
+					label="primary"
+				/>
 			</c:if>
 		</liferay-ui:search-container-column-text>
 

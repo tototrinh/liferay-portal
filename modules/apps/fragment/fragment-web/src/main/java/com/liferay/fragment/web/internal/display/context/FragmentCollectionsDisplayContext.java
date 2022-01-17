@@ -17,6 +17,7 @@ package com.liferay.fragment.web.internal.display.context;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.service.FragmentCollectionServiceUtil;
 import com.liferay.fragment.web.internal.util.FragmentPortletUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.model.CompanyConstants;
@@ -74,7 +75,7 @@ public class FragmentCollectionsDisplayContext {
 		return _orderByType;
 	}
 
-	public SearchContainer getSearchContainer() {
+	public SearchContainer<FragmentCollection> getSearchContainer() {
 		if (_searchContainer != null) {
 			return _searchContainer;
 		}
@@ -83,8 +84,10 @@ public class FragmentCollectionsDisplayContext {
 			(ThemeDisplay)_httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		SearchContainer searchContainer = new SearchContainer(
-			_renderRequest, _getPortletURL(), null, "there-are-no-collections");
+		SearchContainer<FragmentCollection> searchContainer =
+			new SearchContainer(
+				_renderRequest, _getPortletURL(), null,
+				"there-are-no-collections");
 
 		searchContainer.setRowChecker(
 			new EmptyOnClickRowChecker(_renderResponse));
@@ -170,35 +173,48 @@ public class FragmentCollectionsDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/fragment/view_fragment_collections"
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/fragment/view_fragment_collections");
-		portletURL.setParameter("eventName", getEventName());
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = _getKeywords();
-
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
-
-		String orderByCol = _getOrderByCol();
-
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
-
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		portletURL.setParameter(
+				return null;
+			}
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
 			"includeGlobalFragmentCollections",
-			String.valueOf(_isIncludeGlobalFragmentCollections()));
+			_isIncludeGlobalFragmentCollections()
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = _getOrderByCol();
 
-		return portletURL;
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
+
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
+
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
+
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	private boolean _isIncludeGlobalFragmentCollections() {
@@ -228,6 +244,6 @@ public class FragmentCollectionsDisplayContext {
 	private String _orderByType;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
-	private SearchContainer _searchContainer;
+	private SearchContainer<FragmentCollection> _searchContainer;
 
 }

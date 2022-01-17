@@ -23,10 +23,10 @@ String displayStyle = siteNavigationMenuItemSelectorViewDisplayContext.getDispla
 %>
 
 <clay:management-toolbar
-	displayContext="<%= new SiteNavigationMenuItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteNavigationMenuItemSelectorViewDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new SiteNavigationMenuItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteNavigationMenuItemSelectorViewDisplayContext) %>"
 />
 
-<aui:form action="<%= siteNavigationMenuItemSelectorViewDisplayContext.getPortletURL() %>" cssClass="container-fluid-1280" name="selectSiteNavigationMenuFm">
+<aui:form action="<%= siteNavigationMenuItemSelectorViewDisplayContext.getPortletURL() %>" cssClass="container-fluid container-fluid-max-xl" name="selectSiteNavigationMenuFm">
 	<liferay-ui:search-container
 		searchContainer="<%= siteNavigationMenuItemSelectorViewDisplayContext.getSearchContainer() %>"
 	>
@@ -37,10 +37,6 @@ String displayStyle = siteNavigationMenuItemSelectorViewDisplayContext.getDispla
 		>
 
 			<%
-			Map<String, Object> data = new HashMap<String, Object>();
-
-			data.put("id", siteNavigationMenu.getSiteNavigationMenuId());
-
 			String name = siteNavigationMenu.getName();
 
 			if (siteNavigationMenu.getGroupId() != scopeGroupId) {
@@ -49,7 +45,11 @@ String displayStyle = siteNavigationMenuItemSelectorViewDisplayContext.getDispla
 				name = StringUtil.appendParentheticalSuffix(name, group.getDescriptiveName(locale));
 			}
 
-			data.put("name", name);
+			Map<String, Object> data = HashMapBuilder.<String, Object>put(
+				"id", siteNavigationMenu.getSiteNavigationMenuId()
+			).put(
+				"name", name
+			).build();
 			%>
 
 			<c:choose>
@@ -81,7 +81,7 @@ String displayStyle = siteNavigationMenuItemSelectorViewDisplayContext.getDispla
 				</c:when>
 				<c:otherwise>
 					<liferay-ui:search-container-column-text
-						cssClass="table-cell-content"
+						cssClass="table-cell-expand"
 						name="title"
 					>
 						<aui:a cssClass="selector-button" data="<%= data %>" href="javascript:;">
@@ -108,10 +108,3 @@ String displayStyle = siteNavigationMenuItemSelectorViewDisplayContext.getDispla
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script use="aui-base">
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectSiteNavigationMenuFm',
-		'<%= HtmlUtil.escapeJS(siteNavigationMenuItemSelectorViewDisplayContext.getItemSelectedEventName()) %>'
-	);
-</aui:script>

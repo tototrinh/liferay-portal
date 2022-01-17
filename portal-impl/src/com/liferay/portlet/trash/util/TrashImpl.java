@@ -67,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.PortletException;
@@ -143,17 +142,15 @@ public class TrashImpl implements Trash {
 		ActionRequest actionRequest, List<TrashedModel> trashedModels,
 		String cmd) {
 
-		Map<String, Object> data = HashMapBuilder.<String, Object>put(
-			Constants.CMD, new String[] {cmd}
-		).put(
-			"trashedModels", trashedModels
-		).build();
-
 		SessionMessages.add(
 			actionRequest,
 			PortalUtil.getPortletId(actionRequest) +
 				SessionMessages.KEY_SUFFIX_DELETE_SUCCESS_DATA,
-			data);
+			HashMapBuilder.<String, Object>put(
+				Constants.CMD, new String[] {cmd}
+			).put(
+				"trashedModels", trashedModels
+			).build());
 	}
 
 	@Override
@@ -192,12 +189,13 @@ public class TrashImpl implements Trash {
 
 	@Override
 	public Group disableTrash(Group group) {
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getParentLiveGroupTypeSettingsProperties();
 
-		typeSettingsProperties.setProperty("trashEnabled", StringPool.FALSE);
+		typeSettingsUnicodeProperties.setProperty(
+			"trashEnabled", StringPool.FALSE);
 
-		group.setTypeSettingsProperties(typeSettingsProperties);
+		group.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 
 		return GroupLocalServiceUtil.updateGroup(group);
 	}
@@ -258,7 +256,8 @@ public class TrashImpl implements Trash {
 					_log.warn(
 						StringBundler.concat(
 							"Unable to find trash entry for ", entryClassName,
-							" with primary key ", classPK));
+							" with primary key ", classPK),
+						exception);
 				}
 			}
 		}
@@ -297,23 +296,17 @@ public class TrashImpl implements Trash {
 			group.getCompanyId(), PropsKeys.TRASH_ENTRIES_MAX_AGE,
 			PropsValues.TRASH_ENTRIES_MAX_AGE);
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getParentLiveGroupTypeSettingsProperties();
 
 		return GetterUtil.getInteger(
-			typeSettingsProperties.getProperty("trashEntriesMaxAge"),
+			typeSettingsUnicodeProperties.getProperty("trashEntriesMaxAge"),
 			trashEntriesMaxAge);
 	}
 
 	@Override
 	public String getNewName(String oldName, String token) {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(oldName);
-		sb.append(StringPool.SPACE);
-		sb.append(token);
-
-		return sb.toString();
+		return StringBundler.concat(oldName, StringPool.SPACE, token);
 	}
 
 	@Override
@@ -416,10 +409,6 @@ public class TrashImpl implements Trash {
 			return null;
 		}
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		PortletURL portletURL = PortletProviderUtil.getPortletURL(
 			httpServletRequest, TrashEntry.class.getName(),
 			PortletProvider.Action.VIEW);
@@ -429,6 +418,11 @@ public class TrashImpl implements Trash {
 		}
 
 		portletURL.setParameter("mvcPath", "/view_content.jsp");
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
 		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
 
 		TrashEntry trashEntry = TrashEntryLocalServiceUtil.getEntry(
@@ -480,11 +474,11 @@ public class TrashImpl implements Trash {
 			return false;
 		}
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getParentLiveGroupTypeSettingsProperties();
 
 		return GetterUtil.getBoolean(
-			typeSettingsProperties.getProperty("trashEnabled"), true);
+			typeSettingsUnicodeProperties.getProperty("trashEnabled"), true);
 	}
 
 	@Override
@@ -587,7 +581,8 @@ public class TrashImpl implements Trash {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"No trash entry or trash version exists with ID " +
-						trashEntryId);
+						trashEntryId,
+					exception);
 			}
 		}
 

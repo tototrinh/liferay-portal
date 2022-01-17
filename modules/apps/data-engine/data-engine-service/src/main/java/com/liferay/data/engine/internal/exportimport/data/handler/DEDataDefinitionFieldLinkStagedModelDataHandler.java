@@ -138,11 +138,13 @@ public class DEDataDefinitionFieldLinkStagedModelDataHandler
 
 		importedDEDataDefinitionFieldLink.setGroupId(
 			portletDataContext.getScopeGroupId());
-		importedDEDataDefinitionFieldLink.setDdmStructureId(ddmStructureId);
+		importedDEDataDefinitionFieldLink.setCompanyId(
+			portletDataContext.getCompanyId());
 		importedDEDataDefinitionFieldLink.setClassNameId(
 			_portal.getClassNameId(
 				deDataDefinitionFieldLinkElement.attributeValue(
 					"link-class-name")));
+		importedDEDataDefinitionFieldLink.setDdmStructureId(ddmStructureId);
 
 		DDMStructure ddmStructure = _ddmStructureLocalService.getDDMStructure(
 			ddmStructureId);
@@ -171,6 +173,8 @@ public class DEDataDefinitionFieldLinkStagedModelDataHandler
 					portletDataContext, importedDEDataDefinitionFieldLink);
 		}
 		else {
+			importedDEDataDefinitionFieldLink.setMvccVersion(
+				existingDEDataDefinitionFieldLink.getMvccVersion());
 			importedDEDataDefinitionFieldLink.setDeDataDefinitionFieldLinkId(
 				existingDEDataDefinitionFieldLink.
 					getDeDataDefinitionFieldLinkId());

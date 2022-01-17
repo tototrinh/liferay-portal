@@ -20,10 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -41,12 +45,25 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentFieldHTML")
+@GraphQLName(
+	description = "Represents a fragment field with HTML.",
+	value = "FragmentFieldHTML"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentFieldHTML")
-public class FragmentFieldHTML {
+public class FragmentFieldHTML implements Serializable {
 
-	@Schema
+	public static FragmentFieldHTML toDTO(String json) {
+		return ObjectMapperUtil.readValue(FragmentFieldHTML.class, json);
+	}
+
+	public static FragmentFieldHTML unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(FragmentFieldHTML.class, json);
+	}
+
+	@Schema(
+		description = "The fragment field's HTML. Can be inline or mapped to an external value."
+	)
 	@Valid
 	public Object getHtml() {
 		return html;
@@ -69,7 +86,9 @@ public class FragmentFieldHTML {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(
+		description = "The fragment field's HTML. Can be inline or mapped to an external value."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Object html;
 
@@ -107,11 +126,17 @@ public class FragmentFieldHTML {
 
 			sb.append("\"html\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(html));
-
-			sb.append("\"");
+			if (html instanceof Map) {
+				sb.append(JSONFactoryUtil.createJSONObject((Map<?, ?>)html));
+			}
+			else if (html instanceof String) {
+				sb.append("\"");
+				sb.append((String)html);
+				sb.append("\"");
+			}
+			else {
+				sb.append(html);
+			}
 		}
 
 		sb.append("}");
@@ -120,6 +145,7 @@ public class FragmentFieldHTML {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentFieldHTML",
 		name = "x-class-name"
 	)
@@ -129,6 +155,16 @@ public class FragmentFieldHTML {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -145,13 +181,46 @@ public class FragmentFieldHTML {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

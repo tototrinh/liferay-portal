@@ -16,6 +16,7 @@ package com.liferay.fragment.web.internal.display.context;
 
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.service.FragmentCollectionLocalServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -52,22 +53,27 @@ public class FragmentCollectionResourcesDisplayContext {
 			WebKeys.THEME_DISPLAY);
 	}
 
-	public SearchContainer getSearchContainer() throws PortalException {
+	public SearchContainer<FileEntry> getSearchContainer()
+		throws PortalException {
+
 		if (_searchContainer != null) {
 			return _searchContainer;
 		}
 
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "/fragment/view");
-		portletURL.setParameter("tabs1", "resources");
-		portletURL.setParameter(
-			"redirect", _fragmentDisplayContext.getRedirect());
-		portletURL.setParameter(
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/fragment/view"
+		).setRedirect(
+			_fragmentDisplayContext.getRedirect()
+		).setTabs1(
+			"resources"
+		).setParameter(
 			"fragmentCollectionId",
-			String.valueOf(_fragmentDisplayContext.getFragmentCollectionId()));
+			_fragmentDisplayContext.getFragmentCollectionId()
+		).buildPortletURL();
 
-		SearchContainer searchContainer = new SearchContainer(
+		SearchContainer<FileEntry> searchContainer = new SearchContainer(
 			_renderRequest, portletURL, null, "there-are-no-resources");
 
 		searchContainer.setRowChecker(
@@ -112,7 +118,7 @@ public class FragmentCollectionResourcesDisplayContext {
 	private final HttpServletRequest _httpServletRequest;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
-	private SearchContainer _searchContainer;
+	private SearchContainer<FileEntry> _searchContainer;
 	private final ThemeDisplay _themeDisplay;
 
 }

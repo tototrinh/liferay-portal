@@ -14,6 +14,8 @@
 
 package com.liferay.layout.admin.web.internal.display.context;
 
+import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -24,6 +26,7 @@ import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil;
@@ -75,8 +78,9 @@ public class OrphanPortletsDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_liferayPortletRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			PortalUtil.getHttpServletRequest(_liferayPortletRequest),
+			LayoutAdminPortletKeys.GROUP_PAGES, "orphan-display-style", "list");
 
 		return _displayStyle;
 	}
@@ -131,11 +135,9 @@ public class OrphanPortletsDisplayContext {
 			Portlet portlet = PortletLocalServiceUtil.getPortletById(
 				themeDisplay.getCompanyId(), portletId);
 
-			if (portlet.isSystem()) {
-				continue;
-			}
+			if (portlet.isSystem() ||
+				explicitlyAddedPortletIds.contains(portletId)) {
 
-			if (explicitlyAddedPortletIds.contains(portletId)) {
 				continue;
 			}
 
@@ -156,18 +158,17 @@ public class OrphanPortletsDisplayContext {
 				httpServletRequest.getServletContext(),
 				themeDisplay.getLocale(), orderByAsc);
 
-		orphanPortlets = ListUtil.sort(orphanPortlets, portletTitleComparator);
-
-		return orphanPortlets;
+		return ListUtil.sort(orphanPortlets, portletTitleComparator);
 	}
 
-	public SearchContainer getOrphanPortletsSearchContainer() {
+	public SearchContainer<Portlet> getOrphanPortletsSearchContainer() {
 		if (_orphanPortletsSearchContainer != null) {
 			return _orphanPortletsSearchContainer;
 		}
 
-		SearchContainer orphanPortletsSearchContainer = new SearchContainer(
-			_liferayPortletRequest, getPortletURL(), null, null);
+		SearchContainer<Portlet> orphanPortletsSearchContainer =
+			new SearchContainer(
+				_liferayPortletRequest, getPortletURL(), null, null);
 
 		orphanPortletsSearchContainer.setDeltaConfigurable(false);
 		orphanPortletsSearchContainer.setId("portlets");
@@ -183,8 +184,10 @@ public class OrphanPortletsDisplayContext {
 
 		List<Portlet> portlets = getOrphanPortlets();
 
-		orphanPortletsSearchContainer.setResults(portlets);
-
+		orphanPortletsSearchContainer.setResults(
+			ListUtil.subList(
+				portlets, orphanPortletsSearchContainer.getStart(),
+				orphanPortletsSearchContainer.getEnd()));
 		orphanPortletsSearchContainer.setTotal(portlets.size());
 
 		_orphanPortletsSearchContainer = orphanPortletsSearchContainer;
@@ -193,13 +196,15 @@ public class OrphanPortletsDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/orphan_portlets.jsp");
-		portletURL.setParameter("backURL", getBackURL());
-		portletURL.setParameter("displayStyle", getDisplayStyle());
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCPath(
+			"/orphan_portlets.jsp"
+		).setBackURL(
+			getBackURL()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).buildPortletURL();
 	}
 
 	public Layout getSelLayout() {
@@ -249,7 +254,7 @@ public class OrphanPortletsDisplayContext {
 	private final LiferayPortletRequest _liferayPortletRequest;
 	private final LiferayPortletResponse _liferayPortletResponse;
 	private String _orderByType;
-	private SearchContainer _orphanPortletsSearchContainer;
+	private SearchContainer<Portlet> _orphanPortletsSearchContainer;
 	private Layout _selLayout;
 	private Long _selPlid;
 

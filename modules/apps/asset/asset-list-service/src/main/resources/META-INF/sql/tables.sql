@@ -12,6 +12,8 @@ create table AssetListEntry (
 	assetListEntryKey VARCHAR(75) null,
 	title VARCHAR(75) null,
 	type_ INTEGER,
+	assetEntrySubtype VARCHAR(255) null,
+	assetEntryType VARCHAR(255) null,
 	lastPublishDate DATE null,
 	primary key (assetListEntryId, ctCollectionId)
 );
@@ -67,7 +69,12 @@ create table AssetListEntryUsage (
 	assetListEntryId LONG,
 	classNameId LONG,
 	classPK LONG,
+	containerKey VARCHAR(255) null,
+	containerType LONG,
+	key_ VARCHAR(255) null,
+	plid LONG,
 	portletId VARCHAR(200) null,
+	type_ INTEGER,
 	lastPublishDate DATE null,
 	primary key (assetListEntryUsageId, ctCollectionId)
 );

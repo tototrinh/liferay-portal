@@ -22,7 +22,7 @@ class DateInput extends React.Component {
 	static propTypes = {
 		disabled: propTypes.bool,
 		onChange: propTypes.func.isRequired,
-		value: propTypes.string
+		value: propTypes.string,
 	};
 
 	state = {};
@@ -30,30 +30,30 @@ class DateInput extends React.Component {
 	static getDerivedStateFromProps(props, state) {
 		let returnVal = null;
 
-		if (props.value != state.initialValue) {
+		if (props.value !== state.initialValue) {
 			returnVal = {
 				initialValue: props.value,
-				value: props.value
+				value: props.value,
 			};
 		}
 
 		return returnVal;
 	}
 
-	_handleDateChange = event => {
+	_handleDateChange = (event) => {
 		const value = event.target.value;
 
 		this.setState({value});
 	};
 
-	_handleDateBlur = event => {
+	_handleDateBlur = (event) => {
 		const date = jsDatetoYYYYMMDD(event.target.value);
 
 		if (date !== 'Invalid Date') {
 			this.setState({value: date}, () => {
 				this.props.onChange({
 					type: PROPERTY_TYPES.DATE,
-					value: date
+					value: date,
 				});
 			});
 		}
@@ -61,7 +61,7 @@ class DateInput extends React.Component {
 			this.setState({value: jsDatetoYYYYMMDD(new Date())}, () => {
 				this.props.onChange({
 					type: PROPERTY_TYPES.DATE,
-					value: jsDatetoYYYYMMDD(new Date())
+					value: jsDatetoYYYYMMDD(new Date()),
 				});
 			});
 		}

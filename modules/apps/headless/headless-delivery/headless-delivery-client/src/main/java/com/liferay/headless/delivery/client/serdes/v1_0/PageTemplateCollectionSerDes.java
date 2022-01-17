@@ -187,15 +187,25 @@ public class PageTemplateCollectionSerDes {
 				"creator", String.valueOf(pageTemplateCollection.getCreator()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(
-				pageTemplateCollection.getDateCreated()));
+		if (pageTemplateCollection.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(
+					pageTemplateCollection.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(
-				pageTemplateCollection.getDateModified()));
+		if (pageTemplateCollection.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(
+					pageTemplateCollection.getDateModified()));
+		}
 
 		if (pageTemplateCollection.getDescription() == null) {
 			map.put("description", null);
@@ -290,10 +300,6 @@ public class PageTemplateCollectionSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -322,7 +328,7 @@ public class PageTemplateCollectionSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -348,14 +354,17 @@ public class PageTemplateCollectionSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

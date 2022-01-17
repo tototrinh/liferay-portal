@@ -48,7 +48,7 @@ public abstract class BaseJavaTermCheck
 	}
 
 	protected abstract String doProcess(
-			String filename, String absolutePath, JavaTerm javaTerm,
+			String fileName, String absolutePath, JavaTerm javaTerm,
 			String fileContent)
 		throws Exception;
 
@@ -61,7 +61,7 @@ public abstract class BaseJavaTermCheck
 			JavaClass parentJavaClass = javaClass.getParentJavaClass();
 
 			if (parentJavaClass == null) {
-				return javaClass.getImports();
+				return javaClass.getImportNames();
 			}
 
 			javaClass = parentJavaClass;

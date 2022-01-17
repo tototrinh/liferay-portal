@@ -23,14 +23,15 @@ ViewModulesManagementToolbarDisplayContext viewModulesManagementToolbarDisplayCo
 
 AppDisplay appDisplay = viewModulesManagementToolbarDisplayContext.getAppDisplay();
 
-SearchContainer searchContainer = viewModulesManagementToolbarDisplayContext.getSearchContainer();
-
-PortletURL backURL = renderResponse.createRenderURL();
-
-backURL.setParameter("mvcPath", "/view.jsp");
+SearchContainer<Object> searchContainer = viewModulesManagementToolbarDisplayContext.getSearchContainer();
 
 portletDisplay.setShowBackIcon(true);
-portletDisplay.setURLBack(backURL.toString());
+portletDisplay.setURLBack(
+	PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCPath(
+		"/view.jsp"
+	).buildString());
 
 renderResponse.setTitle(appDisplay.getDisplayTitle());
 
@@ -41,11 +42,6 @@ MarketplaceAppManagerUtil.addPortletBreadcrumbEntry(appDisplay, request, renderR
 	<portlet:param name="mvcPath" value="/view_modules.jsp" />
 	<portlet:param name="app" value="<%= app %>" />
 </portlet:renderURL>
-
-<clay:navigation-bar
-	inverted="<%= true %>"
-	navigationItems='<%= appManagerDisplayContext.getNavigationItems(viewURL, "modules") %>'
-/>
 
 <clay:management-toolbar
 	filterDropdownItems="<%= viewModulesManagementToolbarDisplayContext.getFilterDropdownItems() %>"
@@ -58,7 +54,7 @@ MarketplaceAppManagerUtil.addPortletBreadcrumbEntry(appDisplay, request, renderR
 	sortingURL="<%= viewModulesManagementToolbarDisplayContext.getSortingURL() %>"
 />
 
-<div class="container-fluid container-fluid-max-xl">
+<clay:container-fluid>
 	<liferay-ui:breadcrumb
 		showCurrentGroup="<%= false %>"
 		showGuestGroup="<%= false %>"
@@ -83,4 +79,4 @@ MarketplaceAppManagerUtil.addPortletBreadcrumbEntry(appDisplay, request, renderR
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>

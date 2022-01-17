@@ -10,6 +10,7 @@ definition {
 			site = "${site}");
 
 		JSONFragmentAPI._addFragmentCollection(
+			description = "${description}",
 			groupId = "${groupId}",
 			name = "${name}");
 	}
@@ -34,12 +35,12 @@ definition {
 			html = "${html}");
 
 		var status = JSONFragmentSetter.setStatus(
-			status = "${status}");
+			fragmentStatus = "${fragmentStatus}");
 
 		var type = JSONFragmentSetter.setType(
 			type = "${type}");
 
-		JSONFragmentAPI._addSection(
+		var fragmentEntryId = JSONFragmentAPI._addSection(
 			collectionId = "${collectionId}",
 			configuration = "${configuration}",
 			groupId = "${groupId}",
@@ -47,6 +48,8 @@ definition {
 			name = "${name}",
 			status = "${status}",
 			type = "${type}");
+
+		return "${fragmentEntryId}";
 	}
 
 	@summary = "Assert that a fragmentCollection does not exist in a group given its collectionName and groupName"
@@ -63,7 +66,7 @@ definition {
 			groupId = "${groupId}"
 		);
 
-		if ("${collectionNameResult}" == "[]") {
+		if ("${collectionNameResult}" == "") {
 			fail("The collection ${collectionName} was not found.");
 		}
 	}
@@ -82,7 +85,7 @@ definition {
 			groupId = "${groupId}"
 		);
 
-		if ("${collectionNameResult}" != "[]") {
+		if ("${collectionNameResult}" != "") {
 			fail("The collection ${collectionName} was found.");
 		}
 	}
@@ -106,7 +109,7 @@ definition {
 			groupId = "${groupId}"
 		);
 
-		if ("${fragmentNameResult}" == "[]") {
+		if ("${fragmentNameResult}" == "") {
 			fail("The fragment ${fragmentName} was not found.");
 		}
 	}
@@ -130,9 +133,24 @@ definition {
 			groupId = "${groupId}"
 		);
 
-		if ("${fragmentNameResult}" != "[]") {
+		if ("${fragmentNameResult}" != "") {
 			fail("The fragment ${fragmentName} was found.");
 		}
+	}
+
+	@summary = "Delete a fragment collection."
+	macro deleteFragmentCollection {
+		Variables.assertDefined(parameterList = "${groupName},${name}");
+
+		var groupId = JSONFragmentSetter.setGroupId(
+			groupName = "${groupName}",
+			site = "${site}");
+
+		var collectionId = JSONFragmentSetter.setCollectionId(
+			collectionName = "${name}",
+			groupId = "${groupId}");
+
+		JSONFragmentAPI._deleteCollection(collectionId = "${collectionId}");
 	}
 
 }

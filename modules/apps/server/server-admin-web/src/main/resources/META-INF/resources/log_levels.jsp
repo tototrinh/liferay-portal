@@ -20,65 +20,61 @@
 int delta = ParamUtil.getInteger(request, SearchContainer.DEFAULT_DELTA_PARAM, SearchContainer.DEFAULT_DELTA);
 String keywords = ParamUtil.getString(request, "keywords");
 
-PortletURL searchURL = renderResponse.createRenderURL();
+PortletURL searchURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/server_admin/view"
+).setTabs1(
+	tabs1
+).setParameter(
+	"delta", delta
+).buildPortletURL();
 
-searchURL.setParameter("mvcRenderCommandName", "/server_admin/view");
-searchURL.setParameter("tabs1", tabs1);
-searchURL.setParameter("delta", String.valueOf(delta));
+PortletURL clearResultsURL = PortletURLBuilder.create(
+	PortletURLUtil.clone(searchURL, liferayPortletResponse)
+).setKeywords(
+	StringPool.BLANK
+).setNavigation(
+	(String)null
+).buildPortletURL();
 
-PortletURL clearResultsURL = PortletURLUtil.clone(searchURL, liferayPortletResponse);
+SearchContainer<Map.Entry<String, String>> loggerSearchContainer = new SearchContainer(liferayPortletRequest, searchURL, null, null);
 
-clearResultsURL.setParameter("navigation", (String)null);
-clearResultsURL.setParameter("keywords", StringPool.BLANK);
+Map<String, String> currentPriorities = new TreeMap<>();
 
-SearchContainer loggerSearchContainer = new SearchContainer(liferayPortletRequest, searchURL, null, null);
+Map<String, String> priorities = Log4JUtil.getPriorities();
 
-Map currentLoggerNames = new TreeMap();
+for (Map.Entry<String, String> entry : priorities.entrySet()) {
+	String loggerName = entry.getKey();
 
-Enumeration enu = LogManager.getCurrentLoggers();
-
-while (enu.hasMoreElements()) {
-	Logger logger = (Logger)enu.nextElement();
-
-	if (Validator.isNull(keywords) || logger.getName().contains(keywords)) {
-		currentLoggerNames.put(logger.getName(), logger);
+	if (Validator.isNull(keywords) || loggerName.contains(keywords)) {
+		currentPriorities.put(loggerName, entry.getValue());
 	}
 }
 
-List currentLoggerNamesList = ListUtil.fromCollection(currentLoggerNames.entrySet());
+List<Map.Entry<String, String>> currentPrioritiesList = ListUtil.fromCollection(currentPriorities.entrySet());
 
-Iterator itr = currentLoggerNamesList.iterator();
+loggerSearchContainer.setResults(ListUtil.subList(currentPrioritiesList, loggerSearchContainer.getStart(), loggerSearchContainer.getEnd()));
+loggerSearchContainer.setTotal(currentPrioritiesList.size());
 
-while (itr.hasNext()) {
-	Map.Entry entry = (Map.Entry)itr.next();
+PortletURL addLogCategoryURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/server_admin/add_log_category"
+).setRedirect(
+	currentURL
+).buildPortletURL();
 
-	String name = (String)entry.getKey();
-	Logger logger = (Logger)entry.getValue();
-
-	Level level = logger.getLevel();
-
-	if (level == null) {
-		itr.remove();
-	}
-}
-
-loggerSearchContainer.setResults(ListUtil.subList(currentLoggerNamesList, loggerSearchContainer.getStart(), loggerSearchContainer.getEnd()));
-loggerSearchContainer.setTotal(currentLoggerNamesList.size());
-
-PortletURL addLogCategoryURL = renderResponse.createRenderURL();
-
-addLogCategoryURL.setParameter("mvcRenderCommandName", "/server_admin/add_log_category");
-addLogCategoryURL.setParameter("redirect", currentURL);
-
-CreationMenu creationMenu = new CreationMenu() {
-	{
-		addPrimaryDropdownItem(
-			dropdownItem -> {
-				dropdownItem.setHref(addLogCategoryURL);
-				dropdownItem.setLabel(LanguageUtil.get(request, "add-category"));
-			});
-	}
-};
+CreationMenu creationMenu =
+	new CreationMenu() {
+		{
+			addPrimaryDropdownItem(
+				dropdownItem -> {
+					dropdownItem.setHref(addLogCategoryURL);
+					dropdownItem.setLabel(LanguageUtil.get(request, "add-category"));
+				});
+		}
+	};
 %>
 
 <clay:management-toolbar
@@ -92,7 +88,7 @@ CreationMenu creationMenu = new CreationMenu() {
 	showSearch="<%= true %>"
 />
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<liferay-ui:search-container
 		searchContainer="<%= loggerSearchContainer %>"
 	>
@@ -115,18 +111,16 @@ CreationMenu creationMenu = new CreationMenu() {
 			>
 
 				<%
-				Logger logger = (Logger)entry.getValue();
-
-				Level level = logger.getLevel();
+				String priority = (String)entry.getValue();
 				%>
 
-				<select name="<%= renderResponse.getNamespace() + "logLevel" + HtmlUtil.escapeAttribute(name) %>">
+				<select name="<%= liferayPortletResponse.getNamespace() + "logLevel" + HtmlUtil.escapeAttribute(name) %>">
 
 					<%
-					for (int j = 0; j < Levels.ALL_LEVELS.length; j++) {
+					for (int j = 0; j < _ALL_PRIORITIES.length; j++) {
 					%>
 
-						<option <%= level.equals(Levels.ALL_LEVELS[j]) ? "selected" : StringPool.BLANK %> value="<%= Levels.ALL_LEVELS[j] %>"><%= Levels.ALL_LEVELS[j] %></option>
+						<option <%= priority.equals(_ALL_PRIORITIES[j]) ? "selected" : StringPool.BLANK %> value="<%= _ALL_PRIORITIES[j] %>"><%= _ALL_PRIORITIES[j] %></option>
 
 					<%
 					}
@@ -144,4 +138,4 @@ CreationMenu creationMenu = new CreationMenu() {
 	<aui:button-row>
 		<aui:button cssClass="save-server-button" data-cmd="updateLogLevels" value="save" />
 	</aui:button-row>
-</div>
+</clay:container-fluid>

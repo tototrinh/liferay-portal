@@ -19,10 +19,10 @@
 <%@ include file="/new_publication/publish_layouts_setup.jspf" %>
 
 <portlet:renderURL var="basePortletURL">
-	<portlet:param name="mvcRenderCommandName" value="processesList" />
+	<portlet:param name="mvcRenderCommandName" value="/staging_processes/view_processes_list" />
 </portlet:renderURL>
 
-<aui:form action='<%= portletURL.toString() + "&etag=0&strip=0" %>' cssClass="lfr-export-dialog" method="post" name="exportPagesFm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "publishPages();" %>'>
+<aui:form action='<%= portletURL.toString() + "&etag=0&strip=0" %>' cssClass="lfr-export-dialog" method="post" name="exportPagesFm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "publishPages();" %>'>
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= cmd %>" />
 	<aui:input name="exportImportConfigurationId" type="hidden" value="<%= exportImportConfigurationId %>" />
 	<aui:input name="originalCmd" type="hidden" value="<%= cmd %>" />
@@ -68,11 +68,11 @@
 				</aui:fieldset>
 
 				<aui:fieldset cssClass="options-group">
-					<div class="sheet-section">
+					<clay:sheet-section>
 						<h3 class="sheet-subtitle"><liferay-ui:message key="date" /></h3>
 
 						<%@ include file="/new_publication/publish_layouts_scheduler.jspf" %>
-					</div>
+					</clay:sheet-section>
 				</aui:fieldset>
 
 				<liferay-staging:deletions
@@ -81,7 +81,7 @@
 					exportImportConfigurationId="<%= exportImportConfigurationId %>"
 				/>
 
-				<c:if test="<%= !group.isCompany() %>">
+				<c:if test="<%= !group.isCompany() && GroupCapabilityUtil.isSupportsPages(group) %>">
 					<liferay-staging:select-pages
 						action="<%= Constants.PUBLISH %>"
 						disableInputs="<%= configuredPublish %>"
@@ -121,7 +121,7 @@
 		</div>
 
 		<aui:button-row>
-			<aui:button id="addButton" onClick='<%= renderResponse.getNamespace() + "schedulePublishEvent();" %>' value="add-event" />
+			<aui:button id="addButton" onClick='<%= liferayPortletResponse.getNamespace() + "schedulePublishEvent();" %>' value="add-event" />
 
 			<aui:button id="publishButton" type="submit" value="<%= LanguageUtil.get(request, publishMessageKey) %>" />
 
@@ -184,7 +184,7 @@
 	);
 	Liferay.Util.toggleRadio('<portlet:namespace />rangeAll', '', [
 		'<portlet:namespace />startEndDate',
-		'<portlet:namespace />rangeLastInputs'
+		'<portlet:namespace />rangeLastInputs',
 	]);
 	Liferay.Util.toggleRadio(
 		'<portlet:namespace />rangeDateRange',
@@ -193,7 +193,7 @@
 	);
 	Liferay.Util.toggleRadio('<portlet:namespace />rangeLastPublish', '', [
 		'<portlet:namespace />startEndDate',
-		'<portlet:namespace />rangeLastInputs'
+		'<portlet:namespace />rangeLastInputs',
 	]);
 	Liferay.Util.toggleRadio(
 		'<portlet:namespace />rangeLast',
@@ -221,18 +221,18 @@
 		setupNode: '#<%= PortletDataHandlerKeys.PORTLET_SETUP_ALL %>',
 		timeZoneOffset: <%= timeZoneOffset %>,
 		userPreferencesNode:
-			'#<%= PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL %>'
+			'#<%= PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL %>',
 	});
 
 	Liferay.component('<portlet:namespace />ExportImportComponent', exportImport);
 
-	var clickHandler = function(event) {
+	var clickHandler = function (event) {
 		var dataValue = event.target.ancestor('li').attr('data-value');
 
 		processDataValue(dataValue);
 	};
 
-	var processDataValue = function(dataValue) {
+	var processDataValue = function (dataValue) {
 		var customConfiguration = A.one(
 			'#<portlet:namespace />customConfiguration'
 		);

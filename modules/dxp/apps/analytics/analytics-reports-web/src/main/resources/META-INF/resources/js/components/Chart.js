@@ -9,100 +9,78 @@
  * distribution rights of the Software.
  */
 
-import {useIsMounted} from 'frontend-js-react-web';
+import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import className from 'classnames';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useContext, useEffect, useMemo} from 'react';
 import {
 	CartesianGrid,
 	Legend,
 	Line,
 	LineChart,
+	ReferenceDot,
 	Tooltip,
 	XAxis,
-	YAxis
+	YAxis,
 } from 'recharts';
 
+import {
+	ChartDispatchContext,
+	ChartStateContext,
+	useIsPreviousPeriodButtonDisabled,
+} from '../context/ChartStateContext';
+import ConnectionContext from '../context/ConnectionContext';
+import {StoreDispatchContext, StoreStateContext} from '../context/StoreContext';
+import {generateDateFormatters as dateFormat} from '../utils/dateFormat';
 import {numberFormat} from '../utils/numberFormat';
+import {ActiveDot as CustomActiveDot, Dot as CustomDot} from './CustomDots';
 import CustomTooltip from './CustomTooltip';
 
-const {useEffect, useMemo, useReducer} = React;
+const CHART_COLORS = {
+	analyticsReportsHistoricalReads: '#50D2A0',
+	analyticsReportsHistoricalViews: '#4B9BFF',
+	cartesianGrid: '#E7E7ED',
+	publishDate: '#2E5AAC',
+};
 
-const CHART_SIZE = {height: 220, width: 280};
+const CHART_SIZES = {
+	dotRadius: 4,
+	fill: 'white',
+	height: 220,
+	lineWidth: 2,
+	width: 280,
+	yAxisWidth: 40,
+};
+
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+
+const LAST_24_HOURS = 'last-24-hours';
+
+const METRICS_STATIC_VALUES = {
+	analyticsReportsHistoricalReads: {
+		color: CHART_COLORS.analyticsReportsHistoricalReads,
+		iconType: 'square',
+		langKey: Liferay.Language.get('reads-metric'),
+	},
+	analyticsReportsHistoricalViews: {
+		color: CHART_COLORS.analyticsReportsHistoricalViews,
+		iconType: 'circle',
+		langKey: Liferay.Language.get('views-metric'),
+	},
+};
 
 function keyToTranslatedLabelValue(key) {
-	if (key === 'analyticsReportsHistoricalViews') {
-		return Liferay.Language.get('views-metric');
-	}
-	else if (key === 'analyticsReportsHistoricalReads') {
-		return Liferay.Language.get('reads-metric');
-	}
-	else {
-		return key;
-	}
+	return METRICS_STATIC_VALUES[key]?.langKey ?? key;
 }
 
 function keyToHexColor(key) {
-	if (key === 'analyticsReportsHistoricalViews') {
-		return '#4B9BFF';
-	}
-	else if (key === 'analyticsReportsHistoricalReads') {
-		return '#50D2A0';
-	}
-	else {
-		return '#666666';
-	}
+	return METRICS_STATIC_VALUES[key]?.color ?? '#666666';
 }
 
-function mergeDataSets(newData, previousDataSet, key) {
-	const resultDataSet = {};
-
-	resultDataSet.keyList = [...previousDataSet.keyList, key];
-
-	resultDataSet.totals = {
-		...previousDataSet.totals,
-		[key]: newData.value
-	};
-
-	const newFormattedHistogram = newData.histogram.map(h => ({
-		[key]: h.value,
-		label: h.key
-	}));
-
-	let start = 0;
-	const mergeHistogram = [];
-
-	while (start < newData.histogram.length) {
-		if (!previousDataSet.histogram[start]) {
-			mergeHistogram.push({
-				...newFormattedHistogram[start]
-			});
-		}
-		else if (
-			newFormattedHistogram[start].label ===
-			previousDataSet.histogram[start].label
-		) {
-			mergeHistogram.push({
-				...newFormattedHistogram[start],
-				...previousDataSet.histogram[start]
-			});
-		}
-
-		start = start + 1;
-	}
-
-	resultDataSet.histogram = mergeHistogram;
-
-	return resultDataSet;
-}
-
-function transformDataToDataSet(
-	key,
-	data,
-	previousDataset = {histogram: [], keyList: [], totals: []}
-) {
-	const result = mergeDataSets(data, previousDataset, key);
-
-	return result;
+function keyToIconType(key) {
+	return METRICS_STATIC_VALUES[key]?.iconType ?? 'line';
 }
 
 /*
@@ -119,203 +97,347 @@ function thousandsToKilosFormater(value) {
 	return value;
 }
 
-/*
- * It generates a set of functions used to produce
- * internationalized date related content.
- */
-const generateDateFormatters = key => {
-	/*
-	 * Given 2 date objects it produces a user friendly date interval
-	 *
-	 * For 'en-US'
-	 * [Date, Date] => '16 - Jun 21, 2020'
-	 */
-	function formatChartTitle([initialDate, finalDate]) {
-		const dateFormatter = (
-			date,
-			options = {
-				day: 'numeric',
-				month: 'short',
-				year: 'numeric'
-			}
-		) => Intl.DateTimeFormat([key], options).format(date);
+function legendFormatterGenerator(
+	totals,
+	languageTag,
+	publishedToday,
+	validAnalyticsConnection
+) {
+	return (value) => {
+		const preformattedNumber = totals[value];
 
-		const equalMonth = initialDate.getMonth() === finalDate.getMonth();
-		const equalYear = initialDate.getYear() === finalDate.getYear();
+		return (
+			<span>
+				<span
+					className={`custom-${keyToIconType(value)} mr-2`}
+					style={{
+						backgroundColor: keyToHexColor(value),
+					}}
+				></span>
 
-		const initialDateOptions = {
-			day: 'numeric',
-			month: equalMonth && equalYear ? undefined : 'short',
-			year: equalYear ? undefined : 'numeric'
-		};
+				<span className="text-secondary">
+					{keyToTranslatedLabelValue(value)}
+				</span>
 
-		return `${dateFormatter(
-			initialDate,
-			initialDateOptions
-		)} - ${dateFormatter(finalDate)}`;
-	}
-
-	/*
-	 * Given a date like string it produces a internationalized long date
-	 *
-	 * For 'en-US'
-	 * String => 'June 16, 2020'
-	 */
-	function formatLongDate(value) {
-		return Intl.DateTimeFormat([key]).format(new Date(value));
-	}
-
-	/*
-	 * Given a date like string produces the day of the month
-	 *
-	 * For 'en-US'
-	 * String => '16'
-	 */
-	function formatNumericDay(value) {
-		return Intl.DateTimeFormat([key], {
-			day: 'numeric'
-		}).format(new Date(value));
-	}
-
-	return {
-		formatChartTitle,
-		formatLongDate,
-		formatNumericDay
-	};
-};
-
-function legendFormatterGenerator(totals, languageTag) {
-	return value => (
-		<span>
-			<span className="text-secondary">
-				{keyToTranslatedLabelValue(value)}
+				<span className="font-weight-bold inline-item-after">
+					{validAnalyticsConnection &&
+					preformattedNumber !== null &&
+					!publishedToday
+						? numberFormat(languageTag, preformattedNumber)
+						: '-'}
+				</span>
 			</span>
-			<b>{' ' + numberFormat(languageTag, totals[value])}</b>
-		</span>
-	);
+		);
+	};
 }
 
-function reducer(state, action) {
-	switch (action.type) {
-		case 'add-data-key':
-			return transformDataToDataSet(
-				action.payload.key,
-				action.payload.dataSet,
-				state
-			);
-		default:
-			return state;
-	}
-}
+export default function Chart({dataProviders = [], publishDate}) {
+	const {validAnalyticsConnection} = useContext(ConnectionContext);
 
-export default function Chart({languageTag, dataProviders = []}) {
-	const [dataSet, setDataSet] = useReducer(reducer);
+	const storeDispatch = useContext(StoreDispatchContext);
+
+	const chartDispatch = useContext(ChartDispatchContext);
+
+	const {languageTag, publishedToday} = useContext(StoreStateContext);
+
+	const {
+		dataSet,
+		lineChartLoading,
+		timeRange,
+		timeSpanKey,
+		timeSpanOffset,
+	} = useContext(ChartStateContext);
+
+	const isPreviousPeriodButtonDisabled = useIsPreviousPeriodButtonDisabled();
+
+	const dateFormatters = useMemo(() => dateFormat(languageTag), [
+		languageTag,
+	]);
+
 	const isMounted = useIsMounted();
 
 	useEffect(() => {
-		dataProviders.map(getter => {
-			getter().then(data => {
-				if (isMounted()) {
-					Object.keys(data).map(key => {
-						setDataSet({
-							payload: {dataSet: data[key], key},
-							type: 'add-data-key'
-						});
-					});
-				}
-			});
-		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dataProviders]);
+		let gone = false;
 
-	const dateFormatters = useMemo(() => generateDateFormatters(languageTag), [
-		languageTag
-	]);
+		const timeSpanComparator =
+			timeSpanKey === LAST_24_HOURS
+				? HOUR_IN_MILLISECONDS
+				: DAY_IN_MILLISECONDS;
 
-	const title = useMemo(() => {
-		if (dataSet && dataSet.histogram) {
-			const firstDateLabel = dataSet.histogram[0].label;
-			const lastDateLabel =
-				dataSet.histogram[dataSet.histogram.length - 1].label;
+		const keys = new Set(['analyticsReportsHistoricalViews']);
 
-			return dateFormatters.formatChartTitle([
-				new Date(firstDateLabel),
-				new Date(lastDateLabel)
-			]);
+		if (dataProviders.length === 2) {
+			keys.add('analyticsReportsHistoricalReads');
 		}
-	}, [dataSet, dateFormatters]);
+
+		if (validAnalyticsConnection) {
+			const promises = dataProviders.map((getter) => {
+				return getter();
+			});
+
+			allSettled(promises).then((data) => {
+				if (gone || !isMounted()) {
+					return;
+				}
+
+				var dataSetItems = {};
+
+				for (var i = 0; i < data.length; i++) {
+					if (data[i].status === 'fulfilled') {
+						dataSetItems = {
+							...dataSetItems,
+							...data[i].value,
+						};
+					}
+					else {
+						storeDispatch({type: 'ADD_WARNING'});
+					}
+				}
+
+				chartDispatch({
+					payload: {
+						dataSetItems,
+						keys,
+						timeSpanComparator,
+					},
+					type: 'ADD_DATA_SET_ITEMS',
+					validAnalyticsConnection,
+				});
+			});
+		}
+		else {
+			chartDispatch({
+				payload: {
+					keys,
+					timeSpanComparator,
+				},
+				type: 'ADD_DATA_SET_ITEMS',
+				validAnalyticsConnection,
+			});
+		}
+
+		return () => {
+			gone = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [timeSpanKey, timeSpanOffset]);
+
+	const {histogram, keyList} = dataSet;
+
+	const referenceDotPosition = useMemo(() => {
+		const publishDateISOString = new Date(publishDate).toISOString();
+
+		return timeSpanKey === LAST_24_HOURS
+			? publishDateISOString.split(':')[0].concat(':00:00')
+			: publishDateISOString.split('T')[0].concat('T00:00:00');
+	}, [timeSpanKey, publishDate]);
 
 	const legendFormatter =
-		dataSet && legendFormatterGenerator(dataSet.totals, languageTag);
+		dataSet &&
+		legendFormatterGenerator(
+			dataSet.totals,
+			languageTag,
+			publishedToday,
+			validAnalyticsConnection
+		);
 
-	return dataSet ? (
+	const xAxisFormatter =
+		timeSpanKey === LAST_24_HOURS
+			? dateFormatters.formatNumericHour
+			: dateFormatters.formatNumericDay;
+
+	const lineChartWrapperClasses = className('line-chart-wrapper', {
+		'line-chart-wrapper--loading': lineChartLoading,
+	});
+
+	return (
 		<>
-			{title && <h4>{title}</h4>}
+			{dataSet ? (
+				<div className={lineChartWrapperClasses}>
+					{lineChartLoading && (
+						<ClayLoadingIndicator
+							className="chart-loading-indicator"
+							small
+						/>
+					)}
 
-			<div className="mt-3">
-				<LineChart
-					data={dataSet.histogram}
-					height={CHART_SIZE.height}
-					width={CHART_SIZE.width}
-				>
-					<Legend
-						formatter={legendFormatter}
-						iconType="circle"
-						layout="vertical"
-						verticalAlign="top"
-						wrapperStyle={{left: 0, paddingBottom: '1rem'}}
-					/>
-
-					<CartesianGrid strokeDasharray="0 0" vertical={false} />
-
-					<XAxis
-						dataKey="label"
-						tickFormatter={dateFormatters.formatNumericDay}
-						tickLine={false}
-					/>
-
-					<YAxis
-						allowDecimals={false}
-						minTickGap={3}
-						tickFormatter={thousandsToKilosFormater}
-						tickLine={false}
-						width={40}
-					/>
-
-					<Tooltip
-						content={<CustomTooltip />}
-						formatter={(value, name) => {
-							return [
-								numberFormat(languageTag, value),
-								keyToTranslatedLabelValue(name)
-							];
-						}}
-						labelFormatter={dateFormatters.formatLongDate}
-						separator={': '}
-					/>
-
-					{dataSet.keyList.map(keyName => {
-						const color = keyToHexColor(keyName);
-
-						return (
-							<Line
-								activeDot={{r: 6, strokeWidth: 0}}
-								dataKey={keyName}
-								fill={color}
-								key={keyName}
-								stroke={color}
-								strokeWidth={2}
-								type="monotone"
+					<div className="line-chart">
+						<LineChart
+							data={histogram}
+							height={CHART_SIZES.height}
+							width={CHART_SIZES.width}
+						>
+							<Legend
+								formatter={legendFormatter}
+								iconSize={0}
+								layout="vertical"
+								verticalAlign="top"
+								wrapperStyle={{
+									left: 0,
+									top: 0,
+								}}
 							/>
-						);
-					})}
-				</LineChart>
-			</div>
+
+							<CartesianGrid
+								stroke={CHART_COLORS.cartesianGrid}
+								strokeDasharray="0 0"
+								vertical={true}
+								verticalPoints={[
+									CHART_SIZES.width - CHART_SIZES.dotRadius,
+								]}
+							/>
+
+							<XAxis
+								axisLine={{
+									stroke: CHART_COLORS.cartesianGrid,
+								}}
+								dataKey="label"
+								domain={
+									!validAnalyticsConnection ||
+									histogram.length === 0
+										? [
+												new Date(
+													timeRange.startDate
+												).getDate(),
+												new Date(
+													timeRange.endDate
+												).getDate(),
+										  ]
+										: []
+								}
+								interval="preserveStartEnd"
+								tickCount={7}
+								tickFormatter={(value) => {
+									return validAnalyticsConnection &&
+										histogram.length !== 0
+										? xAxisFormatter(value)
+										: value;
+								}}
+								tickLine={false}
+								type={
+									validAnalyticsConnection &&
+									histogram.length !== 0
+										? 'category'
+										: 'number'
+								}
+							/>
+
+							{!validAnalyticsConnection ||
+							publishedToday ||
+							histogram.length === 0 ? (
+								<YAxis
+									axisLine={{
+										stroke: CHART_COLORS.cartesianGrid,
+									}}
+									tickLine={false}
+									ticks={[0, 50, 100]}
+									width={CHART_SIZES.yAxisWidth}
+								/>
+							) : (
+								<YAxis
+									allowDecimals={false}
+									axisLine={{
+										stroke: CHART_COLORS.cartesianGrid,
+									}}
+									minTickGap={3}
+									tickFormatter={thousandsToKilosFormater}
+									tickLine={false}
+									width={CHART_SIZES.yAxisWidth}
+								/>
+							)}
+
+							{validAnalyticsConnection && !publishedToday && (
+								<Tooltip
+									animationDuration={0}
+									content={
+										<CustomTooltip
+											publishDateFill={
+												CHART_COLORS.publishDate
+											}
+											showPublishedDateLabel={
+												isPreviousPeriodButtonDisabled
+											}
+										/>
+									}
+									cursor={
+										validAnalyticsConnection &&
+										histogram.length !== 0 &&
+										!publishedToday
+									}
+									formatter={(value, name) => {
+										return [
+											numberFormat(languageTag, value),
+											keyToTranslatedLabelValue(name),
+											keyToIconType(name),
+										];
+									}}
+									labelFormatter={
+										dateFormatters.formatLongDate
+									}
+									separator=": "
+								/>
+							)}
+
+							{keyList.map((keyName) => {
+								const color = keyToHexColor(keyName);
+								const shape = keyToIconType(keyName);
+
+								return (
+									<Line
+										activeDot={
+											<CustomActiveDot shape={shape} />
+										}
+										dataKey={keyName}
+										dot={<CustomDot shape={shape} />}
+										fill={color}
+										isAnimationActive={false}
+										key={keyName}
+										stroke={color}
+										strokeWidth={CHART_SIZES.lineWidth}
+										type="monotone"
+									/>
+								);
+							})}
+
+							{validAnalyticsConnection && !publishedToday && (
+								<ReferenceDot
+									isFront={true}
+									r={4}
+									stroke={CHART_COLORS.publishDate}
+									strokeWidth={CHART_SIZES.lineWidth}
+									x={referenceDotPosition}
+									y={0}
+								/>
+							)}
+						</LineChart>
+					</div>
+				</div>
+			) : null}
 		</>
-	) : null;
+	);
+}
+
+function allSettled(promises) {
+	return Promise.all(
+		promises.map((promise) => {
+			return promise
+				.then((value) => {
+					return {status: 'fulfilled', value};
+				})
+				.catch((reason) => {
+					return {reason, status: 'rejected'};
+				});
+		})
+	);
 }
 
 Chart.propTypes = {
 	dataProviders: PropTypes.arrayOf(PropTypes.func).isRequired,
-	languageTag: PropTypes.string.isRequired
+	publishDate: PropTypes.string.isRequired,
+	timeSpanOptions: PropTypes.arrayOf(
+		PropTypes.shape({
+			key: PropTypes.string.isRequired,
+			label: PropTypes.string.isRequired,
+		})
+	).isRequired,
 };

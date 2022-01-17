@@ -14,7 +14,7 @@
 
 package com.liferay.portal.search.web.internal.category.facet.portlet;
 
-import com.liferay.portal.search.web.internal.util.PortletPreferencesHelper;
+import com.liferay.portal.search.web.internal.helper.PortletPreferencesHelper;
 
 import java.util.Optional;
 
@@ -58,20 +58,6 @@ public class CategoryFacetPortletPreferencesImpl
 		return _portletPreferencesHelper.getString(
 			CategoryFacetPortletPreferences.PREFERENCE_KEY_PARAMETER_NAME,
 			"category");
-	}
-
-	@Override
-	public boolean isDisplayStyleCloud() {
-		String displayStyle = getDisplayStyle();
-
-		return displayStyle.equals("cloud");
-	}
-
-	@Override
-	public boolean isDisplayStyleList() {
-		String displayStyle = getDisplayStyle();
-
-		return displayStyle.equals("list");
 	}
 
 	@Override

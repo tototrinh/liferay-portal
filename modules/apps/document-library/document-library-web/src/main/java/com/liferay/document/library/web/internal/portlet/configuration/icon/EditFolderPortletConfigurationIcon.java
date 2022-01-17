@@ -20,6 +20,7 @@ import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.web.internal.portlet.action.ActionUtil;
 import com.liferay.document.library.web.internal.util.DLFolderUtil;
 import com.liferay.document.library.web.internal.util.DLPortletConfigurationIconUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -28,7 +29,7 @@ import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfiguration
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -69,15 +70,17 @@ public class EditFolderPortletConfigurationIcon
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		try {
-			PortletURL portletURL = _portal.getControlPanelPortletURL(
-				portletRequest, DLPortletKeys.DOCUMENT_LIBRARY_ADMIN,
-				PortletRequest.RENDER_PHASE);
-
 			ThemeDisplay themeDisplay =
 				(ThemeDisplay)portletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
+			PortletURL portletURL = PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest, DLPortletKeys.DOCUMENT_LIBRARY_ADMIN,
+					PortletRequest.RENDER_PHASE)
+			).setRedirect(
+				themeDisplay.getURLCurrent()
+			).buildPortletURL();
 
 			Folder folder = ActionUtil.getFolder(portletRequest);
 
@@ -150,7 +153,7 @@ public class EditFolderPortletConfigurationIcon
 					(ThemeDisplay)portletRequest.getAttribute(
 						WebKeys.THEME_DISPLAY);
 
-				return ModelResourcePermissionHelper.contains(
+				return ModelResourcePermissionUtil.contains(
 					_folderModelResourcePermission,
 					themeDisplay.getPermissionChecker(),
 					themeDisplay.getScopeGroupId(), folderId,

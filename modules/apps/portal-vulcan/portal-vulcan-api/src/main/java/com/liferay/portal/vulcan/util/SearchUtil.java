@@ -25,11 +25,13 @@ import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.QueryConfig;
-import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.facet.SimpleFacet;
+import com.liferay.portal.kernel.search.facet.config.FacetConfiguration;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.generic.BooleanQueryImpl;
@@ -39,6 +41,11 @@ import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
+import com.liferay.portal.search.aggregation.AggregationResult;
+import com.liferay.portal.search.searcher.SearchResponse;
+import com.liferay.portal.vulcan.aggregation.Aggregation;
+import com.liferay.portal.vulcan.aggregation.Facet;
+import com.liferay.portal.vulcan.aggregation.FacetUtil;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
@@ -46,8 +53,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -81,7 +86,7 @@ public class SearchUtil {
 	public static <T> Page<T> search(
 			Map<String, Map<String, String>> actions,
 			UnsafeConsumer<BooleanQuery, Exception> booleanQueryUnsafeConsumer,
-			Filter filter, Class<?> indexerClass, String keywords,
+			Filter filter, String indexerClassName, String keywords,
 			Pagination pagination,
 			UnsafeConsumer<QueryConfig, Exception> queryConfigUnsafeConsumer,
 			UnsafeConsumer<SearchContext, Exception>
@@ -100,17 +105,25 @@ public class SearchUtil {
 			};
 		}
 
-		List<T> items = new ArrayList<>();
-
-		Indexer<?> indexer = IndexerRegistryUtil.getIndexer(indexerClass);
-
 		SearchContext searchContext = _createSearchContext(
 			_getBooleanClause(booleanQueryUnsafeConsumer, filter), keywords,
 			pagination, queryConfigUnsafeConsumer, sorts);
 
 		searchContextUnsafeConsumer.accept(searchContext);
 
-		Hits hits = indexer.search(searchContext);
+		List<T> items = new ArrayList<>();
+
+		Hits hits = null;
+
+		Indexer<?> indexer = IndexerRegistryUtil.getIndexer(indexerClassName);
+
+		if (searchContext.isVulcanCheckPermissions()) {
+			hits = indexer.search(searchContext);
+		}
+		else {
+			hits = IndexSearcherHelperUtil.search(
+				searchContext, indexer.getFullQuery(searchContext));
+		}
 
 		for (Document document : hits.getDocs()) {
 			T item = transformUnsafeFunction.apply(document);
@@ -121,61 +134,62 @@ public class SearchUtil {
 		}
 
 		return Page.of(
-			actions, items, pagination, indexer.searchCount(searchContext));
+			actions, _getFacets(searchContext), items, pagination,
+			indexer.searchCount(searchContext));
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #search(Map,
-	 *             UnsafeConsumer, Filter, Class, String, Pagination,
-	 *             UnsafeConsumer, UnsafeConsumer, Sort[], UnsafeFunction)}
-	 */
-	@Deprecated
-	public static <T> Page<T> search(
-			UnsafeConsumer<BooleanQuery, Exception> booleanQueryUnsafeConsumer,
-			Filter filter, Class<?> indexerClass, String keywords,
-			Pagination pagination,
-			UnsafeConsumer<QueryConfig, Exception> queryConfigUnsafeConsumer,
-			UnsafeConsumer<SearchContext, Exception>
-				searchContextUnsafeConsumer,
-			UnsafeFunction<Document, T, Exception> transformUnsafeFunction,
-			Sort[] sorts)
-		throws Exception {
+	public static class SearchContext
+		extends com.liferay.portal.kernel.search.SearchContext {
 
-		return search(
-			Collections.emptyMap(), booleanQueryUnsafeConsumer, filter,
-			indexerClass, keywords, pagination, queryConfigUnsafeConsumer,
-			searchContextUnsafeConsumer, sorts, transformUnsafeFunction);
-	}
+		@Override
+		public void addFacet(
+			com.liferay.portal.kernel.search.facet.Facet facet) {
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #search(Map,
-	 *             UnsafeConsumer, Filter, Class, String, Pagination,
-	 *             UnsafeConsumer, UnsafeConsumer, Sort[], UnsafeFunction)}
-	 */
-	@Deprecated
-	public static <T> Page<T> search(
-			UnsafeConsumer<BooleanQuery, Exception> booleanQueryUnsafeConsumer,
-			Filter filter, Class<?> indexerClass, String keywords,
-			Pagination pagination,
-			UnsafeConsumer<QueryConfig, Exception> queryConfigUnsafeConsumer,
-			UnsafeConsumer<SearchContext, Exception>
-				searchContextUnsafeConsumer,
-			UnsafeFunction<Document, T, Exception> transformUnsafeFunction,
-			Sort[] sorts, Map<String, Map> actions)
-		throws Exception {
+			Map<String, com.liferay.portal.kernel.search.facet.Facet> facets =
+				getFacets();
 
-		Set<Map.Entry<String, Map>> entries = actions.entrySet();
+			if (!facets.containsKey(facet.getFieldName())) {
+				super.addFacet(facet);
+			}
+		}
 
-		Stream<Map.Entry<String, Map>> stream = entries.stream();
+		public void addVulcanAggregation(Aggregation aggregation) {
+			if ((aggregation == null) ||
+				(aggregation.getAggregationTerms() == null)) {
 
-		return search(
-			stream.collect(
-				Collectors.toMap(
-					Map.Entry::getKey,
-					entry -> (Map<String, String>)entry.getValue())),
-			booleanQueryUnsafeConsumer, filter, indexerClass, keywords,
-			pagination, queryConfigUnsafeConsumer, searchContextUnsafeConsumer,
-			sorts, transformUnsafeFunction);
+				return;
+			}
+
+			Map<String, String> aggregationTerms =
+				aggregation.getAggregationTerms();
+
+			for (Map.Entry<String, String> entry :
+					aggregationTerms.entrySet()) {
+
+				com.liferay.portal.kernel.search.facet.Facet facet =
+					new SimpleFacet(this);
+
+				FacetConfiguration facetConfiguration =
+					facet.getFacetConfiguration();
+
+				facetConfiguration.setLabel(entry.getKey());
+
+				facet.setFieldName(entry.getValue());
+
+				addFacet(facet);
+			}
+		}
+
+		public boolean isVulcanCheckPermissions() {
+			return _vulcanCheckPermissions;
+		}
+
+		public void setVulcanCheckPermissions(boolean vulcanCheckPermissions) {
+			_vulcanCheckPermissions = vulcanCheckPermissions;
+		}
+
+		private boolean _vulcanCheckPermissions = true;
+
 	}
 
 	private static SearchContext _createSearchContext(
@@ -238,6 +252,34 @@ public class SearchUtil {
 
 		return BooleanClauseFactoryUtil.create(
 			booleanQuery, BooleanClauseOccur.MUST.getName());
+	}
+
+	private static List<Facet> _getFacets(SearchContext searchContext) {
+		Map<String, com.liferay.portal.kernel.search.facet.Facet>
+			searchContextFacets = searchContext.getFacets();
+
+		List<Facet> facets = TransformUtil.transform(
+			searchContextFacets.values(), FacetUtil::toFacet);
+
+		SearchResponse searchResponse =
+			(SearchResponse)searchContext.getAttribute("search.response");
+
+		if (searchResponse == null) {
+			return new ArrayList<>();
+		}
+
+		Map<String, AggregationResult> aggregationResultsMap =
+			searchResponse.getAggregationResultsMap();
+
+		if (aggregationResultsMap != null) {
+			for (AggregationResult aggregationResult :
+					aggregationResultsMap.values()) {
+
+				facets.addAll(FacetUtil.toFacets(aggregationResult));
+			}
+		}
+
+		return facets;
 	}
 
 	private static Object[] _getOrderByComparatorColumns(Sort[] sorts) {

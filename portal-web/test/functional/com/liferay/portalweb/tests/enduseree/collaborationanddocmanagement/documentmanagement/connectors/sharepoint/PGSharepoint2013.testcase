@@ -3,10 +3,8 @@ definition {
 
 	property cmis.repository.type = "sharepoint2013";
 	property custom.properties = "session.store.password=true${line.separator}company.security.auth.type=screenName${line.separator}default.layout.template.id=1_column";
-	property dummy.socket.proxy.disabled = "true";
-	property osgi.app.includes = "sharepoint";
-	property portal.release = "true";
-	property portal.upstream = "true";
+	property osgi.app.includes = "sharepoint-soap";
+	property portal.release = "false";
 	property test.run.environment = "EE";
 	property testray.main.component.name = "Sharepoint";
 
@@ -27,13 +25,13 @@ definition {
 
 		Navigator.gotoAccountSettings();
 
-		User.editDetailsViaMyAccount(userScreenNameEdit = "administrator");
+		User.editUserInformation(userScreenNameEdit = "administrator");
 
 		Navigator.openURL();
 
 		Navigator.gotoAccountSettings();
 
-		User.editPasswordViaMyAccount(
+		User.editPassword(
 			currentPassword = "test",
 			newPassword = "password");
 
@@ -46,7 +44,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Site Builder",
-			panel = "Site Administration",
 			portlet = "Pages");
 
 		SitePages.addPublicPage(
@@ -97,13 +94,13 @@ definition {
 
 			UserBar.gotoDropdownItem(dropdownItem = "Account Settings");
 
-			User.editDetailsViaMyAccount(userScreenNameEdit = "test");
+			User.editUserInformation(userScreenNameEdit = "test");
 
 			Navigator.openURL();
 
 			UserBar.gotoDropdownItem(dropdownItem = "Account Settings");
 
-			User.editPasswordViaMyAccount(
+			User.editPassword(
 				currentPassword = "password",
 				newPassword = "test");
 
@@ -117,6 +114,7 @@ definition {
 	}
 
 	@priority = "4"
+	@refactorneeded
 	test ViewDocumentAsGuest {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 

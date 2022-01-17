@@ -22,10 +22,8 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portlet.documentlibrary.constants.DLConstants;
-
-import java.util.Dictionary;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -42,12 +40,9 @@ public class DLFileShortcutModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", DLFileShortcut.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<DLFileShortcut>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				DLFileShortcut.class, DLFileShortcut::getFileShortcutId,
 				_dlFileShortcutLocalService::getFileShortcut,
@@ -56,7 +51,9 @@ public class DLFileShortcutModelResourcePermissionRegistrar {
 					new StagedModelPermissionLogic<>(
 						_stagingPermission, DLPortletKeys.DOCUMENT_LIBRARY,
 						DLFileShortcut::getFileShortcutId))),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", DLFileShortcut.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -70,7 +67,8 @@ public class DLFileShortcutModelResourcePermissionRegistrar {
 	@Reference(target = "(resource.name=" + DLConstants.RESOURCE_NAME + ")")
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<DLFileShortcut>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

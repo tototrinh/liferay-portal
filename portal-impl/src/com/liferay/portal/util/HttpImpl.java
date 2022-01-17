@@ -14,6 +14,7 @@
 
 package com.liferay.portal.util;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.memory.FinalizeAction;
 import com.liferay.petra.memory.FinalizeManager;
 import com.liferay.petra.string.CharPool;
@@ -31,6 +32,8 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.InetAddressUtil;
+import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
@@ -53,6 +56,7 @@ import java.nio.charset.Charset;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,9 +160,7 @@ public class HttpImpl implements Http {
 		requestConfigBuilder = requestConfigBuilder.setConnectionRequestTimeout(
 			_TIMEOUT);
 
-		RequestConfig requestConfig = requestConfigBuilder.build();
-
-		httpClientBuilder.setDefaultRequestConfig(requestConfig);
+		httpClientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
 
 		SystemDefaultRoutePlanner systemDefaultRoutePlanner =
 			new SystemDefaultRoutePlanner(ProxySelector.getDefault());
@@ -205,9 +207,8 @@ public class HttpImpl implements Http {
 		requestConfigBuilder.setProxy(new HttpHost(_PROXY_HOST, _PROXY_PORT));
 		requestConfigBuilder.setProxyPreferredAuthSchemes(_proxyAuthPrefs);
 
-		RequestConfig proxyRequestConfig = requestConfigBuilder.build();
-
-		proxyHttpClientBuilder.setDefaultRequestConfig(proxyRequestConfig);
+		proxyHttpClientBuilder.setDefaultRequestConfig(
+			requestConfigBuilder.build());
 
 		_proxyCloseableHttpClient = proxyHttpClientBuilder.build();
 	}
@@ -272,15 +273,7 @@ public class HttpImpl implements Http {
 
 	@Override
 	public String decodePath(String path) {
-		if (Validator.isNull(path)) {
-			return path;
-		}
-
-		path = StringUtil.replace(path, CharPool.SLASH, _TEMP_SLASH);
-		path = decodeURL(path);
-		path = StringUtil.replace(path, _TEMP_SLASH, StringPool.SLASH);
-
-		return path;
+		return decodeURL(path);
 	}
 
 	@Override
@@ -293,7 +286,9 @@ public class HttpImpl implements Http {
 			return URLCodec.decodeURL(url, StringPool.UTF8);
 		}
 		catch (IllegalArgumentException illegalArgumentException) {
-			_log.error(illegalArgumentException.getMessage());
+			if (_log.isWarnEnabled()) {
+				_log.warn(illegalArgumentException.getMessage());
+			}
 		}
 
 		return StringPool.BLANK;
@@ -326,6 +321,9 @@ public class HttpImpl implements Http {
 				Thread.sleep(500);
 			}
 			catch (InterruptedException interruptedException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(interruptedException, interruptedException);
+				}
 			}
 
 			retry++;
@@ -358,9 +356,13 @@ public class HttpImpl implements Http {
 			return path;
 		}
 
-		path = StringUtil.replace(path, CharPool.SLASH, _TEMP_SLASH);
+		path = StringUtil.replace(
+			path, new char[] {CharPool.PLUS, CharPool.SLASH, CharPool.TILDE},
+			new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE});
 		path = URLCodec.encodeURL(path, true);
-		path = StringUtil.replace(path, _TEMP_SLASH, StringPool.SLASH);
+		path = StringUtil.replace(
+			path, new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE},
+			new String[] {StringPool.PLUS, StringPool.SLASH, StringPool.TILDE});
 
 		return path;
 	}
@@ -443,9 +445,9 @@ public class HttpImpl implements Http {
 		String completeURL = sb.toString();
 
 		if (httpServletRequest.isRequestedSessionIdFromURL()) {
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			String sessionId = session.getId();
+			String sessionId = httpSession.getId();
 
 			completeURL = PortalUtil.getURLWithSessionId(
 				completeURL, sessionId);
@@ -469,26 +471,19 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		url = url.trim();
+		URI uri = getURI(url);
 
-		if (_getProtocolDelimiterIndex(url) < 0) {
-			url = Http.HTTPS_WITH_SLASH + url;
-		}
-
-		try {
-			URI uri = new URI(url);
-
-			String host = uri.getHost();
-
-			if (host == null) {
-				return StringPool.BLANK;
-			}
-
-			return host;
-		}
-		catch (URISyntaxException uriSyntaxException) {
+		if (uri == null) {
 			return StringPool.BLANK;
 		}
+
+		String host = uri.getHost();
+
+		if (host == null) {
+			return StringPool.BLANK;
+		}
+
+		return host;
 	}
 
 	@Override
@@ -506,6 +501,10 @@ public class HttpImpl implements Http {
 			return address.getHostAddress();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return url;
 		}
 	}
@@ -556,20 +555,19 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		if (url.startsWith(Http.HTTP)) {
-			int pos = url.indexOf(
-				CharPool.SLASH, Http.HTTPS_WITH_SLASH.length());
+		URI uri = getURI(url);
 
-			url = url.substring(pos);
+		if (uri == null) {
+			return StringPool.BLANK;
 		}
 
-		int pos = url.indexOf(CharPool.QUESTION);
+		String path = uri.getPath();
 
-		if (pos == -1) {
-			return url;
+		if (path == null) {
+			return StringPool.BLANK;
 		}
 
-		return url.substring(0, pos);
+		return path;
 	}
 
 	@Override
@@ -598,15 +596,34 @@ public class HttpImpl implements Http {
 
 	@Override
 	public String getProtocol(String url) {
-		url = url.trim();
-
-		int index = _getProtocolDelimiterIndex(url);
-
-		if (index > 0) {
-			return url.substring(0, index);
+		if (Validator.isNull(url)) {
+			return url;
 		}
 
-		return StringPool.BLANK;
+		URI uri = getURI(url);
+
+		if (uri == null) {
+			return StringPool.BLANK;
+		}
+
+		String scheme = uri.getScheme();
+
+		if (scheme == null) {
+			return StringPool.BLANK;
+		}
+
+		return scheme;
+	}
+
+	@Override
+	public String getQueryString(HttpServletRequest httpServletRequest) {
+		if (isForwarded(httpServletRequest)) {
+			return GetterUtil.getString(
+				httpServletRequest.getAttribute(
+					JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING));
+		}
+
+		return httpServletRequest.getQueryString();
 	}
 
 	@Override
@@ -615,18 +632,38 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		int pos = url.indexOf(CharPool.QUESTION);
+		URI uri = getURI(url);
 
-		if (pos == -1) {
+		if (uri == null) {
 			return StringPool.BLANK;
 		}
 
-		return url.substring(pos + 1);
+		String queryString = uri.getRawQuery();
+
+		if (queryString == null) {
+			return StringPool.BLANK;
+		}
+
+		return queryString;
 	}
 
 	@Override
 	public String getRequestURL(HttpServletRequest httpServletRequest) {
 		return String.valueOf(httpServletRequest.getRequestURL());
+	}
+
+	@Override
+	public URI getURI(String uriString) {
+		try {
+			return _getURI(uriString);
+		}
+		catch (URISyntaxException uriSyntaxException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(uriSyntaxException, uriSyntaxException);
+			}
+
+			return null;
+		}
 	}
 
 	@Override
@@ -640,7 +677,16 @@ public class HttpImpl implements Http {
 
 	@Override
 	public boolean hasProtocol(String url) {
-		if (_getProtocolDelimiterIndex(url) > 0) {
+		if (Validator.isNull(url) || (url.indexOf(CharPool.COLON) == -1)) {
+			return false;
+		}
+
+		return Validator.isNotNull(getProtocol(url));
+	}
+
+	@Override
+	public boolean hasProxyConfig() {
+		if (Validator.isNotNull(_PROXY_HOST) && (_PROXY_PORT > 0)) {
 			return true;
 		}
 
@@ -648,8 +694,11 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
-	public boolean hasProxyConfig() {
-		if (Validator.isNotNull(_PROXY_HOST) && (_PROXY_PORT > 0)) {
+	public boolean isForwarded(HttpServletRequest httpServletRequest) {
+		String forwardedRequestURI = (String)httpServletRequest.getAttribute(
+			JavaConstants.JAVAX_SERVLET_FORWARD_REQUEST_URI);
+
+		if (forwardedRequestURI != null) {
 			return true;
 		}
 
@@ -760,7 +809,7 @@ public class HttpImpl implements Http {
 			return StringPool.SLASH;
 		}
 
-		StringBundler sb = new StringBundler(parts.size() * 2 + 2);
+		StringBundler sb = new StringBundler((parts.size() * 2) + 2);
 
 		for (String part : parts) {
 			sb.append(StringPool.SLASH);
@@ -910,6 +959,10 @@ public class HttpImpl implements Http {
 			return urlObj.toString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return url;
 		}
 	}
@@ -1042,12 +1095,20 @@ public class HttpImpl implements Http {
 
 	@Override
 	public String removeProtocol(String url) {
-		url = url.trim();
+		String protocol = getProtocol(url);
 
-		int index = _getProtocolDelimiterIndex(url);
+		if (Validator.isNotNull(protocol)) {
+			url = url.trim();
 
-		if (index > 0) {
-			return url.substring(index + PROTOCOL_DELIMITER.length());
+			if (url.regionMatches(
+					protocol.length(), PROTOCOL_DELIMITER, 0,
+					PROTOCOL_DELIMITER.length())) {
+
+				return url.substring(
+					protocol.length() + PROTOCOL_DELIMITER.length());
+			}
+
+			return url.substring(protocol.length() + StringPool.COLON.length());
 		}
 
 		return url;
@@ -1374,7 +1435,7 @@ public class HttpImpl implements Http {
 		RequestBuilder requestBuilder, Map<String, String> headers,
 		List<Http.FilePart> fileParts, Map<String, String> parts) {
 
-		if ((fileParts == null) || fileParts.isEmpty()) {
+		if (ListUtil.isEmpty(fileParts)) {
 			if (parts != null) {
 				for (Map.Entry<String, String> entry : parts.entrySet()) {
 					String value = entry.getValue();
@@ -1438,7 +1499,7 @@ public class HttpImpl implements Http {
 
 		if (maxAge > 0) {
 			Date expiryDate = new Date(
-				System.currentTimeMillis() + maxAge * 1000L);
+				System.currentTimeMillis() + (maxAge * 1000L));
 
 			basicClientCookie.setExpiryDate(expiryDate);
 
@@ -1539,34 +1600,25 @@ public class HttpImpl implements Http {
 			Http.Response response, boolean followRedirects, int timeout)
 		throws IOException {
 
-		InputStream inputStream = URLtoInputStream(
-			location, method, headers, cookies, auth, body, fileParts, parts,
-			response, followRedirects, timeout);
+		try (InputStream inputStream = URLtoInputStream(
+				location, method, headers, cookies, auth, body, fileParts,
+				parts, response, followRedirects, timeout)) {
 
-		if (inputStream == null) {
-			return null;
-		}
+			if (inputStream == null) {
+				return null;
+			}
 
-		try {
 			long contentLengthLong = response.getContentLengthLong();
 
 			if (contentLengthLong > _MAX_BYTE_ARRAY_LENGTH) {
-				StringBundler sb = new StringBundler(5);
-
-				sb.append("Retrieving ");
-				sb.append(location);
-				sb.append(" yields a file of size ");
-				sb.append(contentLengthLong);
-				sb.append(
-					" bytes that is too large to convert to a byte array");
-
-				throw new OutOfMemoryError(sb.toString());
+				throw new OutOfMemoryError(
+					StringBundler.concat(
+						"Retrieving ", location, " yields a file of size ",
+						contentLengthLong,
+						" bytes that is too large to convert to a byte array"));
 			}
 
 			return FileUtil.getBytes(inputStream);
-		}
-		finally {
-			inputStream.close();
 		}
 	}
 
@@ -1592,7 +1644,7 @@ public class HttpImpl implements Http {
 		URI uri = null;
 
 		try {
-			uri = new URI(location);
+			uri = _getURI(location);
 		}
 		catch (URISyntaxException uriSyntaxException) {
 			throw new IOException(
@@ -1614,7 +1666,7 @@ public class HttpImpl implements Http {
 
 				location = Http.HTTP_WITH_SLASH + location;
 
-				uri = new URI(location);
+				uri = _getURI(location);
 			}
 
 			HttpHost targetHttpHost = new HttpHost(
@@ -1852,7 +1904,7 @@ public class HttpImpl implements Http {
 				}
 				catch (IOException ioException) {
 					if (_log.isWarnEnabled()) {
-						_log.warn("Unable to close response", exception);
+						_log.warn("Unable to close response", ioException);
 					}
 				}
 			}
@@ -1872,32 +1924,20 @@ public class HttpImpl implements Http {
 		}
 	}
 
-	private int _getProtocolDelimiterIndex(String url) {
-		if (Validator.isNull(url)) {
-			return -1;
+	private URI _getURI(String uriString) throws URISyntaxException {
+		Map<String, URI> uris = _uris.get();
+
+		uriString = uriString.trim();
+
+		URI uri = uris.get(uriString);
+
+		if (uri == null) {
+			uri = new URI(uriString);
+
+			uris.put(uriString, uri);
 		}
 
-		// Define protocol as "[a-zA-Z][a-zA-Z0-9]*://"
-
-		int pos = url.indexOf(Http.PROTOCOL_DELIMITER);
-
-		if (pos <= 0) {
-			return -1;
-		}
-
-		if (!Validator.isChar(url.charAt(0))) {
-			return -1;
-		}
-
-		for (int i = 1; i < pos; ++i) {
-			if (!Validator.isChar(url.charAt(i)) &&
-				!Validator.isDigit(url.charAt(i))) {
-
-				return -1;
-			}
-		}
-
-		return pos;
+		return uri;
 	}
 
 	private String _shortenURL(
@@ -2020,7 +2060,11 @@ public class HttpImpl implements Http {
 	private static final String _PROXY_USERNAME = GetterUtil.getString(
 		PropsUtil.get(HttpImpl.class.getName() + ".proxy.username"));
 
+	private static final String _TEMP_PLUS = "_LIFERAY_TEMP_PLUS_";
+
 	private static final String _TEMP_SLASH = "_LIFERAY_TEMP_SLASH_";
+
+	private static final String _TEMP_TILDE = "_LIFERAY_TEMP_TILDE_";
 
 	private static final int _TIMEOUT = GetterUtil.getInteger(
 		PropsUtil.get(HttpImpl.class.getName() + ".timeout"), 5000);
@@ -2028,6 +2072,8 @@ public class HttpImpl implements Http {
 	private static final Log _log = LogFactoryUtil.getLog(HttpImpl.class);
 
 	private static final ThreadLocal<Cookie[]> _cookies = new ThreadLocal<>();
+	private static final ThreadLocal<Map<String, URI>> _uris =
+		new CentralizedThreadLocal<>(HttpImpl.class + "._uris", HashMap::new);
 
 	private final CloseableHttpClient _closeableHttpClient;
 	private final Pattern _nonProxyHostsPattern;

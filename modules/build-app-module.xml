@@ -56,6 +56,7 @@
 			<available file=".lfrbuild-portal-pre" />
 			<available file=".lfrbuild-releng-ignore" />
 			<contains string="${basedir}" substring="modules-compat-data" />
+			<contains string="${basedir}" substring="portal-osgi-web-jasper-plugins-taglib" />
 			<contains string="${basedir}" substring="required-dependencies" />
 		</or>
 	</condition>
@@ -82,7 +83,7 @@
 		>
 			<fileset
 				dir="hotfix"
-				includes="*.jar"
+				includes="*.jar,*.war"
 			/>
 		</copy>
 	</target>
@@ -103,25 +104,9 @@
 		name="dist-module-artifact"
 	/>
 
-	<target depends="move-artifact,move-artifact-dependencies,move-artifact-wsdd" name="dist-module-artifact-lpkg" />
+	<target depends="move-artifact,move-artifact-dependencies,move-artifact-wsdd,move-hotfix-artifact" name="dist-module-artifact-lpkg" />
 
-	<target depends="get-artifact-properties" name="download-artifact" unless="artifact.exclude">
-		<fail message="Missing artifact.properties file in ${releng.module.dir}.">
-			<condition>
-				<not>
-					<available file="${releng.module.dir}/artifact.properties" />
-				</not>
-			</condition>
-		</fail>
-
-		<loadproperties srcFile="${releng.module.dir}/artifact.properties">
-			<filterchain>
-				<linecontains>
-					<contains value="artifact.url=" />
-				</linecontains>
-			</filterchain>
-		</loadproperties>
-
+	<target depends="get-artifact-properties-releng" name="download-artifact" unless="artifact.exclude">
 		<if>
 			<or>
 				<contains string="${basedir}" substring="dxp${file.separator}" />
@@ -153,23 +138,7 @@
 		</exec>
 	</target>
 
-	<target depends="get-artifact-properties" if="${download.artifact.sources}" name="download-artifact-sources" unless="artifact.exclude">
-		<fail message="Missing artifact.properties file in ${releng.module.dir}.">
-			<condition>
-				<not>
-					<available file="${releng.module.dir}/artifact.properties" />
-				</not>
-			</condition>
-		</fail>
-
-		<loadproperties srcFile="${releng.module.dir}/artifact.properties">
-			<filterchain>
-				<linecontains>
-					<contains value="artifact.sources.url=" />
-				</linecontains>
-			</filterchain>
-		</loadproperties>
-
+	<target depends="get-artifact-properties-releng" if="${download.artifact.sources}" name="download-artifact-sources" unless="download.artifact.sources.skip">
 		<mkdir dir="${dist.dir}/sources" />
 
 		<if>
@@ -207,23 +176,7 @@
 		</condition>
 	</target>
 
-	<target depends="get-artifact-properties" if="download.artifact.wsdd" name="download-artifact-wsdd" unless="artifact.exclude">
-		<fail message="Missing artifact.properties file in ${releng.module.dir}.">
-			<condition>
-				<not>
-					<available file="${releng.module.dir}/artifact.properties" />
-				</not>
-			</condition>
-		</fail>
-
-		<loadproperties srcFile="${releng.module.dir}/artifact.properties">
-			<filterchain>
-				<linecontains>
-					<contains value="artifact.wsdd.url=" />
-				</linecontains>
-			</filterchain>
-		</loadproperties>
-
+	<target depends="get-artifact-properties-releng" if="download.artifact.wsdd" name="download-artifact-wsdd" unless="artifact.exclude">
 		<if>
 			<or>
 				<contains string="${basedir}" substring="private${file.separator}" />
@@ -306,7 +259,7 @@
 		</condition>
 	</target>
 
-	<target depends="get-artifact-properties-bnd,get-artifact-properties-json,get-artifact-properties-legacy" name="get-artifact-properties" />
+	<target depends="get-artifact-properties-bnd,get-artifact-properties-json,get-artifact-properties-legacy" name="get-artifact-properties" unless="artifact.exclude" />
 
 	<target depends="get-artifact-version-from-releng" if="artifact.bnd" name="get-artifact-properties-bnd">
 		<property file="bnd.bnd" />
@@ -433,7 +386,28 @@
 		<property name="artifact.location.src" value="${osgi.dir}/../deploy/${artifact.name}-${artifact.version}.war" />
 	</target>
 
-	<target if="${get.artifact.version.from.releng}" name="get-artifact-version-from-releng">
+	<target name="get-artifact-properties-releng" unless="artifact.exclude">
+		<fail message="Missing artifact.properties file in ${releng.module.dir}.">
+			<condition>
+				<not>
+					<available file="${releng.module.dir}/artifact.properties" />
+				</not>
+			</condition>
+		</fail>
+
+		<loadproperties srcFile="${releng.module.dir}/artifact.properties" />
+
+		<condition property="download.artifact.sources.skip">
+			<or>
+				<istrue value="${artifact.exclude}" />
+				<not>
+					<isset property="artifact.sources.url" />
+				</not>
+			</or>
+		</condition>
+	</target>
+
+	<target if="${get.artifact.version.from.releng}" name="get-artifact-version-from-releng" unless="artifact.exclude">
 		<loadproperties srcFile="${releng.module.dir}/artifact.properties">
 			<filterchain>
 				<linecontains>
@@ -561,6 +535,13 @@
 		<move
 			file="${artifact.location.wsdd.src}"
 			tofile="${artifact.location.wsdd.dest}"
+		/>
+	</target>
+
+	<target depends="get-artifact-properties" if="artifact.hotfix" name="move-hotfix-artifact">
+		<move
+			file="${artifact.location.src}"
+			tofile="${artifact.location.dest}"
 		/>
 	</target>
 

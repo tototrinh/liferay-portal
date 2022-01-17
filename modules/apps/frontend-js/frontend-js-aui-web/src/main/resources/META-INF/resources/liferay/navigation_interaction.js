@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-navigation-interaction',
-	A => {
+	(A) => {
 		var ACTIVE_DESCENDANT = 'activeDescendant';
 
 		var DIRECTION_LEFT = 'left';
@@ -46,7 +46,7 @@ AUI.add(
 
 					if (instance._isTriggerVisible()) {
 						Liferay.fire('exitNavigation', {
-							navigation: instance.get('host')
+							navigation: instance.get('host'),
 						});
 					}
 				},
@@ -65,7 +65,7 @@ AUI.add(
 
 						var fallbackFirst = true;
 
-						if (direction == DIRECTION_LEFT) {
+						if (direction === DIRECTION_LEFT) {
 							item = parent.previous();
 
 							fallbackFirst = false;
@@ -90,7 +90,7 @@ AUI.add(
 					else {
 						Liferay.fire('exitNavigation', {
 							direction,
-							navigation: instance.get('host')
+							navigation: instance.get('host'),
 						});
 					}
 				},
@@ -138,7 +138,7 @@ AUI.add(
 					) {
 						var mapHover = instance.MAP_HOVER;
 
-						var menuOldDistinct = menuOld && menuOld != menuNew;
+						var menuOldDistinct = menuOld && menuOld !== menuNew;
 
 						if (menuOldDistinct) {
 							Liferay.fire('hideNavigationMenu', mapHover);
@@ -180,7 +180,7 @@ AUI.add(
 							if (exitDirection) {
 								Liferay.fire('exitNavigation', {
 									direction: exitDirection,
-									navigation: instance.get('host')
+									navigation: instance.get('host'),
 								});
 							}
 						}
@@ -229,8 +229,8 @@ AUI.add(
 						focusClass: 'active',
 						keys: {
 							next: 'down:40',
-							previous: 'down:38'
-						}
+							previous: 'down:38',
+						},
 					});
 
 					var focusManager = host.focusManager;
@@ -266,7 +266,7 @@ AUI.add(
 
 					var eventType = 'hideNavigationMenu';
 
-					if (event.type == 'mouseenter') {
+					if (event.type === 'mouseenter') {
 						eventType = 'showNavigationMenu';
 					}
 
@@ -339,7 +339,7 @@ AUI.add(
 
 					Liferay.on(
 						['hideNavigationMenu', 'showNavigationMenu'],
-						event => {
+						(event) => {
 							var menu = event.menu;
 
 							if (menu) {
@@ -362,8 +362,8 @@ AUI.add(
 					instance._initChildMenuHandlers(navigation);
 
 					instance._initNodeFocusManager();
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.NavigationInteraction = NavigationInteraction;
@@ -375,7 +375,7 @@ AUI.add(
 			'aui-component',
 			'event-mouseenter',
 			'node-focusmanager',
-			'plugin'
-		]
+			'plugin',
+		],
 	}
 );

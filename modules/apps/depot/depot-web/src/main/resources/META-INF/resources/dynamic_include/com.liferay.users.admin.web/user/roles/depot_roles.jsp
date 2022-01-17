@@ -17,16 +17,52 @@
 <%@ include file="/init.jsp" %>
 
 <%
-DepotAdminRolesDisplayContext depotAdminRolesDisplayContext = new DepotAdminRolesDisplayContext(request);
+DepotAdminRolesDisplayContext depotAdminRolesDisplayContext = (DepotAdminRolesDisplayContext)request.getAttribute(DepotAdminRolesDisplayContext.class.getName());
 %>
 
 <aui:input name="<%= ActionRequest.ACTION_NAME %>" type="hidden" value="/depot/update_roles" />
 
-<h3 class="autofit-row sheet-subtitle">
-	<span class="autofit-col autofit-col-expand">
+<clay:content-row
+	containerElement="h3"
+	cssClass="sheet-subtitle"
+>
+	<clay:content-col
+		expand="<%= true %>"
+	>
 		<span class="heading-text"><%= depotAdminRolesDisplayContext.getLabel() %></span>
-	</span>
-</h3>
+	</clay:content-col>
+
+	<c:if test="<%= depotAdminRolesDisplayContext.isSelectable() %>">
+		<clay:content-col>
+			<span class="heading-end">
+				<liferay-ui:icon
+					cssClass="modify-link"
+					id="selectDepotRoleLink"
+					label="<%= true %>"
+					linkCssClass="btn btn-secondary btn-sm"
+					message="select"
+					method="get"
+					url="javascript:;"
+				/>
+			</clay:content-col>
+		</span>
+	</c:if>
+</clay:content-row>
+
+<liferay-util:buffer
+	var="removeDepotRoleIcon"
+>
+	<liferay-ui:icon
+		icon="times-circle"
+		markupView="lexicon"
+		message="remove"
+	/>
+</liferay-util:buffer>
+
+<aui:input name="addDepotGroupRolesGroupIds" type="hidden" />
+<aui:input name="addDepotGroupRolesRoleIds" type="hidden" />
+<aui:input name="deleteDepotGroupRolesGroupIds" type="hidden" />
+<aui:input name="deleteDepotGroupRolesRoleIds" type="hidden" />
 
 <liferay-ui:search-container
 	compactEmptyResultsMessage="<%= true %>"
@@ -34,6 +70,7 @@ DepotAdminRolesDisplayContext depotAdminRolesDisplayContext = new DepotAdminRole
 	curParam="depotRolesCur"
 	emptyResultsMessage="this-user-is-not-assigned-any-asset-library-roles"
 	headerNames="title,asset-library,null"
+	id="depotRolesSearchContainer"
 	iteratorURL="<%= currentURLObj %>"
 	total="<%= depotAdminRolesDisplayContext.getUserGroupRolesCount() %>"
 >
@@ -48,7 +85,7 @@ DepotAdminRolesDisplayContext depotAdminRolesDisplayContext = new DepotAdminRole
 		modelVar="userGroupRole"
 	>
 		<liferay-ui:search-container-column-text
-			cssClass="table-cell-content"
+			cssClass="table-cell-expand"
 			name="title"
 		>
 			<liferay-ui:icon
@@ -59,16 +96,41 @@ DepotAdminRolesDisplayContext depotAdminRolesDisplayContext = new DepotAdminRole
 		</liferay-ui:search-container-column-text>
 
 		<liferay-ui:search-container-column-text
-			cssClass="table-cell-content"
+			cssClass="table-cell-expand"
 			name="<%= depotAdminRolesDisplayContext.getAssetLibraryLabel() %>"
 		>
 			<liferay-staging:descriptive-name
 				group="<%= userGroupRole.getGroup() %>"
 			/>
 		</liferay-ui:search-container-column-text>
+
+		<c:if test="<%= depotAdminRolesDisplayContext.isDeletable() %>">
+			<liferay-ui:search-container-column-text>
+				<a class="modify-link" data-entityId="<%= userGroupRole.getGroupId() %>-<%= userGroupRole.getRoleId() %>" href="javascript:;"><%= removeDepotRoleIcon %></a>
+			</liferay-ui:search-container-column-text>
+		</c:if>
 	</liferay-ui:search-container-row>
 
 	<liferay-ui:search-iterator
 		markupView="lexicon"
 	/>
 </liferay-ui:search-container>
+
+<c:if test="<%= depotAdminRolesDisplayContext.isSelectable() %>">
+	<liferay-frontend:component
+		context='<%=
+			HashMapBuilder.<String, Object>put(
+				"portletNamespace", liferayPortletResponse.getNamespace()
+			).put(
+				"removeDepotRoleIcon", removeDepotRoleIcon
+			).put(
+				"searchContainerId", "depotRolesSearchContainer"
+			).put(
+				"selectDepotRolesURL", depotAdminRolesDisplayContext.getSelectDepotRolesURL()
+			).put(
+				"selectEventName", depotAdminRolesDisplayContext.getSelectDepotRolesEventName()
+			).build()
+		%>'
+		module="js/DepotRoles"
+	/>
+</c:if>

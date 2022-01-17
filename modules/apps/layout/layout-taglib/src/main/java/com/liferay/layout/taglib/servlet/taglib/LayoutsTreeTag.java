@@ -15,9 +15,9 @@
 package com.liferay.layout.taglib.servlet.taglib;
 
 import com.liferay.layout.taglib.internal.servlet.ServletContextUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
@@ -26,9 +26,9 @@ import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.SessionTreeJSClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.taglib.ui.util.SessionTreeJSClicks;
 import com.liferay.taglib.util.IncludeTag;
 
 import java.util.ArrayList;
@@ -163,7 +163,7 @@ public class LayoutsTreeTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setPortletURL(PortletURL portletURL) {
@@ -241,7 +241,7 @@ public class LayoutsTreeTag extends IncludeTag {
 		String checkedLayoutIds = GetterUtil.getString(
 			_selectedLayoutIds,
 			SessionTreeJSClicks.getOpenNodes(
-				request, _treeId + "SelectedNode"));
+				getRequest(), _treeId + "SelectedNode"));
 
 		if (Validator.isNull(checkedLayoutIds)) {
 			return checkedNodesJSONArray.toString();
@@ -299,19 +299,19 @@ public class LayoutsTreeTag extends IncludeTag {
 		}
 
 		for (Map.Entry<String, PortletURL> entry : portletURLs.entrySet()) {
-			JSONObject jsonObject = JSONUtil.put("name", entry.getKey());
-
-			PortletURL portletURL = entry.getValue();
-
-			portletURL.setParameter("selPlid", "{selPlid}");
-
-			jsonObject.put(
-				"value",
-				StringUtil.replace(
-					portletURL.toString(), HttpUtil.encodePath("{selPlid}"),
-					"{selPlid}"));
-
-			jsonArray.put(jsonObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"name", entry.getKey()
+				).put(
+					"value",
+					StringUtil.replace(
+						PortletURLBuilder.create(
+							entry.getValue()
+						).setParameter(
+							"selPlid", "{selPlid}"
+						).buildString(),
+						HttpUtil.encodePath("{selPlid}"), "{selPlid}")
+				));
 		}
 
 		return jsonArray;

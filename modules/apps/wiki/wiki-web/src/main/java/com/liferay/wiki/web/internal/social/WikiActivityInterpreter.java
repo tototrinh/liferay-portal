@@ -26,7 +26,6 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.social.kernel.model.BaseSocialActivityInterpreter;
@@ -42,8 +41,6 @@ import com.liferay.wiki.social.WikiActivityKeys;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Samuel Kong
@@ -98,19 +95,13 @@ public class WikiActivityInterpreter extends BaseSocialActivityInterpreter {
 				"fileEntryTitle");
 
 			if ((fileEntry != null) && !fileEntry.isInTrash()) {
-				StringBundler sb = new StringBundler(9);
-
-				sb.append(serviceContext.getPathMain());
-				sb.append("/wiki/get_page_attachment?p_l_id=");
-				sb.append(serviceContext.getPlid());
-				sb.append("&nodeId=");
-				sb.append(pageResource.getNodeId());
-				sb.append("&title=");
-				sb.append(URLCodec.encodeURL(pageResource.getTitle()));
-				sb.append("&fileName=");
-				sb.append(fileEntryTitle);
-
-				link = sb.toString();
+				link = StringBundler.concat(
+					serviceContext.getPathMain(),
+					"/wiki/get_page_attachment?p_l_id=",
+					serviceContext.getPlid(), "&nodeId=",
+					pageResource.getNodeId(), "&title=",
+					URLCodec.encodeURL(pageResource.getTitle()), "&fileName=",
+					fileEntryTitle);
 			}
 
 			return wrapLink(link, fileEntryTitle);
@@ -124,11 +115,6 @@ public class WikiActivityInterpreter extends BaseSocialActivityInterpreter {
 		SocialActivity activity, ServiceContext serviceContext) {
 
 		return "/wiki/find_page?pageResourcePrimKey=" + activity.getClassPK();
-	}
-
-	@Override
-	protected ResourceBundleLoader getResourceBundleLoader() {
-		return _resourceBundleLoader;
 	}
 
 	@Override
@@ -272,13 +258,6 @@ public class WikiActivityInterpreter extends BaseSocialActivityInterpreter {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		WikiActivityInterpreter.class);
-
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.wiki.web)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
 
 	@Reference
 	private WikiPageLocalService _wikiPageLocalService;

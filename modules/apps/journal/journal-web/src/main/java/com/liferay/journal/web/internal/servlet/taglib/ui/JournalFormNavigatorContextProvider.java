@@ -14,14 +14,14 @@
 
 package com.liferay.journal.web.internal.servlet.taglib.ui;
 
+import com.liferay.frontend.taglib.form.navigator.constants.FormNavigatorConstants;
 import com.liferay.frontend.taglib.form.navigator.constants.FormNavigatorContextConstants;
 import com.liferay.frontend.taglib.form.navigator.context.FormNavigatorContextProvider;
+import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.model.JournalArticleConstants;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
-import com.liferay.portal.kernel.servlet.taglib.ui.FormNavigatorConstants;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -61,7 +61,7 @@ public class JournalFormNavigatorContextProvider
 		else if ((article != null) && (article.getId() > 0)) {
 			return "update";
 		}
-		else if (classNameId > JournalArticleConstants.CLASSNAME_ID_DEFAULT) {
+		else if (classNameId > JournalArticleConstants.CLASS_NAME_ID_DEFAULT) {
 			return "default.values";
 		}
 

@@ -25,7 +25,7 @@ import java.util.Map;
  * @author Shuyang Zhou
  * @author Brian Wing Shun Chan
  */
-public interface WorkflowInstance {
+public interface WorkflowInstance extends WorkflowModel {
 
 	public void addChildWorkflowInstance(
 		WorkflowInstance childWorkflowInstance);
@@ -33,6 +33,8 @@ public interface WorkflowInstance {
 	public int getChildrenWorkflowInstanceCount();
 
 	public List<WorkflowInstance> getChildrenWorkflowInstances();
+
+	public List<String> getCurrentNodeNames();
 
 	public Date getEndDate();
 
@@ -42,6 +44,11 @@ public interface WorkflowInstance {
 
 	public Date getStartDate();
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * #getCurrentNodeNames()}
+	 */
+	@Deprecated
 	public String getState();
 
 	public Map<String, Serializable> getWorkflowContext();

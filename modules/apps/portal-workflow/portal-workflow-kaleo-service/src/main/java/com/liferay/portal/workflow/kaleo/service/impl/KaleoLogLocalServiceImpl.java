@@ -58,6 +58,7 @@ import com.liferay.portal.workflow.kaleo.service.base.KaleoLogLocalServiceBaseIm
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -90,6 +91,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 
 		kaleoLog.setKaleoClassName(kaleoAction.getKaleoClassName());
 		kaleoLog.setKaleoClassPK(kaleoAction.getKaleoClassPK());
+		kaleoLog.setKaleoDefinitionId(kaleoAction.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			kaleoAction.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoNodeName(kaleoAction.getKaleoNodeName());
@@ -113,6 +115,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 
 		kaleoLog.setKaleoClassName(KaleoNode.class.getName());
 		kaleoLog.setKaleoClassPK(targetKaleoNode.getKaleoNodeId());
+		kaleoLog.setKaleoDefinitionId(targetKaleoNode.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			targetKaleoNode.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoNodeName(targetKaleoNode.getName());
@@ -140,6 +143,8 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 
 		kaleoLog.setKaleoClassName(KaleoNode.class.getName());
 		kaleoLog.setKaleoClassPK(departingKaleoNode.getKaleoNodeId());
+		kaleoLog.setKaleoDefinitionId(
+			departingKaleoNode.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			departingKaleoNode.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoNodeName(departingKaleoNode.getName());
@@ -157,6 +162,9 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			kaleoLog.setDuration(endDate.getTime() - startDate.getTime());
 		}
 		catch (NoSuchLogException noSuchLogException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchLogException, noSuchLogException);
+			}
 		}
 
 		return kaleoLogPersistence.update(kaleoLog);
@@ -167,6 +175,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 	public KaleoLog addTaskAssignmentKaleoLog(
 			List<KaleoTaskAssignmentInstance>
 				previousKaleoTaskAssignmentInstances,
+			KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance,
 			KaleoTaskInstanceToken kaleoTaskInstanceToken, String comment,
 			Map<String, Serializable> workflowContext,
 			ServiceContext serviceContext)
@@ -185,6 +194,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 
 		kaleoLog.setKaleoClassName(KaleoNode.class.getName());
 		kaleoLog.setKaleoClassPK(currentKaleoNode.getKaleoNodeId());
+		kaleoLog.setKaleoDefinitionId(currentKaleoNode.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			currentKaleoNode.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoNodeName(currentKaleoNode.getName());
@@ -192,22 +202,16 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		if ((previousKaleoTaskAssignmentInstances != null) &&
 			(previousKaleoTaskAssignmentInstances.size() == 1)) {
 
-			KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance =
+			KaleoTaskAssignmentInstance previousKaleoTaskAssignmentInstance =
 				previousKaleoTaskAssignmentInstances.get(0);
 
 			kaleoLog.setPreviousAssigneeClassName(
-				kaleoTaskAssignmentInstance.getAssigneeClassName());
+				previousKaleoTaskAssignmentInstance.getAssigneeClassName());
 			kaleoLog.setPreviousAssigneeClassPK(
-				kaleoTaskAssignmentInstance.getAssigneeClassPK());
+				previousKaleoTaskAssignmentInstance.getAssigneeClassPK());
 		}
 
-		List<KaleoTaskAssignmentInstance> kaleoTaskAssignmentInstances =
-			kaleoTaskInstanceToken.getKaleoTaskAssignmentInstances();
-
-		if (!kaleoTaskAssignmentInstances.isEmpty()) {
-			KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance =
-				kaleoTaskAssignmentInstances.get(0);
-
+		if (kaleoTaskAssignmentInstance != null) {
 			kaleoLog.setCurrentAssigneeClassName(
 				kaleoTaskAssignmentInstance.getAssigneeClassName());
 			kaleoLog.setCurrentAssigneeClassPK(
@@ -219,6 +223,67 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			WorkflowContextUtil.convert(workflowContext));
 
 		return kaleoLogPersistence.update(kaleoLog);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #addTaskAssignmentKaleoLog(List, KaleoTaskAssignmentInstance,
+	 *             KaleoTaskInstanceToken, String, Map, ServiceContext)}}
+	 */
+	@Deprecated
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public KaleoLog addTaskAssignmentKaleoLog(
+			List<KaleoTaskAssignmentInstance>
+				previousKaleoTaskAssignmentInstances,
+			KaleoTaskInstanceToken kaleoTaskInstanceToken, String comment,
+			Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance = null;
+
+		List<KaleoTaskAssignmentInstance> kaleoTaskAssignmentInstances =
+			kaleoTaskInstanceToken.getKaleoTaskAssignmentInstances();
+
+		if (ListUtil.isNotEmpty(kaleoTaskAssignmentInstances)) {
+			kaleoTaskAssignmentInstance = kaleoTaskAssignmentInstances.get(0);
+		}
+
+		return addTaskAssignmentKaleoLog(
+			previousKaleoTaskAssignmentInstances, kaleoTaskAssignmentInstance,
+			kaleoTaskInstanceToken, comment, workflowContext, serviceContext);
+	}
+
+	@Override
+	public List<KaleoLog> addTaskAssignmentKaleoLogs(
+			List<KaleoTaskAssignmentInstance> previousTaskAssignmentInstances,
+			KaleoTaskInstanceToken kaleoTaskInstanceToken, String comment,
+			Map<String, Serializable> workflowContext,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		List<KaleoLog> kaleoLogs = new ArrayList<>();
+
+		for (KaleoTaskAssignmentInstance kaleoTaskAssignmentInstance :
+				kaleoTaskInstanceToken.getKaleoTaskAssignmentInstances()) {
+
+			kaleoLogs.add(
+				kaleoLogLocalService.addTaskAssignmentKaleoLog(
+					previousTaskAssignmentInstances,
+					kaleoTaskAssignmentInstance, kaleoTaskInstanceToken,
+					comment, workflowContext, serviceContext));
+		}
+
+		if (ListUtil.isEmpty(kaleoLogs)) {
+			kaleoLogs.add(
+				kaleoLogLocalService.addTaskAssignmentKaleoLog(
+					previousTaskAssignmentInstances, null,
+					kaleoTaskInstanceToken, comment, workflowContext,
+					serviceContext));
+		}
+
+		return kaleoLogs;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -242,6 +307,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 
 		kaleoLog.setKaleoClassName(KaleoNode.class.getName());
 		kaleoLog.setKaleoClassPK(currentKaleoNode.getKaleoNodeId());
+		kaleoLog.setKaleoDefinitionId(currentKaleoNode.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			currentKaleoNode.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoNodeName(currentKaleoNode.getName());
@@ -277,6 +343,9 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		KaleoLog kaleoLog = createKaleoLog(
 			kaleoTaskInstanceToken.getKaleoInstanceToken(), LogType.TASK_UPDATE,
 			serviceContext);
+
+		kaleoLog.setKaleoTaskInstanceTokenId(
+			kaleoTaskInstanceToken.getKaleoTaskInstanceTokenId());
 
 		List<KaleoTaskAssignmentInstance> kaleoTaskAssignmentInstances =
 			kaleoTaskInstanceToken.getKaleoTaskAssignmentInstances();
@@ -322,6 +391,9 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			kaleoLog.setDuration(endDate.getTime() - startDate.getTime());
 		}
 		catch (NoSuchLogException noSuchLogException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchLogException, noSuchLogException);
+			}
 		}
 
 		return kaleoLogPersistence.update(kaleoLog);
@@ -377,28 +449,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		}
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getKaleoInstanceKaleoLogs(long, long, List, int, int,
-	 *             OrderByComparator)}
-	 */
-	@Deprecated
 	@Override
-	public List<KaleoLog> getKaleoInstanceKaleoLogs(
-		long kaleoInstanceId, List<Integer> logTypes, int start, int end,
-		OrderByComparator<KaleoLog> orderByComparator) {
-
-		if ((logTypes == null) || logTypes.isEmpty()) {
-			return kaleoLogPersistence.findByKaleoInstanceId(
-				kaleoInstanceId, start, end, orderByComparator);
-		}
-
-		DynamicQuery dynamicQuery = buildKaleoInstanceDynamicQuery(
-			kaleoInstanceId, logTypes);
-
-		return dynamicQuery(dynamicQuery, start, end, orderByComparator);
-	}
-
 	public List<KaleoLog> getKaleoInstanceKaleoLogs(
 		long companyId, long kaleoInstanceId, List<Integer> logTypes, int start,
 		int end, OrderByComparator<KaleoLog> orderByComparator) {
@@ -413,25 +464,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			start, end, orderByComparator);
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getKaleoInstanceKaleoLogsCount(long, long, List)}
-	 */
-	@Deprecated
 	@Override
-	public int getKaleoInstanceKaleoLogsCount(
-		long kaleoInstanceId, List<Integer> logTypes) {
-
-		if ((logTypes == null) || logTypes.isEmpty()) {
-			return kaleoLogPersistence.countByKaleoInstanceId(kaleoInstanceId);
-		}
-
-		DynamicQuery dynamicQuery = buildKaleoInstanceDynamicQuery(
-			kaleoInstanceId, logTypes);
-
-		return (int)dynamicQueryCount(dynamicQuery);
-	}
-
 	public int getKaleoInstanceKaleoLogsCount(
 		long companyId, long kaleoInstanceId, List<Integer> logTypes) {
 
@@ -444,28 +477,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			).build());
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getKaleoTaskInstanceTokenKaleoLogs(long, long, List, int,
-	 *             int, OrderByComparator)}
-	 */
-	@Deprecated
 	@Override
-	public List<KaleoLog> getKaleoTaskInstanceTokenKaleoLogs(
-		long kaleoTaskInstanceTokenId, List<Integer> logTypes, int start,
-		int end, OrderByComparator<KaleoLog> orderByComparator) {
-
-		if ((logTypes == null) || logTypes.isEmpty()) {
-			return kaleoLogPersistence.findByKaleoTaskInstanceTokenId(
-				kaleoTaskInstanceTokenId, start, end, orderByComparator);
-		}
-
-		DynamicQuery dynamicQuery = buildKaleoTaskInstanceTokenDynamicQuery(
-			kaleoTaskInstanceTokenId, logTypes);
-
-		return dynamicQuery(dynamicQuery, start, end, orderByComparator);
-	}
-
 	public List<KaleoLog> getKaleoTaskInstanceTokenKaleoLogs(
 		long companyId, long kaleoTaskInstanceTokenId, List<Integer> logTypes,
 		int start, int end, OrderByComparator<KaleoLog> orderByComparator) {
@@ -481,26 +493,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			start, end, orderByComparator);
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getKaleoTaskInstanceTokenKaleoLogsCount(long, long, List)}
-	 */
-	@Deprecated
 	@Override
-	public int getKaleoTaskInstanceTokenKaleoLogsCount(
-		long kaleoTaskInstanceTokenId, List<Integer> logTypes) {
-
-		if ((logTypes == null) || logTypes.isEmpty()) {
-			return kaleoLogPersistence.countByKaleoTaskInstanceTokenId(
-				kaleoTaskInstanceTokenId);
-		}
-
-		DynamicQuery dynamicQuery = buildKaleoTaskInstanceTokenDynamicQuery(
-			kaleoTaskInstanceTokenId, logTypes);
-
-		return (int)dynamicQueryCount(dynamicQuery);
-	}
-
 	public int getKaleoTaskInstanceTokenKaleoLogsCount(
 		long companyId, long kaleoTaskInstanceTokenId, List<Integer> logTypes) {
 
@@ -574,6 +567,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		searchContext.setAttributes(searchAttributes);
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
+		searchContext.setGroupIds(new long[] {-1L});
 		searchContext.setStart(start);
 
 		if (orderByComparator != null) {
@@ -589,7 +583,7 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		throws PortalException {
 
 		User user = userLocalService.getUser(serviceContext.getGuestOrUserId());
-		Date now = new Date();
+		Date date = new Date();
 
 		long kaleoLogId = counterLocalService.increment();
 
@@ -598,8 +592,10 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 		kaleoLog.setCompanyId(user.getCompanyId());
 		kaleoLog.setUserId(user.getUserId());
 		kaleoLog.setUserName(user.getFullName());
-		kaleoLog.setCreateDate(now);
-		kaleoLog.setModifiedDate(now);
+		kaleoLog.setCreateDate(date);
+		kaleoLog.setModifiedDate(date);
+		kaleoLog.setKaleoDefinitionId(
+			kaleoInstanceToken.getKaleoDefinitionId());
 		kaleoLog.setKaleoDefinitionVersionId(
 			kaleoInstanceToken.getKaleoDefinitionVersionId());
 		kaleoLog.setKaleoInstanceId(kaleoInstanceToken.getKaleoInstanceId());
@@ -739,6 +735,8 @@ public class KaleoLogLocalServiceImpl extends KaleoLogLocalServiceBaseImpl {
 			"createDate", _getSortableFieldName(Field.CREATE_DATE, "Number")
 		).put(
 			"kaleoLogId", _getSortableFieldName("kaleoLogId", "Number")
+		).put(
+			"modifiedDate", _getSortableFieldName(Field.MODIFIED_DATE, "Number")
 		).put(
 			"userId", _getSortableFieldName(Field.USER_ID, "Number")
 		).build();

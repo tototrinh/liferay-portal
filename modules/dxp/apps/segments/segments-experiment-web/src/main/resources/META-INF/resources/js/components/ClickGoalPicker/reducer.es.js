@@ -23,7 +23,7 @@ export function reducer(state, action) {
 				if (state.mode !== mode) {
 					return {
 						...state,
-						mode
+						mode,
 					};
 				}
 			}
@@ -32,15 +32,22 @@ export function reducer(state, action) {
 		case 'editTarget':
 			return {
 				...state,
-				editingTarget: action.selector
+				editingTarget: action.selector,
+			};
+
+		case 'invalidTarget':
+			return {
+				...state,
+				isValidTarget: false,
 			};
 
 		case 'selectTarget':
 			return {
 				...state,
 				editingTarget: null,
+				isValidTarget: true,
 				mode: 'active',
-				selectedTarget: action.selector
+				selectedTarget: action.selector,
 			};
 
 		default:
@@ -49,14 +56,8 @@ export function reducer(state, action) {
 	return state;
 }
 
-export function getInitialState(target) {
-	return {
-		...INITIAL_STATE,
-		selectedTarget: target
-	};
-}
-
 const INITIAL_STATE = {
+
 	/**
 	 * The click goal target that is currently being edited.
 	 *
@@ -68,6 +69,11 @@ const INITIAL_STATE = {
 	 * the `editingTarget` becomes the new `selectedTarget`.
 	 */
 	editingTarget: '',
+
+	/**
+	 * The click goal target is valid or not.
+	 */
+	isValidTarget: true,
 
 	/**
 	 * The mode of the component, which will be one of:
@@ -90,7 +96,14 @@ const INITIAL_STATE = {
 	 * As noted above, it is possible to have one target selected and another
 	 * being edited at the same time.
 	 */
-	selectedTarget: ''
+	selectedTarget: '',
 };
+
+export function getInitialState(target) {
+	return {
+		...INITIAL_STATE,
+		selectedTarget: target,
+	};
+}
 
 export const StateContext = React.createContext(INITIAL_STATE);

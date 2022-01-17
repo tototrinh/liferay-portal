@@ -14,7 +14,8 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
@@ -38,13 +39,19 @@ public class MissingEmptyLineCheck extends BaseCheck {
 	@Override
 	protected void doVisitToken(DetailAST detailAST) {
 		if (detailAST.getType() == TokenTypes.METHOD_CALL) {
-			_checkMissingEmptyLineAfterMethodCall(detailAST);
+			_checkMissingEmptyLinesAroundMethodCall(detailAST);
 
 			return;
 		}
 
 		if (detailAST.getType() == TokenTypes.VARIABLE_DEF) {
-			_checkMissingEmptyLineAfterVariableDef(detailAST, "ThemeDisplay");
+			DetailAST parentDetailAST = detailAST.getParent();
+
+			if (parentDetailAST.getType() == TokenTypes.SLIST) {
+				_checkMissingEmptyLineAfterVariableDef(
+					detailAST, "ThemeDisplay");
+				_checkMissingEmptyLineBeforeVariableDef(detailAST);
+			}
 
 			return;
 		}
@@ -73,28 +80,9 @@ public class MissingEmptyLineCheck extends BaseCheck {
 			parentDetailAST, variableName, getEndLineNumber(detailAST));
 	}
 
-	private void _checkMissingEmptyLineAfterMethodCall(DetailAST detailAST) {
-		String variableName = getVariableName(detailAST);
-
-		if (variableName == null) {
-			return;
-		}
-
-		DetailAST parentDetailAST = detailAST.getParent();
-
-		if (parentDetailAST.getType() != TokenTypes.EXPR) {
-			return;
-		}
-
-		DetailAST nextSiblingDetailAST = parentDetailAST.getNextSibling();
-
-		if ((nextSiblingDetailAST == null) ||
-			(nextSiblingDetailAST.getType() != TokenTypes.SEMI)) {
-
-			return;
-		}
-
-		nextSiblingDetailAST = nextSiblingDetailAST.getNextSibling();
+	private void _checkMissingEmptyLineAfterMethodCall(
+		DetailAST detailAST, String variableName,
+		DetailAST nextSiblingDetailAST) {
 
 		if (nextSiblingDetailAST == null) {
 			return;
@@ -110,6 +98,22 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		}
 
 		if (nextSiblingDetailAST.getType() == TokenTypes.EXPR) {
+			List<String> enforceEmptyLineAfterMethodNames = getAttributeValues(
+				_ENFORCE_EMPTY_LINE_AFTER_METHOD_NAMES);
+
+			String methodName = getMethodName(detailAST);
+
+			if (enforceEmptyLineAfterMethodNames.contains(
+					StringBundler.concat(
+						getVariableTypeName(detailAST, variableName, false),
+						StringPool.PERIOD, methodName))) {
+
+				log(
+					endLineNumber, _MSG_MISSING_EMPTY_LINE_AFTER_METHOD_NAME,
+					StringBundler.concat(
+						variableName, StringPool.PERIOD, methodName));
+			}
+
 			DetailAST firstChildDetailAST =
 				nextSiblingDetailAST.getFirstChild();
 
@@ -122,7 +126,7 @@ public class MissingEmptyLineCheck extends BaseCheck {
 
 		if (_containsVariableName(nextSiblingDetailAST, variableName)) {
 			log(
-				endLineNumber, _MSG_MISSING_EMPTY_LINE_AFTER_METHOD_CALL,
+				endLineNumber, _MSG_MISSING_EMPTY_LINE_LINE_NUMBER, "after",
 				endLineNumber);
 		}
 	}
@@ -146,6 +150,7 @@ public class MissingEmptyLineCheck extends BaseCheck {
 			nextSiblingDetailAST = nextSiblingDetailAST.getNextSibling();
 
 			if ((nextSiblingDetailAST == null) ||
+				hasPrecedingPlaceholder(nextSiblingDetailAST) ||
 				((nextSiblingDetailAST.getType() != TokenTypes.EXPR) &&
 				 (nextSiblingDetailAST.getType() != TokenTypes.VARIABLE_DEF))) {
 
@@ -164,20 +169,10 @@ public class MissingEmptyLineCheck extends BaseCheck {
 					return;
 				}
 
-				if (_containsVariableName(
-						previousDetailAST, lastAssignedVariableName) &&
-					_containsVariableName(
+				if (!_containsVariableName(
+						previousDetailAST, lastAssignedVariableName) ||
+					!_containsVariableName(
 						nextSiblingDetailAST, lastAssignedVariableName)) {
-
-					return;
-				}
-
-				String methodCallVariableName = _getMethodCallVariableName(
-					nextSiblingDetailAST);
-
-				if (!_hasFollowingMethodCallWithVariableName(
-						nextSiblingDetailAST, methodCallVariableName,
-						variableName)) {
 
 					log(
 						nextExpressionStartLineNumber,
@@ -213,22 +208,60 @@ public class MissingEmptyLineCheck extends BaseCheck {
 			return;
 		}
 
+		int endLineNumber = getEndLineNumber(detailAST);
+
+		String nextLine = getLine(endLineNumber);
+
+		if (Validator.isNull(nextLine)) {
+			return;
+		}
+
+		DetailAST nextSiblingDetailAST = detailAST.getNextSibling();
+
+		if ((nextSiblingDetailAST == null) ||
+			(nextSiblingDetailAST.getType() != TokenTypes.SEMI)) {
+
+			return;
+		}
+
+		nextSiblingDetailAST = nextSiblingDetailAST.getNextSibling();
+
+		if ((nextSiblingDetailAST == null) ||
+			(getHiddenBefore(nextSiblingDetailAST) != null) ||
+			(nextSiblingDetailAST.getType() == TokenTypes.RCURLY)) {
+
+			return;
+		}
+
 		DetailAST identDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
 		if (variableTypeName.equals(
 				getVariableTypeName(
 					detailAST, identDetailAST.getText(), false))) {
 
-			String nextLine = StringUtil.trim(
-				getLine(getEndLineNumber(detailAST)));
+			log(
+				detailAST, _MSG_MISSING_EMPTY_LINE_AFTER_VARIABLE_DEFINITION,
+				variableTypeName);
 
-			if (Validator.isNotNull(nextLine) && !nextLine.startsWith("}")) {
-				log(
-					detailAST,
-					_MSG_MISSING_EMPTY_LINE_AFTER_VARIABLE_DEFINITION,
-					variableTypeName);
+			return;
+		}
+
+		if (nextSiblingDetailAST.getType() == TokenTypes.VARIABLE_DEF) {
+			return;
+		}
+
+		if (nextSiblingDetailAST.getType() == TokenTypes.EXPR) {
+			DetailAST firstChildDetailAST =
+				nextSiblingDetailAST.getFirstChild();
+
+			if (firstChildDetailAST.getType() == TokenTypes.ASSIGN) {
+				return;
 			}
 		}
+
+		log(
+			endLineNumber, _MSG_MISSING_EMPTY_LINE_LINE_NUMBER, "after",
+			endLineNumber);
 	}
 
 	private void _checkMissingEmptyLineBeforeAssign(DetailAST assignDetailAST) {
@@ -237,12 +270,9 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		DetailAST nextSiblingDetailAST = parentDetailAST.getNextSibling();
 
 		if ((nextSiblingDetailAST == null) ||
-			(nextSiblingDetailAST.getType() != TokenTypes.SEMI)) {
+			(nextSiblingDetailAST.getType() != TokenTypes.SEMI) ||
+			_hasPrecedingVariableDef(parentDetailAST)) {
 
-			return;
-		}
-
-		if (_hasPrecedingVariableDef(parentDetailAST)) {
 			return;
 		}
 
@@ -300,6 +330,89 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		}
 	}
 
+	private void _checkMissingEmptyLineBeforeMethodCall(
+		DetailAST detailAST, String variableName,
+		DetailAST previousSiblingDetailAST) {
+
+		if (previousSiblingDetailAST == null) {
+			return;
+		}
+
+		int startLineNumber = getStartLineNumber(detailAST);
+
+		int previousExpressionEndLineNumber = getEndLineNumber(
+			previousSiblingDetailAST);
+
+		if ((previousExpressionEndLineNumber + 1) != startLineNumber) {
+			return;
+		}
+
+		if (previousSiblingDetailAST.getType() == TokenTypes.EXPR) {
+			DetailAST firstChildDetailAST =
+				previousSiblingDetailAST.getFirstChild();
+
+			if ((firstChildDetailAST.getType() == TokenTypes.METHOD_CALL) &&
+				variableName.equals(getVariableName(firstChildDetailAST))) {
+
+				return;
+			}
+		}
+
+		if (_containsVariableName(previousSiblingDetailAST, variableName)) {
+			log(
+				startLineNumber, _MSG_MISSING_EMPTY_LINE_LINE_NUMBER, "before",
+				startLineNumber);
+		}
+	}
+
+	private void _checkMissingEmptyLineBeforeVariableDef(DetailAST detailAST) {
+		if (getHiddenBefore(detailAST) != null) {
+			return;
+		}
+
+		DetailAST parentDetailAST = detailAST.getParent();
+
+		if (parentDetailAST.getType() != TokenTypes.SLIST) {
+			return;
+		}
+
+		int startLineNumber = getStartLineNumber(detailAST);
+
+		String previousLine = getLine(startLineNumber - 2);
+
+		if (Validator.isNull(previousLine)) {
+			return;
+		}
+
+		DetailAST previousSiblingDetailAST = detailAST.getPreviousSibling();
+
+		if ((previousSiblingDetailAST == null) ||
+			(previousSiblingDetailAST.getType() != TokenTypes.SEMI)) {
+
+			return;
+		}
+
+		previousSiblingDetailAST =
+			previousSiblingDetailAST.getPreviousSibling();
+
+		if (previousSiblingDetailAST.getType() == TokenTypes.VARIABLE_DEF) {
+			return;
+		}
+
+		if (previousSiblingDetailAST.getType() == TokenTypes.EXPR) {
+			DetailAST firstChildDetailAST =
+				previousSiblingDetailAST.getFirstChild();
+
+			if (firstChildDetailAST.getType() == TokenTypes.ASSIGN) {
+				return;
+			}
+		}
+
+		log(
+			startLineNumber, _MSG_MISSING_EMPTY_LINE_LINE_NUMBER, "before",
+			startLineNumber);
+	}
+
 	private void _checkMissingEmptyLineBetweenAssigningAndUsingVariable(
 		DetailAST detailAST, String name, int endLineNumber) {
 
@@ -354,6 +467,46 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		}
 	}
 
+	private void _checkMissingEmptyLinesAroundMethodCall(DetailAST detailAST) {
+		String variableName = getVariableName(detailAST);
+
+		if ((variableName == null) ||
+			Character.isUpperCase(variableName.charAt(0))) {
+
+			return;
+		}
+
+		DetailAST parentDetailAST = detailAST.getParent();
+
+		if (parentDetailAST.getType() != TokenTypes.EXPR) {
+			return;
+		}
+
+		DetailAST nextSiblingDetailAST = parentDetailAST.getNextSibling();
+
+		if ((nextSiblingDetailAST == null) ||
+			(nextSiblingDetailAST.getType() != TokenTypes.SEMI)) {
+
+			return;
+		}
+
+		_checkMissingEmptyLineAfterMethodCall(
+			detailAST, variableName, nextSiblingDetailAST.getNextSibling());
+
+		DetailAST previousSiblingDetailAST =
+			parentDetailAST.getPreviousSibling();
+
+		if ((previousSiblingDetailAST == null) ||
+			(previousSiblingDetailAST.getType() != TokenTypes.SEMI)) {
+
+			return;
+		}
+
+		_checkMissingEmptyLineBeforeMethodCall(
+			detailAST, variableName,
+			previousSiblingDetailAST.getPreviousSibling());
+	}
+
 	private boolean _containsVariableName(
 		DetailAST detailAST, String variableName) {
 
@@ -383,7 +536,9 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		}
 
 		for (DetailAST identDetailAST : identDetailASTList) {
-			if (variableName.equals(identDetailAST.getText())) {
+			if (!isMethodNameDetailAST(identDetailAST) &&
+				variableName.equals(identDetailAST.getText())) {
+
 				return true;
 			}
 		}
@@ -440,9 +595,15 @@ public class MissingEmptyLineCheck extends BaseCheck {
 				continue;
 			}
 
-			if (allowDividingEmptyLine ||
-				(nextStartLineNumber == (endLineNumber + 1))) {
+			if (nextStartLineNumber == (endLineNumber + 1)) {
+				return nextSiblingDetailAST;
+			}
 
+			if (hasPrecedingPlaceholder(nextSiblingDetailAST)) {
+				return null;
+			}
+
+			if (allowDividingEmptyLine) {
 				return nextSiblingDetailAST;
 			}
 
@@ -470,32 +631,6 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		return identDetailASTList;
 	}
 
-	private String _getMethodCallVariableName(DetailAST detailAST) {
-		if (detailAST.getType() != TokenTypes.EXPR) {
-			return null;
-		}
-
-		DetailAST firstChildDetailAST = detailAST.getFirstChild();
-
-		if (firstChildDetailAST.getType() != TokenTypes.METHOD_CALL) {
-			return null;
-		}
-
-		firstChildDetailAST = firstChildDetailAST.getFirstChild();
-
-		if (firstChildDetailAST.getType() != TokenTypes.DOT) {
-			return null;
-		}
-
-		firstChildDetailAST = firstChildDetailAST.getFirstChild();
-
-		if (firstChildDetailAST.getType() == TokenTypes.IDENT) {
-			return firstChildDetailAST.getText();
-		}
-
-		return null;
-	}
-
 	private String _getVariableName(DetailAST assignDetailAST) {
 		DetailAST parentDetailAST = assignDetailAST.getParent();
 
@@ -514,51 +649,6 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		}
 
 		return null;
-	}
-
-	private boolean _hasFollowingMethodCallWithVariableName(
-		DetailAST detailAST, String methodCallVariableName,
-		String variableName) {
-
-		if (methodCallVariableName == null) {
-			return false;
-		}
-
-		DetailAST nextSiblingDetailAST = detailAST.getNextSibling();
-
-		if ((nextSiblingDetailAST == null) ||
-			(nextSiblingDetailAST.getType() != TokenTypes.SEMI)) {
-
-			return false;
-		}
-
-		nextSiblingDetailAST = nextSiblingDetailAST.getNextSibling();
-
-		if (nextSiblingDetailAST == null) {
-			return false;
-		}
-
-		int endLineNumber = getEndLineNumber(detailAST);
-		int nextExpressionStartLineNumber = getStartLineNumber(
-			nextSiblingDetailAST);
-
-		if ((endLineNumber + 1) != nextExpressionStartLineNumber) {
-			return false;
-		}
-
-		String nextMethodCallVariableName = _getMethodCallVariableName(
-			nextSiblingDetailAST);
-
-		if (!methodCallVariableName.equals(nextMethodCallVariableName)) {
-			return false;
-		}
-
-		if (_containsVariableName(nextSiblingDetailAST, variableName)) {
-			return true;
-		}
-
-		return _hasFollowingMethodCallWithVariableName(
-			nextSiblingDetailAST, methodCallVariableName, variableName);
 	}
 
 	private boolean _hasPrecedingVariableDef(
@@ -589,8 +679,11 @@ public class MissingEmptyLineCheck extends BaseCheck {
 		return false;
 	}
 
-	private static final String _MSG_MISSING_EMPTY_LINE_AFTER_METHOD_CALL =
-		"empty.line.missing.after.method.call";
+	private static final String _ENFORCE_EMPTY_LINE_AFTER_METHOD_NAMES =
+		"enforceEmptyLineAfterMethodNames";
+
+	private static final String _MSG_MISSING_EMPTY_LINE_AFTER_METHOD_NAME =
+		"empty.line.missing.after.method.name";
 
 	private static final String
 		_MSG_MISSING_EMPTY_LINE_AFTER_VARIABLE_DEFINITION =
@@ -605,5 +698,8 @@ public class MissingEmptyLineCheck extends BaseCheck {
 
 	private static final String _MSG_MISSING_EMPTY_LINE_BEFORE_VARIABLE_USE =
 		"empty.line.missing.before.variable.use";
+
+	private static final String _MSG_MISSING_EMPTY_LINE_LINE_NUMBER =
+		"empty.line.missing.line.number";
 
 }

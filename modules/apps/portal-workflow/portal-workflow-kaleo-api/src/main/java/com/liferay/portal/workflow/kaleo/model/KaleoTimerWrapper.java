@@ -52,6 +52,7 @@ public class KaleoTimerWrapper
 		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("kaleoClassName", getKaleoClassName());
 		attributes.put("kaleoClassPK", getKaleoClassPK());
+		attributes.put("kaleoDefinitionId", getKaleoDefinitionId());
 		attributes.put(
 			"kaleoDefinitionVersionId", getKaleoDefinitionVersionId());
 		attributes.put("name", getName());
@@ -127,6 +128,12 @@ public class KaleoTimerWrapper
 			setKaleoClassPK(kaleoClassPK);
 		}
 
+		Long kaleoDefinitionId = (Long)attributes.get("kaleoDefinitionId");
+
+		if (kaleoDefinitionId != null) {
+			setKaleoDefinitionId(kaleoDefinitionId);
+		}
+
 		Long kaleoDefinitionVersionId = (Long)attributes.get(
 			"kaleoDefinitionVersionId");
 
@@ -176,6 +183,11 @@ public class KaleoTimerWrapper
 		if (recurrenceScale != null) {
 			setRecurrenceScale(recurrenceScale);
 		}
+	}
+
+	@Override
+	public KaleoTimer cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -256,6 +268,16 @@ public class KaleoTimerWrapper
 	@Override
 	public long getKaleoClassPK() {
 		return model.getKaleoClassPK();
+	}
+
+	/**
+	 * Returns the kaleo definition ID of this kaleo timer.
+	 *
+	 * @return the kaleo definition ID of this kaleo timer
+	 */
+	@Override
+	public long getKaleoDefinitionId() {
+		return model.getKaleoDefinitionId();
 	}
 
 	/**
@@ -481,6 +503,16 @@ public class KaleoTimerWrapper
 	@Override
 	public void setKaleoClassPK(long kaleoClassPK) {
 		model.setKaleoClassPK(kaleoClassPK);
+	}
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo timer.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo timer
+	 */
+	@Override
+	public void setKaleoDefinitionId(long kaleoDefinitionId) {
+		model.setKaleoDefinitionId(kaleoDefinitionId);
 	}
 
 	/**

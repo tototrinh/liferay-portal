@@ -14,16 +14,27 @@
 
 package com.liferay.portal.workflow.metrics.service.util;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.WorkflowDefinition;
+import com.liferay.portal.kernel.workflow.WorkflowDefinitionManager;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
 import com.liferay.portal.search.engine.adapter.search.CountSearchRequest;
 import com.liferay.portal.search.engine.adapter.search.CountSearchResponse;
 import com.liferay.portal.search.query.BooleanQuery;
 import com.liferay.portal.search.query.Queries;
 import com.liferay.portal.search.test.util.IdempotentRetryAssert;
+import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
-import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.test.rule.SynchronousMailTestRule;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 import com.liferay.portal.workflow.kaleo.model.KaleoNode;
 import com.liferay.portal.workflow.kaleo.model.KaleoTask;
@@ -34,40 +45,158 @@ import com.liferay.portal.workflow.kaleo.service.KaleoTaskLocalService;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
 /**
  * @author Rafael Praxedes
  */
 public abstract class BaseWorkflowMetricsTestCase {
 
-	protected String getInitialNodeKey(KaleoDefinition kaleoDefinition)
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE,
+			SynchronousMailTestRule.INSTANCE);
+
+	@Before
+	public void setUp() throws Exception {
+		_deployWorkflowDefinition();
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		undeployWorkflowDefinition();
+	}
+
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
+
+	protected void assertCount(
+			Consumer<BooleanQuery> booleanQueryConsumer, long expectedCount,
+			String indexName, String indexType, Object... parameters)
+		throws Exception {
+
+		if ((searchEngineAdapter == null) || (parameters == null)) {
+			return;
+		}
+
+		if ((parameters.length % 2) != 0) {
+			throw new IllegalArgumentException(
+				"Parameters length is not an even number");
+		}
+
+		CountSearchRequest countSearchRequest = new CountSearchRequest();
+
+		countSearchRequest.setIndexNames(indexName);
+
+		BooleanQuery booleanQuery = queries.booleanQuery();
+
+		BooleanQuery filterQuery = queries.booleanQuery();
+
+		for (int i = 0; i < parameters.length; i = i + 2) {
+			filterQuery.addMustQueryClauses(
+				queries.term(String.valueOf(parameters[i]), parameters[i + 1]));
+		}
+
+		booleanQueryConsumer.accept(filterQuery);
+
+		countSearchRequest.setQuery(
+			booleanQuery.addFilterQueryClauses(filterQuery));
+
+		countSearchRequest.setTypes(indexType);
+
+		CountSearchResponse countSearchResponse = searchEngineAdapter.execute(
+			countSearchRequest);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				indexName, " ", indexType, " ",
+				countSearchResponse.getSearchRequestString()),
+			expectedCount, countSearchResponse.getCount());
+	}
+
+	protected void assertCount(
+			long expectedCount, String indexName, String indexType,
+			Object... parameters)
+		throws Exception {
+
+		if ((searchEngineAdapter == null) || (parameters == null)) {
+			return;
+		}
+
+		if ((parameters.length % 2) != 0) {
+			throw new IllegalArgumentException(
+				"Parameters length is not an even number");
+		}
+
+		CountSearchRequest countSearchRequest = new CountSearchRequest();
+
+		countSearchRequest.setIndexNames(indexName);
+
+		BooleanQuery booleanQuery = queries.booleanQuery();
+
+		for (int i = 0; i < parameters.length; i = i + 2) {
+			booleanQuery.addMustQueryClauses(
+				queries.term(String.valueOf(parameters[i]), parameters[i + 1]));
+		}
+
+		countSearchRequest.setQuery(booleanQuery);
+
+		countSearchRequest.setTypes(indexType);
+
+		CountSearchResponse countSearchResponse = searchEngineAdapter.execute(
+			countSearchRequest);
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				indexName, " ", indexType, " ",
+				countSearchResponse.getSearchRequestString()),
+			expectedCount, countSearchResponse.getCount());
+	}
+
+	protected void assertCount(
+			String indexName, String indexType, Object... parameters)
+		throws Exception {
+
+		assertCount(1, indexName, indexType, parameters);
+	}
+
+	protected String getInitialNodeKey(WorkflowDefinition workflowDefinition)
 		throws Exception {
 
 		return _getInitialNodeKey(
 			_kaleoDefinitionVersionLocalService.getLatestKaleoDefinitionVersion(
-				kaleoDefinition.getCompanyId(), kaleoDefinition.getName()));
+				workflowDefinition.getCompanyId(),
+				workflowDefinition.getName()));
 	}
 
 	protected String getInitialNodeKey(
-			KaleoDefinition kaleoDefinition, String version)
+			WorkflowDefinition workflowDefinition, String version)
 		throws Exception {
 
 		return _getInitialNodeKey(
 			_kaleoDefinitionVersionLocalService.getKaleoDefinitionVersion(
-				kaleoDefinition.getCompanyId(), kaleoDefinition.getName(),
+				workflowDefinition.getCompanyId(), workflowDefinition.getName(),
 				version));
 	}
 
-	protected String getTaskKey(
-			KaleoDefinition kaleoDefinition, String taskName)
+	protected String getTaskName(
+			WorkflowDefinition workflowDefinition, String taskName)
 		throws PortalException {
 
 		KaleoDefinitionVersion latestKaleoDefinitionVersion =
 			_kaleoDefinitionVersionLocalService.getLatestKaleoDefinitionVersion(
-				kaleoDefinition.getCompanyId(), kaleoDefinition.getName());
+				workflowDefinition.getCompanyId(),
+				workflowDefinition.getName());
 
 		List<KaleoNode> kaleoNodes =
 			_kaleoNodeLocalService.getKaleoDefinitionVersionKaleoNodes(
@@ -84,6 +213,9 @@ public abstract class BaseWorkflowMetricsTestCase {
 						kaleoNode.getKaleoNodeId());
 				}
 				catch (PortalException portalException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(portalException, portalException);
+					}
 				}
 
 				return null;
@@ -100,79 +232,64 @@ public abstract class BaseWorkflowMetricsTestCase {
 		);
 	}
 
-	protected String getTerminalNodeKey(KaleoDefinition kaleoDefinition)
+	protected String getTerminalNodeKey(WorkflowDefinition workflowDefinition)
 		throws PortalException {
 
 		return _getTerminalNodeKey(
 			_kaleoDefinitionVersionLocalService.getLatestKaleoDefinitionVersion(
-				kaleoDefinition.getCompanyId(), kaleoDefinition.getName()));
+				workflowDefinition.getCompanyId(),
+				workflowDefinition.getName()));
 	}
 
 	protected String getTerminalNodeKey(
-			KaleoDefinition kaleoDefinition, String version)
+			WorkflowDefinition workflowDefinition, String version)
 		throws PortalException {
 
 		return _getTerminalNodeKey(
 			_kaleoDefinitionVersionLocalService.getKaleoDefinitionVersion(
-				kaleoDefinition.getCompanyId(), kaleoDefinition.getName(),
+				workflowDefinition.getCompanyId(), workflowDefinition.getName(),
 				version));
 	}
 
 	protected void retryAssertCount(
-			long expectedCount, String indexName, String indexType,
-			Object... parameters)
+			Consumer<BooleanQuery> booleanQueryConsumer, long expectedCount,
+			String indexName, String indexType, Object... parameters)
 		throws Exception {
 
-		if (searchEngineAdapter == null) {
-			return;
-		}
-
-		if (parameters == null) {
-			return;
-		}
-
-		if ((parameters.length % 2) != 0) {
-			throw new IllegalArgumentException(
-				"Parameters length is not an even number");
-		}
-
 		IdempotentRetryAssert.retryAssert(
-			15, TimeUnit.SECONDS, 1, TimeUnit.SECONDS,
+			3, TimeUnit.SECONDS,
 			() -> {
-				CountSearchRequest countSearchRequest =
-					new CountSearchRequest();
-
-				countSearchRequest.setIndexNames(indexName);
-
-				BooleanQuery booleanQuery = queries.booleanQuery();
-
-				for (int i = 0; i < parameters.length; i = i + 2) {
-					booleanQuery.addMustQueryClauses(
-						queries.term(
-							String.valueOf(parameters[i]), parameters[i + 1]));
-				}
-
-				countSearchRequest.setQuery(booleanQuery);
-
-				countSearchRequest.setTypes(indexType);
-
-				CountSearchResponse countSearchResponse =
-					searchEngineAdapter.execute(countSearchRequest);
-
-				Assert.assertEquals(
-					indexName + " " + indexType + " " +
-						countSearchResponse.getSearchRequestString(),
-					expectedCount, countSearchResponse.getCount());
+				assertCount(
+					booleanQueryConsumer, expectedCount, indexName, indexType,
+					parameters);
 
 				return null;
 			});
 	}
 
-	protected void retryAssertCount(
-			String indexName, String indexType, Object... parameters)
-		throws Exception {
+	protected void undeployWorkflowDefinition() throws Exception {
+		if (workflowDefinition != null) {
+			workflowDefinitionManager.updateActive(
+				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+				workflowDefinition.getName(), workflowDefinition.getVersion(),
+				false);
 
-		retryAssertCount(1, indexName, indexType, parameters);
+			workflowDefinitionManager.undeployWorkflowDefinition(
+				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+				workflowDefinition.getName(), workflowDefinition.getVersion());
+
+			workflowDefinition = null;
+		}
+	}
+
+	protected void updateWorkflowDefinition() throws Exception {
+		updateWorkflowDefinition(WorkflowDefinitionUtil.getBytes());
+	}
+
+	protected void updateWorkflowDefinition(byte[] bytes) throws Exception {
+		workflowDefinition = workflowDefinitionManager.deployWorkflowDefinition(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			workflowDefinition.getTitle(), workflowDefinition.getName(), bytes);
 	}
 
 	@Inject
@@ -180,6 +297,18 @@ public abstract class BaseWorkflowMetricsTestCase {
 
 	@Inject(blocking = false, filter = "search.engine.impl=Elasticsearch")
 	protected SearchEngineAdapter searchEngineAdapter;
+
+	protected WorkflowDefinition workflowDefinition;
+
+	@Inject
+	protected WorkflowDefinitionManager workflowDefinitionManager;
+
+	private void _deployWorkflowDefinition() throws Exception {
+		workflowDefinition = workflowDefinitionManager.deployWorkflowDefinition(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			StringUtil.randomId(), StringUtil.randomId(),
+			WorkflowDefinitionUtil.getBytes());
+	}
 
 	private String _getInitialNodeKey(
 			KaleoDefinitionVersion kaleoDefinitionVersion)
@@ -224,6 +353,9 @@ public abstract class BaseWorkflowMetricsTestCase {
 			() -> StringPool.BLANK
 		);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseWorkflowMetricsTestCase.class);
 
 	@Inject
 	private KaleoDefinitionVersionLocalService

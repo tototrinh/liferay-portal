@@ -57,7 +57,7 @@ public class BlogImagesDisplayContext {
 		_httpServletRequest = _liferayPortletRequest.getHttpServletRequest();
 	}
 
-	public void populateResults(SearchContainer searchContainer)
+	public void populateResults(SearchContainer<FileEntry> searchContainer)
 		throws PortalException {
 
 		ThemeDisplay themeDisplay =
@@ -69,7 +69,7 @@ public class BlogImagesDisplayContext {
 				themeDisplay.getUserId(), themeDisplay.getScopeGroupId());
 
 		int total = 0;
-		List results = null;
+		List<FileEntry> results = null;
 
 		String keywords = ParamUtil.getString(_httpServletRequest, "keywords");
 
@@ -123,19 +123,17 @@ public class BlogImagesDisplayContext {
 				long fileEntryId = GetterUtil.getLong(
 					doc.get(Field.ENTRY_CLASS_PK));
 
-				FileEntry fileEntry = null;
-
 				try {
-					fileEntry = DLAppLocalServiceUtil.getFileEntry(fileEntryId);
-
-					results.add(fileEntry);
+					results.add(
+						DLAppLocalServiceUtil.getFileEntry(fileEntryId));
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
 						_log.warn(
 							StringBundler.concat(
 								"Documents and Media search index is stale ",
-								"and contains file entry ", fileEntryId));
+								"and contains file entry ", fileEntryId),
+							exception);
 					}
 				}
 			}

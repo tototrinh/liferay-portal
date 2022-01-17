@@ -12,50 +12,103 @@
  * details.
  */
 
-import deleteWidgets from '../actions/deleteWidgets';
-import updateLayoutData from '../actions/updateLayoutData';
+import deleteItemAction from '../actions/deleteItem';
 import updatePageContents from '../actions/updatePageContents';
+import {LAYOUT_DATA_ITEM_TYPES} from '../config/constants/layoutDataItemTypes';
 import InfoItemService from '../services/InfoItemService';
 import LayoutService from '../services/LayoutService';
+import getFragmentEntryLinkIdsFromItemId from '../utils/getFragmentEntryLinkIdsFromItemId';
 
-export default function deleteItem({itemId, store}) {
-	return dispatch => {
-		const {segmentsExperienceId} = store;
+export default function deleteItem({itemId, selectItem = () => {}}) {
+	return (dispatch, getState) => {
+		const {
+			fragmentEntryLinks,
+			layoutData,
+			segmentsExperienceId,
+		} = getState();
 
-		return LayoutService.deleteItem({
+		return markItemForDeletion({
+			fragmentEntryLinks,
 			itemId,
+			layoutData,
 			onNetworkStatus: dispatch,
-			segmentsExperienceId
+			segmentsExperienceId,
 		})
-			.then(({deletedFragmentEntryLinkIds = [], layoutData}) => {
-				const deletedWidgets = deletedFragmentEntryLinkIds
-					.map(
-						fragmentEntryLinkId =>
-							store.fragmentEntryLinks[fragmentEntryLinkId]
-					)
-					.filter(
-						fragmentEntryLink =>
-							fragmentEntryLink.editableValues.portletId
-					);
+			.then(({portletIds = [], layoutData}) => {
+				selectItem(null);
 
-				if (deletedWidgets.length) {
-					dispatch(deleteWidgets(deletedWidgets));
-				}
+				const fragmentEntryLinkIds = getFragmentEntryLinkIdsFromItemId({
+					itemId,
+					layoutData,
+				});
 
 				dispatch(
-					updateLayoutData({deletedFragmentEntryLinkIds, layoutData})
+					deleteItemAction({
+						fragmentEntryLinkIds,
+						itemId,
+						layoutData,
+						portletIds,
+					})
 				);
 			})
 			.then(() => {
 				InfoItemService.getPageContents({
-					onNetworkStatus: dispatch
-				}).then(pageContents => {
+					onNetworkStatus: dispatch,
+				}).then((pageContents) => {
 					dispatch(
 						updatePageContents({
-							pageContents
+							pageContents,
 						})
 					);
 				});
 			});
 	};
+}
+
+function markItemForDeletion({
+	fragmentEntryLinks,
+	itemId,
+	layoutData,
+	onNetworkStatus: dispatch,
+	segmentsExperienceId,
+}) {
+	const portletIds = findPortletIds(itemId, layoutData, fragmentEntryLinks);
+
+	return LayoutService.markItemForDeletion({
+		itemId,
+		onNetworkStatus: dispatch,
+		portletIds,
+		segmentsExperienceId,
+	}).then((response) => {
+		return {...response, portletIds};
+	});
+}
+
+function findPortletIds(itemId, layoutData, fragmentEntryLinks) {
+	const item = layoutData.items[itemId];
+
+	const {config = {}, children = []} = item;
+
+	if (
+		item.type === LAYOUT_DATA_ITEM_TYPES.fragment &&
+		config.fragmentEntryLinkId
+	) {
+		const {editableValues = {}} = fragmentEntryLinks[
+			config.fragmentEntryLinkId
+		];
+
+		if (editableValues.portletId && !editableValues.instanceId) {
+			return [editableValues.portletId];
+		}
+	}
+
+	const deletedWidgets = [];
+
+	children.forEach((itemId) => {
+		deletedWidgets.push(
+			...findPortletIds(itemId, layoutData, fragmentEntryLinks)
+		);
+	});
+
+	return deletedWidgets;
 }

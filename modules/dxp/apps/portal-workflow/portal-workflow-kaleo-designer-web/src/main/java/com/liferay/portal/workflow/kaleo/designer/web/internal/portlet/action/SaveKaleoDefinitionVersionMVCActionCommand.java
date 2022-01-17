@@ -40,7 +40,7 @@ import org.osgi.service.component.annotations.Component;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + KaleoDesignerPortletKeys.KALEO_DESIGNER,
-		"mvc.command.name=saveKaleoDefinitionVersion"
+		"mvc.command.name=/kaleo_designer/save_kaleo_definition_version"
 	},
 	service = MVCActionCommand.class
 )
@@ -63,7 +63,7 @@ public class SaveKaleoDefinitionVersionMVCActionCommand
 		WorkflowDefinition workflowDefinition =
 			workflowDefinitionManager.saveWorkflowDefinition(
 				themeDisplay.getCompanyId(), themeDisplay.getUserId(),
-				getTitle(titleMap), name, content.getBytes());
+				getTitle(actionRequest, titleMap), name, content.getBytes());
 
 		KaleoDefinitionVersion kaleoDefinitionVersion =
 			kaleoDefinitionVersionLocalService.getLatestKaleoDefinitionVersion(

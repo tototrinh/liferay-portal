@@ -15,6 +15,7 @@
 package com.liferay.portal.service.base;
 
 import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -36,17 +37,18 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
-import com.liferay.portal.kernel.service.persistence.ResourceActionPersistence;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ResourcePermissionFinder;
 import com.liferay.portal.kernel.service.persistence.ResourcePermissionPersistence;
-import com.liferay.portal.kernel.service.persistence.RoleFinder;
-import com.liferay.portal.kernel.service.persistence.RolePersistence;
 import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -70,11 +72,15 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>ResourcePermissionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>ResourcePermissionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>ResourcePermissionLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the resource permission to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ResourcePermissionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param resourcePermission the resource permission
 	 * @return the resource permission that was added
@@ -106,6 +112,10 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 	/**
 	 * Deletes the resource permission with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ResourcePermissionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param resourcePermissionId the primary key of the resource permission
 	 * @return the resource permission that was removed
 	 * @throws PortalException if a resource permission with the primary key could not be found
@@ -122,6 +132,10 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 	/**
 	 * Deletes the resource permission from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ResourcePermissionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param resourcePermission the resource permission
 	 * @return the resource permission that was removed
 	 */
@@ -131,6 +145,18 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 		ResourcePermission resourcePermission) {
 
 		return resourcePermissionPersistence.remove(resourcePermission);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return resourcePermissionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -293,6 +319,7 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -309,6 +336,11 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 
 		return resourcePermissionLocalService.deleteResourcePermission(
 			(ResourcePermission)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<ResourcePermission> getBasePersistence() {
+		return resourcePermissionPersistence;
 	}
 
 	/**
@@ -349,6 +381,10 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 
 	/**
 	 * Updates the resource permission in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ResourcePermissionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param resourcePermission the resource permission
 	 * @return the resource permission that was updated
@@ -444,116 +480,19 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 		this.counterLocalService = counterLocalService;
 	}
 
-	/**
-	 * Returns the resource action local service.
-	 *
-	 * @return the resource action local service
-	 */
-	public com.liferay.portal.kernel.service.ResourceActionLocalService
-		getResourceActionLocalService() {
-
-		return resourceActionLocalService;
-	}
-
-	/**
-	 * Sets the resource action local service.
-	 *
-	 * @param resourceActionLocalService the resource action local service
-	 */
-	public void setResourceActionLocalService(
-		com.liferay.portal.kernel.service.ResourceActionLocalService
-			resourceActionLocalService) {
-
-		this.resourceActionLocalService = resourceActionLocalService;
-	}
-
-	/**
-	 * Returns the resource action persistence.
-	 *
-	 * @return the resource action persistence
-	 */
-	public ResourceActionPersistence getResourceActionPersistence() {
-		return resourceActionPersistence;
-	}
-
-	/**
-	 * Sets the resource action persistence.
-	 *
-	 * @param resourceActionPersistence the resource action persistence
-	 */
-	public void setResourceActionPersistence(
-		ResourceActionPersistence resourceActionPersistence) {
-
-		this.resourceActionPersistence = resourceActionPersistence;
-	}
-
-	/**
-	 * Returns the role local service.
-	 *
-	 * @return the role local service
-	 */
-	public com.liferay.portal.kernel.service.RoleLocalService
-		getRoleLocalService() {
-
-		return roleLocalService;
-	}
-
-	/**
-	 * Sets the role local service.
-	 *
-	 * @param roleLocalService the role local service
-	 */
-	public void setRoleLocalService(
-		com.liferay.portal.kernel.service.RoleLocalService roleLocalService) {
-
-		this.roleLocalService = roleLocalService;
-	}
-
-	/**
-	 * Returns the role persistence.
-	 *
-	 * @return the role persistence
-	 */
-	public RolePersistence getRolePersistence() {
-		return rolePersistence;
-	}
-
-	/**
-	 * Sets the role persistence.
-	 *
-	 * @param rolePersistence the role persistence
-	 */
-	public void setRolePersistence(RolePersistence rolePersistence) {
-		this.rolePersistence = rolePersistence;
-	}
-
-	/**
-	 * Returns the role finder.
-	 *
-	 * @return the role finder
-	 */
-	public RoleFinder getRoleFinder() {
-		return roleFinder;
-	}
-
-	/**
-	 * Sets the role finder.
-	 *
-	 * @param roleFinder the role finder
-	 */
-	public void setRoleFinder(RoleFinder roleFinder) {
-		this.roleFinder = roleFinder;
-	}
-
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.portal.kernel.model.ResourcePermission",
 			resourcePermissionLocalService);
+
+		_setLocalServiceUtilService(resourcePermissionLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.kernel.model.ResourcePermission");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -614,6 +553,23 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		ResourcePermissionLocalService resourcePermissionLocalService) {
+
+		try {
+			Field field =
+				ResourcePermissionLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, resourcePermissionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = ResourcePermissionLocalService.class)
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 
@@ -628,27 +584,6 @@ public abstract class ResourcePermissionLocalServiceBaseImpl
 	)
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.ResourceActionLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.ResourceActionLocalService
-		resourceActionLocalService;
-
-	@BeanReference(type = ResourceActionPersistence.class)
-	protected ResourceActionPersistence resourceActionPersistence;
-
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.RoleLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.RoleLocalService
-		roleLocalService;
-
-	@BeanReference(type = RolePersistence.class)
-	protected RolePersistence rolePersistence;
-
-	@BeanReference(type = RoleFinder.class)
-	protected RoleFinder roleFinder;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

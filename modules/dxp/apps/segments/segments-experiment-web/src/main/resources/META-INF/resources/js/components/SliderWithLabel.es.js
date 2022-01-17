@@ -19,18 +19,20 @@ function SliderWithLabel({
 	min = 1,
 	onValueChange,
 	subTitle,
-	value
+	value,
 }) {
 	return (
 		<label className="form-group-autofit">
 			<span className="form-group-item">
 				{label}
+
 				{subTitle && (
 					<span className="font-weight-normal form-text">
 						{subTitle}
 					</span>
 				)}
 			</span>
+
 			<div className="flex-row form-group-item">
 				<ClaySlider
 					className="w-100"
@@ -40,6 +42,7 @@ function SliderWithLabel({
 					showTooltip={false}
 					value={value}
 				/>
+
 				<small className="font-weight-normal form-text ml-3">
 					{value + '%'}
 				</small>
@@ -54,7 +57,7 @@ SliderWithLabel.propTypes = {
 	min: PropTypes.number,
 	onValueChange: PropTypes.func.isRequired,
 	subTitle: PropTypes.string,
-	value: PropTypes.number.isRequired
+	value: PropTypes.number.isRequired,
 };
 
 export {SliderWithLabel};

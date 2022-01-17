@@ -28,18 +28,16 @@ import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.servlet.taglib.ui.MenuItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.URLMenuItem;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.ResourceBundle;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
@@ -69,7 +67,7 @@ public class DLOpenerGoogleDriveDLPortletToolbarContributorContext
 
 			if (!_dlOpenerGoogleDriveManager.isConfigured(
 					themeDisplay.getCompanyId()) ||
-				!ModelResourcePermissionHelper.contains(
+				!ModelResourcePermissionUtil.contains(
 					_folderEntryModelResourcePermission,
 					themeDisplay.getPermissionChecker(),
 					themeDisplay.getScopeGroupId(), folderId,
@@ -155,11 +153,7 @@ public class DLOpenerGoogleDriveDLPortletToolbarContributorContext
 	}
 
 	private String _translate(PortletRequest portletRequest, String key) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			_portal.getLocale(portletRequest),
-			DLOpenerGoogleDriveDLPortletToolbarContributorContext.class);
-
-		return _language.get(resourceBundle, key);
+		return _language.get(_portal.getLocale(portletRequest), key);
 	}
 
 	private static final String _ICON_COLOR_DOCUMENT = "6";

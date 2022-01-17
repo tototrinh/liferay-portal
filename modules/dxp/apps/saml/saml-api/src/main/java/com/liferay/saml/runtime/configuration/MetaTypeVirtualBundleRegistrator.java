@@ -59,6 +59,7 @@ public class MetaTypeVirtualBundleRegistrator implements Closeable {
 		mainAttributes.put(new Attributes.Name("Bundle-Version"), "1.0.0");
 	}
 
+	@Override
 	public void close() {
 		try {
 			_servicesDropDownMetaTypeProvider.close();
@@ -123,16 +124,12 @@ public class MetaTypeVirtualBundleRegistrator implements Closeable {
 
 		Attributes mainAttributes = _manifest.getMainAttributes();
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("liferay.resource.bundle;bundle.symbolic.name=");
-		sb.append(_symbolicName);
-		sb.append(";resource.bundle.aggregate=\"");
-		sb.append(filterString);
-		sb.append("\";resource.bundle.base.name=\"content.Language\"");
-
 		mainAttributes.put(
-			new Attributes.Name("Provide-Capability"), sb.toString());
+			new Attributes.Name("Provide-Capability"),
+			StringBundler.concat(
+				"liferay.resource.bundle;bundle.symbolic.name=", _symbolicName,
+				";resource.bundle.aggregate=\"", filterString,
+				"\";resource.bundle.base.name=\"content.Language\""));
 
 		return this;
 	}

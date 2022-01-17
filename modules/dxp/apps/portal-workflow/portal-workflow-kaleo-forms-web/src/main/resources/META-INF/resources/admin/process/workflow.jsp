@@ -20,7 +20,7 @@
 String tabs1 = ParamUtil.getString(request, "tabs1", "published");
 
 String redirect = ParamUtil.getString(request, "redirect");
-String backURL = HttpUtil.setParameter(currentURL, renderResponse.getNamespace() + "historyKey", "workflow");
+String backURL = HttpUtil.setParameter(currentURL, liferayPortletResponse.getNamespace() + "historyKey", "workflow");
 
 KaleoProcess kaleoProcess = (KaleoProcess)request.getAttribute(KaleoFormsWebKeys.KALEO_PROCESS);
 
@@ -95,7 +95,9 @@ if (tabs1.equals("published")) {
 		<portlet:param name="closeRedirect" value="<%= backURL %>" />
 	</liferay-portlet:renderURL>
 
-	<aui:button onClick='<%= "javascript:" + renderResponse.getNamespace() + "editWorkflow('" + addURL + "');" %>' primary="<%= true %>" value="add-workflow" />
+	<c:if test="<%= permissionChecker.isCompanyAdmin() %>">
+		<aui:button onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "editWorkflow('" + addURL + "');" %>' primary="<%= true %>" value="add-workflow" />
+	</c:if>
 
 	<div class="separator"><!-- --></div>
 
@@ -107,29 +109,27 @@ if (tabs1.equals("published")) {
 		<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcessId) %>" />
 	</liferay-portlet:renderURL>
 
-	<aui:nav-bar cssClass="collapse-basic-search" markupView="lexicon">
-		<aui:nav cssClass="kaleo-process-workflow-nav-tabs nav-bar-workflow nav-tabs nav-tabs-default">
-			<liferay-portlet:renderURL var="viewPublishedURL">
-				<portlet:param name="mvcPath" value="/admin/edit_kaleo_process.jsp" />
-				<portlet:param name="tabs1" value="published" />
-				<portlet:param name="redirect" value="<%= redirect %>" />
-				<portlet:param name="historyKey" value="workflow" />
-				<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcessId) %>" />
-			</liferay-portlet:renderURL>
+	<aui:nav cssClass="kaleo-process-workflow-nav-tabs nav-bar-workflow nav-tabs">
+		<liferay-portlet:renderURL var="viewPublishedURL">
+			<portlet:param name="mvcPath" value="/admin/edit_kaleo_process.jsp" />
+			<portlet:param name="tabs1" value="published" />
+			<portlet:param name="redirect" value="<%= redirect %>" />
+			<portlet:param name="historyKey" value="workflow" />
+			<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcessId) %>" />
+		</liferay-portlet:renderURL>
 
-			<aui:nav-item href="<%= viewPublishedURL %>" label="published" selected='<%= tabs1.equals("published") %>' />
+		<aui:nav-item href="<%= viewPublishedURL %>" label="published" selected='<%= tabs1.equals("published") %>' />
 
-			<liferay-portlet:renderURL var="viewUnpublishedURL">
-				<portlet:param name="mvcPath" value="/admin/edit_kaleo_process.jsp" />
-				<portlet:param name="tabs1" value="unpublished" />
-				<portlet:param name="redirect" value="<%= redirect %>" />
-				<portlet:param name="historyKey" value="workflow" />
-				<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcessId) %>" />
-			</liferay-portlet:renderURL>
+		<liferay-portlet:renderURL var="viewUnpublishedURL">
+			<portlet:param name="mvcPath" value="/admin/edit_kaleo_process.jsp" />
+			<portlet:param name="tabs1" value="unpublished" />
+			<portlet:param name="redirect" value="<%= redirect %>" />
+			<portlet:param name="historyKey" value="workflow" />
+			<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcessId) %>" />
+		</liferay-portlet:renderURL>
 
-			<aui:nav-item href="<%= viewUnpublishedURL %>" label="unpublished" selected='<%= tabs1.equals("unpublished") %>' />
-		</aui:nav>
-	</aui:nav-bar>
+		<aui:nav-item href="<%= viewUnpublishedURL %>" label="unpublished" selected='<%= tabs1.equals("unpublished") %>' />
+	</aui:nav>
 
 	<c:choose>
 		<c:when test='<%= tabs1.equals("published") %>'>
@@ -229,7 +229,7 @@ if (tabs1.equals("published")) {
 <aui:script>
 	Liferay.on(
 		'<portlet:namespace />chooseWorkflow',
-		function(event) {
+		(event) => {
 			var A = AUI();
 
 			var workflowDefinition = event.name + '@' + event.version;
@@ -240,16 +240,16 @@ if (tabs1.equals("published")) {
 
 			A.one('#<portlet:namespace />workflowDefinitionDisplay').html(
 				A.Lang.sub('{title}', {
-					title: Liferay.Util.escapeHTML(event.title)
+					title: Liferay.Util.escapeHTML(event.title),
 				})
 			);
 
 			var kaleoFormsAdmin = Liferay.component(
-				'<portlet:namespace/>KaleoFormsAdmin'
+				'<portlet:namespace />KaleoFormsAdmin'
 			);
 
 			kaleoFormsAdmin.saveInPortletSession({
-				workflowDefinition: workflowDefinition
+				workflowDefinition: workflowDefinition,
 			});
 
 			kaleoFormsAdmin.updateNavigationControls();
@@ -257,21 +257,20 @@ if (tabs1.equals("published")) {
 		['aui-base']
 	);
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />editWorkflow',
-		function(uri) {
-			var A = AUI();
-
+	window['<portlet:namespace />editWorkflow'] = function (uri) {
+		AUI().use('liferay-util', (A) => {
 			var WIN = A.config.win;
 
 			Liferay.Util.openWindow({
+				dialog: {
+					destroyOnHide: true,
+					modal: true,
+				},
 				id: A.guid(),
 				refreshWindow: WIN,
 				title: '<liferay-ui:message key="workflow" />',
-				uri: uri
+				uri: uri,
 			});
-		},
-		['liferay-util']
-	);
+		});
+	};
 </aui:script>

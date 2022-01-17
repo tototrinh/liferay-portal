@@ -15,7 +15,7 @@
 package com.liferay.document.library.web.internal.portlet.action;
 
 import com.liferay.document.library.constants.DLPortletKeys;
-import com.liferay.document.library.web.internal.util.DLTrashUtil;
+import com.liferay.document.library.web.internal.helper.DLTrashHelper;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.repository.model.Folder;
@@ -41,7 +41,7 @@ import org.osgi.service.component.annotations.Reference;
 	},
 	service = MVCRenderCommand.class
 )
-public class EditFolderMVCRenderCommand extends GetFolderMVCRenderCommand {
+public class EditFolderMVCRenderCommand extends BaseFolderMVCRenderCommand {
 
 	@Override
 	protected void checkPermissions(
@@ -53,8 +53,8 @@ public class EditFolderMVCRenderCommand extends GetFolderMVCRenderCommand {
 	}
 
 	@Override
-	protected DLTrashUtil getDLTrashUtil() {
-		return _dlTrashUtil;
+	protected DLTrashHelper getDLTrashHelper() {
+		return _dlTrashHelper;
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public class EditFolderMVCRenderCommand extends GetFolderMVCRenderCommand {
 	}
 
 	@Reference
-	private DLTrashUtil _dlTrashUtil;
+	private DLTrashHelper _dlTrashHelper;
 
 	@Reference(
 		target = "(model.class.name=com.liferay.portal.kernel.repository.model.Folder)"

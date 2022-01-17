@@ -12,26 +12,29 @@
  * details.
  */
 
+/**
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
+ */
 YUI.add(
 	'liferay-browser-selectors',
-	A => {
+	(A) => {
 		var REGEX_VERSION_DOT = /\./g;
 
 		var YUI3_JS_ENABLED = 'yui3-js-enabled';
 
-		var parseVersionNumber = function(str) {
+		var parseVersionNumber = function (str) {
 			var count = 0;
 
 			return parseFloat(
 				str.replace(REGEX_VERSION_DOT, () => {
-					return count++ == 1 ? '' : '.';
+					return count++ === 1 ? '' : '.';
 				})
 			);
 		};
 
 		var DEFAULTS_VERSION = ['0', '0'];
 
-		var getVersion = function(regex, userAgent) {
+		var getVersion = function (regex, userAgent) {
 			var version = (userAgent.match(regex) || DEFAULTS_VERSION)[1];
 
 			return parseVersionNumber(version);
@@ -50,12 +53,12 @@ YUI.add(
 			'netscape',
 			'icab',
 			'konqueror',
-			'safari'
+			'safari',
 		];
 
 		var MAP_OS_SELECTORS = {
 			macintosh: 'mac',
-			windows: 'win'
+			windows: 'win',
 		};
 
 		var nav = navigator;
@@ -82,15 +85,16 @@ YUI.add(
 			konqueror: 0,
 			mozilla: 0,
 			netscape: 0,
-			safari: 0
+			safari: 0,
 		};
 
-		UAX.mac = OS == 'macintosh';
-		UAX.rhino = OS == 'rhino';
-		UAX.win = OS == 'windows';
+		UAX.mac = OS === 'macintosh';
+		UAX.rhino = OS === 'rhino';
+		UAX.win = OS === 'windows';
 
 		var BrowserSelectors = {
 			getSelectors() {
+
 				// The methods in this if block only run once across all instances
 
 				if (!UA.selectors) {
@@ -171,7 +175,7 @@ YUI.add(
 
 					var versionObj = {
 						major: versionMajor,
-						string: ''
+						string: '',
 					};
 
 					var i = BROWSERS.length;
@@ -275,7 +279,10 @@ YUI.add(
 						behaviorObj.style.behavior = 'url(#default#VML)';
 
 						if (
-							!(behaviorObj && typeof behaviorObj.adj == 'object')
+							!(
+								behaviorObj &&
+								typeof behaviorObj.adj === 'object'
+							)
 						) {
 							vml = false;
 						}
@@ -312,13 +319,13 @@ YUI.add(
 				}
 
 				documentElement.className += ' ' + selectors;
-			}
+			},
 		};
 
 		Liferay.BrowserSelectors = BrowserSelectors;
 	},
 	'',
 	{
-		requires: ['yui-base']
+		requires: ['yui-base'],
 	}
 );

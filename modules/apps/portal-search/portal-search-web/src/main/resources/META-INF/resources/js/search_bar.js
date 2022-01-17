@@ -14,8 +14,12 @@
 
 AUI.add(
 	'liferay-search-bar',
-	A => {
-		var SearchBar = function(form) {
+	(A) => {
+		var SearchBar = function (form) {
+			if (!form) {
+				return;
+			}
+
 			var instance = this;
 
 			instance.form = form;
@@ -113,7 +117,7 @@ AUI.add(
 				searchParams.delete('start');
 
 				return '?' + searchParams.toString();
-			}
+			},
 		});
 
 		Liferay.namespace('Search').SearchBar = SearchBar;

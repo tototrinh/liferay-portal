@@ -24,7 +24,7 @@
 	action="<%= configurationActionURL %>"
 	method="post"
 	name="fm"
-	onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "saveConfiguration();" %>'
+	onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveConfiguration();" %>'
 >
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.UPDATE %>" />
 	<aui:input name="redirect" type="hidden" value="<%= configurationRenderURL %>" />
@@ -33,7 +33,7 @@
 		<liferay-frontend:fieldset-group>
 			<liferay-frontend:fieldset>
 				<div class="display-template">
-					<liferay-ddm:template-selector
+					<liferay-template:template-selector
 						className="<%= AssetCategory.class.getName() %>"
 						displayStyle="<%= assetCategoriesNavigationPortletInstanceConfiguration.displayStyle() %>"
 						displayStyleGroupId="<%= assetCategoriesNavigationDisplayContext.getDisplayStyleGroupId() %>"
@@ -79,8 +79,8 @@
 			data: {
 				assetVocabularyIds: Liferay.Util.listSelect(
 					Liferay.Util.getFormElement(form, 'currentAssetVocabularyIds')
-				)
-			}
+				),
+			},
 		});
 	}
 

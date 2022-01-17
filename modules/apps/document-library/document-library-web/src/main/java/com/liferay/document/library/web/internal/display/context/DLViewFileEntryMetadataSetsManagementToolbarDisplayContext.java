@@ -14,19 +14,26 @@
 
 package com.liferay.document.library.web.internal.display.context;
 
-import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLRequestHelper;
+import com.liferay.document.library.web.internal.security.permission.resource.DDMStructurePermission;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
-import javax.portlet.PortletURL;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -48,16 +55,32 @@ public class DLViewFileEntryMetadataSetsManagementToolbarDisplayContext
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			dlViewFileEntryMetadataSetsDisplayContext.getStructureSearch());
 
+		_dlViewFileEntryMetadataSetsDisplayContext =
+			dlViewFileEntryMetadataSetsDisplayContext;
+
 		_dlRequestHelper = new DLRequestHelper(httpServletRequest);
 	}
 
 	@Override
+	public List<DropdownItem> getActionDropdownItems() {
+		return DropdownItemListBuilder.add(
+			dropdownItem -> {
+				dropdownItem.putData("action", "deleteMetadataSets");
+				dropdownItem.setIcon("times-circle");
+				dropdownItem.setLabel(
+					LanguageUtil.get(httpServletRequest, "delete"));
+				dropdownItem.setQuickAction(true);
+			}
+		).build();
+	}
+
+	@Override
 	public String getClearResultsURL() {
-		PortletURL portletURL = getPortletURL();
-
-		portletURL.setParameter("keywords", StringPool.BLANK);
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -71,33 +94,49 @@ public class DLViewFileEntryMetadataSetsManagementToolbarDisplayContext
 				dropdownItem.setHref(
 					liferayPortletResponse.createRenderURL(),
 					"mvcRenderCommandName",
-					"/document_library/ddm/edit_ddm_structure", "redirect",
+					"/document_library/edit_ddm_structure", "redirect",
 					themeDisplay.getURLCurrent(), "groupId",
 					String.valueOf(_dlRequestHelper.getScopeGroupId()));
 
 				dropdownItem.setLabel(
-					LanguageUtil.get(_dlRequestHelper.getRequest(), "add"));
+					LanguageUtil.get(_dlRequestHelper.getRequest(), "new"));
 			}
 		).build();
 	}
 
 	@Override
-	public String getSearchActionURL() {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter(
-			"tabs1",
-			ParamUtil.getString(liferayPortletRequest, "tabs1", "structures"));
-		portletURL.setParameter(
-			"groupId", String.valueOf(_dlRequestHelper.getScopeGroupId()));
-
-		return portletURL.toString();
+	public String getDefaultEventHandler() {
+		return "dlDDMStructuresManagementToolbarDefaultEventHandler";
 	}
 
 	@Override
-	public Boolean isSelectable() {
-		return false;
+	public String getSearchActionURL() {
+		return PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setNavigation(
+			"file_entry_metadata_sets"
+		).setParameter(
+			"groupId", _dlRequestHelper.getScopeGroupId()
+		).buildString();
+	}
+
+	@Override
+	public String getSearchContainerId() {
+		return "ddmStructures";
+	}
+
+	@Override
+	public Boolean isShowCreationMenu() {
+		try {
+			return _isShowAddButton();
+		}
+		catch (PortalException portalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to get creation menu", portalException);
+			}
+
+			return false;
+		}
 	}
 
 	@Override
@@ -110,6 +149,31 @@ public class DLViewFileEntryMetadataSetsManagementToolbarDisplayContext
 		return new String[] {"modified-date", "id"};
 	}
 
+	private boolean _isShowAddButton() throws PortalException {
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		Group group = themeDisplay.getScopeGroup();
+
+		if ((!group.hasLocalOrRemoteStagingGroup() || group.isStagingGroup()) &&
+			DDMStructurePermission.containsAddDDMStructurePermission(
+				_dlRequestHelper.getPermissionChecker(),
+				_dlRequestHelper.getScopeGroupId(),
+				_dlViewFileEntryMetadataSetsDisplayContext.
+					getStructureClassNameId())) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DLViewFileEntryMetadataSetsManagementToolbarDisplayContext.class);
+
 	private final DLRequestHelper _dlRequestHelper;
+	private final DLViewFileEntryMetadataSetsDisplayContext
+		_dlViewFileEntryMetadataSetsDisplayContext;
 
 }

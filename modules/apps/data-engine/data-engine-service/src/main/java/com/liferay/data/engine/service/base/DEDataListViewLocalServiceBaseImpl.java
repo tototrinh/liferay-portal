@@ -16,12 +16,15 @@ package com.liferay.data.engine.service.base;
 
 import com.liferay.data.engine.model.DEDataListView;
 import com.liferay.data.engine.service.DEDataListViewLocalService;
+import com.liferay.data.engine.service.DEDataListViewLocalServiceUtil;
 import com.liferay.data.engine.service.persistence.DEDataListViewPersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -42,16 +45,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -72,11 +81,15 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DEDataListViewLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.data.engine.service.DEDataListViewLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DEDataListViewLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DEDataListViewLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the de data list view to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataListViewLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param deDataListView the de data list view
 	 * @return the de data list view that was added
@@ -104,6 +117,10 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	/**
 	 * Deletes the de data list view with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataListViewLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataListViewId the primary key of the de data list view
 	 * @return the de data list view that was removed
 	 * @throws PortalException if a de data list view with the primary key could not be found
@@ -119,6 +136,10 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	/**
 	 * Deletes the de data list view from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataListViewLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataListView the de data list view
 	 * @return the de data list view that was removed
 	 */
@@ -126,6 +147,18 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	@Override
 	public DEDataListView deleteDEDataListView(DEDataListView deDataListView) {
 		return deDataListViewPersistence.remove(deDataListView);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return deDataListViewPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -359,6 +392,7 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -375,6 +409,11 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 
 		return deDataListViewLocalService.deleteDEDataListView(
 			(DEDataListView)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<DEDataListView> getBasePersistence() {
+		return deDataListViewPersistence;
 	}
 
 	/**
@@ -465,6 +504,10 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 	/**
 	 * Updates the de data list view in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataListViewLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataListView the de data list view
 	 * @return the de data list view that was updated
 	 */
@@ -474,17 +517,24 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 		return deDataListViewPersistence.update(deDataListView);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			DEDataListViewLocalService.class, IdentifiableOSGiService.class,
-			PersistedModelLocalService.class
+			CTService.class, PersistedModelLocalService.class
 		};
 	}
 
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		deDataListViewLocalService = (DEDataListViewLocalService)aopProxy;
+
+		_setLocalServiceUtilService(deDataListViewLocalService);
 	}
 
 	/**
@@ -497,8 +547,23 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 		return DEDataListViewLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DEDataListView> getCTPersistence() {
+		return deDataListViewPersistence;
+	}
+
+	@Override
+	public Class<DEDataListView> getModelClass() {
 		return DEDataListView.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DEDataListView>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(deDataListViewPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -526,6 +591,22 @@ public abstract class DEDataListViewLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		DEDataListViewLocalService deDataListViewLocalService) {
+
+		try {
+			Field field = DEDataListViewLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, deDataListViewLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

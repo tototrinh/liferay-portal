@@ -20,12 +20,14 @@ import com.liferay.exportimport.staged.model.repository.StagedModelRepositoryReg
 import com.liferay.exportimport.test.util.lar.BaseStagedModelDataHandlerTestCase;
 import com.liferay.exportimport.test.util.model.DummyFolder;
 import com.liferay.exportimport.test.util.model.util.DummyFolderTestUtil;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.PersistedModel;
 import com.liferay.portal.kernel.model.StagedModel;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistryUtil;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -70,6 +72,21 @@ public class DummyFolderStagedModelDataHandlerTest
 						PersistedModel persistedModel)
 					throws PortalException {
 
+					return null;
+				}
+
+				@Override
+				public <T> T dslQuery(DSLQuery dslQuery) {
+					return null;
+				}
+
+				@Override
+				public int dslQueryCount(DSLQuery dslQuery) {
+					return 0;
+				}
+
+				@Override
+				public BasePersistence<?> getBasePersistence() {
 					return null;
 				}
 

@@ -40,7 +40,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + SiteNavigationAdminPortletKeys.SITE_NAVIGATION_ADMIN,
-		"mvc.command.name=/navigation_menu/edit_site_navigation_menu_item"
+		"mvc.command.name=/site_navigation_admin/edit_site_navigation_menu_item"
 	},
 	service = MVCActionCommand.class
 )
@@ -55,7 +55,7 @@ public class EditSiteNavigationMenuItemMVCActionCommand
 		long siteNavigationMenuItemId = ParamUtil.getLong(
 			actionRequest, "siteNavigationMenuItemId");
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			SiteNavigationMenuItemUtil.getSiteNavigationMenuItemProperties(
 				actionRequest, "TypeSettingsProperties--");
 
@@ -64,8 +64,8 @@ public class EditSiteNavigationMenuItemMVCActionCommand
 
 		try {
 			_siteNavigationMenuItemService.updateSiteNavigationMenuItem(
-				siteNavigationMenuItemId, typeSettingsProperties.toString(),
-				serviceContext);
+				siteNavigationMenuItemId,
+				typeSettingsUnicodeProperties.toString(), serviceContext);
 		}
 		catch (PortalException portalException) {
 			hideDefaultErrorMessage(actionRequest);

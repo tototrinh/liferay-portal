@@ -22,8 +22,8 @@ import com.liferay.oauth2.provider.model.OAuth2Authorization;
 import com.liferay.oauth2.provider.model.OAuth2ScopeGrant;
 import com.liferay.oauth2.provider.rest.spi.bearer.token.provider.BearerTokenProvider;
 import com.liferay.oauth2.provider.rest.spi.bearer.token.provider.BearerTokenProviderAccessor;
-import com.liferay.oauth2.provider.scope.liferay.OAuth2ProviderScopeLiferayConstants;
 import com.liferay.oauth2.provider.scope.liferay.ScopeLocator;
+import com.liferay.oauth2.provider.scope.liferay.constants.OAuth2ProviderScopeLiferayConstants;
 import com.liferay.oauth2.provider.scope.spi.scope.finder.ScopeFinder;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationLocalService;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalService;
@@ -105,11 +105,9 @@ public class OAuth2JSONWSAuthVerifier implements AuthVerifier {
 				_bearerTokenProviderAccessor.getBearerTokenProvider(
 					companyId, oAuth2Application.getClientId());
 
-			if (bearerTokenProvider == null) {
-				return authVerifierResult;
-			}
+			if ((bearerTokenProvider == null) ||
+				!bearerTokenProvider.isValid(accessToken)) {
 
-			if (!bearerTokenProvider.isValid(accessToken)) {
 				return authVerifierResult;
 			}
 

@@ -22,6 +22,18 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
  */
 public interface DataDefinitionContentType {
 
+	public default boolean allowEmptyDataDefinition() {
+		return false;
+	}
+
+	public default boolean allowInvalidAvailableLocalesForProperty() {
+		return false;
+	}
+
+	public default boolean allowReferencedDataDefinitionDeletion() {
+		return false;
+	}
+
 	public long getClassNameId();
 
 	public default String getContentType() {
@@ -53,6 +65,10 @@ public interface DataDefinitionContentType {
 
 		return permissionChecker.hasPermission(
 			groupId, getPortletResourceName(), groupId, actionId);
+	}
+
+	public default boolean isDataRecordCollectionPermissionCheckingEnabled() {
+		return false;
 	}
 
 }

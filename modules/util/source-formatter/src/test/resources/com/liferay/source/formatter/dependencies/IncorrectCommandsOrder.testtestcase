@@ -20,6 +20,7 @@ definition {
 	}
 
 	@description = "This is the description for TestC."
+
 	@ignore = "true"
 	@priority = "5"
 	test TestC{
@@ -28,6 +29,8 @@ definition {
 
 	test TestB {
 		property setup.wizard.enabled = "true";
+
+		CalendarNavigator.gotoConfiguration();
 	}
 
 	@description = "This is the description for TestA."

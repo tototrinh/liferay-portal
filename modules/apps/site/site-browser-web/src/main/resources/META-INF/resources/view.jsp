@@ -21,10 +21,10 @@
 />
 
 <clay:management-toolbar
-	displayContext="<%= new SiteBrowserManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteBrowserDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new SiteBrowserManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteBrowserDisplayContext) %>"
 />
 
-<aui:form action="<%= siteBrowserDisplayContext.getPortletURL() %>" cssClass="container-fluid-1280" method="post" name="selectGroupFm">
+<aui:form action="<%= siteBrowserDisplayContext.getPortletURL() %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="selectGroupFm">
 	<liferay-ui:search-container
 		searchContainer="<%= siteBrowserDisplayContext.getGroupSearch() %>"
 	>
@@ -38,13 +38,17 @@
 		>
 
 			<%
-			Map<String, Object> data = new HashMap<String, Object>();
-
-			data.put("entityid", group.getGroupId());
-			data.put("entityname", group.getDescriptiveName(locale));
-			data.put("grouptarget", siteBrowserDisplayContext.getTarget());
-			data.put("grouptype", LanguageUtil.get(request, group.getTypeLabel()));
-			data.put("url", group.getDisplayURL(themeDisplay));
+			Map<String, Object> data = HashMapBuilder.<String, Object>put(
+				"entityid", group.getGroupId()
+			).put(
+				"entityname", group.getDescriptiveName(locale)
+			).put(
+				"grouptarget", siteBrowserDisplayContext.getTarget()
+			).put(
+				"grouptype", LanguageUtil.get(request, group.getTypeLabel())
+			).put(
+				"url", group.getDisplayURL(themeDisplay)
+			).build();
 			%>
 
 			<c:choose>
@@ -75,11 +79,6 @@
 					</liferay-ui:search-container-column-text>
 				</c:when>
 				<c:when test='<%= Objects.equals(siteBrowserDisplayContext.getDisplayStyle(), "icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<clay:vertical-card
 							verticalCard="<%= new SiteVerticalCard(group, renderRequest, siteBrowserDisplayContext) %>"
@@ -117,19 +116,3 @@
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script>
-	var Util = Liferay.Util;
-
-	var openingLiferay = Util.getOpener().Liferay;
-
-	openingLiferay.fire('<portlet:namespace />enableRemovedSites', {
-		selectors: document.querySelectorAll('.selector-button:disabled')
-	});
-
-	Util.selectEntityHandler(
-		'#<portlet:namespace />selectGroupFm',
-		'<%= HtmlUtil.escapeJS(siteBrowserDisplayContext.getEventName()) %>',
-		<%= siteBrowserDisplayContext.getSelUser() != null %>
-	);
-</aui:script>

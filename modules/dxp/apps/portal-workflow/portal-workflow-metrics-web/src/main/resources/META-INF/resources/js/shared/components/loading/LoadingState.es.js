@@ -14,15 +14,13 @@ import React from 'react';
 const LoadingState = ({
 	className = 'border-1 pb-6 pt-6 sheet',
 	message,
-	messageClassName = ''
+	messageClassName = '',
 }) => (
-	<div className={className} data-testid="loadingState">
+	<div className={className}>
 		<span aria-hidden="true" className="loading-animation" />
+
 		{message && (
-			<span
-				className={`text-center text-truncate ${messageClassName}`}
-				data-testid="loadingStateMsg"
-			>
+			<span className={`text-center text-truncate ${messageClassName}`}>
 				{message}
 			</span>
 		)}

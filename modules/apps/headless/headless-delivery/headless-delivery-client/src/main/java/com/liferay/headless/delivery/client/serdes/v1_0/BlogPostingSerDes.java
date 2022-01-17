@@ -17,7 +17,8 @@ package com.liferay.headless.delivery.client.serdes.v1_0;
 import com.liferay.headless.delivery.client.dto.v1_0.BlogPosting;
 import com.liferay.headless.delivery.client.dto.v1_0.CustomField;
 import com.liferay.headless.delivery.client.dto.v1_0.RelatedContent;
-import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategory;
+import com.liferay.headless.delivery.client.dto.v1_0.RenderedContent;
+import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.delivery.client.json.BaseJSONParser;
 
 import java.text.DateFormat;
@@ -216,6 +217,20 @@ public class BlogPostingSerDes {
 			sb.append("\"");
 		}
 
+		if (blogPosting.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(blogPosting.getExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
 		if (blogPosting.getFriendlyUrlPath() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -318,6 +333,26 @@ public class BlogPostingSerDes {
 			sb.append("]");
 		}
 
+		if (blogPosting.getRenderedContents() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"renderedContents\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < blogPosting.getRenderedContents().length; i++) {
+				sb.append(String.valueOf(blogPosting.getRenderedContents()[i]));
+
+				if ((i + 1) < blogPosting.getRenderedContents().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (blogPosting.getSiteId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -328,22 +363,22 @@ public class BlogPostingSerDes {
 			sb.append(blogPosting.getSiteId());
 		}
 
-		if (blogPosting.getTaxonomyCategories() != null) {
+		if (blogPosting.getTaxonomyCategoryBriefs() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"taxonomyCategories\": ");
+			sb.append("\"taxonomyCategoryBriefs\": ");
 
 			sb.append("[");
 
-			for (int i = 0; i < blogPosting.getTaxonomyCategories().length;
+			for (int i = 0; i < blogPosting.getTaxonomyCategoryBriefs().length;
 				 i++) {
 
 				sb.append(
-					String.valueOf(blogPosting.getTaxonomyCategories()[i]));
+					String.valueOf(blogPosting.getTaxonomyCategoryBriefs()[i]));
 
-				if ((i + 1) < blogPosting.getTaxonomyCategories().length) {
+				if ((i + 1) < blogPosting.getTaxonomyCategoryBriefs().length) {
 					sb.append(", ");
 				}
 			}
@@ -457,17 +492,32 @@ public class BlogPostingSerDes {
 				"customFields", String.valueOf(blogPosting.getCustomFields()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(blogPosting.getDateCreated()));
+		if (blogPosting.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(blogPosting.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(blogPosting.getDateModified()));
+		if (blogPosting.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(blogPosting.getDateModified()));
+		}
 
-		map.put(
-			"datePublished",
-			liferayToJSONDateFormat.format(blogPosting.getDatePublished()));
+		if (blogPosting.getDatePublished() == null) {
+			map.put("datePublished", null);
+		}
+		else {
+			map.put(
+				"datePublished",
+				liferayToJSONDateFormat.format(blogPosting.getDatePublished()));
+		}
 
 		if (blogPosting.getDescription() == null) {
 			map.put("description", null);
@@ -484,6 +534,15 @@ public class BlogPostingSerDes {
 			map.put(
 				"encodingFormat",
 				String.valueOf(blogPosting.getEncodingFormat()));
+		}
+
+		if (blogPosting.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(blogPosting.getExternalReferenceCode()));
 		}
 
 		if (blogPosting.getFriendlyUrlPath() == null) {
@@ -541,6 +600,15 @@ public class BlogPostingSerDes {
 				String.valueOf(blogPosting.getRelatedContents()));
 		}
 
+		if (blogPosting.getRenderedContents() == null) {
+			map.put("renderedContents", null);
+		}
+		else {
+			map.put(
+				"renderedContents",
+				String.valueOf(blogPosting.getRenderedContents()));
+		}
+
 		if (blogPosting.getSiteId() == null) {
 			map.put("siteId", null);
 		}
@@ -548,13 +616,13 @@ public class BlogPostingSerDes {
 			map.put("siteId", String.valueOf(blogPosting.getSiteId()));
 		}
 
-		if (blogPosting.getTaxonomyCategories() == null) {
-			map.put("taxonomyCategories", null);
+		if (blogPosting.getTaxonomyCategoryBriefs() == null) {
+			map.put("taxonomyCategoryBriefs", null);
 		}
 		else {
 			map.put(
-				"taxonomyCategories",
-				String.valueOf(blogPosting.getTaxonomyCategories()));
+				"taxonomyCategoryBriefs",
+				String.valueOf(blogPosting.getTaxonomyCategoryBriefs()));
 		}
 
 		if (blogPosting.getTaxonomyCategoryIds() == null) {
@@ -667,6 +735,14 @@ public class BlogPostingSerDes {
 					blogPosting.setEncodingFormat((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					blogPosting.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "friendlyUrlPath")) {
 				if (jsonParserFieldValue != null) {
 					blogPosting.setFriendlyUrlPath(
@@ -714,6 +790,19 @@ public class BlogPostingSerDes {
 						));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "renderedContents")) {
+				if (jsonParserFieldValue != null) {
+					blogPosting.setRenderedContents(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> RenderedContentSerDes.toDTO(
+								(String)object)
+						).toArray(
+							size -> new RenderedContent[size]
+						));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "siteId")) {
 				if (jsonParserFieldValue != null) {
 					blogPosting.setSiteId(
@@ -721,17 +810,17 @@ public class BlogPostingSerDes {
 				}
 			}
 			else if (Objects.equals(
-						jsonParserFieldName, "taxonomyCategories")) {
+						jsonParserFieldName, "taxonomyCategoryBriefs")) {
 
 				if (jsonParserFieldValue != null) {
-					blogPosting.setTaxonomyCategories(
+					blogPosting.setTaxonomyCategoryBriefs(
 						Stream.of(
 							toStrings((Object[])jsonParserFieldValue)
 						).map(
-							object -> TaxonomyCategorySerDes.toDTO(
+							object -> TaxonomyCategoryBriefSerDes.toDTO(
 								(String)object)
 						).toArray(
-							size -> new TaxonomyCategory[size]
+							size -> new TaxonomyCategoryBrief[size]
 						));
 				}
 			}
@@ -749,10 +838,6 @@ public class BlogPostingSerDes {
 						BlogPosting.ViewableBy.create(
 							(String)jsonParserFieldValue));
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -782,7 +867,7 @@ public class BlogPostingSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -808,14 +893,17 @@ public class BlogPostingSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -40,7 +40,7 @@ import org.junit.Assert;
  */
 public class FileServerTestUtil {
 
-	public static void assertFileEquals(final Path file1, Path file2)
+	public static void assertFileEquals(Path file1, Path file2)
 		throws IOException {
 
 		Files.walkFileTree(file1, new FolderCompareFileVisitor(file1, file2));
@@ -172,7 +172,7 @@ public class FileServerTestUtil {
 
 	public static ByteBuf wrapSecondHalf(byte[] data) {
 		return Unpooled.wrappedBuffer(
-			data, data.length / 2, data.length - data.length / 2);
+			data, data.length / 2, data.length - (data.length / 2));
 	}
 
 	protected static final Set<Path> paths = new HashSet<>();

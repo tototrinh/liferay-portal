@@ -12,48 +12,70 @@
  * details.
  */
 
+import ClayIcon from '@clayui/icon';
+import classNames from 'classnames';
+import {useQuery} from 'graphql-hooks';
 import React, {useContext, useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../AppContext.es';
-import {getRelatedThreads} from '../utils/client.es';
+import {getRelatedThreadsQuery} from '../utils/client.es';
 import {dateToInternationalHuman, normalizeRating} from '../utils/utils.es';
+import Link from './Link.es';
 import QuestionBadge from './QuestionsBadge.es';
+import SectionLabel from './SectionLabel.es';
 import UserIcon from './UserIcon.es';
 
-export default ({question}) => {
-	const [relatedQuestions, setRelatedQuestions] = useState([]);
-	const context = useContext(AppContext);
+export default withRouter(
+	({
+		match: {
+			params: {sectionTitle},
+		},
+		question,
+	}) => {
+		const context = useContext(AppContext);
 
-	useEffect(() => {
-		if (question) {
-			getRelatedThreads(question.headline, context.siteKey).then(data =>
-				setRelatedQuestions(
-					data.items.filter(
-						otherQuestion => otherQuestion.id !== question.id
-					)
-				)
+		const [relatedQuestions, setRelatedQuestions] = useState([]);
+
+		const {data} = useQuery(getRelatedThreadsQuery, {
+			variables: {
+				search: question && question.headline,
+				siteKey: context.siteKey,
+			},
+		});
+
+		useEffect(() => {
+			setRelatedQuestions(
+				data?.messageBoardThreads.items.filter(
+					(otherQuestion) => otherQuestion.id !== question.id
+				) ?? []
 			);
-		}
-	}, [question, context.siteKey]);
+		}, [data, question.id]);
 
-	return (
-		<>
-			<h3>Related Questions</h3>
-			<hr />
+		return (
+			<>
+				<h2 className="c-mt-5 font-weight-light h3 text-secondary">
+					{Liferay.Language.get('related-questions')}
+				</h2>
 
-			{!!relatedQuestions.length && (
-				<div className="autofit-padded autofit-row">
-					{relatedQuestions.map(relatedQuestion => (
-						<div className="autofit-col" key={relatedQuestion.id}>
-							<div className="autofit-row">
-								<div className="autofit-col autofit-col-expand">
-									{relatedQuestion.messageBoardSection &&
-										relatedQuestion.messageBoardSection
-											.title}
-								</div>
-								<div>
+				<hr />
+
+				{relatedQuestions.length ? (
+					<div className="questions-container row">
+						{relatedQuestions.map((relatedQuestion) => (
+							<div
+								className="col-lg-3 col-md-4 col-sm-6 p-3 position-relative"
+								key={relatedQuestion.id}
+							>
+								<div className="align-items-center d-flex justify-content-between stretched-link-layer">
+									<SectionLabel
+										section={
+											relatedQuestion.messageBoardSection
+										}
+									/>
+
 									<QuestionBadge
+										className="text-secondary"
 										symbol={
 											normalizeRating(
 												question.aggregateRating
@@ -66,35 +88,82 @@ export default ({question}) => {
 										)}
 									/>
 								</div>
-							</div>
-							<h2 className="question-headline">
-								<Link to={'/questions/' + relatedQuestion.id}>
-									{relatedQuestion.headline}
-								</Link>
-							</h2>
-							<div>
-								<UserIcon
-									fullName={relatedQuestion.creator.name}
-									portraitURL={relatedQuestion.creator.image}
-									size="sm"
-									userId={String(relatedQuestion.creator.id)}
-								/>
-								<span>
-									<strong>
-										{relatedQuestion.creator.name}
-									</strong>
-								</span>
-								<span>
-									{' - ' +
-										dateToInternationalHuman(
-											relatedQuestion.dateModified
+
+								<Link
+									className="c-mt-2 d-block questions-title stretched-link text-reset"
+									to={`/questions/${sectionTitle}/${relatedQuestion.friendlyUrlPath}`}
+								>
+									<h3
+										className={classNames(
+											'h2',
+											'stretched-link-layer',
+											{
+												'question-seen':
+													relatedQuestion.seen,
+											}
 										)}
-								</span>
+									>
+										{relatedQuestion.headline}
+
+										{!!relatedQuestion.locked && (
+											<span className="c-ml-2">
+												<ClayIcon symbol="lock" />
+											</span>
+										)}
+									</h3>
+								</Link>
+
+								<div className="c-mt-3 small stretched-link-layer">
+									<UserIcon
+										fullName={
+											relatedQuestion.creator
+												? relatedQuestion.creator.name
+												: ''
+										}
+										portraitURL={
+											relatedQuestion.creator
+												? relatedQuestion.creator.image
+												: ''
+										}
+										size="sm"
+										userId={
+											relatedQuestion.creator
+												? String(
+														relatedQuestion.creator
+															.id
+												  )
+												: '0'
+										}
+									/>
+
+									<span className="c-ml-2 font-weight-bold">
+										{relatedQuestion.creator
+											? relatedQuestion.creator.name
+											: Liferay.Language.get(
+													'anonymous-user-configuration-name'
+											  )}
+									</span>
+
+									<span className="text-secondary">
+										{' - ' +
+											dateToInternationalHuman(
+												relatedQuestion.dateModified
+											)}
+									</span>
+								</div>
 							</div>
-						</div>
-					))}
-				</div>
-			)}
-		</>
-	);
-};
+						))}
+					</div>
+				) : (
+					<div className="d-flex justify-content-center">
+						<h2 className="c-my-5 font-weight-light h3 text-secondary">
+							{Liferay.Language.get(
+								'no-related-questions-were-found'
+							)}
+						</h2>
+					</div>
+				)}
+			</>
+		);
+	}
+);

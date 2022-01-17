@@ -18,6 +18,7 @@
 
 <%
 Group group = layoutsAdminDisplayContext.getGroup();
+
 Layout selLayout = layoutsAdminDisplayContext.getSelLayout();
 
 LayoutType selLayoutType = selLayout.getLayoutType();
@@ -39,6 +40,7 @@ String friendlyURLBase = StringPool.BLANK;
 %>
 
 <c:if test="<%= !group.isLayoutPrototype() && selLayoutType.isURLFriendliable() && !layoutsAdminDisplayContext.isDraft() && !selLayout.isSystem() %>">
+	<liferay-ui:error exception="<%= DuplicateFriendlyURLEntryException.class %>" message="the-friendly-url-is-already-in-use.-please-enter-a-unique-friendly-url" />
 
 	<%
 	friendlyURLBase = layoutsAdminDisplayContext.getFriendlyURLBase();
@@ -80,25 +82,21 @@ String friendlyURLBase = StringPool.BLANK;
 <c:choose>
 	<c:when test="<%= !group.isLayoutPrototype() %>">
 		<c:if test="<%= !layoutsAdminDisplayContext.isDraft() && !selLayout.isSystem() %>">
-			<aui:input name="name" />
+			<aui:input ignoreRequestValue="<%= SessionErrors.isEmpty(liferayPortletRequest) %>" name="name" />
 
 			<div class="form-group">
-				<aui:input helpMessage="hidden-from-navigation-menu-widget-help-message" label="hidden-from-navigation-menu-widget" name="hidden" type="toggle-switch" value="<%= selLayout.isHidden() %>" />
+				<aui:input helpMessage="hidden-from-navigation-menu-widget-help-message" inlineLabel="right" label="hidden-from-navigation-menu-widget" labelCssClass="simple-toggle-switch" name="hidden" type="toggle-switch" value="<%= selLayout.isHidden() %>" />
 			</div>
 		</c:if>
 
 		<c:choose>
 			<c:when test="<%= selLayoutType.isURLFriendliable() && !layoutsAdminDisplayContext.isDraft() && !selLayout.isSystem() %>">
-				<div class="form-group friendly-url">
-					<label for="<portlet:namespace />friendlyURL"><liferay-ui:message key="friendly-url" /> <liferay-ui:icon-help message='<%= LanguageUtil.format(request, "for-example-x", "<em>/news</em>", false) %>' /></label>
-
-					<liferay-ui:input-localized
-						defaultLanguageId="<%= LocaleUtil.toLanguageId(themeDisplay.getSiteDefaultLocale()) %>"
-						inputAddon="<%= friendlyURLBase.toString() %>"
-						name="friendlyURL"
-						xml="<%= HttpUtil.decodeURL(selLayout.getFriendlyURLsXML()) %>"
-					/>
-				</div>
+				<liferay-friendly-url:input
+					className="<%= Layout.class.getName() %>"
+					classPK="<%= selLayout.getPlid() %>"
+					inputAddon="<%= friendlyURLBase %>"
+					name="friendlyURL"
+				/>
 			</c:when>
 			<c:otherwise>
 				<aui:input name="friendlyURL" type="hidden" value="<%= (selLayout != null) ? HttpUtil.decodeURL(selLayout.getFriendlyURL()) : StringPool.BLANK %>" />
@@ -109,12 +107,11 @@ String friendlyURLBase = StringPool.BLANK;
 
 			<%
 			LayoutSetPrototype layoutSetPrototype = LayoutSetPrototypeLocalServiceUtil.getLayoutSetPrototype(group.getClassPK());
-
-			boolean layoutSetPrototypeUpdateable = GetterUtil.getBoolean(layoutSetPrototype.getSettingsProperty("layoutsUpdateable"), true);
-			boolean layoutUpdateable = GetterUtil.getBoolean(selLayoutType.getTypeSettingsProperty("layoutUpdateable"), true);
 			%>
 
-			<aui:input disabled="<%= !layoutSetPrototypeUpdateable %>" helpMessage="allow-site-administrators-to-modify-this-page-for-their-site-help" label="allow-site-administrators-to-modify-this-page-for-their-site" name="TypeSettingsProperties--layoutUpdateable--" type="checkbox" value="<%= layoutUpdateable %>" />
+			<c:if test='<%= GetterUtil.getBoolean(layoutSetPrototype.getSettingsProperty("layoutsUpdateable"), true) %>'>
+				<aui:input helpMessage="allow-site-administrators-to-modify-this-page-for-their-site-help" label="allow-site-administrators-to-modify-this-page-for-their-site" name="TypeSettingsProperties--layoutUpdateable--" type="checkbox" value='<%= GetterUtil.getBoolean(selLayoutType.getTypeSettingsProperty("layoutUpdateable"), true) %>' />
+			</c:if>
 		</c:if>
 	</c:when>
 	<c:otherwise>
@@ -132,7 +129,7 @@ String friendlyURLBase = StringPool.BLANK;
 	<aui:input name="applyLayoutPrototype" type="hidden" value="<%= false %>" />
 	<aui:input name="layoutPrototypeUuid" type="hidden" value="<%= selLayout.getLayoutPrototypeUuid() %>" />
 
-	<aui:input helpMessage='<%= LanguageUtil.format(request, "if-enabled-this-page-will-inherit-changes-made-to-the-x-page-template", HtmlUtil.escape(layoutPrototype.getName(user.getLocale())), false) %>' label="inherit-changes" name="layoutPrototypeLinkEnabled" type="toggle-switch" value="<%= selLayout.isLayoutPrototypeLinkEnabled() %>" />
+	<aui:input helpMessage='<%= LanguageUtil.format(request, "if-enabled-this-page-will-inherit-changes-made-to-the-x-page-template", HtmlUtil.escape(layoutPrototype.getName(user.getLocale())), false) %>' inlineLabel="right" label="inherit-changes" labelCssClass="simple-toggle-switch" name="layoutPrototypeLinkEnabled" type="toggle-switch" value="<%= selLayout.isLayoutPrototypeLinkEnabled() %>" />
 
 	<div class="alert alert-warning layout-prototype-info-message <%= selLayout.isLayoutPrototypeLinkActive() ? StringPool.BLANK : "hide" %>">
 		<liferay-ui:message arguments='<%= new String[] {"inherit-changes", "general"} %>' key="some-page-settings-are-unavailable-because-x-is-enabled" translateArguments="<%= true %>" />
@@ -158,14 +155,14 @@ String friendlyURLBase = StringPool.BLANK;
 </div>
 
 <c:if test="<%= !selLayout.isTypeAssetDisplay() %>">
-	<div class="sheet-section">
+	<clay:sheet-section>
 		<h3 class="sheet-subtitle"><liferay-ui:message key="categorization" /></h3>
 
 		<liferay-util:include page="/layout/categorization.jsp" servletContext="<%= application %>" />
-	</div>
+	</clay:sheet-section>
 </c:if>
 
-<aui:script require="metal-dom/src/dom as dom">
+<aui:script sandbox="<%= true %>">
 	Liferay.Util.toggleBoxes(
 		'<portlet:namespace />layoutPrototypeLinkEnabled',
 		'<portlet:namespace />layoutPrototypeMergeAlert'
@@ -181,7 +178,7 @@ String friendlyURLBase = StringPool.BLANK;
 	);
 
 	if (layoutPrototypeLinkEnabled) {
-		layoutPrototypeLinkEnabled.addEventListener('change', function(event) {
+		layoutPrototypeLinkEnabled.addEventListener('change', (event) => {
 			var layoutPrototypeLinkChecked = event.currentTarget.checked;
 
 			var layoutPrototypeInfoMessage = document.querySelector(
@@ -209,10 +206,7 @@ String friendlyURLBase = StringPool.BLANK;
 				'#<portlet:namespace />editLayoutFm .propagatable-field'
 			);
 
-			Array.prototype.forEach.call(propagatableFields, function(
-				field,
-				index
-			) {
+			Array.prototype.forEach.call(propagatableFields, (field, index) => {
 				Liferay.Util.toggleDisabled(field, layoutPrototypeLinkChecked);
 			});
 		});

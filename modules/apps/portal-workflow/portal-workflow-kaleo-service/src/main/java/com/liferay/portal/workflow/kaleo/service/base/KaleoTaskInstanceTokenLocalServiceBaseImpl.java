@@ -14,6 +14,7 @@
 
 package com.liferay.portal.workflow.kaleo.service.base;
 
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -33,11 +34,13 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.workflow.kaleo.model.KaleoTaskInstanceToken;
 import com.liferay.portal.workflow.kaleo.service.KaleoTaskInstanceTokenLocalService;
+import com.liferay.portal.workflow.kaleo.service.KaleoTaskInstanceTokenLocalServiceUtil;
 import com.liferay.portal.workflow.kaleo.service.persistence.KaleoActionPersistence;
 import com.liferay.portal.workflow.kaleo.service.persistence.KaleoConditionPersistence;
 import com.liferay.portal.workflow.kaleo.service.persistence.KaleoDefinitionPersistence;
@@ -61,10 +64,13 @@ import com.liferay.portal.workflow.kaleo.service.persistence.KaleoTransitionPers
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -86,11 +92,15 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>KaleoTaskInstanceTokenLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.workflow.kaleo.service.KaleoTaskInstanceTokenLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>KaleoTaskInstanceTokenLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>KaleoTaskInstanceTokenLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the kaleo task instance token to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoTaskInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param kaleoTaskInstanceToken the kaleo task instance token
 	 * @return the kaleo task instance token that was added
@@ -123,6 +133,10 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	/**
 	 * Deletes the kaleo task instance token with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoTaskInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoTaskInstanceTokenId the primary key of the kaleo task instance token
 	 * @return the kaleo task instance token that was removed
 	 * @throws PortalException if a kaleo task instance token with the primary key could not be found
@@ -140,6 +154,10 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	/**
 	 * Deletes the kaleo task instance token from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoTaskInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoTaskInstanceToken the kaleo task instance token
 	 * @return the kaleo task instance token that was removed
 	 */
@@ -149,6 +167,18 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 		KaleoTaskInstanceToken kaleoTaskInstanceToken) {
 
 		return kaleoTaskInstanceTokenPersistence.remove(kaleoTaskInstanceToken);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return kaleoTaskInstanceTokenPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -314,6 +344,7 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -330,6 +361,11 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 
 		return kaleoTaskInstanceTokenLocalService.deleteKaleoTaskInstanceToken(
 			(KaleoTaskInstanceToken)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<KaleoTaskInstanceToken> getBasePersistence() {
+		return kaleoTaskInstanceTokenPersistence;
 	}
 
 	/**
@@ -374,6 +410,10 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	/**
 	 * Updates the kaleo task instance token in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect KaleoTaskInstanceTokenLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param kaleoTaskInstanceToken the kaleo task instance token
 	 * @return the kaleo task instance token that was updated
 	 */
@@ -383,6 +423,11 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 		KaleoTaskInstanceToken kaleoTaskInstanceToken) {
 
 		return kaleoTaskInstanceTokenPersistence.update(kaleoTaskInstanceToken);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
 	}
 
 	@Override
@@ -397,6 +442,8 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		kaleoTaskInstanceTokenLocalService =
 			(KaleoTaskInstanceTokenLocalService)aopProxy;
+
+		_setLocalServiceUtilService(kaleoTaskInstanceTokenLocalService);
 	}
 
 	/**
@@ -439,6 +486,23 @@ public abstract class KaleoTaskInstanceTokenLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		KaleoTaskInstanceTokenLocalService kaleoTaskInstanceTokenLocalService) {
+
+		try {
+			Field field =
+				KaleoTaskInstanceTokenLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, kaleoTaskInstanceTokenLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

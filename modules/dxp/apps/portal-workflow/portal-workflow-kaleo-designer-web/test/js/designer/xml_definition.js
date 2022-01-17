@@ -13,29 +13,31 @@ const fs = require('fs');
 const path = require('path');
 
 describe('liferay-kaleo-designer-xml-definition', () => {
-	beforeEach(done => {
+	beforeEach((done) => {
 		const add = AUI.add;
 
-		AUI.add = function(name, callback, version, metadata) {
+		AUI.add = function (name, callback, version, metadata) {
 			add.call(AUI, name, callback, version, {
 				...metadata,
 				requires: metadata.requires.filter(
-					name => name !== 'aui-component'
-				)
+					(name) => name !== 'aui-component'
+				),
 			});
 		};
 
-		require('../../../src/main/resources/META-INF/resources/designer/js/xml_definition');
+		require('../../../src/main/resources/META-INF/resources/designer/js/legacy/xml_definition');
 
 		AUI.add = add;
 
-		require('../../../src/main/resources/META-INF/resources/designer/js/utils');
+		require('../../../src/main/resources/META-INF/resources/designer/js/legacy/xml_util');
 
-		AUI().use(['liferay-kaleo-designer-utils'], A => {
+		AUI().use(['liferay-kaleo-designer-xml-util'], (A) => {
+
 			// Stub for "aui-component", which refuses to load in test env.
+
 			A.Component = {
 				create({ATTRS, prototype, ...properties}) {
-					const constructor = function(config) {
+					const constructor = function (config) {
 						this.initializer(config);
 					};
 
@@ -54,12 +56,12 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 										ATTRS[key].value = value;
 									}
 								);
-							}
+							},
 						}
 					);
 
 					return constructor;
-				}
+				},
 			};
 
 			AUI().use(['liferay-kaleo-designer-xml-definition'], () => {
@@ -70,10 +72,12 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 
 	describe('getDefinitionMetadata()', () => {
 		it('has a name', () => {
-			const definition = loadResource('metadata-only-definition.xml');
+			const definition = loadResource(
+				'metadata-only-workflow-definition.xml'
+			);
 
 			const xmlDefinition = new Liferay.KaleoDesignerXMLDefinition({
-				value: definition
+				value: definition,
 			});
 
 			const metadata = xmlDefinition.getDefinitionMetadata();
@@ -87,11 +91,11 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 	describe('forEachField()', () => {
 		it('retrieves "receptionType" attribute value', () => {
 			const definition = loadResource(
-				'recipients-with-reception-type-bcc-definition.xml'
+				'recipients-with-reception-type-bcc-workflow-definition.xml'
 			);
 
 			const xmlDefinition = new Liferay.KaleoDesignerXMLDefinition({
-				value: definition
+				value: definition,
 			});
 
 			// Jest's jsdom's XMLDocument evaluate() implementation
@@ -103,6 +107,7 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 			//
 			//      https://github.com/yui/yui3/blob/25264e3629/src/dataschema/js/dataschema-xml.js#L182
 			//
+
 			xmlDefinition.definitionDoc.evaluate = undefined;
 
 			xmlDefinition.forEachField((_tagName, fieldData) => {
@@ -118,11 +123,11 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 
 		it('does not have a "receptionType" if not present in definition', () => {
 			const definition = loadResource(
-				'recipients-with-no-reception-type-definition.xml'
+				'recipients-with-no-reception-type-workflow-definition.xml'
 			);
 
 			const xmlDefinition = new Liferay.KaleoDesignerXMLDefinition({
-				value: definition
+				value: definition,
 			});
 
 			xmlDefinition.forEachField((_tagName, fieldData) => {
@@ -138,11 +143,11 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 
 		it('has "users" as recipient', () => {
 			const definition = loadResource(
-				'recipients-with-user-definition.xml'
+				'recipients-with-user-workflow-definition.xml'
 			);
 
 			const xmlDefinition = new Liferay.KaleoDesignerXMLDefinition({
-				value: definition
+				value: definition,
 			});
 
 			xmlDefinition.forEachField((_tagName, fieldData) => {
@@ -158,11 +163,11 @@ describe('liferay-kaleo-designer-xml-definition', () => {
 
 		it('has "assignees" as recipient', () => {
 			const definition = loadResource(
-				'recipients-with-assignees-definition.xml'
+				'recipients-with-assignees-workflow-definition.xml'
 			);
 
 			const xmlDefinition = new Liferay.KaleoDesignerXMLDefinition({
-				value: definition
+				value: definition,
 			});
 
 			xmlDefinition.forEachField((_tagName, fieldData) => {

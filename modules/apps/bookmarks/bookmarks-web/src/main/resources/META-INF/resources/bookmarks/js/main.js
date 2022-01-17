@@ -14,26 +14,26 @@
 
 AUI.add(
 	'liferay-bookmarks',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var Bookmarks = A.Component.create({
 			ATTRS: {
 				editEntryUrl: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				form: {
-					validator: Lang.isObject
+					validator: Lang.isObject,
 				},
 
 				moveEntryUrl: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				searchContainerId: {
-					validator: Lang.isString
-				}
+					validator: Lang.isString,
+				},
 			},
 
 			AUGMENTS: [Liferay.PortletBase],
@@ -43,14 +43,14 @@ AUI.add(
 			NAME: 'bookmarks',
 
 			prototype: {
-				_moveToFolder(obj) {
+				_moveToFolder(object) {
 					var instance = this;
 
 					var namespace = instance.NS;
 
-					var dropTarget = obj.targetItem;
+					var dropTarget = object.targetItem;
 
-					var selectedItems = obj.selectedItems;
+					var selectedItems = object.selectedItems;
 
 					var folderId = dropTarget.attr('data-folder-id');
 
@@ -126,14 +126,14 @@ AUI.add(
 					);
 
 					instance._searchContainer = searchContainer;
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Portlet.Bookmarks = Bookmarks;
 	},
 	'',
 	{
-		requires: ['liferay-portlet-base']
+		requires: ['liferay-portlet-base'],
 	}
 );

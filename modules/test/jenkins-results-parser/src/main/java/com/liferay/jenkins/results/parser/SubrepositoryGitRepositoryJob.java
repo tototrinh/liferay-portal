@@ -14,41 +14,66 @@
 
 package com.liferay.jenkins.results.parser;
 
+import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
+import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
+import com.liferay.jenkins.results.parser.test.clazz.group.SegmentTestClassGroup;
+
 import java.io.File;
 import java.io.IOException;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Michael Hashimoto
  */
 public class SubrepositoryGitRepositoryJob
-	extends GitRepositoryJob implements SubrepositoryTestClassJob {
+	extends GitRepositoryJob
+	implements BatchDependentJob, SubrepositoryTestClassJob {
 
 	@Override
-	public Set<String> getBatchNames() {
-		Properties jobProperties = getJobProperties();
+	public List<AxisTestClassGroup> getDependentAxisTestClassGroups() {
+		List<AxisTestClassGroup> axisTestClassGroups = new ArrayList<>();
 
-		String testBatchNames = JenkinsResultsParserUtil.getProperty(
-			jobProperties, "test.batch.names[" + getBranchName() + "]");
+		for (BatchTestClassGroup batchTestClassGroup :
+				getDependentBatchTestClassGroups()) {
 
-		if (testBatchNames == null) {
-			testBatchNames = JenkinsResultsParserUtil.getProperty(
-				jobProperties, "test.batch.names");
+			axisTestClassGroups.addAll(
+				batchTestClassGroup.getAxisTestClassGroups());
 		}
 
-		return getSetFromString(testBatchNames);
+		return axisTestClassGroups;
+	}
+
+	@Override
+	public Set<String> getDependentBatchNames() {
+		return getFilteredBatchNames(getRawDependentBatchNames());
+	}
+
+	@Override
+	public List<BatchTestClassGroup> getDependentBatchTestClassGroups() {
+		return getBatchTestClassGroups(getRawDependentBatchNames());
+	}
+
+	@Override
+	public Set<String> getDependentSegmentNames() {
+		return getFilteredSegmentNames(getRawDependentBatchNames());
+	}
+
+	@Override
+	public List<SegmentTestClassGroup> getDependentSegmentTestClassGroups() {
+		return getSegmentTestClassGroups(getRawDependentBatchNames());
 	}
 
 	@Override
 	public Set<String> getDistTypes() {
-		String distTypes = JenkinsResultsParserUtil.getProperty(
-			getJobProperties(), "subrepo.dist.app.servers");
+		String testBatchDistAppServers = JenkinsResultsParserUtil.getProperty(
+			getJobProperties(), "test.batch.dist.app.servers");
 
-		return new TreeSet<>(Arrays.asList(distTypes.split(",")));
+		return getSetFromString(testBatchDistAppServers);
 	}
 
 	@Override
@@ -92,8 +117,9 @@ public class SubrepositoryGitRepositoryJob
 		return (SubrepositoryGitWorkingDirectory)gitWorkingDirectory;
 	}
 
-	public boolean getTestRunValidation() {
-		return testRunValidation;
+	@Override
+	public boolean isValidationRequired() {
+		return validationRequired;
 	}
 
 	@Override
@@ -110,9 +136,9 @@ public class SubrepositoryGitRepositoryJob
 	}
 
 	protected SubrepositoryGitRepositoryJob(
-		String jobName, String repositoryName) {
+		String jobName, BuildProfile buildProfile, String repositoryName) {
 
-		super(jobName);
+		super(jobName, buildProfile);
 
 		gitWorkingDirectory =
 			GitWorkingDirectoryFactory.newSubrepositoryGitWorkingDirectory(
@@ -121,6 +147,14 @@ public class SubrepositoryGitRepositoryJob
 		setGitRepositoryDir(gitWorkingDirectory.getWorkingDirectory());
 
 		checkGitRepositoryDir();
+
+		PortalGitWorkingDirectory portalGitWorkingDirectory =
+			getPortalGitWorkingDirectory();
+
+		jobPropertiesFiles.add(
+			new File(
+				portalGitWorkingDirectory.getWorkingDirectory(),
+				"test.properties"));
 
 		Properties buildProperties = null;
 
@@ -144,7 +178,26 @@ public class SubrepositoryGitRepositoryJob
 		readJobProperties();
 	}
 
+	@Override
+	protected Set<String> getRawBatchNames() {
+		String batchNames = JenkinsResultsParserUtil.getProperty(
+			getJobProperties(), "test.batch.names", getBranchName());
+
+		return getSetFromString(batchNames);
+	}
+
+	protected Set<String> getRawDependentBatchNames() {
+		String dependentBatchNames = JenkinsResultsParserUtil.getProperty(
+			getJobProperties(), "test.batch.names.smoke", getBranchName());
+
+		if (JenkinsResultsParserUtil.isNullOrEmpty(dependentBatchNames)) {
+			return new HashSet<>();
+		}
+
+		return getSetFromString(dependentBatchNames);
+	}
+
 	protected PortalGitWorkingDirectory portalGitWorkingDirectory;
-	protected boolean testRunValidation;
+	protected boolean validationRequired;
 
 }

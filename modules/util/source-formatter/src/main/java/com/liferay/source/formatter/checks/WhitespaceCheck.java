@@ -182,6 +182,8 @@ public class WhitespaceCheck extends BaseFileCheck {
 
 		if (javaSource) {
 			linePart = formatIncorrectSyntax(linePart, " ...", "...", false);
+			linePart = formatIncorrectSyntax(linePart, " .", ".", false);
+			linePart = formatIncorrectSyntax(linePart, ". ", ".", false);
 			linePart = formatIncorrectSyntax(linePart, " [", "[", false);
 			linePart = formatIncorrectSyntax(linePart, "{ ", "{", false);
 			linePart = formatIncorrectSyntax(linePart, " }", "}", false);
@@ -343,7 +345,7 @@ public class WhitespaceCheck extends BaseFileCheck {
 			return line;
 		}
 
-		while (line.matches("^\t*" + StringPool.FOUR_SPACES + ".*")) {
+		while (line.matches("^\t*    .*")) {
 			line = StringUtil.replaceFirst(
 				line, StringPool.FOUR_SPACES, StringPool.TAB);
 		}

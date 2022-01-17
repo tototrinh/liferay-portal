@@ -15,20 +15,20 @@
 /**
  * The Store Utility
  *
- * @deprecated As of Athanasius(7.3.x), replaced by Liferay.Util.Session
+ * @deprecated As of Athanasius (7.3.x), replaced by Liferay.Util.Session
  * @module liferay-store
  */
 
 AUI.add(
 	'liferay-store',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var isObject = Lang.isObject;
 
 		var TOKEN_SERIALIZE = 'serialize://';
 
-		var Store = function(key, value) {
+		var Store = function (key, value) {
 			var method;
 
 			if (Lang.isFunction(value)) {
@@ -44,7 +44,7 @@ AUI.add(
 				if (isObject(key)) {
 					method = 'setAll';
 				}
-				else if (arguments.length == 1) {
+				else if (arguments.length === 1) {
 					method = null;
 				}
 			}
@@ -62,11 +62,11 @@ AUI.add(
 					callback,
 					data: {
 						cmd,
-						key
-					}
+						key,
+					},
 				};
 
-				if (cmd == 'getAll') {
+				if (cmd === 'getAll') {
 					config.dataType = 'json';
 				}
 
@@ -84,9 +84,9 @@ AUI.add(
 
 				const body = new URLSearchParams();
 
-				Object.keys(config.data).forEach(key => {
+				Object.keys(config.data).forEach((key) => {
 					if (Array.isArray(config.data[key])) {
-						config.data[key].forEach(value => {
+						config.data[key].forEach((value) => {
 							body.append(key, value);
 						});
 					}
@@ -99,10 +99,10 @@ AUI.add(
 					themeDisplay.getPathMain() + '/portal/session_click',
 					{
 						body,
-						method: 'POST'
+						method: 'POST',
 					}
 				)
-					.then(response => {
+					.then((response) => {
 						if (config.dataType === 'json') {
 							return response.json();
 						}
@@ -110,7 +110,7 @@ AUI.add(
 							return response.text();
 						}
 					})
-					.then(data => {
+					.then((data) => {
 						if (config.dataType === 'json') {
 							if (
 								Lang.isString(data) &&
@@ -121,11 +121,11 @@ AUI.add(
 										data.substring(TOKEN_SERIALIZE.length)
 									);
 								}
-								catch (e) {}
+								catch (error) {}
 							}
 						}
 
-						if (Liferay.Util.isFunction(config.callback)) {
+						if (typeof config.callback === 'function') {
 							config.callback(data);
 						}
 					});
@@ -135,7 +135,7 @@ AUI.add(
 				var instance = this;
 
 				instance._ioRequest({
-					data
+					data,
 				});
 			},
 
@@ -154,22 +154,22 @@ AUI.add(
 			set(key, value) {
 				var instance = this;
 
-				var obj = {};
+				var object = {};
 
 				if (isObject(value)) {
 					value = TOKEN_SERIALIZE + JSON.stringify(value);
 				}
 
-				obj[key] = value;
+				object[key] = value;
 
-				instance._setValues(obj);
+				instance._setValues(object);
 			},
 
-			setAll(obj) {
+			setAll(object) {
 				var instance = this;
 
-				instance._setValues(obj);
-			}
+				instance._setValues(object);
+			},
 		});
 
 		Liferay.Store = Store;

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.tools.service.builder.test.service.base;
 
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -33,6 +34,7 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.version.VersionService;
 import com.liferay.portal.kernel.service.version.VersionServiceListener;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -44,6 +46,7 @@ import com.liferay.portal.tools.service.builder.test.model.LVEntryLocalization;
 import com.liferay.portal.tools.service.builder.test.model.LVEntryLocalizationVersion;
 import com.liferay.portal.tools.service.builder.test.model.LVEntryVersion;
 import com.liferay.portal.tools.service.builder.test.service.LVEntryLocalService;
+import com.liferay.portal.tools.service.builder.test.service.LVEntryLocalServiceUtil;
 import com.liferay.portal.tools.service.builder.test.service.persistence.BigDecimalEntryPersistence;
 import com.liferay.portal.tools.service.builder.test.service.persistence.LVEntryLocalizationPersistence;
 import com.liferay.portal.tools.service.builder.test.service.persistence.LVEntryLocalizationVersionPersistence;
@@ -51,6 +54,8 @@ import com.liferay.portal.tools.service.builder.test.service.persistence.LVEntry
 import com.liferay.portal.tools.service.builder.test.service.persistence.LVEntryVersionPersistence;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,11 +86,15 @@ public abstract class LVEntryLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>LVEntryLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.tools.service.builder.test.service.LVEntryLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>LVEntryLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>LVEntryLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the lv entry to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect LVEntryLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param lvEntry the lv entry
 	 * @return the lv entry that was added
@@ -119,6 +128,10 @@ public abstract class LVEntryLocalServiceBaseImpl
 	/**
 	 * Deletes the lv entry with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect LVEntryLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param lvEntryId the primary key of the lv entry
 	 * @return the lv entry that was removed
 	 * @throws PortalException if a lv entry with the primary key could not be found
@@ -138,6 +151,10 @@ public abstract class LVEntryLocalServiceBaseImpl
 	/**
 	 * Deletes the lv entry from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect LVEntryLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param lvEntry the lv entry
 	 * @return the lv entry that was removed
 	 */
@@ -152,6 +169,18 @@ public abstract class LVEntryLocalServiceBaseImpl
 		catch (PortalException portalException) {
 			throw new SystemException(portalException);
 		}
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return lvEntryPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -302,6 +331,7 @@ public abstract class LVEntryLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -316,6 +346,11 @@ public abstract class LVEntryLocalServiceBaseImpl
 		throws PortalException {
 
 		return lvEntryLocalService.deleteLVEntry((LVEntry)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<LVEntry> getBasePersistence() {
+		return lvEntryPersistence;
 	}
 
 	/**
@@ -356,6 +391,10 @@ public abstract class LVEntryLocalServiceBaseImpl
 
 	/**
 	 * Updates the lv entry in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect LVEntryLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param lvEntry the lv entry
 	 * @return the lv entry that was updated
@@ -842,11 +881,15 @@ public abstract class LVEntryLocalServiceBaseImpl
 			lvEntryLocalService);
 
 		registerListener(new LVEntryLocalizationVersionServiceListener());
+
+		_setLocalServiceUtilService(lvEntryLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.tools.service.builder.test.model.LVEntry");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -1240,6 +1283,22 @@ public abstract class LVEntryLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		LVEntryLocalService lvEntryLocalService) {
+
+		try {
+			Field field = LVEntryLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, lvEntryLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = LVEntryLocalService.class)
 	protected LVEntryLocalService lvEntryLocalService;
 
@@ -1354,28 +1413,16 @@ public abstract class LVEntryLocalServiceBaseImpl
 		@Override
 		public void afterDelete(LVEntry publishedLVEntry)
 			throws PortalException {
-
-			lvEntryLocalizationPersistence.removeByLvEntryId(
-				publishedLVEntry.getPrimaryKey());
-			lvEntryLocalizationVersionPersistence.removeByLvEntryId(
-				publishedLVEntry.getPrimaryKey());
 		}
 
 		@Override
 		public void afterDeleteDraft(LVEntry draftLVEntry)
 			throws PortalException {
-
-			lvEntryLocalizationPersistence.removeByLvEntryId(
-				draftLVEntry.getPrimaryKey());
 		}
 
 		@Override
 		public void afterDeleteVersion(LVEntryVersion lvEntryVersion)
 			throws PortalException {
-
-			lvEntryLocalizationVersionPersistence.removeByLvEntryId_Version(
-				lvEntryVersion.getVersionedModelId(),
-				lvEntryVersion.getVersion());
 		}
 
 		@Override

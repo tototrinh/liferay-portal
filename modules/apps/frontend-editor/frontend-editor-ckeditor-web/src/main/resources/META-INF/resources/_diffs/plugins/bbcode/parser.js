@@ -12,32 +12,32 @@
  * details.
  */
 
-(function() {
+(function () {
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-	var isString = function(val) {
-		return typeof val == 'string';
+	var isString = function (val) {
+		return typeof val === 'string';
 	};
 
 	var ELEMENTS_BLOCK = {
 		'*': 1,
-		center: 1,
-		code: 1,
-		justify: 1,
-		left: 1,
-		li: 1,
-		list: 1,
-		q: 1,
-		quote: 1,
-		right: 1,
-		table: 1,
-		td: 1,
-		th: 1,
-		tr: 1
+		'center': 1,
+		'code': 1,
+		'justify': 1,
+		'left': 1,
+		'li': 1,
+		'list': 1,
+		'q': 1,
+		'quote': 1,
+		'right': 1,
+		'table': 1,
+		'td': 1,
+		'th': 1,
+		'tr': 1,
 	};
 
 	var ELEMENTS_CLOSE_SELF = {
-		'*': 1
+		'*': 1,
 	};
 
 	var ELEMENTS_INLINE = {
@@ -45,18 +45,19 @@
 		color: 1,
 		font: 1,
 		i: 1,
+		// eslint-disable-next-line @liferay/no-abbreviations
 		img: 1,
 		s: 1,
 		size: 1,
 		u: 1,
-		url: 1
+		url: 1,
 	};
 
 	var REGEX_TAG_NAME = /^\/?(?:b|center|code|colou?r|email|i|img|justify|left|pre|q|quote|right|\*|s|size|table|tr|th|td|li|list|font|u|url)$/i;
 
 	var STR_TAG_CODE = 'code';
 
-	var Parser = function(config) {
+	var Parser = function (config) {
 		var instance = this;
 
 		config = config || {};
@@ -89,7 +90,7 @@
 			if (length > instance._dataPointer) {
 				instance._result.push({
 					type: Parser.TOKEN_DATA,
-					value: data.substring(instance._dataPointer, length)
+					value: data.substring(instance._dataPointer, length),
 				});
 			}
 
@@ -116,7 +117,7 @@
 				tagName = tagName.toLowerCase();
 
 				for (pos = stack.length - 1; pos >= 0; pos--) {
-					if (stack[pos] == tagName) {
+					if (stack[pos] === tagName) {
 						break;
 					}
 				}
@@ -128,7 +129,7 @@
 				for (var i = stack.length - 1; i >= pos; i--) {
 					instance._result.push({
 						type: tokenTagEnd,
-						value: stack[i]
+						value: stack[i],
 					});
 				}
 
@@ -157,7 +158,7 @@
 
 				if (
 					hasOwnProperty.call(ELEMENTS_CLOSE_SELF, tagName) &&
-					stack.last() == tagName
+					stack.last() === tagName
 				) {
 					instance._handleTagEnd(tagName);
 				}
@@ -167,7 +168,7 @@
 				instance._result.push({
 					attribute: token[2],
 					type: Parser.TOKEN_TAG_START,
-					value: tagName
+					value: tagName,
 				});
 			}
 		},
@@ -200,7 +201,7 @@
 
 			stack.last =
 				stack.last ||
-				function() {
+				function () {
 					var instance = this;
 
 					return instance[instance.length - 1];
@@ -228,12 +229,14 @@
 				if (token[1]) {
 					instance._handleTagStart(token);
 
-					if (token[1].toLowerCase() == STR_TAG_CODE) {
+					if (token[1].toLowerCase() === STR_TAG_CODE) {
 						while (
 							(token = lexer.getNextToken()) &&
-							token[3] != STR_TAG_CODE
+							token[3] !== STR_TAG_CODE
 						) {
+
 							// Continue.
+
 						}
 
 						instance._handleData(token, data);
@@ -260,7 +263,7 @@
 			instance._reset();
 
 			return result;
-		}
+		},
 	};
 
 	Parser.TOKEN_DATA = 4;

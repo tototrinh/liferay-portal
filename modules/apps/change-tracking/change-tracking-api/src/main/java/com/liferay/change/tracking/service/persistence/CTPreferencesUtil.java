@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
-
 /**
  * The persistence utility for the ct preferences service. This utility wraps <code>com.liferay.change.tracking.service.persistence.impl.CTPreferencesPersistenceImpl</code> and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
  *
@@ -129,8 +125,10 @@ public class CTPreferencesUtil {
 	 * @param ctCollectionId the ct collection ID
 	 * @return the matching ct preferenceses
 	 */
-	public static List<CTPreferences> findByCollectionId(long ctCollectionId) {
-		return getPersistence().findByCollectionId(ctCollectionId);
+	public static List<CTPreferences> findByCtCollectionId(
+		long ctCollectionId) {
+
+		return getPersistence().findByCtCollectionId(ctCollectionId);
 	}
 
 	/**
@@ -145,10 +143,11 @@ public class CTPreferencesUtil {
 	 * @param end the upper bound of the range of ct preferenceses (not inclusive)
 	 * @return the range of matching ct preferenceses
 	 */
-	public static List<CTPreferences> findByCollectionId(
+	public static List<CTPreferences> findByCtCollectionId(
 		long ctCollectionId, int start, int end) {
 
-		return getPersistence().findByCollectionId(ctCollectionId, start, end);
+		return getPersistence().findByCtCollectionId(
+			ctCollectionId, start, end);
 	}
 
 	/**
@@ -164,11 +163,11 @@ public class CTPreferencesUtil {
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching ct preferenceses
 	 */
-	public static List<CTPreferences> findByCollectionId(
+	public static List<CTPreferences> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		OrderByComparator<CTPreferences> orderByComparator) {
 
-		return getPersistence().findByCollectionId(
+		return getPersistence().findByCtCollectionId(
 			ctCollectionId, start, end, orderByComparator);
 	}
 
@@ -186,12 +185,12 @@ public class CTPreferencesUtil {
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the ordered range of matching ct preferenceses
 	 */
-	public static List<CTPreferences> findByCollectionId(
+	public static List<CTPreferences> findByCtCollectionId(
 		long ctCollectionId, int start, int end,
 		OrderByComparator<CTPreferences> orderByComparator,
 		boolean useFinderCache) {
 
-		return getPersistence().findByCollectionId(
+		return getPersistence().findByCtCollectionId(
 			ctCollectionId, start, end, orderByComparator, useFinderCache);
 	}
 
@@ -203,13 +202,13 @@ public class CTPreferencesUtil {
 	 * @return the first matching ct preferences
 	 * @throws NoSuchPreferencesException if a matching ct preferences could not be found
 	 */
-	public static CTPreferences findByCollectionId_First(
+	public static CTPreferences findByCtCollectionId_First(
 			long ctCollectionId,
 			OrderByComparator<CTPreferences> orderByComparator)
 		throws com.liferay.change.tracking.exception.
 			NoSuchPreferencesException {
 
-		return getPersistence().findByCollectionId_First(
+		return getPersistence().findByCtCollectionId_First(
 			ctCollectionId, orderByComparator);
 	}
 
@@ -220,11 +219,11 @@ public class CTPreferencesUtil {
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching ct preferences, or <code>null</code> if a matching ct preferences could not be found
 	 */
-	public static CTPreferences fetchByCollectionId_First(
+	public static CTPreferences fetchByCtCollectionId_First(
 		long ctCollectionId,
 		OrderByComparator<CTPreferences> orderByComparator) {
 
-		return getPersistence().fetchByCollectionId_First(
+		return getPersistence().fetchByCtCollectionId_First(
 			ctCollectionId, orderByComparator);
 	}
 
@@ -236,13 +235,13 @@ public class CTPreferencesUtil {
 	 * @return the last matching ct preferences
 	 * @throws NoSuchPreferencesException if a matching ct preferences could not be found
 	 */
-	public static CTPreferences findByCollectionId_Last(
+	public static CTPreferences findByCtCollectionId_Last(
 			long ctCollectionId,
 			OrderByComparator<CTPreferences> orderByComparator)
 		throws com.liferay.change.tracking.exception.
 			NoSuchPreferencesException {
 
-		return getPersistence().findByCollectionId_Last(
+		return getPersistence().findByCtCollectionId_Last(
 			ctCollectionId, orderByComparator);
 	}
 
@@ -253,11 +252,11 @@ public class CTPreferencesUtil {
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching ct preferences, or <code>null</code> if a matching ct preferences could not be found
 	 */
-	public static CTPreferences fetchByCollectionId_Last(
+	public static CTPreferences fetchByCtCollectionId_Last(
 		long ctCollectionId,
 		OrderByComparator<CTPreferences> orderByComparator) {
 
-		return getPersistence().fetchByCollectionId_Last(
+		return getPersistence().fetchByCtCollectionId_Last(
 			ctCollectionId, orderByComparator);
 	}
 
@@ -270,13 +269,13 @@ public class CTPreferencesUtil {
 	 * @return the previous, current, and next ct preferences
 	 * @throws NoSuchPreferencesException if a ct preferences with the primary key could not be found
 	 */
-	public static CTPreferences[] findByCollectionId_PrevAndNext(
+	public static CTPreferences[] findByCtCollectionId_PrevAndNext(
 			long ctPreferencesId, long ctCollectionId,
 			OrderByComparator<CTPreferences> orderByComparator)
 		throws com.liferay.change.tracking.exception.
 			NoSuchPreferencesException {
 
-		return getPersistence().findByCollectionId_PrevAndNext(
+		return getPersistence().findByCtCollectionId_PrevAndNext(
 			ctPreferencesId, ctCollectionId, orderByComparator);
 	}
 
@@ -285,8 +284,8 @@ public class CTPreferencesUtil {
 	 *
 	 * @param ctCollectionId the ct collection ID
 	 */
-	public static void removeByCollectionId(long ctCollectionId) {
-		getPersistence().removeByCollectionId(ctCollectionId);
+	public static void removeByCtCollectionId(long ctCollectionId) {
+		getPersistence().removeByCtCollectionId(ctCollectionId);
 	}
 
 	/**
@@ -295,8 +294,194 @@ public class CTPreferencesUtil {
 	 * @param ctCollectionId the ct collection ID
 	 * @return the number of matching ct preferenceses
 	 */
-	public static int countByCollectionId(long ctCollectionId) {
-		return getPersistence().countByCollectionId(ctCollectionId);
+	public static int countByCtCollectionId(long ctCollectionId) {
+		return getPersistence().countByCtCollectionId(ctCollectionId);
+	}
+
+	/**
+	 * Returns all the ct preferenceses where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @return the matching ct preferenceses
+	 */
+	public static List<CTPreferences> findByPreviousCtCollectionId(
+		long previousCtCollectionId) {
+
+		return getPersistence().findByPreviousCtCollectionId(
+			previousCtCollectionId);
+	}
+
+	/**
+	 * Returns a range of all the ct preferenceses where previousCtCollectionId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTPreferencesModelImpl</code>.
+	 * </p>
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param start the lower bound of the range of ct preferenceses
+	 * @param end the upper bound of the range of ct preferenceses (not inclusive)
+	 * @return the range of matching ct preferenceses
+	 */
+	public static List<CTPreferences> findByPreviousCtCollectionId(
+		long previousCtCollectionId, int start, int end) {
+
+		return getPersistence().findByPreviousCtCollectionId(
+			previousCtCollectionId, start, end);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct preferenceses where previousCtCollectionId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTPreferencesModelImpl</code>.
+	 * </p>
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param start the lower bound of the range of ct preferenceses
+	 * @param end the upper bound of the range of ct preferenceses (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching ct preferenceses
+	 */
+	public static List<CTPreferences> findByPreviousCtCollectionId(
+		long previousCtCollectionId, int start, int end,
+		OrderByComparator<CTPreferences> orderByComparator) {
+
+		return getPersistence().findByPreviousCtCollectionId(
+			previousCtCollectionId, start, end, orderByComparator);
+	}
+
+	/**
+	 * Returns an ordered range of all the ct preferenceses where previousCtCollectionId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>CTPreferencesModelImpl</code>.
+	 * </p>
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param start the lower bound of the range of ct preferenceses
+	 * @param end the upper bound of the range of ct preferenceses (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching ct preferenceses
+	 */
+	public static List<CTPreferences> findByPreviousCtCollectionId(
+		long previousCtCollectionId, int start, int end,
+		OrderByComparator<CTPreferences> orderByComparator,
+		boolean useFinderCache) {
+
+		return getPersistence().findByPreviousCtCollectionId(
+			previousCtCollectionId, start, end, orderByComparator,
+			useFinderCache);
+	}
+
+	/**
+	 * Returns the first ct preferences in the ordered set where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct preferences
+	 * @throws NoSuchPreferencesException if a matching ct preferences could not be found
+	 */
+	public static CTPreferences findByPreviousCtCollectionId_First(
+			long previousCtCollectionId,
+			OrderByComparator<CTPreferences> orderByComparator)
+		throws com.liferay.change.tracking.exception.
+			NoSuchPreferencesException {
+
+		return getPersistence().findByPreviousCtCollectionId_First(
+			previousCtCollectionId, orderByComparator);
+	}
+
+	/**
+	 * Returns the first ct preferences in the ordered set where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching ct preferences, or <code>null</code> if a matching ct preferences could not be found
+	 */
+	public static CTPreferences fetchByPreviousCtCollectionId_First(
+		long previousCtCollectionId,
+		OrderByComparator<CTPreferences> orderByComparator) {
+
+		return getPersistence().fetchByPreviousCtCollectionId_First(
+			previousCtCollectionId, orderByComparator);
+	}
+
+	/**
+	 * Returns the last ct preferences in the ordered set where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct preferences
+	 * @throws NoSuchPreferencesException if a matching ct preferences could not be found
+	 */
+	public static CTPreferences findByPreviousCtCollectionId_Last(
+			long previousCtCollectionId,
+			OrderByComparator<CTPreferences> orderByComparator)
+		throws com.liferay.change.tracking.exception.
+			NoSuchPreferencesException {
+
+		return getPersistence().findByPreviousCtCollectionId_Last(
+			previousCtCollectionId, orderByComparator);
+	}
+
+	/**
+	 * Returns the last ct preferences in the ordered set where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching ct preferences, or <code>null</code> if a matching ct preferences could not be found
+	 */
+	public static CTPreferences fetchByPreviousCtCollectionId_Last(
+		long previousCtCollectionId,
+		OrderByComparator<CTPreferences> orderByComparator) {
+
+		return getPersistence().fetchByPreviousCtCollectionId_Last(
+			previousCtCollectionId, orderByComparator);
+	}
+
+	/**
+	 * Returns the ct preferenceses before and after the current ct preferences in the ordered set where previousCtCollectionId = &#63;.
+	 *
+	 * @param ctPreferencesId the primary key of the current ct preferences
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next ct preferences
+	 * @throws NoSuchPreferencesException if a ct preferences with the primary key could not be found
+	 */
+	public static CTPreferences[] findByPreviousCtCollectionId_PrevAndNext(
+			long ctPreferencesId, long previousCtCollectionId,
+			OrderByComparator<CTPreferences> orderByComparator)
+		throws com.liferay.change.tracking.exception.
+			NoSuchPreferencesException {
+
+		return getPersistence().findByPreviousCtCollectionId_PrevAndNext(
+			ctPreferencesId, previousCtCollectionId, orderByComparator);
+	}
+
+	/**
+	 * Removes all the ct preferenceses where previousCtCollectionId = &#63; from the database.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 */
+	public static void removeByPreviousCtCollectionId(
+		long previousCtCollectionId) {
+
+		getPersistence().removeByPreviousCtCollectionId(previousCtCollectionId);
+	}
+
+	/**
+	 * Returns the number of ct preferenceses where previousCtCollectionId = &#63;.
+	 *
+	 * @param previousCtCollectionId the previous ct collection ID
+	 * @return the number of matching ct preferenceses
+	 */
+	public static int countByPreviousCtCollectionId(
+		long previousCtCollectionId) {
+
+		return getPersistence().countByPreviousCtCollectionId(
+			previousCtCollectionId);
 	}
 
 	/**
@@ -515,25 +700,9 @@ public class CTPreferencesUtil {
 	}
 
 	public static CTPreferencesPersistence getPersistence() {
-		return _serviceTracker.getService();
+		return _persistence;
 	}
 
-	private static ServiceTracker
-		<CTPreferencesPersistence, CTPreferencesPersistence> _serviceTracker;
-
-	static {
-		Bundle bundle = FrameworkUtil.getBundle(CTPreferencesPersistence.class);
-
-		ServiceTracker<CTPreferencesPersistence, CTPreferencesPersistence>
-			serviceTracker =
-				new ServiceTracker
-					<CTPreferencesPersistence, CTPreferencesPersistence>(
-						bundle.getBundleContext(),
-						CTPreferencesPersistence.class, null);
-
-		serviceTracker.open();
-
-		_serviceTracker = serviceTracker;
-	}
+	private static volatile CTPreferencesPersistence _persistence;
 
 }

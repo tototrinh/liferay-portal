@@ -25,7 +25,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
-import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.version.Version;
@@ -44,6 +43,7 @@ import java.util.function.Supplier;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -144,8 +144,11 @@ public class UpgradeExecutor {
 
 		Release release = _releaseLocalService.fetchRelease(bundleSymbolicName);
 
+		ServiceRegistration<Release> oldServiceRegistration = null;
+
 		if (release != null) {
-			_releasePublisher.publishInProgress(release);
+			oldServiceRegistration = _releasePublisher.publishInProgress(
+				release);
 		}
 
 		UpgradeInfosRunnable upgradeInfosRunnable = new UpgradeInfosRunnable(
@@ -158,8 +161,18 @@ public class UpgradeExecutor {
 
 		release = _releaseLocalService.fetchRelease(bundleSymbolicName);
 
+		ServiceRegistration<Release> inProgressServiceRegistration = null;
+
 		if (release != null) {
-			_releasePublisher.publish(release);
+			inProgressServiceRegistration = _releasePublisher.publish(release);
+		}
+
+		if (inProgressServiceRegistration != null) {
+			inProgressServiceRegistration.unregister();
+		}
+
+		if (oldServiceRegistration != null) {
+			oldServiceRegistration.unregister();
 		}
 
 		return release;
@@ -275,15 +288,10 @@ public class UpgradeExecutor {
 
 			UpgradeInfo upgradeInfo = _upgradeInfos.get(0);
 
-			UpgradeStep upgradeStep = upgradeInfo.getUpgradeStep();
-
-			if (upgradeStep instanceof DummyUpgradeStep) {
-				return false;
-			}
-
 			String fromSchemaVersion = upgradeInfo.getFromSchemaVersionString();
 
-			String upgradeStepName = upgradeStep.toString();
+			String upgradeStepName = String.valueOf(
+				upgradeInfo.getUpgradeStep());
 
 			if (fromSchemaVersion.equals("0.0.0") &&
 				upgradeStepName.equals("Initial Database Creation")) {

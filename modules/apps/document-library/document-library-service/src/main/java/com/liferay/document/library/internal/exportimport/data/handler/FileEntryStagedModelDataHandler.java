@@ -55,8 +55,10 @@ import com.liferay.exportimport.kernel.lar.PortletDataException;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandler;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelModifiedDateComparator;
+import com.liferay.exportimport.portlet.data.handler.util.ExportImportGroupedModelUtil;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -80,6 +82,7 @@ import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -219,7 +222,9 @@ public class FileEntryStagedModelDataHandler
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_serviceTrackerList = ServiceTrackerListFactory.open(
-			bundleContext, DLPluggableContentDataHandler.class,
+			bundleContext,
+			(Class<DLPluggableContentDataHandler<?>>)
+				(Class<?>)DLPluggableContentDataHandler.class,
 			"(model.class.name=" + FileEntry.class.getName() + ")");
 	}
 
@@ -287,10 +292,10 @@ public class FileEntryStagedModelDataHandler
 		liferayFileEntry.setCachedFileVersion(fileEntry.getFileVersion());
 
 		if (!portletDataContext.isPerformDirectBinaryImport()) {
-			InputStream is = null;
+			InputStream inputStream = null;
 
 			try {
-				is = FileEntryUtil.getContentStream(fileEntry);
+				inputStream = FileEntryUtil.getContentStream(fileEntry);
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
@@ -301,7 +306,7 @@ public class FileEntryStagedModelDataHandler
 				}
 			}
 
-			if (is == null) {
+			if (inputStream == null) {
 				fileEntryElement.detach();
 
 				return;
@@ -311,13 +316,13 @@ public class FileEntryStagedModelDataHandler
 				String binPath = ExportImportPathUtil.getModelPath(
 					fileEntry, fileEntry.getVersion());
 
-				portletDataContext.addZipEntry(binPath, is);
+				portletDataContext.addZipEntry(binPath, inputStream);
 
 				fileEntryElement.addAttribute("bin-path", binPath);
 			}
 			finally {
 				try {
-					is.close();
+					inputStream.close();
 				}
 				catch (IOException ioException) {
 					_log.error(ioException, ioException);
@@ -325,10 +330,15 @@ public class FileEntryStagedModelDataHandler
 			}
 		}
 
-		for (DLPluggableContentDataHandler dlPluggableContentDataHandler :
+		for (DLPluggableContentDataHandler<?> dlPluggableContentDataHandler :
 				_serviceTrackerList) {
 
-			dlPluggableContentDataHandler.exportContent(
+			DLPluggableContentDataHandler<FileEntry>
+				fileEntryDLPluggableContentDataHandler =
+					(DLPluggableContentDataHandler<FileEntry>)
+						dlPluggableContentDataHandler;
+
+			fileEntryDLPluggableContentDataHandler.exportContent(
 				portletDataContext, fileEntryElement, fileEntry);
 		}
 
@@ -420,14 +430,14 @@ public class FileEntryStagedModelDataHandler
 
 		serviceContext.setAttribute("validateDDMFormValues", Boolean.FALSE);
 
-		InputStream is = null;
+		InputStream inputStream = null;
 
 		try {
 			if (Validator.isNull(binPath) &&
 				portletDataContext.isPerformDirectBinaryImport()) {
 
 				try {
-					is = FileEntryUtil.getContentStream(fileEntry);
+					inputStream = FileEntryUtil.getContentStream(fileEntry);
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
@@ -441,10 +451,11 @@ public class FileEntryStagedModelDataHandler
 				}
 			}
 			else {
-				is = portletDataContext.getZipEntryAsInputStream(binPath);
+				inputStream = portletDataContext.getZipEntryAsInputStream(
+					binPath);
 			}
 
-			if (is == null) {
+			if (inputStream == null) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"No file found for file entry " +
@@ -454,7 +465,7 @@ public class FileEntryStagedModelDataHandler
 				return;
 			}
 
-			importMetaData(
+			boolean updateFileEntry = importMetaData(
 				portletDataContext, fileEntryElement, fileEntry,
 				serviceContext);
 
@@ -470,13 +481,14 @@ public class FileEntryStagedModelDataHandler
 
 						FileEntry existingTitleFileEntry =
 							FileEntryUtil.fetchByR_F_T(
-								repositoryId, folderId, fileEntry.getTitle());
+								portletDataContext.getScopeGroupId(), folderId,
+								fileEntry.getTitle());
 
 						if (existingTitleFileEntry == null) {
 							existingTitleFileEntry =
 								FileEntryUtil.fetchByR_F_FN(
-									repositoryId, folderId,
-									fileEntry.getFileName());
+									portletDataContext.getScopeGroupId(),
+									folderId, fileEntry.getFileName());
 						}
 
 						if (existingTitleFileEntry != null) {
@@ -495,10 +507,12 @@ public class FileEntryStagedModelDataHandler
 							fileEntry.getTitle(), fileEntry.getExtension());
 
 					importedFileEntry = _dlAppLocalService.addFileEntry(
-						userId, repositoryId, folderId, fileEntry.getFileName(),
+						fileEntry.getExternalReferenceCode(), userId,
+						repositoryId, folderId, fileEntry.getFileName(),
 						fileEntry.getMimeType(), fileEntryTitle,
-						fileEntry.getDescription(), null, is,
-						fileEntry.getSize(), serviceContext);
+						fileEntry.getDescription(), null, inputStream,
+						fileEntry.getSize(), fileEntry.getExpirationDate(),
+						fileEntry.getReviewDate(), serviceContext);
 
 					if (fileEntry.isInTrash()) {
 						importedFileEntry =
@@ -513,7 +527,6 @@ public class FileEntryStagedModelDataHandler
 					boolean indexEnabled = serviceContext.isIndexingEnabled();
 
 					boolean deleteFileEntry = false;
-					boolean updateFileEntry = false;
 
 					if (!Objects.equals(
 							fileVersionUuid,
@@ -523,26 +536,18 @@ public class FileEntryStagedModelDataHandler
 						updateFileEntry = true;
 					}
 					else {
-						InputStream existingFileVersionInputStream = null;
-
-						try {
-							existingFileVersionInputStream =
+						try (InputStream existingFileVersionInputStream =
 								latestExistingFileVersion.getContentStream(
-									false);
+									false)) {
+
+							if (existingFileVersionInputStream == null) {
+								updateFileEntry = true;
+							}
 						}
 						catch (Exception exception) {
 							if (_log.isDebugEnabled()) {
 								_log.debug(exception, exception);
 							}
-						}
-						finally {
-							if (existingFileVersionInputStream != null) {
-								existingFileVersionInputStream.close();
-							}
-						}
-
-						if (existingFileVersionInputStream == null) {
-							updateFileEntry = true;
 						}
 					}
 
@@ -579,8 +584,10 @@ public class FileEntryStagedModelDataHandler
 									fileEntry.getFileName(),
 									fileEntry.getMimeType(), fileEntryTitle,
 									fileEntry.getDescription(), null,
-									DLVersionNumberIncrease.MINOR, is,
-									fileEntry.getSize(), serviceContext);
+									DLVersionNumberIncrease.MINOR, inputStream,
+									fileEntry.getSize(),
+									fileEntry.getExpirationDate(),
+									fileEntry.getReviewDate(), serviceContext);
 						}
 						else {
 							_dlAppLocalService.updateAsset(
@@ -644,16 +651,23 @@ public class FileEntryStagedModelDataHandler
 					fileEntry.getTitle(), fileEntry.getExtension());
 
 				importedFileEntry = _dlAppLocalService.addFileEntry(
-					userId, repositoryId, folderId, fileEntry.getFileName(),
-					fileEntry.getMimeType(), fileEntryTitle,
-					fileEntry.getDescription(), null, is, fileEntry.getSize(),
+					fileEntry.getExternalReferenceCode(), userId, repositoryId,
+					folderId, fileEntry.getFileName(), fileEntry.getMimeType(),
+					fileEntryTitle, fileEntry.getDescription(), null,
+					inputStream, fileEntry.getSize(),
+					fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
 					serviceContext);
 			}
 
-			for (DLPluggableContentDataHandler dlPluggableContentDataHandler :
-					_serviceTrackerList) {
+			for (DLPluggableContentDataHandler<?>
+					dlPluggableContentDataHandler : _serviceTrackerList) {
 
-				dlPluggableContentDataHandler.importContent(
+				DLPluggableContentDataHandler<FileEntry>
+					fileEntryDLPluggableContentDataHandler =
+						(DLPluggableContentDataHandler<FileEntry>)
+							dlPluggableContentDataHandler;
+
+				fileEntryDLPluggableContentDataHandler.importContent(
 					portletDataContext, fileEntryElement, fileEntry,
 					importedFileEntry);
 			}
@@ -676,8 +690,8 @@ public class FileEntryStagedModelDataHandler
 				"validateDDMFormValues", validateDDMFormValues);
 
 			try {
-				if (is != null) {
-					is.close();
+				if (inputStream != null) {
+					inputStream.close();
 				}
 			}
 			catch (IOException ioException) {
@@ -702,10 +716,9 @@ public class FileEntryStagedModelDataHandler
 			DLFileEntry.class.getName());
 
 		if (trashHandler.isRestorable(existingFileEntry.getFileEntryId())) {
-			long userId = portletDataContext.getUserId(fileEntry.getUserUuid());
-
 			trashHandler.restoreTrashEntry(
-				userId, existingFileEntry.getFileEntryId());
+				portletDataContext.getUserId(fileEntry.getUserUuid()),
+				existingFileEntry.getFileEntryId());
 		}
 	}
 
@@ -733,6 +746,8 @@ public class FileEntryStagedModelDataHandler
 
 		structureFields.addAttribute("ddm-form-values-path", ddmFormValuesPath);
 
+		structureFields.addAttribute(
+			"structureKey", ddmStructure.getStructureKey());
 		structureFields.addAttribute("structureUuid", ddmStructure.getUuid());
 
 		com.liferay.dynamic.data.mapping.storage.DDMFormValues ddmFormValues =
@@ -806,7 +821,7 @@ public class FileEntryStagedModelDataHandler
 		return new String[] {AssetDisplayPageEntry.class.getName()};
 	}
 
-	protected void importMetaData(
+	protected boolean importMetaData(
 			PortletDataContext portletDataContext, Element fileEntryElement,
 			FileEntry fileEntry, ServiceContext serviceContext)
 		throws Exception {
@@ -830,11 +845,13 @@ public class FileEntryStagedModelDataHandler
 		if (existingDLFileEntryType == null) {
 			serviceContext.setAttribute("fileEntryTypeId", -1);
 
-			return;
+			return false;
 		}
 
 		serviceContext.setAttribute(
 			"fileEntryTypeId", existingDLFileEntryType.getFileEntryTypeId());
+
+		boolean updateFileEntry = false;
 
 		List<DDMStructure> ddmStructures =
 			existingDLFileEntryType.getDDMStructures();
@@ -842,11 +859,17 @@ public class FileEntryStagedModelDataHandler
 		for (DDMStructure ddmStructure : ddmStructures) {
 			Element structureFieldsElement =
 				(Element)fileEntryElement.selectSingleNode(
-					"structure-fields[@structureUuid='".concat(
-						ddmStructure.getUuid()
-					).concat(
-						"']"
-					));
+					StringBundler.concat(
+						"structure-fields[@structureUuid='",
+						ddmStructure.getUuid(), "']"));
+
+			if (structureFieldsElement == null) {
+				structureFieldsElement =
+					(Element)fileEntryElement.selectSingleNode(
+						StringBundler.concat(
+							"structure-fields[@structureKey='",
+							ddmStructure.getStructureKey(), "']"));
+			}
 
 			if (structureFieldsElement == null) {
 				continue;
@@ -859,7 +882,11 @@ public class FileEntryStagedModelDataHandler
 				DDMFormValues.class.getName() + StringPool.POUND +
 					ddmStructure.getStructureId(),
 				ddmFormValues);
+
+			updateFileEntry = true;
 		}
+
+		return updateFileEntry;
 	}
 
 	@Override
@@ -894,7 +921,10 @@ public class FileEntryStagedModelDataHandler
 		throws PortletDataException {
 
 		if ((fileEntry.getGroupId() != portletDataContext.getGroupId()) &&
-			(fileEntry.getGroupId() != portletDataContext.getScopeGroupId())) {
+			(fileEntry.getGroupId() != portletDataContext.getScopeGroupId()) &&
+			!ExportImportGroupedModelUtil.
+				isReferenceInLayoutGroupWithinExportScope(
+					portletDataContext, fileEntry)) {
 
 			PortletDataException portletDataException =
 				new PortletDataException(PortletDataException.INVALID_GROUP);
@@ -956,12 +986,12 @@ public class FileEntryStagedModelDataHandler
 
 	private void _exportAssetDisplayPage(
 			PortletDataContext portletDataContext, FileEntry fileEntry)
-		throws PortletDataException {
+		throws Exception {
 
 		AssetDisplayPageEntry assetDisplayPageEntry =
 			_assetDisplayPageEntryLocalService.fetchAssetDisplayPageEntry(
 				fileEntry.getGroupId(),
-				_portal.getClassNameId(DLFileEntry.class),
+				_portal.getClassNameId(FileEntry.class.getName()),
 				fileEntry.getFileEntryId());
 
 		if (assetDisplayPageEntry != null) {
@@ -986,6 +1016,21 @@ public class FileEntryStagedModelDataHandler
 
 		articleNewPrimaryKeys.put(
 			fileEntry.getFileEntryId(), importedFileEntry.getFileEntryId());
+
+		if (ListUtil.isEmpty(assetDisplayPageEntryElements)) {
+			AssetDisplayPageEntry existingAssetDisplayPageEntry =
+				_assetDisplayPageEntryLocalService.fetchAssetDisplayPageEntry(
+					importedFileEntry.getGroupId(),
+					_portal.getClassNameId(FileEntry.class.getName()),
+					importedFileEntry.getFileEntryId());
+
+			if (existingAssetDisplayPageEntry != null) {
+				_assetDisplayPageEntryLocalService.deleteAssetDisplayPageEntry(
+					existingAssetDisplayPageEntry);
+			}
+
+			return;
+		}
 
 		for (Element assetDisplayPageEntryElement :
 				assetDisplayPageEntryElements) {
@@ -1023,7 +1068,7 @@ public class FileEntryStagedModelDataHandler
 	}
 
 	private FileEntry _overrideFileVersion(
-			final FileEntry importedFileEntry, final String version,
+			FileEntry importedFileEntry, String version,
 			ServiceContext serviceContext)
 		throws PortalException {
 
@@ -1073,8 +1118,8 @@ public class FileEntryStagedModelDataHandler
 		catch (PortalException | SystemException exception) {
 			throw exception;
 		}
-		catch (Throwable t) {
-			throw new PortalException(t);
+		catch (Throwable throwable) {
+			throw new PortalException(throwable);
 		}
 		finally {
 			ServiceContextThreadLocal.popServiceContext();
@@ -1141,9 +1186,8 @@ public class FileEntryStagedModelDataHandler
 	@Reference
 	private RepositoryLocalService _repositoryLocalService;
 
-	private ServiceTrackerList
-		<DLPluggableContentDataHandler, DLPluggableContentDataHandler>
-			_serviceTrackerList;
+	private ServiceTrackerList<DLPluggableContentDataHandler<?>>
+		_serviceTrackerList;
 
 	@Reference
 	private StorageEngine _storageEngine;

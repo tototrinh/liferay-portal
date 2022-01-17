@@ -27,6 +27,7 @@ import com.liferay.dynamic.data.mapping.io.DDMFormValuesSerializerSerializeRespo
 import com.liferay.dynamic.data.mapping.model.DDMDataProviderInstance;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.service.base.DDMDataProviderInstanceLocalServiceBaseImpl;
+import com.liferay.dynamic.data.mapping.service.persistence.DDMDataProviderInstanceLinkPersistence;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.validator.DDMFormValuesValidator;
@@ -38,9 +39,13 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -50,6 +55,7 @@ import com.liferay.portal.kernel.util.Validator;
 import java.net.URL;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -82,7 +88,7 @@ public class DDMDataProviderInstanceLocalServiceImpl
 
 		// Data provider instance
 
-		User user = userLocalService.getUser(userId);
+		User user = _userLocalService.getUser(userId);
 
 		validate(nameMap, ddmFormValues);
 
@@ -122,13 +128,14 @@ public class DDMDataProviderInstanceLocalServiceImpl
 	}
 
 	@Override
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
 	public void deleteDataProviderInstance(
 			DDMDataProviderInstance dataProviderInstance)
 		throws PortalException {
 
 		if (!GroupThreadLocal.isDeleteInProcess()) {
 			int count =
-				ddmDataProviderInstanceLinkPersistence.
+				_ddmDataProviderInstanceLinkPersistence.
 					countByDataProviderInstanceId(
 						dataProviderInstance.getDataProviderInstanceId());
 
@@ -145,7 +152,7 @@ public class DDMDataProviderInstanceLocalServiceImpl
 
 		// Resources
 
-		resourceLocalService.deleteResource(
+		_resourceLocalService.deleteResource(
 			dataProviderInstance.getCompanyId(),
 			DDMDataProviderInstance.class.getName(),
 			ResourceConstants.SCOPE_INDIVIDUAL,
@@ -165,7 +172,7 @@ public class DDMDataProviderInstanceLocalServiceImpl
 	}
 
 	@Override
-	public void deleteDataProviderInstances(long companyId, final long groupId)
+	public void deleteDataProviderInstances(long companyId, long groupId)
 		throws PortalException {
 
 		ActionableDynamicQuery actionableDynamicQuery =
@@ -299,16 +306,18 @@ public class DDMDataProviderInstanceLocalServiceImpl
 			DDMFormValues ddmFormValues, ServiceContext serviceContext)
 		throws PortalException {
 
-		User user = userLocalService.getUser(userId);
-
 		validate(nameMap, ddmFormValues);
 
 		DDMDataProviderInstance dataProviderInstance =
 			ddmDataProviderInstancePersistence.findByPrimaryKey(
 				dataProviderInstanceId);
 
+		User user = _userLocalService.getUser(userId);
+
 		dataProviderInstance.setUserId(user.getUserId());
 		dataProviderInstance.setUserName(user.getFullName());
+
+		dataProviderInstance.setModifiedDate(new Date());
 		dataProviderInstance.setNameMap(nameMap);
 		dataProviderInstance.setDescriptionMap(descriptionMap);
 		dataProviderInstance.setDefinition(serialize(ddmFormValues));
@@ -321,7 +330,7 @@ public class DDMDataProviderInstanceLocalServiceImpl
 			boolean addGroupPermissions, boolean addGuestPermissions)
 		throws PortalException {
 
-		resourceLocalService.addResources(
+		_resourceLocalService.addResources(
 			dataProviderInstance.getCompanyId(),
 			dataProviderInstance.getGroupId(), dataProviderInstance.getUserId(),
 			DDMDataProviderInstance.class.getName(),
@@ -334,7 +343,7 @@ public class DDMDataProviderInstanceLocalServiceImpl
 			ModelPermissions modelPermissions)
 		throws PortalException {
 
-		resourceLocalService.addModelResources(
+		_resourceLocalService.addModelResources(
 			dataProviderInstance.getCompanyId(),
 			dataProviderInstance.getGroupId(), dataProviderInstance.getUserId(),
 			DDMDataProviderInstance.class.getName(),
@@ -489,9 +498,19 @@ public class DDMDataProviderInstanceLocalServiceImpl
 		_ddmDataProviderConfigurationActivator;
 
 	@Reference
+	private DDMDataProviderInstanceLinkPersistence
+		_ddmDataProviderInstanceLinkPersistence;
+
+	@Reference
 	private DDMFormValuesValidator _ddmFormValuesValidator;
 
 	@Reference(target = "(ddm.form.values.serializer.type=json)")
 	private DDMFormValuesSerializer _jsonDDMFormValuesSerializer;
+
+	@Reference
+	private ResourceLocalService _resourceLocalService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

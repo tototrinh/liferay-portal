@@ -16,10 +16,13 @@ package com.liferay.portlet.expando.service.base;
 
 import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
+import com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil;
 import com.liferay.expando.kernel.service.persistence.ExpandoColumnPersistence;
 import com.liferay.expando.kernel.service.persistence.ExpandoRowPersistence;
 import com.liferay.expando.kernel.service.persistence.ExpandoTablePersistence;
 import com.liferay.expando.kernel.service.persistence.ExpandoValuePersistence;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -39,15 +42,18 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
-import com.liferay.portal.kernel.service.persistence.SystemEventPersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -71,11 +77,15 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>ExpandoColumnLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>ExpandoColumnLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>ExpandoColumnLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the expando column to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ExpandoColumnLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param expandoColumn the expando column
 	 * @return the expando column that was added
@@ -103,6 +113,10 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	/**
 	 * Deletes the expando column with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ExpandoColumnLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param columnId the primary key of the expando column
 	 * @return the expando column that was removed
 	 * @throws PortalException if a expando column with the primary key could not be found
@@ -118,6 +132,10 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	/**
 	 * Deletes the expando column from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ExpandoColumnLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param expandoColumn the expando column
 	 * @return the expando column that was removed
 	 */
@@ -125,6 +143,18 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	@Override
 	public ExpandoColumn deleteExpandoColumn(ExpandoColumn expandoColumn) {
 		return expandoColumnPersistence.remove(expandoColumn);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return expandoColumnPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -277,6 +307,7 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -293,6 +324,11 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 
 		return expandoColumnLocalService.deleteExpandoColumn(
 			(ExpandoColumn)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<ExpandoColumn> getBasePersistence() {
+		return expandoColumnPersistence;
 	}
 
 	/**
@@ -333,6 +369,10 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 
 	/**
 	 * Updates the expando column in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect ExpandoColumnLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param expandoColumn the expando column
 	 * @return the expando column that was updated
@@ -602,49 +642,6 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	}
 
 	/**
-	 * Returns the system event local service.
-	 *
-	 * @return the system event local service
-	 */
-	public com.liferay.portal.kernel.service.SystemEventLocalService
-		getSystemEventLocalService() {
-
-		return systemEventLocalService;
-	}
-
-	/**
-	 * Sets the system event local service.
-	 *
-	 * @param systemEventLocalService the system event local service
-	 */
-	public void setSystemEventLocalService(
-		com.liferay.portal.kernel.service.SystemEventLocalService
-			systemEventLocalService) {
-
-		this.systemEventLocalService = systemEventLocalService;
-	}
-
-	/**
-	 * Returns the system event persistence.
-	 *
-	 * @return the system event persistence
-	 */
-	public SystemEventPersistence getSystemEventPersistence() {
-		return systemEventPersistence;
-	}
-
-	/**
-	 * Sets the system event persistence.
-	 *
-	 * @param systemEventPersistence the system event persistence
-	 */
-	public void setSystemEventPersistence(
-		SystemEventPersistence systemEventPersistence) {
-
-		this.systemEventPersistence = systemEventPersistence;
-	}
-
-	/**
 	 * Returns the user local service.
 	 *
 	 * @return the user local service
@@ -706,11 +703,15 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.expando.kernel.model.ExpandoColumn",
 			expandoColumnLocalService);
+
+		_setLocalServiceUtilService(expandoColumnLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.expando.kernel.model.ExpandoColumn");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -723,8 +724,23 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 		return ExpandoColumnLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<ExpandoColumn> getCTPersistence() {
+		return expandoColumnPersistence;
+	}
+
+	@Override
+	public Class<ExpandoColumn> getModelClass() {
 		return ExpandoColumn.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<ExpandoColumn>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(expandoColumnPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -752,6 +768,22 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		ExpandoColumnLocalService expandoColumnLocalService) {
+
+		try {
+			Field field = ExpandoColumnLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, expandoColumnLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 
@@ -808,15 +840,6 @@ public abstract class ExpandoColumnLocalServiceBaseImpl
 	)
 	protected com.liferay.portal.kernel.service.ResourceLocalService
 		resourceLocalService;
-
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.SystemEventLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.SystemEventLocalService
-		systemEventLocalService;
-
-	@BeanReference(type = SystemEventPersistence.class)
-	protected SystemEventPersistence systemEventPersistence;
 
 	@BeanReference(
 		type = com.liferay.portal.kernel.service.UserLocalService.class

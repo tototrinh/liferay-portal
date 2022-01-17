@@ -15,11 +15,13 @@
 package com.liferay.portal.search.elasticsearch7.internal.configuration;
 
 import com.liferay.portal.kernel.util.PropertiesUtil;
-import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchFixture;
+import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionFixture;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Map;
 import java.util.Properties;
 
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -27,22 +29,29 @@ import org.junit.Test;
  */
 public class ElasticsearchConfigurationTest {
 
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testConfigurationsFromBuildTestXmlAntFile() throws Exception {
 		Map<String, Object> configurationProperties =
 			loadConfigurationProperties(
 				"ElasticsearchConfigurationTest-build-test-xml.cfg");
 
-		Class<? extends ElasticsearchConfigurationTest> clazz = getClass();
-
-		ElasticsearchFixture elasticsearchFixture = new ElasticsearchFixture(
-			clazz.getSimpleName(), configurationProperties);
+		ElasticsearchConnectionFixture elasticsearchConnectionFixture =
+			ElasticsearchConnectionFixture.builder(
+			).clusterName(
+				ElasticsearchConfigurationTest.class.getSimpleName()
+			).elasticsearchConfigurationProperties(
+				configurationProperties
+			).build();
 
 		try {
-			elasticsearchFixture.createNode();
+			elasticsearchConnectionFixture.createNode();
 		}
 		finally {
-			elasticsearchFixture.destroyNode();
+			elasticsearchConnectionFixture.destroyNode();
 		}
 	}
 

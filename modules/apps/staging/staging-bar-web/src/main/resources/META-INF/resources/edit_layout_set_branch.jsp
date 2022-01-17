@@ -63,11 +63,14 @@ if (layoutSetBranch != null) {
 	<liferay-util:param name="navigationName" value="<%= title %>" />
 </liferay-util:include>
 
-<div class="container-fluid-1280 container-view" data-namespace="<portlet:namespace />" id="<portlet:namespace /><%= (layoutSetBranch != null) ? "updateBranch" : "addBranch" %>">
+<clay:container-fluid
+	cssClass="container-view"
+	id='<%= liferayPortletResponse.getNamespace() + ((layoutSetBranch != null) ? "updateBranch" : "addBranch") %>'
+>
 	<aui:model-context bean="<%= layoutSetBranch %>" model="<%= LayoutSetBranch.class %>" />
 
-	<portlet:actionURL name="editLayoutSetBranch" var="editLayoutSetBranchURL">
-		<portlet:param name="mvcRenderCommandName" value="editLayoutSetBranch" />
+	<portlet:actionURL name="/staging_bar/edit_layout_set_branch" var="editLayoutSetBranchURL">
+		<portlet:param name="mvcRenderCommandName" value="/staging_bar/edit_layout_set_branch" />
 	</portlet:actionURL>
 
 	<aui:form action="<%= editLayoutSetBranchURL %>" enctype="multipart/form-data" method="post" name="fm3">
@@ -78,7 +81,7 @@ if (layoutSetBranch != null) {
 		<aui:input name="workflowAction" type="hidden" value="<%= WorkflowConstants.ACTION_SAVE_DRAFT %>" />
 
 		<aui:fieldset>
-			<aui:input name="name" />
+			<aui:input ignoreRequestValue="<%= true %>" name="name" type="text" value="<%= (layoutSetBranch != null) ? HtmlUtil.escape(layoutSetBranchDisplayContext.getLayoutSetBranchDisplayName(layoutSetBranch)) : StringPool.BLANK %>" />
 
 			<aui:input name="description" />
 
@@ -112,4 +115,4 @@ if (layoutSetBranch != null) {
 			<aui:button href="<%= redirect %>" value="cancel" />
 		</aui:button-row>
 	</aui:form>
-</div>
+</clay:container-fluid>

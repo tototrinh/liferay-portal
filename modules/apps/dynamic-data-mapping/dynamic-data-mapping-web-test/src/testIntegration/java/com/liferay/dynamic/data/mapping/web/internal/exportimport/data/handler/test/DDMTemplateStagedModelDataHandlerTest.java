@@ -23,8 +23,8 @@ import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
 import com.liferay.dynamic.data.mapping.test.util.DDMTemplateTestUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.test.util.lar.BaseStagedModelDataHandlerTestCase;
+import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.model.JournalArticle;
-import com.liferay.journal.model.JournalFolderConstants;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
@@ -130,7 +130,7 @@ public class DDMTemplateStagedModelDataHandlerTest
 
 		JournalArticle journalArticle =
 			JournalArticleLocalServiceUtil.addArticle(
-				TestPropsValues.getUserId(), childGroup.getGroupId(),
+				null, TestPropsValues.getUserId(), childGroup.getGroupId(),
 				JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, titleMap,
 				descriptionMap, content, structure.getStructureKey(),
 				template.getTemplateKey(), serviceContext);

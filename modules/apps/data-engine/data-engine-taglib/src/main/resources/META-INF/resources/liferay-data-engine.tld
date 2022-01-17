@@ -9,13 +9,19 @@
 		<tag-class>com.liferay.data.engine.taglib.servlet.taglib.DataLayoutBuilderTag</tag-class>
 		<body-content>JSP</body-content>
 		<attribute>
+			<name>additionalPanels</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>java.util.List</type>
+		</attribute>
+		<attribute>
 			<name>componentId</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
 			<name>contentType</name>
-			<required>false</required>
+			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
@@ -31,6 +37,11 @@
 			<type>java.lang.Long</type>
 		</attribute>
 		<attribute>
+			<name>fieldSetContentType</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
 			<name>groupId</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
@@ -41,6 +52,17 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 			<type>boolean</type>
+		</attribute>
+		<attribute>
+			<name>module</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>moduleServletContext</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>javax.servlet.ServletContext</type>
 		</attribute>
 		<attribute>
 			<name>namespace</name>
@@ -54,10 +76,15 @@
 			<type>java.util.Set</type>
 		</attribute>
 		<attribute>
-			<name>singlePage</name>
+			<name>searchableFieldsDisabled</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 			<type>boolean</type>
+		</attribute>
+		<attribute>
+			<name>submitButtonId</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<dynamic-attributes>true</dynamic-attributes>
 	</tag>
@@ -95,9 +122,43 @@
 			<type>java.util.Map</type>
 		</attribute>
 		<attribute>
+			<name>defaultLanguageId</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>languageId</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
 			<name>namespace</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>persistDefaultValues</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>boolean</type>
+		</attribute>
+		<attribute>
+			<name>persisted</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>boolean</type>
+		</attribute>
+		<attribute>
+			<name>readOnly</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>boolean</type>
+		</attribute>
+		<attribute>
+			<name>submittable</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>boolean</type>
 		</attribute>
 		<dynamic-attributes>true</dynamic-attributes>
 	</tag>

@@ -24,8 +24,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -48,44 +51,24 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("TaxonomyCategory")
+@GraphQLName(
+	description = "Represents a category, which is a hierarchical classification that can be associated with particular asset types. Properties follow the [category](https://schema.org/category) specification.",
+	value = "TaxonomyCategory"
+)
 @JsonFilter("Liferay.Vulcan")
-@Schema(requiredProperties = {"name"})
+@Schema(
+	description = "Represents a category, which is a hierarchical classification that can be associated with particular asset types. Properties follow the [category](https://schema.org/category) specification.",
+	requiredProperties = {"name"}
+)
 @XmlRootElement(name = "TaxonomyCategory")
-public class TaxonomyCategory {
+public class TaxonomyCategory implements Serializable {
 
-	@GraphQLName("ViewableBy")
-	public static enum ViewableBy {
+	public static TaxonomyCategory toDTO(String json) {
+		return ObjectMapperUtil.readValue(TaxonomyCategory.class, json);
+	}
 
-		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
-
-		@JsonCreator
-		public static ViewableBy create(String value) {
-			for (ViewableBy viewableBy : values()) {
-				if (Objects.equals(viewableBy.getValue(), value)) {
-					return viewableBy;
-				}
-			}
-
-			return null;
-		}
-
-		@JsonValue
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ViewableBy(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static TaxonomyCategory unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(TaxonomyCategory.class, json);
 	}
 
 	@Schema
@@ -293,7 +276,7 @@ public class TaxonomyCategory {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> description_i18n;
 
-	@Schema
+	@Schema(description = "The category's external reference code")
 	public String getExternalReferenceCode() {
 		return externalReferenceCode;
 	}
@@ -317,7 +300,7 @@ public class TaxonomyCategory {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The category's external reference code")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String externalReferenceCode;
 
@@ -508,6 +491,135 @@ public class TaxonomyCategory {
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected ParentTaxonomyVocabulary parentTaxonomyVocabulary;
+
+	@Schema(
+		description = "The ID of the site to which this category is scoped."
+	)
+	public Long getSiteId() {
+		return siteId;
+	}
+
+	public void setSiteId(Long siteId) {
+		this.siteId = siteId;
+	}
+
+	@JsonIgnore
+	public void setSiteId(
+		UnsafeSupplier<Long, Exception> siteIdUnsafeSupplier) {
+
+		try {
+			siteId = siteIdUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The ID of the site to which this category is scoped."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Long siteId;
+
+	@Schema(description = "The category's properties.")
+	@Valid
+	public TaxonomyCategoryProperty[] getTaxonomyCategoryProperties() {
+		return taxonomyCategoryProperties;
+	}
+
+	public void setTaxonomyCategoryProperties(
+		TaxonomyCategoryProperty[] taxonomyCategoryProperties) {
+
+		this.taxonomyCategoryProperties = taxonomyCategoryProperties;
+	}
+
+	@JsonIgnore
+	public void setTaxonomyCategoryProperties(
+		UnsafeSupplier<TaxonomyCategoryProperty[], Exception>
+			taxonomyCategoryPropertiesUnsafeSupplier) {
+
+		try {
+			taxonomyCategoryProperties =
+				taxonomyCategoryPropertiesUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The category's properties.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected TaxonomyCategoryProperty[] taxonomyCategoryProperties;
+
+	@Schema
+	public Integer getTaxonomyCategoryUsageCount() {
+		return taxonomyCategoryUsageCount;
+	}
+
+	public void setTaxonomyCategoryUsageCount(
+		Integer taxonomyCategoryUsageCount) {
+
+		this.taxonomyCategoryUsageCount = taxonomyCategoryUsageCount;
+	}
+
+	@JsonIgnore
+	public void setTaxonomyCategoryUsageCount(
+		UnsafeSupplier<Integer, Exception>
+			taxonomyCategoryUsageCountUnsafeSupplier) {
+
+		try {
+			taxonomyCategoryUsageCount =
+				taxonomyCategoryUsageCountUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Integer taxonomyCategoryUsageCount;
+
+	@Schema(
+		description = "The `TaxonomyVocabulary` id, only if the category does not have a parent category."
+	)
+	public Long getTaxonomyVocabularyId() {
+		return taxonomyVocabularyId;
+	}
+
+	public void setTaxonomyVocabularyId(Long taxonomyVocabularyId) {
+		this.taxonomyVocabularyId = taxonomyVocabularyId;
+	}
+
+	@JsonIgnore
+	public void setTaxonomyVocabularyId(
+		UnsafeSupplier<Long, Exception> taxonomyVocabularyIdUnsafeSupplier) {
+
+		try {
+			taxonomyVocabularyId = taxonomyVocabularyIdUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The `TaxonomyVocabulary` id, only if the category does not have a parent category."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long taxonomyVocabularyId;
 
 	@Schema(
 		description = "A write-only property that specifies the category's default permissions."
@@ -759,6 +871,56 @@ public class TaxonomyCategory {
 			sb.append(String.valueOf(parentTaxonomyVocabulary));
 		}
 
+		if (siteId != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"siteId\": ");
+
+			sb.append(siteId);
+		}
+
+		if (taxonomyCategoryProperties != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyCategoryProperties\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < taxonomyCategoryProperties.length; i++) {
+				sb.append(String.valueOf(taxonomyCategoryProperties[i]));
+
+				if ((i + 1) < taxonomyCategoryProperties.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (taxonomyCategoryUsageCount != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyCategoryUsageCount\": ");
+
+			sb.append(taxonomyCategoryUsageCount);
+		}
+
+		if (taxonomyVocabularyId != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyVocabularyId\": ");
+
+			sb.append(taxonomyVocabularyId);
+		}
+
 		if (viewableBy != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -779,15 +941,64 @@ public class TaxonomyCategory {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.taxonomy.dto.v1_0.TaxonomyCategory",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
+	@GraphQLName("ViewableBy")
+	public static enum ViewableBy {
+
+		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
+
+		@JsonCreator
+		public static ViewableBy create(String value) {
+			if ((value == null) || value.equals("")) {
+				return null;
+			}
+
+			for (ViewableBy viewableBy : values()) {
+				if (Objects.equals(viewableBy.getValue(), value)) {
+					return viewableBy;
+				}
+			}
+
+			throw new IllegalArgumentException("Invalid enum value: " + value);
+		}
+
+		@JsonValue
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ViewableBy(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
+	}
+
 	private static String _escape(Object object) {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -804,13 +1015,46 @@ public class TaxonomyCategory {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

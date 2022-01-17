@@ -24,11 +24,12 @@ import {archiveExperiment} from '../state/actions.es';
 import {DispatchContext, StateContext} from '../state/context.es';
 import {SegmentsExperienceType} from '../types.es';
 import {NO_EXPERIMENT_ILLUSTRATION_FILE_NAME} from '../util/contants.es';
+import {navigateToExperience} from '../util/navigation.es';
 import {
 	STATUS_COMPLETED,
 	STATUS_DRAFT,
 	STATUS_FINISHED_WINNER,
-	statusToLabelDisplayType
+	statusToLabelDisplayType,
 } from '../util/statuses.es';
 import {openErrorToast, openSuccessToast} from '../util/toasts.es';
 import ClickGoalPicker from './ClickGoalPicker/ClickGoalPicker.es';
@@ -39,7 +40,7 @@ import Variants from './Variants/Variants.es';
 
 const TABS_STATES = {
 	ACTIVE: 0,
-	HISTORY: 1
+	HISTORY: 1,
 };
 
 function SegmentsExperiments({
@@ -49,7 +50,7 @@ function SegmentsExperiments({
 	onEditSegmentsExperimentStatus,
 	onSelectSegmentsExperienceChange,
 	onTargetChange,
-	segmentsExperiences = []
+	segmentsExperiences = [],
 }) {
 	const [dropdown, setDropdown] = useState(false);
 	const [activeTab, setActiveTab] = useState(TABS_STATES.ACTIVE);
@@ -57,16 +58,24 @@ function SegmentsExperiments({
 		experiment,
 		experimentHistory,
 		selectedExperienceId,
-		variants
+		variants,
 	} = useContext(StateContext);
-	const {APIService, assetsPath} = useContext(SegmentsExperimentsContext);
+	const {APIService, imagesPath} = useContext(SegmentsExperimentsContext);
 	const dispatch = useContext(DispatchContext);
 
 	const _selectedExperienceId = experiment
 		? experiment.segmentsExperienceId
 		: selectedExperienceId;
-	const noExperimentIllustration = `${assetsPath}${NO_EXPERIMENT_ILLUSTRATION_FILE_NAME}`;
-	const winnerVariant = variants.find(variant => variant.winner === true);
+	const noExperimentIllustration = `${imagesPath}${NO_EXPERIMENT_ILLUSTRATION_FILE_NAME}`;
+	const winnerVariant = variants.find((variant) => variant.winner === true);
+	const goalTarget = experiment?.goal?.target?.replace('#', '');
+	const isGoalTargetInDOM = document.getElementById(goalTarget);
+
+	// If the target has been removed from the page we must reset it
+
+	if (goalTarget && !isGoalTargetInDOM) {
+		onTargetChange('');
+	}
 
 	return (
 		<>
@@ -76,11 +85,12 @@ function SegmentsExperiments({
 						<label>
 							{Liferay.Language.get('select-experience')}
 						</label>
+
 						<ClaySelect
 							defaultValue={_selectedExperienceId}
 							onChange={_handleExperienceSelection}
 						>
-							{segmentsExperiences.map(segmentsExperience => {
+							{segmentsExperiences.map((segmentsExperience) => {
 								return (
 									<ClaySelect.Option
 										key={
@@ -101,16 +111,18 @@ function SegmentsExperiments({
 
 			<ClayTabs justified={true}>
 				<ClayTabs.Item
-					active={activeTab == TABS_STATES.ACTIVE}
+					active={activeTab === TABS_STATES.ACTIVE}
 					onClick={() => setActiveTab(TABS_STATES.ACTIVE)}
 				>
 					{Liferay.Language.get('active-test')}
 				</ClayTabs.Item>
+
 				<ClayTabs.Item
-					active={activeTab == TABS_STATES.HISTORY}
+					active={activeTab === TABS_STATES.HISTORY}
 					onClick={() => setActiveTab(TABS_STATES.HISTORY)}
 				>
 					{Liferay.Language.get('history')}
+
 					{' (' + experimentHistory.length + ')'}
 				</ClayTabs.Item>
 			</ClayTabs>
@@ -152,6 +164,7 @@ function SegmentsExperiments({
 											>
 												{Liferay.Language.get('edit')}
 											</ClayDropDown.Item>
+
 											<ClayDropDown.Item
 												onClick={
 													_handleDeleteActiveExperiment
@@ -188,24 +201,26 @@ function SegmentsExperiments({
 												'<strong>',
 												winnerVariant.name,
 												'</strong>'
-											)
+											),
 										}}
 									/>
 
-									<div className="mt-3">
-										<ClayButton
-											className="btn-success"
-											onClick={() =>
-												_handlePublishVariant(
-													winnerVariant.segmentsExperienceId
-												)
-											}
-										>
-											{Liferay.Language.get(
-												'publish-winner'
-											)}
-										</ClayButton>
-									</div>
+									<ClayAlert.Footer>
+										<ClayButton.Group>
+											<ClayButton
+												alert
+												onClick={() =>
+													_handlePublishVariant(
+														winnerVariant.segmentsExperienceId
+													)
+												}
+											>
+												{Liferay.Language.get(
+													'publish-winner'
+												)}
+											</ClayButton>
+										</ClayButton.Group>
+									</ClayAlert.Footer>
 								</ClayAlert>
 							)}
 
@@ -218,10 +233,10 @@ function SegmentsExperiments({
 									allowEdit={
 										experiment.status.value === STATUS_DRAFT
 									}
-									onSelectClickGoalTarget={selector => {
+									onSelectClickGoalTarget={(selector) => {
 										onTargetChange(selector);
 									}}
-									target={experiment.goal.target}
+									target={goalTarget}
 								/>
 							)}
 
@@ -248,16 +263,19 @@ function SegmentsExperiments({
 								src={noExperimentIllustration}
 								width="120px"
 							/>
+
 							<h4 className="text-dark">
 								{Liferay.Language.get(
 									'no-active-tests-were-found-for-the-selected-experience'
 								)}
 							</h4>
+
 							<p>
 								{Liferay.Language.get(
 									'create-test-help-message'
 								)}
 							</p>
+
 							<ClayButton
 								displayType="secondary"
 								onClick={() =>
@@ -271,6 +289,7 @@ function SegmentsExperiments({
 						</div>
 					)}
 				</ClayTabs.TabPane>
+
 				<ClayTabs.TabPane>
 					<ExperimentsHistory
 						experimentHistory={experimentHistory}
@@ -305,7 +324,7 @@ function SegmentsExperiments({
 		const body = {
 			segmentsExperimentId: experiment.segmentsExperimentId,
 			status: STATUS_COMPLETED,
-			winnerSegmentsExperienceId: experienceId
+			winnerSegmentsExperienceId: experienceId,
 		};
 
 		const confirmed = confirm(
@@ -321,11 +340,12 @@ function SegmentsExperiments({
 
 					dispatch(
 						archiveExperiment({
-							status: segmentsExperiment.status
+							status: segmentsExperiment.status,
 						})
 					);
+					navigateToExperience(experienceId);
 				})
-				.catch(_error => {
+				.catch((_error) => {
 					openErrorToast();
 				});
 		}
@@ -339,7 +359,7 @@ SegmentsExperiments.propTypes = {
 	onEditSegmentsExperimentStatus: PropTypes.func.isRequired,
 	onSelectSegmentsExperienceChange: PropTypes.func.isRequired,
 	onTargetChange: PropTypes.func.isRequired,
-	segmentsExperiences: PropTypes.arrayOf(SegmentsExperienceType)
+	segmentsExperiences: PropTypes.arrayOf(SegmentsExperienceType),
 };
 
 export default SegmentsExperiments;

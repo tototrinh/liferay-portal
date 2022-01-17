@@ -12,8 +12,8 @@
  * details.
  */
 
+import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock';
-import dom from 'metal-dom';
 
 import AnalyticsClient from '../../src/analytics';
 
@@ -60,10 +60,12 @@ describe('Custom Asset Plugin', () => {
 	let Analytics;
 
 	beforeEach(() => {
+
 		// Force attaching DOM Content Loaded event
+
 		Object.defineProperty(document, 'readyState', {
 			value: 'loading',
-			writable: false
+			writable: false,
 		});
 
 		fetchMock.mock('*', () => 200);
@@ -86,7 +88,7 @@ describe('Custom Asset Plugin', () => {
 
 			document.dispatchEvent(domContentLoaded);
 
-			const events = Analytics.events.filter(
+			const events = Analytics.getEvents().filter(
 				({eventId}) => eventId === 'assetViewed'
 			);
 
@@ -97,8 +99,8 @@ describe('Custom Asset Plugin', () => {
 					applicationId,
 					eventId: 'assetViewed',
 					properties: expect.objectContaining({
-						assetId: 'assetId'
-					})
+						assetId: 'assetId',
+					}),
 				})
 			);
 
@@ -112,7 +114,7 @@ describe('Custom Asset Plugin', () => {
 
 			document.dispatchEvent(domContentLoaded);
 
-			const events = Analytics.events.filter(
+			const events = Analytics.getEvents().filter(
 				({eventId}) => eventId === 'assetViewed'
 			);
 
@@ -124,8 +126,8 @@ describe('Custom Asset Plugin', () => {
 					eventId: 'assetViewed',
 					properties: expect.objectContaining({
 						assetId: 'assetId',
-						formEnabled: true
-					})
+						formEnabled: true,
+					}),
 				})
 			);
 
@@ -143,18 +145,18 @@ describe('Custom Asset Plugin', () => {
 
 			customAssetElement.appendChild(imageInsideCustomAsset);
 
-			dom.triggerEvent(imageInsideCustomAsset, 'click');
+			userEvent.click(imageInsideCustomAsset);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'assetClicked',
 					properties: expect.objectContaining({
 						assetId: 'assetId',
 						src: googleUrl,
-						tagName: 'img'
-					})
-				})
+						tagName: 'img',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(customAssetElement);
@@ -173,9 +175,9 @@ describe('Custom Asset Plugin', () => {
 
 			customAssetElement.appendChild(linkInsideCustomAsset);
 
-			dom.triggerEvent(linkInsideCustomAsset, 'click');
+			userEvent.click(linkInsideCustomAsset);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'assetClicked',
@@ -183,9 +185,9 @@ describe('Custom Asset Plugin', () => {
 						assetId: 'assetId',
 						href: googleUrl,
 						tagName: 'a',
-						text
-					})
-				})
+						text,
+					}),
+				}),
 			]);
 
 			document.body.removeChild(customAssetElement);
@@ -205,17 +207,17 @@ describe('Custom Asset Plugin', () => {
 
 			customAssetElement.appendChild(paragraphInsideCustomAsset);
 
-			dom.triggerEvent(paragraphInsideCustomAsset, 'click');
+			userEvent.click(paragraphInsideCustomAsset);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'assetClicked',
 					properties: expect.objectContaining({
 						assetId: 'assetId',
-						tagName: 'p'
-					})
-				})
+						tagName: 'p',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(customAssetElement);
@@ -241,14 +243,14 @@ describe('Custom Asset Plugin', () => {
 
 			customAssetElement.appendChild(linkInsideCustomAsset);
 
-			dom.triggerEvent(linkInsideCustomAsset, 'click');
+			userEvent.click(linkInsideCustomAsset);
 
-			expect(Analytics.events.length).toEqual(2);
+			expect(Analytics.getEvents().length).toEqual(2);
 
-			expect(Analytics.events[1]).toEqual(
+			expect(Analytics.getEvents()[1]).toEqual(
 				expect.objectContaining({
 					applicationId,
-					eventId: 'assetDownloaded'
+					eventId: 'assetDownloaded',
 				})
 			);
 

@@ -76,12 +76,9 @@ public class JavaTaglibMethodCheck extends BaseJavaTermCheck {
 			javaClass, absolutePath);
 
 		if (!_containsClass(
-				extendedTagJavaClasses, "com.liferay.taglib.util.IncludeTag")) {
+				extendedTagJavaClasses, "com.liferay.taglib.util.IncludeTag") ||
+			(extendedTagJavaClasses == null)) {
 
-			return javaTerm.getContent();
-		}
-
-		if (extendedTagJavaClasses == null) {
 			return javaTerm.getContent();
 		}
 
@@ -352,7 +349,7 @@ public class JavaTaglibMethodCheck extends BaseJavaTermCheck {
 
 		List<String> tldFileNames = TaglibUtil.getTLDFileNames(
 			getBaseDirName(), _allFileNames, getSourceFormatterExcludes(),
-			isPortalSource());
+			isPortalSource(), getMaxDirLevel());
 
 		if (tldFileNames.isEmpty()) {
 			return _tagAttributesMap.get(fullyQualifiedClassName);
@@ -407,7 +404,7 @@ public class JavaTaglibMethodCheck extends BaseJavaTermCheck {
 		}
 
 		_utilTaglibSrcDirName = TaglibUtil.getUtilTaglibSrcDirName(
-			getBaseDirName());
+			getBaseDirName(), getMaxDirLevel());
 
 		return _utilTaglibSrcDirName;
 	}

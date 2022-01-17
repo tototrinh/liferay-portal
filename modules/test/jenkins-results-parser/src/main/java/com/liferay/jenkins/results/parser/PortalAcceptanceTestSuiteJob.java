@@ -14,6 +14,13 @@
 
 package com.liferay.jenkins.results.parser;
 
+import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
+import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
+import com.liferay.jenkins.results.parser.test.clazz.group.SegmentTestClassGroup;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -21,44 +28,76 @@ import java.util.Set;
  * @author Yi-Chen Tsai
  */
 public abstract class PortalAcceptanceTestSuiteJob
-	extends PortalGitRepositoryJob implements TestSuiteJob {
+	extends PortalGitRepositoryJob implements BatchDependentJob, TestSuiteJob {
 
-	public PortalAcceptanceTestSuiteJob(String jobName) {
-		this(jobName, "default");
-	}
+	public PortalAcceptanceTestSuiteJob(
+		String jobName, BuildProfile buildProfile, String testSuiteName,
+		String branchName) {
 
-	public PortalAcceptanceTestSuiteJob(String jobName, String testSuiteName) {
-		super(jobName);
+		super(jobName, buildProfile, branchName);
+
+		if (testSuiteName == null) {
+			testSuiteName = "default";
+		}
 
 		_testSuiteName = testSuiteName;
 	}
 
 	@Override
-	public Set<String> getBatchNames() {
-		Properties jobProperties = getJobProperties();
+	public List<AxisTestClassGroup> getDependentAxisTestClassGroups() {
+		List<AxisTestClassGroup> axisTestClassGroups = new ArrayList<>();
 
-		String testBatchNames = JenkinsResultsParserUtil.getProperty(
-			jobProperties, "test.batch.names[" + _testSuiteName + "]");
+		for (BatchTestClassGroup batchTestClassGroup :
+				getDependentBatchTestClassGroups()) {
 
-		if (testBatchNames == null) {
-			testBatchNames = JenkinsResultsParserUtil.getProperty(
-				jobProperties, "test.batch.names");
+			axisTestClassGroups.addAll(
+				batchTestClassGroup.getAxisTestClassGroups());
 		}
 
-		Set<String> testBatchNamesSet = getSetFromString(testBatchNames);
+		return axisTestClassGroups;
+	}
 
-		if (!_testSuiteName.equals("relevant")) {
-			return testBatchNamesSet;
+	@Override
+	public Set<String> getDependentBatchNames() {
+		return getFilteredBatchNames(getRawDependentBatchNames());
+	}
+
+	@Override
+	public List<BatchTestClassGroup> getDependentBatchTestClassGroups() {
+		return getBatchTestClassGroups(getRawDependentBatchNames());
+	}
+
+	@Override
+	public Set<String> getDependentSegmentNames() {
+		return getFilteredSegmentNames(getRawDependentBatchNames());
+	}
+
+	@Override
+	public List<SegmentTestClassGroup> getDependentSegmentTestClassGroups() {
+		return getSegmentTestClassGroups(getRawDependentBatchNames());
+	}
+
+	@Override
+	public DistType getDistType() {
+		String distType = JenkinsResultsParserUtil.getProperty(
+			getJobProperties(), "dist.type[" + _testSuiteName + "]");
+
+		if ((distType == null) && _testSuiteName.equals("default")) {
+			distType = JenkinsResultsParserUtil.getProperty(
+				getJobProperties(), "dist.type");
 		}
 
-		String stableTestBatchNames = JenkinsResultsParserUtil.getProperty(
-			jobProperties, "test.batch.names[stable]");
-
-		if (stableTestBatchNames != null) {
-			testBatchNamesSet.addAll(getSetFromString(stableTestBatchNames));
+		if (distType == null) {
+			return DistType.CI;
 		}
 
-		return testBatchNamesSet;
+		for (DistType distTypeValue : DistType.values()) {
+			if (distType.equals(distTypeValue.toString())) {
+				return distTypeValue;
+			}
+		}
+
+		return DistType.CI;
 	}
 
 	@Override
@@ -96,6 +135,46 @@ public abstract class PortalAcceptanceTestSuiteJob
 	@Override
 	public String getTestSuiteName() {
 		return _testSuiteName;
+	}
+
+	@Override
+	protected Set<String> getRawBatchNames() {
+		Properties jobProperties = getJobProperties();
+
+		String testBatchNames = JenkinsResultsParserUtil.getProperty(
+			jobProperties, "test.batch.names[" + _testSuiteName + "]");
+
+		if (testBatchNames == null) {
+			testBatchNames = JenkinsResultsParserUtil.getProperty(
+				jobProperties, "test.batch.names");
+		}
+
+		Set<String> batchNames = getSetFromString(testBatchNames);
+
+		if (!_testSuiteName.equals("relevant")) {
+			return batchNames;
+		}
+
+		String stableTestBatchNames = JenkinsResultsParserUtil.getProperty(
+			jobProperties, "test.batch.names[stable]");
+
+		if (stableTestBatchNames != null) {
+			batchNames.addAll(getSetFromString(stableTestBatchNames));
+		}
+
+		return batchNames;
+	}
+
+	protected Set<String> getRawDependentBatchNames() {
+		String dependentBatchNames = JenkinsResultsParserUtil.getProperty(
+			getJobProperties(), "test.batch.names.smoke", getBranchName(),
+			getTestSuiteName());
+
+		if ((dependentBatchNames == null) || dependentBatchNames.isEmpty()) {
+			return new HashSet<>();
+		}
+
+		return getSetFromString(dependentBatchNames);
 	}
 
 	private final String _testSuiteName;

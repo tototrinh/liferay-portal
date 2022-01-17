@@ -4,8 +4,6 @@ definition {
 		var key_navItem = "${navItem}";
 		var key_index = "${count}";
 
-		AssertElementPresent(locator1 = "NavBar#ACTIVE_NAV_ITEM_LINK");
-
 		AssertElementPresent(locator1 = "LexiconTable#TABLE_SESSION_ID");
 	}
 
@@ -20,25 +18,23 @@ definition {
 		var leadingPortNumber = StringUtil.replace("${nodePort}", "080", "");
 		var bundleIndex = ${leadingPortNumber} - 8;
 
-		AntCommand(
-			locator1 = "build-test.xml",
-			value1 = "deploy-dependency-jars -Dliferay.dependency.jars=${liferayDependencyJars} -Dapp.server.bundle.index=${bundleIndex}");
-
-		Pause(locator1 = "10000");
+		FileInstall.deployFileOnServer(
+			bundleIndex = "${bundleIndex}",
+			liferayDependencyJars = "${liferayDependencyJars}");
 	}
 
 	macro enableDebugging {
 		Navigator.openSpecificURL(url = "http://localhost:${nodePort}");
 
 		if (IsElementPresent(locator1 = "UserBar#USER_SIGN_IN")) {
-			User.loginPG(
-				nodePort = "${nodePort}",
+			User.firstLoginUI(
 				password = "test",
+				specificURL = "http://localhost:${nodePort}",
 				userEmailAddress = "test@liferay.com");
 		}
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
 			panel = "Control Panel",
 			portlet = "Server Administration");
 
@@ -104,7 +100,13 @@ definition {
 	@description = "This will get the log content for a specific clustered server bundle"
 	macro getLogFileSpecificServer {
 		var leadingPortNumber = StringUtil.replace("${nodePort}", "080", "");
-		var bundleIndex = ${leadingPortNumber} - 8;
+
+		if ("${leadingPortNumber}" != "0") {
+			var bundleIndex = ${leadingPortNumber} - 8;
+		}
+		else {
+			var bundleIndex = "${leadingPortNumber}";
+		}
 
 		AntCommand(
 			locator1 = "build-test.xml",
@@ -120,14 +122,14 @@ definition {
 		Navigator.openSpecificURL(url = "http://localhost:${nodePort}");
 
 		if (IsElementPresent(locator1 = "UserBar#USER_SIGN_IN")) {
-			User.loginPG(
-				nodePort = "${nodePort}",
+			User.firstLoginUI(
 				password = "test",
+				specificURL = "http://localhost:${nodePort}",
 				userEmailAddress = "test@liferay.com");
 		}
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
 			panel = "Control Panel",
 			portlet = "Server Administration");
 
@@ -227,6 +229,15 @@ definition {
 				fail("Failed to find expected text: ${expectedText} on cluser node at ${nodePort}");
 			}
 		}
+	}
+
+	@description = "This will wait 5 minutes for node at port ${nodePort} to shutdown"
+	macro waitForNodeShutdown {
+		AntCommand(
+			locator1 = "build-test.xml",
+			value1 = "wait-for-server-shutdown -Dapp.server.port.number=${nodePort}");
+
+		Pause(locator1 = "30000");
 	}
 
 }

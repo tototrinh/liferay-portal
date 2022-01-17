@@ -23,6 +23,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -46,6 +48,7 @@ public class DDLRecordWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("uuid", getUuid());
 		attributes.put("recordId", getRecordId());
 		attributes.put("groupId", getGroupId());
@@ -59,6 +62,8 @@ public class DDLRecordWrapper
 		attributes.put("DDMStorageId", getDDMStorageId());
 		attributes.put("recordSetId", getRecordSetId());
 		attributes.put("recordSetVersion", getRecordSetVersion());
+		attributes.put("className", getClassName());
+		attributes.put("classPK", getClassPK());
 		attributes.put("version", getVersion());
 		attributes.put("displayIndex", getDisplayIndex());
 		attributes.put("lastPublishDate", getLastPublishDate());
@@ -72,6 +77,12 @@ public class DDLRecordWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
 		}
 
 		String uuid = (String)attributes.get("uuid");
@@ -152,6 +163,18 @@ public class DDLRecordWrapper
 			setRecordSetVersion(recordSetVersion);
 		}
 
+		String className = (String)attributes.get("className");
+
+		if (className != null) {
+			setClassName(className);
+		}
+
+		Long classPK = (Long)attributes.get("classPK");
+
+		if (classPK != null) {
+			setClassPK(classPK);
+		}
+
 		String version = (String)attributes.get("version");
 
 		if (version != null) {
@@ -169,6 +192,31 @@ public class DDLRecordWrapper
 		if (lastPublishDate != null) {
 			setLastPublishDate(lastPublishDate);
 		}
+	}
+
+	@Override
+	public DDLRecord cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	/**
+	 * Returns the class name of this ddl record.
+	 *
+	 * @return the class name of this ddl record
+	 */
+	@Override
+	public String getClassName() {
+		return model.getClassName();
+	}
+
+	/**
+	 * Returns the class pk of this ddl record.
+	 *
+	 * @return the class pk of this ddl record
+	 */
+	@Override
+	public long getClassPK() {
+		return model.getClassPK();
 	}
 
 	/**
@@ -189,6 +237,16 @@ public class DDLRecordWrapper
 	@Override
 	public Date getCreateDate() {
 		return model.getCreateDate();
+	}
+
+	/**
+	 * Returns the ct collection ID of this ddl record.
+	 *
+	 * @return the ct collection ID of this ddl record
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
 	}
 
 	@Override
@@ -441,6 +499,26 @@ public class DDLRecordWrapper
 	}
 
 	/**
+	 * Sets the class name of this ddl record.
+	 *
+	 * @param className the class name of this ddl record
+	 */
+	@Override
+	public void setClassName(String className) {
+		model.setClassName(className);
+	}
+
+	/**
+	 * Sets the class pk of this ddl record.
+	 *
+	 * @param classPK the class pk of this ddl record
+	 */
+	@Override
+	public void setClassPK(long classPK) {
+		model.setClassPK(classPK);
+	}
+
+	/**
 	 * Sets the company ID of this ddl record.
 	 *
 	 * @param companyId the company ID of this ddl record
@@ -458,6 +536,16 @@ public class DDLRecordWrapper
 	@Override
 	public void setCreateDate(Date createDate) {
 		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets the ct collection ID of this ddl record.
+	 *
+	 * @param ctCollectionId the ct collection ID of this ddl record
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
 	}
 
 	/**
@@ -638,6 +726,20 @@ public class DDLRecordWrapper
 	@Override
 	public void setVersionUserUuid(String versionUserUuid) {
 		model.setVersionUserUuid(versionUserUuid);
+	}
+
+	@Override
+	public Map<String, Function<DDLRecord, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<DDLRecord, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

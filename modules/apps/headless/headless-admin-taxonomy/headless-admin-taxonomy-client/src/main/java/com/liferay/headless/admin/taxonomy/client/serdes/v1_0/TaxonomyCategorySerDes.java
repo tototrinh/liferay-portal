@@ -15,6 +15,7 @@
 package com.liferay.headless.admin.taxonomy.client.serdes.v1_0;
 
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.TaxonomyCategory;
+import com.liferay.headless.admin.taxonomy.client.dto.v1_0.TaxonomyCategoryProperty;
 import com.liferay.headless.admin.taxonomy.client.json.BaseJSONParser;
 
 import java.text.DateFormat;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import javax.annotation.Generated;
 
@@ -247,6 +249,64 @@ public class TaxonomyCategorySerDes {
 				String.valueOf(taxonomyCategory.getParentTaxonomyVocabulary()));
 		}
 
+		if (taxonomyCategory.getSiteId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"siteId\": ");
+
+			sb.append(taxonomyCategory.getSiteId());
+		}
+
+		if (taxonomyCategory.getTaxonomyCategoryProperties() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyCategoryProperties\": ");
+
+			sb.append("[");
+
+			for (int i = 0;
+				 i < taxonomyCategory.getTaxonomyCategoryProperties().length;
+				 i++) {
+
+				sb.append(
+					String.valueOf(
+						taxonomyCategory.getTaxonomyCategoryProperties()[i]));
+
+				if ((i + 1) <
+						taxonomyCategory.
+							getTaxonomyCategoryProperties().length) {
+
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (taxonomyCategory.getTaxonomyCategoryUsageCount() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyCategoryUsageCount\": ");
+
+			sb.append(taxonomyCategory.getTaxonomyCategoryUsageCount());
+		}
+
+		if (taxonomyCategory.getTaxonomyVocabularyId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"taxonomyVocabularyId\": ");
+
+			sb.append(taxonomyCategory.getTaxonomyVocabularyId());
+		}
+
 		if (taxonomyCategory.getViewableBy() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -306,13 +366,25 @@ public class TaxonomyCategorySerDes {
 			map.put("creator", String.valueOf(taxonomyCategory.getCreator()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(taxonomyCategory.getDateCreated()));
+		if (taxonomyCategory.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(
+					taxonomyCategory.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(taxonomyCategory.getDateModified()));
+		if (taxonomyCategory.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(
+					taxonomyCategory.getDateModified()));
+		}
 
 		if (taxonomyCategory.getDescription() == null) {
 			map.put("description", null);
@@ -389,6 +461,42 @@ public class TaxonomyCategorySerDes {
 			map.put(
 				"parentTaxonomyVocabulary",
 				String.valueOf(taxonomyCategory.getParentTaxonomyVocabulary()));
+		}
+
+		if (taxonomyCategory.getSiteId() == null) {
+			map.put("siteId", null);
+		}
+		else {
+			map.put("siteId", String.valueOf(taxonomyCategory.getSiteId()));
+		}
+
+		if (taxonomyCategory.getTaxonomyCategoryProperties() == null) {
+			map.put("taxonomyCategoryProperties", null);
+		}
+		else {
+			map.put(
+				"taxonomyCategoryProperties",
+				String.valueOf(
+					taxonomyCategory.getTaxonomyCategoryProperties()));
+		}
+
+		if (taxonomyCategory.getTaxonomyCategoryUsageCount() == null) {
+			map.put("taxonomyCategoryUsageCount", null);
+		}
+		else {
+			map.put(
+				"taxonomyCategoryUsageCount",
+				String.valueOf(
+					taxonomyCategory.getTaxonomyCategoryUsageCount()));
+		}
+
+		if (taxonomyCategory.getTaxonomyVocabularyId() == null) {
+			map.put("taxonomyVocabularyId", null);
+		}
+		else {
+			map.put(
+				"taxonomyVocabularyId",
+				String.valueOf(taxonomyCategory.getTaxonomyVocabularyId()));
 		}
 
 		if (taxonomyCategory.getViewableBy() == null) {
@@ -517,16 +625,49 @@ public class TaxonomyCategorySerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "siteId")) {
+				if (jsonParserFieldValue != null) {
+					taxonomyCategory.setSiteId(
+						Long.valueOf((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "taxonomyCategoryProperties")) {
+
+				if (jsonParserFieldValue != null) {
+					taxonomyCategory.setTaxonomyCategoryProperties(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> TaxonomyCategoryPropertySerDes.toDTO(
+								(String)object)
+						).toArray(
+							size -> new TaxonomyCategoryProperty[size]
+						));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "taxonomyCategoryUsageCount")) {
+
+				if (jsonParserFieldValue != null) {
+					taxonomyCategory.setTaxonomyCategoryUsageCount(
+						Integer.valueOf((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "taxonomyVocabularyId")) {
+
+				if (jsonParserFieldValue != null) {
+					taxonomyCategory.setTaxonomyVocabularyId(
+						Long.valueOf((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "viewableBy")) {
 				if (jsonParserFieldValue != null) {
 					taxonomyCategory.setViewableBy(
 						TaxonomyCategory.ViewableBy.create(
 							(String)jsonParserFieldValue));
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -556,7 +697,7 @@ public class TaxonomyCategorySerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -582,14 +723,17 @@ public class TaxonomyCategorySerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

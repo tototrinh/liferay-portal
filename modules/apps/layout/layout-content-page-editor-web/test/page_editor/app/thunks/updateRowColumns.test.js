@@ -12,9 +12,9 @@
  * details.
  */
 
-import updateLayoutData from '../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateLayoutData';
+import updateRowColumns from '../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateRowColumns';
 import LayoutService from '../../../../src/main/resources/META-INF/resources/page_editor/app/services/LayoutService';
-import updateRowColumns from '../../../../src/main/resources/META-INF/resources/page_editor/app/thunks/updateRowColumns';
+import updateRowColumnsThunk from '../../../../src/main/resources/META-INF/resources/page_editor/app/thunks/updateRowColumns';
 
 jest.mock(
 	'../../../../src/main/resources/META-INF/resources/page_editor/app/config',
@@ -22,7 +22,7 @@ jest.mock(
 );
 
 jest.mock(
-	'../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateLayoutData',
+	'../../../../src/main/resources/META-INF/resources/page_editor/app/actions/updateRowColumns',
 	() => jest.fn()
 );
 
@@ -34,7 +34,7 @@ jest.mock(
 describe('updateRowColumns', () => {
 	beforeEach(() => {
 		LayoutService.updateRowColumns.mockClear();
-		updateLayoutData.mockClear();
+		updateRowColumns.mockClear();
 
 		LayoutService.updateRowColumns.mockImplementation(() =>
 			Promise.resolve()
@@ -44,17 +44,17 @@ describe('updateRowColumns', () => {
 			Promise.resolve({
 				layoutData: {
 					items: {},
-					version: 1
-				}
+					version: 1,
+				},
 			})
 		);
 	});
 
 	const runThunk = () =>
-		updateRowColumns({
+		updateRowColumnsThunk({
 			itemId: '0',
 			numberOfColumns: 6,
-			segmentsExperienceId: '0'
+			segmentsExperienceId: '0',
 		})(() => {});
 
 	it('calls LayoutService.updateRowColumns with the given information', () => {
@@ -64,19 +64,20 @@ describe('updateRowColumns', () => {
 			expect.objectContaining({
 				itemId: '0',
 				numberOfColumns: 6,
-				segmentsExperienceId: '0'
+				segmentsExperienceId: '0',
 			})
 		);
 	});
 
-	it('dispatch updateLayoutData action when the promise is resolved', async () => {
+	it('dispatch updateRowColumns action when the promise is resolved', async () => {
 		await runThunk();
 
-		expect(updateLayoutData).toHaveBeenCalledWith({
+		expect(updateRowColumns).toHaveBeenCalledWith({
+			itemId: '0',
 			layoutData: {
 				items: {},
-				version: 1
-			}
+				version: 1,
+			},
 		});
 	});
 });

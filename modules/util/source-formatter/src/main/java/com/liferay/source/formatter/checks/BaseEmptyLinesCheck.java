@@ -15,6 +15,7 @@
 package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -97,12 +98,55 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 
 			String tagName2 = matcher.group(4);
 
-			if (!tagName1.equals(tagName2) &&
-				(!ArrayUtil.contains(_STYLING_TAG_NAMES, tagName1) ||
-				 !ArrayUtil.contains(_STYLING_TAG_NAMES, tagName2))) {
+			if ((!tagName1.equals(tagName2) &&
+				 (!ArrayUtil.contains(_STYLING_TAG_NAMES, tagName1) ||
+				  !ArrayUtil.contains(_STYLING_TAG_NAMES, tagName2))) ||
+				(tagName1.matches("h\\d") && tagName1.matches("h\\d"))) {
 
 				return StringUtil.replaceFirst(
 					content, "\n", "\n\n", matcher.start());
+			}
+		}
+
+		matcher = _emptyLineBetweenSameSelfClosingTagsPattern.matcher(content);
+
+		while (matcher.find()) {
+			String match = matcher.group();
+
+			String replacement = match.replaceAll("\n\n", "\n");
+
+			StringBundler sb = new StringBundler();
+
+			if (ArrayUtil.contains(
+					_ENFORCE_EMPTY_LINE_SELF_CLOSING_TAG_NAMES,
+					matcher.group(2))) {
+
+				String previousLine = null;
+
+				for (String line : replacement.split("\n")) {
+					if ((previousLine != null) &&
+						(!previousLine.contains("\"hidden\"") ||
+						 !line.contains("\"hidden\""))) {
+
+						sb.append("\n");
+					}
+
+					sb.append(line);
+					sb.append("\n");
+
+					previousLine = line;
+				}
+			}
+
+			if (sb.index() > 0) {
+				sb.setIndex(sb.index() - 1);
+
+				replacement = sb.toString();
+			}
+
+			if (!replacement.equals(match)) {
+				return StringUtil.replaceFirst(
+					content, matcher.group(), replacement, matcher.start());
 			}
 		}
 
@@ -341,25 +385,34 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 		return content;
 	}
 
+	protected String fixMissingEmptyLineAfterDoctype(String content) {
+		Matcher matcher = _missingEmptyLineAfterDoctypePattern.matcher(content);
+
+		if (matcher.find()) {
+			return StringUtil.replaceFirst(
+				content, "\n", "\n\n", matcher.start());
+		}
+
+		return content;
+	}
+
 	protected String fixMissingEmptyLineAfterSettingVariable(String content) {
-		Matcher matcher = _setVariablePattern.matcher(content);
+		Matcher matcher1 = _setVariablePattern.matcher(content);
 
-		while (matcher.find()) {
-			if (!isJavaSource(content, matcher.start())) {
+		while (matcher1.find()) {
+			if (!isJavaSource(content, matcher1.start()) ||
+				(content.charAt(matcher1.end()) == CharPool.NEW_LINE)) {
+
 				continue;
 			}
 
-			if (content.charAt(matcher.end()) == CharPool.NEW_LINE) {
-				continue;
-			}
-
-			int x = content.indexOf(";\n", matcher.end());
+			int x = content.indexOf(";\n", matcher1.end());
 
 			if (x == -1) {
 				return content;
 			}
 
-			String nextCommand = content.substring(matcher.end(), x + 1);
+			String nextCommand = content.substring(matcher1.end(), x + 1);
 
 			if (nextCommand.contains("{\n") ||
 				nextCommand.matches("\t*%>[\\S\\s]*")) {
@@ -367,7 +420,7 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 				continue;
 			}
 
-			String variableName = matcher.group(2);
+			String variableName = matcher1.group(2);
 
 			Pattern pattern2 = Pattern.compile("\\W(" + variableName + ")\\W");
 
@@ -383,7 +436,7 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 				continue;
 			}
 
-			x += matcher.end();
+			x += matcher1.end();
 
 			int y = content.lastIndexOf("\ttry (", x);
 
@@ -396,7 +449,7 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 			}
 
 			return StringUtil.replaceFirst(
-				content, "\n", "\n\n", matcher.end(3));
+				content, "\n", "\n\n", matcher1.end(3));
 		}
 
 		return content;
@@ -429,12 +482,8 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 
 			String whitespace = matcher.group(1);
 
-			int x = content.indexOf(
-				whitespace + StringPool.CLOSE_CURLY_BRACE + "\n",
-				matcher.end());
-			int y = content.indexOf(
-				whitespace + StringPool.CLOSE_CURLY_BRACE + "\n\n",
-				matcher.end());
+			int x = content.indexOf(whitespace + "}\n", matcher.end());
+			int y = content.indexOf(whitespace + "}\n\n", matcher.end());
 
 			if ((x != -1) && (x != y)) {
 				return StringUtil.replaceFirst(content, "\n", "\n\n", x + 1);
@@ -492,7 +541,7 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 	}
 
 	protected String fixMissingEmptyLinesAroundComments(String content) {
-		Matcher matcher = _missingEmptyLineAfterComment.matcher(content);
+		Matcher matcher = _missingEmptyLineAfterCommentPattern.matcher(content);
 
 		while (matcher.find()) {
 			if (isJavaSource(content, matcher.start())) {
@@ -501,7 +550,7 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 			}
 		}
 
-		matcher = _missingEmptyLineBeforeComment.matcher(content);
+		matcher = _missingEmptyLineBeforeCommentPattern.matcher(content);
 
 		while (matcher.find()) {
 			if (isJavaSource(content, matcher.start())) {
@@ -604,10 +653,6 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 		return content;
 	}
 
-	protected boolean isJavaSource(String content, int pos) {
-		return true;
-	}
-
 	private int _getMatchingClosingCurlyBracePos(String content, int start) {
 		int x = start;
 
@@ -640,22 +685,28 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 		}
 	}
 
+	private static final String[] _ENFORCE_EMPTY_LINE_SELF_CLOSING_TAG_NAMES = {
+		"img", "input"
+	};
+
 	private static final String[] _STYLING_TAG_NAMES = {
 		"dd", "dt", "li", "span", "td", "th", "tr"
 	};
 
+	private static final Pattern _emptyLineBetweenSameSelfClosingTagsPattern =
+		Pattern.compile("(?<=\n)(\t*<(\\w+) ).+?/>(\n+\\1.+?/>(?=\n))+");
 	private static final Pattern _emptyLineBetweenTagsPattern1 =
 		Pattern.compile("\n(\t*)</([-\\w:]+)>(\n*)(\t*)<([-\\w:]+)[> \n]");
 	private static final Pattern _emptyLineBetweenTagsPattern2 =
-		Pattern.compile("(\\S</(\\w+)>| />)\n(\t+)<([-\\w:]+)[> \n]");
+		Pattern.compile("(\\S</([\\w:]+)>| />)\n(\t+)<([-\\w:]+)[> \n]");
 	private static final Pattern _emptyLineInMultiLineTagsPattern1 =
 		Pattern.compile("\n\t*<[-\\w:#]+\n\n\t*\\w");
 	private static final Pattern _emptyLineInMultiLineTagsPattern2 =
 		Pattern.compile("\n(\t*)\\S*[^>]\n\n(\t*)(/?)>\n");
 	private static final Pattern _emptyLineInNestedTagsPattern1 =
-		Pattern.compile("\n(\t*)(?:<\\w.*[^/])?>\n\n(\t*)(<.*)\n");
+		Pattern.compile("(?:\\A|\n)(\t*)(?:<\\w.*[^/])?>\n(?=\n(\t*)(<.*)\n)");
 	private static final Pattern _emptyLineInNestedTagsPattern2 =
-		Pattern.compile("\n(\t*)(.*>)\n\n(\t*)</.*(\n|$)");
+		Pattern.compile("\n(\t*)(.*>)\n(?=\n(\t*)</.*(\n|$))");
 	private static final Pattern _incorrectCloseCurlyBracePattern1 =
 		Pattern.compile("\n(.+)\n\n(\t+)}\n");
 	private static final Pattern _incorrectCloseCurlyBracePattern2 =
@@ -665,9 +716,13 @@ public abstract class BaseEmptyLinesCheck extends BaseFileCheck {
 	private static final Pattern _incorrectOpenCurlyBracePattern =
 		Pattern.compile(
 			"\n.*?(\\Wnew (.*\\)) |\\[\\] (\\w+ = )?)?\\{(\n+)\t*\\{\n");
-	private static final Pattern _missingEmptyLineAfterComment =
+	private static final Pattern _missingEmptyLineAfterCommentPattern =
 		Pattern.compile("\n\t*// .*\n[\t ]*(?!// )\\S");
-	private static final Pattern _missingEmptyLineBeforeComment =
+	private static final Pattern _missingEmptyLineAfterDoctypePattern =
+		Pattern.compile(
+			"^(<\\?xml .*\\?>|<\\!DOCTYPE .*>)\n<\\w",
+			Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+	private static final Pattern _missingEmptyLineBeforeCommentPattern =
 		Pattern.compile("\n[\t ]*(?!// )\\S.*\n\t*// ");
 	private static final Pattern _missingEmptyLineBetweenTagsPattern1 =
 		Pattern.compile("\n(\t*)/>\n(\t*)<[-\\w:]+[> \n]");

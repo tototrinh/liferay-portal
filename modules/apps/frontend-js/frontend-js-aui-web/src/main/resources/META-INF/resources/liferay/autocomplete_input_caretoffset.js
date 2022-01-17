@@ -15,13 +15,13 @@
 /**
  * The Autocomplete Input Caretoffset Component.
  *
- * @deprecated since 7.2, unused
+ * @deprecated As of Mueller (7.2.x), with no direct replacement
  * @module liferay-autocomplete-input-caretoffset
  */
 
 AUI.add(
 	'liferay-autocomplete-input-caretoffset',
-	A => {
+	(A) => {
 		var ANode = A.Node;
 
 		var MIRROR_STYLES = [
@@ -41,12 +41,12 @@ AUI.add(
 			'textIndent',
 			'textTransform',
 			'width',
-			'wordSpacing'
+			'wordSpacing',
 		];
 
 		var STR_INPUT_NODE = 'inputNode';
 
-		var AutcompleteInputCaretOffset = function() {};
+		var AutcompleteInputCaretOffset = function () {};
 
 		AutcompleteInputCaretOffset.prototype = {
 			_applyMirrorContent() {
@@ -86,7 +86,7 @@ AUI.add(
 
 				var inputMirror = instance._inputMirror;
 
-				MIRROR_STYLES.forEach(item => {
+				MIRROR_STYLES.forEach((item) => {
 					inputMirror.setStyle(item, inputNode.getStyle(item));
 				});
 			},
@@ -97,6 +97,7 @@ AUI.add(
 				if (!instance._inputMirror) {
 					var inputMirror = ANode.create(instance.TPL_INPUT_MIRROR);
 
+					// eslint-disable-next-line @liferay/aui/no-get-body
 					A.getBody().append(inputMirror);
 
 					instance._inputMirror = inputMirror;
@@ -124,20 +125,20 @@ AUI.add(
 
 				return {
 					x: inputCaretEl.offsetLeft + scrollLeft,
-					y: inputCaretEl.offsetTop - scrollTop
+					y: inputCaretEl.offsetTop - scrollTop,
 				};
 			},
 
 			TPL_CARET: '<span class="input-caret">&nbsp</span>',
 
 			TPL_INPUT_MIRROR:
-				'<div class="liferay-autocomplete-input-mirror"></div>'
+				'<div class="liferay-autocomplete-input-mirror"></div>',
 		};
 
 		A.Base.mix(Liferay.AutoCompleteTextarea, [AutcompleteInputCaretOffset]);
 	},
 	'',
 	{
-		requires: ['liferay-autocomplete-textarea']
+		requires: ['liferay-autocomplete-textarea'],
 	}
 );

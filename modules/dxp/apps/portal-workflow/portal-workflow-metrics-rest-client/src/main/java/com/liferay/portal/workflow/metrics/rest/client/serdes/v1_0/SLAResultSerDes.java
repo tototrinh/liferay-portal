@@ -59,6 +59,21 @@ public class SLAResultSerDes {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+		if (slaResult.getDateModified() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dateModified\": ");
+
+			sb.append("\"");
+
+			sb.append(
+				liferayToJSONDateFormat.format(slaResult.getDateModified()));
+
+			sb.append("\"");
+		}
+
 		if (slaResult.getDateOverdue() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -153,9 +168,23 @@ public class SLAResultSerDes {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-		map.put(
-			"dateOverdue",
-			liferayToJSONDateFormat.format(slaResult.getDateOverdue()));
+		if (slaResult.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(slaResult.getDateModified()));
+		}
+
+		if (slaResult.getDateOverdue() == null) {
+			map.put("dateOverdue", null);
+		}
+		else {
+			map.put(
+				"dateOverdue",
+				liferayToJSONDateFormat.format(slaResult.getDateOverdue()));
+		}
 
 		if (slaResult.getId() == null) {
 			map.put("id", null);
@@ -213,7 +242,13 @@ public class SLAResultSerDes {
 			SLAResult slaResult, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "dateOverdue")) {
+			if (Objects.equals(jsonParserFieldName, "dateModified")) {
+				if (jsonParserFieldValue != null) {
+					slaResult.setDateModified(
+						toDate((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "dateOverdue")) {
 				if (jsonParserFieldValue != null) {
 					slaResult.setDateOverdue(
 						toDate((String)jsonParserFieldValue));
@@ -246,10 +281,6 @@ public class SLAResultSerDes {
 						SLAResult.Status.create((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -278,7 +309,7 @@ public class SLAResultSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -304,14 +335,17 @@ public class SLAResultSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -23,19 +23,19 @@ export default function VariantForm({
 	onClose,
 	onSave,
 	title,
-	variantId
+	variantId,
 }) {
 	const [inputName, setInputName] = useState(name);
 	const [error, setError] = useState(false);
 	const [invalidForm, setInvalidForm] = useState(false);
 	const [busy, setBusy] = useState(false);
-	const mounted = useRef();
+	const mountedRef = useRef();
 
 	useEffect(() => {
-		mounted.current = true;
+		mountedRef.current = true;
 
 		return () => {
-			mounted.current = false;
+			mountedRef.current = false;
 		};
 	});
 
@@ -59,7 +59,7 @@ export default function VariantForm({
 							'variant-name-is-required'
 						)}
 						label={Liferay.Language.get('name')}
-						onChange={event => setInputName(event.target.value)}
+						onChange={(event) => setInputName(event.target.value)}
 						onValidationChange={setInvalidForm}
 						value={inputName}
 					/>
@@ -72,6 +72,7 @@ export default function VariantForm({
 						<ClayButton displayType="secondary" onClick={onClose}>
 							{Liferay.Language.get('cancel')}
 						</ClayButton>
+
 						<BusyButton
 							busy={busy}
 							disabled={busy || invalidForm}
@@ -93,13 +94,13 @@ export default function VariantForm({
 			setBusy(true);
 			onSave({name: inputName, variantId})
 				.then(() => {
-					if (mounted.current) {
+					if (mountedRef.current) {
 						setBusy(false);
 						onClose();
 					}
 				})
 				.catch(() => {
-					if (mounted.current) {
+					if (mountedRef.current) {
 						setBusy(false);
 						setError(true);
 					}

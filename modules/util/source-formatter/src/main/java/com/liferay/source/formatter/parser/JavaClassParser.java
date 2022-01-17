@@ -40,6 +40,13 @@ public class JavaClassParser {
 	public static List<JavaClass> parseAnonymousClasses(String content)
 		throws IOException, ParseException {
 
+		return parseAnonymousClasses(content, null, null);
+	}
+
+	public static List<JavaClass> parseAnonymousClasses(
+			String content, String packageName, List<String> importNames)
+		throws IOException, ParseException {
+
 		List<JavaClass> anonymousClasses = new ArrayList<>();
 
 		Matcher matcher = _anonymousClassPattern.matcher(content);
@@ -53,13 +60,21 @@ public class JavaClassParser {
 				continue;
 			}
 
-			int lineNumber = SourceUtil.getLineNumber(content, matcher.start());
+			JavaClass anonymousClass = _parseJavaClass(
+				StringPool.BLANK, anonymousClassContent,
+				SourceUtil.getLineNumber(content, matcher.start()),
+				JavaTerm.ACCESS_MODIFIER_PRIVATE, false, false, false, false,
+				false, true);
 
-			anonymousClasses.add(
-				_parseJavaClass(
-					StringPool.BLANK, anonymousClassContent, lineNumber,
-					JavaTerm.ACCESS_MODIFIER_PRIVATE, false, false, false,
-					false, true));
+			if (packageName != null) {
+				anonymousClass.setPackageName(packageName);
+			}
+
+			if (importNames != null) {
+				anonymousClass.setImportNames(importNames);
+			}
+
+			anonymousClasses.add(anonymousClass);
 		}
 
 		return anonymousClasses;
@@ -109,6 +124,13 @@ public class JavaClassParser {
 		}
 
 		boolean isEnum = false;
+
+		boolean isFinal = false;
+
+		if (matcher.group(3) != null) {
+			isFinal = true;
+		}
+
 		boolean isInterface = false;
 
 		if (matcher.group(4) != null) {
@@ -124,7 +146,7 @@ public class JavaClassParser {
 
 		JavaClass javaClass = _parseJavaClass(
 			className, classContent, lineNumber,
-			JavaTerm.ACCESS_MODIFIER_PUBLIC, isAbstract, false, isEnum,
+			JavaTerm.ACCESS_MODIFIER_PUBLIC, isAbstract, isFinal, false, isEnum,
 			isInterface, false);
 
 		javaClass.setPackageName(JavaSourceUtil.getPackageName(content));
@@ -134,7 +156,7 @@ public class JavaClassParser {
 
 		for (String importLine : importLines) {
 			if (Validator.isNotNull(importLine)) {
-				javaClass.addImport(
+				javaClass.addImportName(
 					importLine.substring(7, importLine.length() - 1));
 			}
 		}
@@ -246,9 +268,7 @@ public class JavaClassParser {
 		}
 	}
 
-	private static String _getConstructorOrMethodName(String line, int pos) {
-		line = line.substring(0, pos);
-
+	private static String _getConstructorOrMethodName(String line) {
 		int x = line.lastIndexOf(CharPool.SPACE);
 
 		return line.substring(x + 1);
@@ -266,9 +286,15 @@ public class JavaClassParser {
 
 		String startLine = StringUtil.trim(matcher.group());
 
+		int x = startLine.indexOf(CharPool.OPEN_PARENTHESIS);
+
+		if (x != -1) {
+			startLine = startLine.substring(0, x);
+		}
+
 		startLine = StringUtil.replace(
-			startLine, new String[] {"\t", "(\n", "\n", " synchronized "},
-			new String[] {"", "(", " ", " "});
+			startLine, new String[] {"\t", "\n", " synchronized "},
+			new String[] {"", " ", " "});
 
 		javaTermContent = metadata + javaTermContent;
 
@@ -289,12 +315,12 @@ public class JavaClassParser {
 		boolean isAbstract = SourceUtil.containsUnquoted(
 			startLine, " abstract ");
 		boolean isEnum = SourceUtil.containsUnquoted(startLine, " enum ");
+		boolean isFinal = SourceUtil.containsUnquoted(startLine, " final ");
 		boolean isInterface = SourceUtil.containsUnquoted(
 			startLine, " interface ");
 		boolean isStatic = SourceUtil.containsUnquoted(startLine, " static ");
 
-		int x = startLine.indexOf(CharPool.EQUAL);
-		int y = startLine.indexOf(CharPool.OPEN_PARENTHESIS);
+		int y = startLine.indexOf(CharPool.EQUAL);
 
 		if (SourceUtil.containsUnquoted(startLine, " @interface ") ||
 			SourceUtil.containsUnquoted(startLine, " class ") ||
@@ -303,32 +329,31 @@ public class JavaClassParser {
 
 			return _parseJavaClass(
 				_getClassName(startLine), javaTermContent, lineNumber,
-				accessModifier, isAbstract, isStatic, isEnum, isInterface,
-				false);
+				accessModifier, isAbstract, isFinal, isStatic, isEnum,
+				isInterface, false);
 		}
 
-		if (((x > 0) && ((y == -1) || (y > x))) ||
-			(startLine.endsWith(StringPool.SEMICOLON) && (y == -1))) {
+		if (((y > 0) && ((x == -1) || (x > y))) ||
+			(startLine.endsWith(StringPool.SEMICOLON) && (x == -1))) {
 
 			return new JavaVariable(
 				_getVariableName(startLine), javaTermContent, accessModifier,
-				lineNumber, isAbstract, isStatic);
+				lineNumber, isAbstract, isFinal, isStatic);
 		}
 
-		if (y == -1) {
+		if (x == -1) {
 			return null;
 		}
 
-		int spaceCount = StringUtil.count(
-			startLine.substring(0, y), CharPool.SPACE);
+		int spaceCount = StringUtil.count(startLine, CharPool.SPACE);
 
 		if (isStatic || (spaceCount > 1) ||
 			(accessModifier.equals(JavaTerm.ACCESS_MODIFIER_DEFAULT) &&
 			 (spaceCount > 0))) {
 
 			return new JavaMethod(
-				_getConstructorOrMethodName(startLine, y), javaTermContent,
-				accessModifier, lineNumber, isAbstract, isStatic);
+				_getConstructorOrMethodName(startLine), javaTermContent,
+				accessModifier, lineNumber, isAbstract, isFinal, isStatic);
 		}
 
 		if ((spaceCount == 1) ||
@@ -336,8 +361,8 @@ public class JavaClassParser {
 			 (spaceCount == 0))) {
 
 			return new JavaConstructor(
-				_getConstructorOrMethodName(startLine, y), javaTermContent,
-				accessModifier, lineNumber, isAbstract, isStatic);
+				_getConstructorOrMethodName(startLine), javaTermContent,
+				accessModifier, lineNumber, isAbstract, isFinal, isStatic);
 		}
 
 		return null;
@@ -372,10 +397,9 @@ public class JavaClassParser {
 		int level = 0;
 
 		while (true) {
-			String line = SourceUtil.getLine(classContent, lineNumber);
-
 			level += ToolsUtil.getLevel(
-				line, increaseLevelString, decreaseLevelString);
+				SourceUtil.getLine(classContent, lineNumber),
+				increaseLevelString, decreaseLevelString);
 
 			if (level == 0) {
 				return lineNumber;
@@ -452,18 +476,29 @@ public class JavaClassParser {
 
 	private static JavaClass _parseJavaClass(
 			String className, String classContent, int classLineNumber,
-			String accessModifier, boolean isAbstract, boolean isStatic,
-			boolean isEnum, boolean isInterface, boolean anonymous)
+			String accessModifier, boolean isAbstract, boolean isFinal,
+			boolean isStatic, boolean isEnum, boolean isInterface,
+			boolean anonymous)
 		throws IOException, ParseException {
 
 		JavaClass javaClass = new JavaClass(
 			className, classContent, accessModifier, classLineNumber,
-			isAbstract, isStatic, isInterface, anonymous);
+			isAbstract, isFinal, isStatic, isInterface, anonymous);
 
 		int lineNumber = 0;
 
 		int annotationLevel = 0;
 		int level = 0;
+
+		if (classContent.startsWith("/*")) {
+			while (true) {
+				String line = SourceUtil.getLine(classContent, ++lineNumber);
+
+				if (line.endsWith("*/")) {
+					break;
+				}
+			}
+		}
 
 		while (true) {
 			String line = SourceUtil.getLine(classContent, ++lineNumber);

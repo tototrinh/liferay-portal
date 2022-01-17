@@ -12,15 +12,15 @@
  * details.
  */
 
-import dom from 'metal-dom';
+import {delegate} from 'frontend-js-web';
 
 const CssClass = {
 	ACTIVE: 'active',
-	SHOW: 'show'
+	SHOW: 'show',
 };
 
 const Selector = {
-	TRIGGER: '[data-toggle="liferay-tab"]'
+	TRIGGER: '[data-toggle="liferay-tab"]',
 };
 
 class TabsProvider {
@@ -36,7 +36,7 @@ class TabsProvider {
 
 		this._setTransitionEndEvent();
 
-		dom.delegate(
+		delegate(
 			document.body,
 			'click',
 			Selector.TRIGGER,
@@ -68,13 +68,17 @@ class TabsProvider {
 
 		this._transitioning = true;
 
-		dom.once(panel, this._transitionEndEvent, () => {
-			panel.classList.remove(CssClass.ACTIVE);
+		panel.addEventListener(
+			this._transitionEndEvent,
+			() => {
+				panel.classList.remove(CssClass.ACTIVE);
 
-			this._transitioning = false;
+				this._transitioning = false;
 
-			Liferay.fire(this.EVENT_HIDDEN, {panel, trigger});
-		});
+				Liferay.fire(this.EVENT_HIDDEN, {panel, trigger});
+			},
+			{once: true}
+		);
 	};
 
 	show = ({panel, trigger}) => {
@@ -90,12 +94,16 @@ class TabsProvider {
 			return;
 		}
 
-		const activePanel = panel.parentElement.querySelector(
-			`.${CssClass.SHOW}`
-		);
+		const panels = Array.from(panel.parentElement.children);
 
-		if (activePanel) {
-			Liferay.on(this.EVENT_HIDDEN, event => {
+		const activePanels = panels.filter((item) => {
+			return item.classList.contains(CssClass.SHOW);
+		});
+
+		if (activePanels.length) {
+			const activePanel = activePanels[0];
+
+			Liferay.once(this.EVENT_HIDDEN, (event) => {
 				if (event.panel === activePanel) {
 					this.show({panel, trigger});
 				}
@@ -124,7 +132,7 @@ class TabsProvider {
 		return document.querySelector(`[href="#${panel.getAttribute('id')}"]`);
 	}
 
-	_onTriggerClick = event => {
+	_onTriggerClick = (event) => {
 		const trigger = event.delegateTarget;
 
 		if (trigger.tagName === 'A') {
@@ -133,13 +141,8 @@ class TabsProvider {
 
 		const panel = this._getPanel(trigger);
 
-		if (panel) {
-			if (panel.classList.contains(CssClass.SHOW)) {
-				this.hide({panel, trigger});
-			}
-			else {
-				this.show({panel, trigger});
-			}
+		if (panel && !panel.classList.contains(CssClass.SHOW)) {
+			this.show({panel, trigger});
 		}
 	};
 
@@ -150,12 +153,12 @@ class TabsProvider {
 			MozTransition: 'transitionend',
 			OTransition: 'oTransitionEnd otransitionend',
 			WebkitTransition: 'webkitTransitionEnd',
-			transition: 'transitionend'
+			transition: 'transitionend',
 		};
 
 		let eventName = false;
 
-		Object.keys(transitionEndEvents).some(name => {
+		Object.keys(transitionEndEvents).some((name) => {
 			if (sampleElement.style[name] !== undefined) {
 				eventName = transitionEndEvents[name];
 

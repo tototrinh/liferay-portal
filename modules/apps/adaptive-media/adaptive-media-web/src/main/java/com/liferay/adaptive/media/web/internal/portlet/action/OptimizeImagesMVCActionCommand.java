@@ -66,7 +66,7 @@ public class OptimizeImagesMVCActionCommand extends BaseMVCActionCommand {
 
 		String entryUuid = ParamUtil.getString(actionRequest, "entryUuid");
 
-		final String jobName = "optimizeImages-".concat(_portalUUID.generate());
+		String jobName = "optimizeImages-".concat(_portalUUID.generate());
 
 		if (Validator.isNotNull(entryUuid)) {
 			_optimizeImagesSingleConfiguration(
@@ -83,7 +83,7 @@ public class OptimizeImagesMVCActionCommand extends BaseMVCActionCommand {
 
 	private BackgroundTask _optimizeImages(
 			long userId, long companyId, String jobName)
-		throws PortalException {
+		throws Exception {
 
 		Map<String, Serializable> taskContextMap =
 			HashMapBuilder.<String, Serializable>put(
@@ -109,7 +109,7 @@ public class OptimizeImagesMVCActionCommand extends BaseMVCActionCommand {
 	private BackgroundTask _optimizeImagesSingleConfiguration(
 			long userId, long companyId, String jobName,
 			String configurationEntryUuid)
-		throws PortalException {
+		throws Exception {
 
 		Map<String, Serializable> taskContextMap =
 			HashMapBuilder.<String, Serializable>put(

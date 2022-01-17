@@ -15,7 +15,6 @@
 package com.liferay.portal.tools;
 
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 
 /**
  * @author Carlos Sierra Andrés
@@ -24,16 +23,22 @@ import com.liferay.portal.kernel.util.StringUtil;
 public class ImportPackage implements Comparable<ImportPackage> {
 
 	public ImportPackage(String importString, boolean isStatic, String line) {
-		this(importString, isStatic, line, false);
+		_importString = importString;
+		_isStatic = isStatic;
+		_line = line;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #ImportPackage(String, boolean, String)}
+	 */
+	@Deprecated
 	public ImportPackage(
 		String importString, boolean isStatic, String line, boolean bndImport) {
 
 		_importString = importString;
 		_isStatic = isStatic;
 		_line = line;
-		_bndImport = bndImport;
 	}
 
 	@Override
@@ -56,37 +61,20 @@ public class ImportPackage implements Comparable<ImportPackage> {
 			return value;
 		}
 
-		if (!_bndImport) {
-			return value;
-		}
-
-		int startsWithWeight = StringUtil.startsWithWeight(
-			_importString, importPackageImportString);
-
-		String importStringPart1 = _importString.substring(startsWithWeight);
-		String importStringPart2 = importPackageImportString.substring(
-			startsWithWeight);
-
-		if (importStringPart1.equals(StringPool.STAR) ||
-			importStringPart2.equals(StringPool.STAR)) {
-
-			return -value;
-		}
-
 		return value;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof ImportPackage)) {
+		if (!(object instanceof ImportPackage)) {
 			return false;
 		}
 
-		ImportPackage importPackage = (ImportPackage)obj;
+		ImportPackage importPackage = (ImportPackage)object;
 
 		if ((_isStatic == importPackage.isStatic()) &&
 			_importString.equals(importPackage.getImportString())) {
@@ -122,7 +110,7 @@ public class ImportPackage implements Comparable<ImportPackage> {
 
 		pos = _importString.indexOf(StringPool.PERIOD, pos + 1);
 
-		if ((pos == -1) && !_bndImport) {
+		if (pos == -1) {
 			pos = _importString.indexOf(StringPool.PERIOD);
 		}
 
@@ -145,11 +133,9 @@ public class ImportPackage implements Comparable<ImportPackage> {
 
 		String importPackageImportString = importPackage.getImportString();
 
-		if (importPackageImportString.equals(StringPool.STAR)) {
-			return false;
-		}
+		if (importPackageImportString.equals(StringPool.STAR) ||
+			(_isStatic != importPackage.isStatic())) {
 
-		if (_isStatic != importPackage.isStatic()) {
 			return false;
 		}
 
@@ -166,7 +152,6 @@ public class ImportPackage implements Comparable<ImportPackage> {
 		return _isStatic;
 	}
 
-	private final boolean _bndImport;
 	private final String _importString;
 	private boolean _isStatic;
 	private final String _line;

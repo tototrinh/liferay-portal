@@ -35,17 +35,17 @@ public class PortletPreferencesCacheModel
 	implements CacheModel<PortletPreferences>, Externalizable, MVCCModel {
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof PortletPreferencesCacheModel)) {
+		if (!(object instanceof PortletPreferencesCacheModel)) {
 			return false;
 		}
 
 		PortletPreferencesCacheModel portletPreferencesCacheModel =
-			(PortletPreferencesCacheModel)obj;
+			(PortletPreferencesCacheModel)object;
 
 		if ((portletPreferencesId ==
 				portletPreferencesCacheModel.portletPreferencesId) &&
@@ -76,7 +76,7 @@ public class PortletPreferencesCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(19);
+		StringBundler sb = new StringBundler(17);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -94,8 +94,6 @@ public class PortletPreferencesCacheModel
 		sb.append(plid);
 		sb.append(", portletId=");
 		sb.append(portletId);
-		sb.append(", preferences=");
-		sb.append(preferences);
 		sb.append("}");
 
 		return sb.toString();
@@ -121,13 +119,6 @@ public class PortletPreferencesCacheModel
 			portletPreferencesImpl.setPortletId(portletId);
 		}
 
-		if (preferences == null) {
-			portletPreferencesImpl.setPreferences("");
-		}
-		else {
-			portletPreferencesImpl.setPreferences(preferences);
-		}
-
 		portletPreferencesImpl.resetOriginalValues();
 
 		return portletPreferencesImpl;
@@ -149,7 +140,6 @@ public class PortletPreferencesCacheModel
 
 		plid = objectInput.readLong();
 		portletId = objectInput.readUTF();
-		preferences = objectInput.readUTF();
 	}
 
 	@Override
@@ -174,13 +164,6 @@ public class PortletPreferencesCacheModel
 		else {
 			objectOutput.writeUTF(portletId);
 		}
-
-		if (preferences == null) {
-			objectOutput.writeUTF("");
-		}
-		else {
-			objectOutput.writeUTF(preferences);
-		}
 	}
 
 	public long mvccVersion;
@@ -191,6 +174,5 @@ public class PortletPreferencesCacheModel
 	public int ownerType;
 	public long plid;
 	public String portletId;
-	public String preferences;
 
 }

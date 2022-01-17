@@ -16,7 +16,10 @@ package com.liferay.journal.service.base;
 
 import com.liferay.journal.model.JournalContentSearch;
 import com.liferay.journal.service.JournalContentSearchLocalService;
+import com.liferay.journal.service.JournalContentSearchLocalServiceUtil;
 import com.liferay.journal.service.persistence.JournalContentSearchPersistence;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -36,16 +39,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -67,11 +76,15 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>JournalContentSearchLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.journal.service.JournalContentSearchLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>JournalContentSearchLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>JournalContentSearchLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the journal content search to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect JournalContentSearchLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param journalContentSearch the journal content search
 	 * @return the journal content search that was added
@@ -103,6 +116,10 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	/**
 	 * Deletes the journal content search with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect JournalContentSearchLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param contentSearchId the primary key of the journal content search
 	 * @return the journal content search that was removed
 	 * @throws PortalException if a journal content search with the primary key could not be found
@@ -118,6 +135,10 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	/**
 	 * Deletes the journal content search from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect JournalContentSearchLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param journalContentSearch the journal content search
 	 * @return the journal content search that was removed
 	 */
@@ -127,6 +148,18 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 		JournalContentSearch journalContentSearch) {
 
 		return journalContentSearchPersistence.remove(journalContentSearch);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return journalContentSearchPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -289,6 +322,7 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -307,6 +341,11 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 			(JournalContentSearch)persistedModel);
 	}
 
+	@Override
+	public BasePersistence<JournalContentSearch> getBasePersistence() {
+		return journalContentSearchPersistence;
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -318,15 +357,15 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	}
 
 	/**
-	 * Returns a range of all the journal content searchs.
+	 * Returns a range of all the journal content searches.
 	 *
 	 * <p>
 	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.journal.model.impl.JournalContentSearchModelImpl</code>.
 	 * </p>
 	 *
-	 * @param start the lower bound of the range of journal content searchs
-	 * @param end the upper bound of the range of journal content searchs (not inclusive)
-	 * @return the range of journal content searchs
+	 * @param start the lower bound of the range of journal content searches
+	 * @param end the upper bound of the range of journal content searches (not inclusive)
+	 * @return the range of journal content searches
 	 */
 	@Override
 	public List<JournalContentSearch> getJournalContentSearchs(
@@ -336,9 +375,9 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	}
 
 	/**
-	 * Returns the number of journal content searchs.
+	 * Returns the number of journal content searches.
 	 *
-	 * @return the number of journal content searchs
+	 * @return the number of journal content searches
 	 */
 	@Override
 	public int getJournalContentSearchsCount() {
@@ -347,6 +386,10 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 
 	/**
 	 * Updates the journal content search in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect JournalContentSearchLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param journalContentSearch the journal content search
 	 * @return the journal content search that was updated
@@ -359,11 +402,17 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 		return journalContentSearchPersistence.update(journalContentSearch);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			JournalContentSearchLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -371,6 +420,8 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		journalContentSearchLocalService =
 			(JournalContentSearchLocalService)aopProxy;
+
+		_setLocalServiceUtilService(journalContentSearchLocalService);
 	}
 
 	/**
@@ -383,8 +434,23 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 		return JournalContentSearchLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<JournalContentSearch> getCTPersistence() {
+		return journalContentSearchPersistence;
+	}
+
+	@Override
+	public Class<JournalContentSearch> getModelClass() {
 		return JournalContentSearch.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<JournalContentSearch>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(journalContentSearchPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -416,6 +482,23 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		JournalContentSearchLocalService journalContentSearchLocalService) {
+
+		try {
+			Field field =
+				JournalContentSearchLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, journalContentSearchLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected JournalContentSearchLocalService journalContentSearchLocalService;
 
 	@Reference
@@ -424,17 +507,5 @@ public abstract class JournalContentSearchLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.GroupLocalService
-		groupLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.LayoutLocalService
-		layoutLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.PortletPreferencesLocalService
-		portletPreferencesLocalService;
 
 }

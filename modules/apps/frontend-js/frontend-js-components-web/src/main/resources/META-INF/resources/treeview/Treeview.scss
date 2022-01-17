@@ -26,8 +26,16 @@ $white: #fff;
 				box-shadow: none;
 			}
 
+			.card-body {
+				padding: 0.5rem;
+
+				.card-row {
+					min-height: 2rem;
+				}
+			}
+
 			&.form-check-middle-left .card-horizontal > .card-body {
-				padding-left: 1rem;
+				padding-left: 0.5rem;
 			}
 		}
 
@@ -47,8 +55,12 @@ $white: #fff;
 			padding-left: 24px;
 		}
 
-		&:focus .card-type-directory {
-			@include treeview-box-shadow;
+		&:focus {
+			outline: none;
+
+			.card-type-directory {
+				@include treeview-box-shadow;
+			}
 		}
 
 		&:not(:first-child) {

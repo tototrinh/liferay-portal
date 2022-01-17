@@ -25,7 +25,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashRenderer;
@@ -46,7 +46,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = "model.class.name=com.liferay.bookmarks.model.BookmarksFolder",
 	service = TrashHandler.class
 )
-public class BookmarksFolderTrashHandler extends BookmarksBaseTrashHandler {
+public class BookmarksFolderTrashHandler extends BaseBookmarksTrashHandler {
 
 	@Override
 	public void deleteTrashEntry(long classPK) throws PortalException {
@@ -130,7 +130,7 @@ public class BookmarksFolderTrashHandler extends BookmarksBaseTrashHandler {
 		throws PortalException {
 
 		if (trashActionId.equals(TrashActionKeys.MOVE)) {
-			return ModelResourcePermissionHelper.contains(
+			return ModelResourcePermissionUtil.contains(
 				_bookmarksFolderModelResourcePermission, permissionChecker,
 				groupId, classPK, ActionKeys.ADD_FOLDER);
 		}

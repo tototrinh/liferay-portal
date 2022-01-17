@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * @author Michael Hashimoto
@@ -30,13 +29,13 @@ import java.util.Set;
 public class LegacyDataArchivePortalVersion {
 
 	public LegacyDataArchivePortalVersion(
-		LegacyDataArchiveUtil legacyDataArchiveUtil, String portalVersion) {
+		LegacyDataArchiveHelper legacyDataArchiveHelper, String portalVersion) {
 
-		_legacyDataArchiveUtil = legacyDataArchiveUtil;
+		_legacyDataArchiveHelper = legacyDataArchiveHelper;
 		_portalVersion = portalVersion;
 
 		_legacyGitWorkingDirectory =
-			_legacyDataArchiveUtil.getLegacyGitWorkingDirectory();
+			_legacyDataArchiveHelper.getLegacyGitWorkingDirectory();
 
 		_portalVersionDirectory = new File(
 			_legacyGitWorkingDirectory.getWorkingDirectory(), _portalVersion);
@@ -67,8 +66,8 @@ public class LegacyDataArchivePortalVersion {
 		return _legacyDataArchiveGroups;
 	}
 
-	public LegacyDataArchiveUtil getLegacyDataArchiveUtil() {
-		return _legacyDataArchiveUtil;
+	public LegacyDataArchiveHelper getLegacyDataArchiveHelper() {
+		return _legacyDataArchiveHelper;
 	}
 
 	public String getPortalVersion() {
@@ -83,19 +82,21 @@ public class LegacyDataArchivePortalVersion {
 		Properties testProperties = JenkinsResultsParserUtil.getProperties(
 			new File(_portalVersionTestDirectory, "test.properties"));
 
-		if (!testProperties.containsKey(
-				"test.case.available.property.values[data.archive.type]")) {
+		String dataArchiveTypesString = JenkinsResultsParserUtil.getProperty(
+			testProperties, "data.archive.types");
 
+		if (JenkinsResultsParserUtil.isNullOrEmpty(dataArchiveTypesString)) {
+			dataArchiveTypesString = JenkinsResultsParserUtil.getProperty(
+				testProperties,
+				"test.case.available.property.values[data.archive.type]");
+		}
+
+		if (JenkinsResultsParserUtil.isNullOrEmpty(dataArchiveTypesString)) {
 			return Collections.emptyList();
 		}
 
-		String dataArchiveTypeString = testProperties.getProperty(
-			"test.case.available.property.values[data.archive.type]");
-
-		Set<String> dataArchiveTypeSet = new HashSet<>(
-			Arrays.asList(dataArchiveTypeString.split(",")));
-
-		List<String> dataArchiveTypes = new ArrayList<>(dataArchiveTypeSet);
+		List<String> dataArchiveTypes = new ArrayList<>(
+			new HashSet<>(Arrays.asList(dataArchiveTypesString.split(","))));
 
 		Collections.sort(dataArchiveTypes);
 
@@ -104,7 +105,7 @@ public class LegacyDataArchivePortalVersion {
 
 	private List<String> _getDatabaseNames() {
 		Properties buildProperties =
-			_legacyDataArchiveUtil.getBuildProperties();
+			_legacyDataArchiveHelper.getBuildProperties();
 
 		String legacyDataArchiveDatabaseNames = buildProperties.getProperty(
 			"legacy.data.archive.database.names");
@@ -155,7 +156,7 @@ public class LegacyDataArchivePortalVersion {
 	private final List<String> _databaseNames;
 	private final LocalGitCommit _latestTestLocalGitCommit;
 	private final List<LegacyDataArchiveGroup> _legacyDataArchiveGroups;
-	private final LegacyDataArchiveUtil _legacyDataArchiveUtil;
+	private final LegacyDataArchiveHelper _legacyDataArchiveHelper;
 	private final GitWorkingDirectory _legacyGitWorkingDirectory;
 	private final String _portalVersion;
 	private final File _portalVersionDirectory;

@@ -9,92 +9,155 @@
  * distribution rights of the Software.
  */
 
-import React from 'react';
+import ClayAlert from '@clayui/alert';
+import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {fetch} from 'frontend-js-web';
+import React, {useCallback, useEffect, useReducer} from 'react';
 
-import BasicInformation from './components/BasicInformation';
-import Chart from './components/Chart';
-import TotalCount from './components/TotalCount';
-import APIService from './utils/APIService';
-import {numberFormat} from './utils/numberFormat';
+import Navigation from './components/Navigation';
+import {ChartStateContextProvider} from './context/ChartStateContext';
+import ConnectionContext from './context/ConnectionContext';
+import {StoreContextProvider} from './context/StoreContext';
 
-export default function({context, props}) {
-	const {endpoints, languageTag, namespace, page} = context;
-	const {authorName, publishDate, title} = props;
+import '../css/analytics-reports-app.scss';
 
-	const {
-		getAnalyticsReportsHistoricalReadsURL,
-		getAnalyticsReportsHistoricalViewsURL,
-		getAnalyticsReportsTotalReadsURL,
-		getAnalyticsReportsTotalViewsURL
-	} = endpoints;
+const initialState = {
+	data: null,
+	error: null,
+	loading: false,
+};
 
-	const api = APIService({
-		endpoints: {
-			getAnalyticsReportsHistoricalReadsURL,
-			getAnalyticsReportsHistoricalViewsURL,
-			getAnalyticsReportsTotalReadsURL,
-			getAnalyticsReportsTotalViewsURL
+const dataReducer = (state, action) => {
+	switch (action.type) {
+		case 'LOAD_DATA':
+			return {
+				...state,
+				loading: true,
+			};
+
+		case 'SET_ERROR':
+			return {
+				...state,
+				error: action.error,
+				loading: false,
+			};
+
+		case 'SET_DATA':
+			return {
+				data: {
+					...action.data,
+					publishedToday:
+						new Date().toDateString() ===
+						new Date(action.data?.publishDate).toDateString(),
+				},
+				error: action.data?.error,
+				loading: false,
+			};
+
+		default:
+			return initialState;
+	}
+};
+
+export default function ({context}) {
+	const {analyticsReportsDataURL} = context;
+
+	const isMounted = useIsMounted();
+
+	const [state, dispatch] = useReducer(dataReducer, initialState);
+
+	const safeDispatch = (action) => {
+		if (isMounted()) {
+			dispatch(action);
+		}
+	};
+
+	const getData = (fetchURL, timeSpanKey, timeSpanOffset) => {
+		safeDispatch({type: 'LOAD_DATA'});
+
+		const body =
+			!timeSpanOffset && !!timeSpanKey
+				? {timeSpanKey, timeSpanOffset}
+				: {};
+
+		fetch(fetchURL, {
+			body,
+			method: 'POST',
+		})
+			.then((response) =>
+				response.json().then((data) =>
+					safeDispatch({
+						data: data.context,
+						type: 'SET_DATA',
+					})
+				)
+			)
+			.catch(() => {
+				safeDispatch({
+					error: Liferay.Language.get('an-unexpected-error-occurred'),
+					type: 'SET_ERROR',
+				});
+			});
+	};
+
+	useEffect(() => {
+		getData(analyticsReportsDataURL);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [analyticsReportsDataURL]);
+
+	const handleSelectedLanguageClick = useCallback(
+		(url, timeSpanKey, timeSpanOffset) => {
+			getData(url, timeSpanKey, timeSpanOffset);
 		},
-		namespace,
-		page
-	});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[]
+	);
 
-	function _handleTotalReads() {
-		return api.getTotalReads().then(response => {
-			return numberFormat(
-				languageTag,
-				response.analyticsReportsTotalReads
-			);
-		});
-	}
-	function _handleTotalViews() {
-		return api.getTotalViews().then(response => {
-			return numberFormat(
-				languageTag,
-				response.analyticsReportsTotalViews
-			);
-		});
-	}
-
-	function _handleHistoricalViews() {
-		return api.getHistoricalViews();
-	}
-
-	function _handleHistoricalReads() {
-		return api.getHistoricalReads();
-	}
-
-	return (
-		<div className="p-3">
-			<BasicInformation
-				authorName={authorName}
-				publishDate={publishDate}
-				title={title}
-			/>
-
-			<TotalCount
-				className="mt-4"
-				dataProvider={_handleTotalViews}
-				label={Liferay.Util.sub(Liferay.Language.get('total-views'))}
-				popoverHeader={Liferay.Language.get('total-views')}
-				popoverMessage={Liferay.Language.get(
-					'this-number-refers-to-the-total-number-of-views-since-the-content-was-published'
-				)}
-			/>
-			<TotalCount
-				className="mt-2"
-				dataProvider={_handleTotalReads}
-				label={Liferay.Util.sub(Liferay.Language.get('total-reads'))}
-				popoverHeader={Liferay.Language.get('total-reads')}
-				popoverMessage={Liferay.Language.get(
-					'this-number-refers-to-the-total-number-of-reads-since-the-content-was-published'
-				)}
-			/>
-			<hr />
-			<Chart
-				dataProviders={[_handleHistoricalViews, _handleHistoricalReads]}
-				languageTag={languageTag}
-			/>
-		</div>
+	return state.loading ? (
+		<ClayLoadingIndicator small />
+	) : state.error ? (
+		<ClayAlert displayType="danger" variant="stripe">
+			{state.error}
+		</ClayAlert>
+	) : (
+		state.data && (
+			<ConnectionContext.Provider
+				value={{
+					validAnalyticsConnection:
+						state.data.validAnalyticsConnection,
+				}}
+			>
+				<StoreContextProvider
+					value={{
+						endpoints: {...state.data.endpoints},
+						languageTag: state.data.languageTag,
+						namespace: state.data.namespace,
+						page: state.data.page,
+						publishedToday: state.data.publishedToday,
+					}}
+				>
+					<ChartStateContextProvider
+						publishDate={state.data.publishDate}
+						timeRange={state.data.timeRange}
+						timeSpanKey={state.data.timeSpanKey}
+					>
+						<div className="analytics-reports-app">
+							<Navigation
+								author={state.data.author}
+								canonicalURL={state.data.canonicalURL}
+								onSelectedLanguageClick={
+									handleSelectedLanguageClick
+								}
+								pagePublishDate={state.data.publishDate}
+								pageTitle={state.data.title}
+								timeSpanOptions={state.data.timeSpans}
+								viewURLs={state.data.viewURLs}
+							/>
+						</div>
+					</ChartStateContextProvider>
+				</StoreContextProvider>
+			</ConnectionContext.Provider>
+		)
 	);
 }

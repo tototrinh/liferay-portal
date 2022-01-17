@@ -10,14 +10,7 @@ definition {
 	setUp {
 		SignIn.signIn();
 
-		Smoke.viewWelcomePage();
-
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "Search");
-
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+		SearchAdministration.executeReindex();
 	}
 
 	@priority = "4"
@@ -29,8 +22,6 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "4"
@@ -42,8 +33,6 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "4"
@@ -55,8 +44,6 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "4"
@@ -68,8 +55,6 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "4"
@@ -81,8 +66,17 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
+	}
 
-		Upgrade.searchForAssetsAfterUpgrade();
+	@priority = "4"
+	test ViewPortalSmokeArchive740 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "true";
+		property portal.version = "7.4.0";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
 	}
 
 	@priority = "5"
@@ -93,88 +87,113 @@ definition {
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "5"
 	test ViewPortalSmokeArchive7210 {
 		property data.archive.type = "data-archive-portal";
 		property portal.upgrades = "true";
+		property portal.upstream = "true";
 		property portal.version = "7.2.10";
 		property test.assert.warning.exceptions = "true";
 		property test.run.environment = "EE";
 
 		Upgrade.viewUpgrade();
+	}
 
-		Upgrade.searchForAssetsAfterUpgrade();
+	@priority = "5"
+	test ViewPortalSmokeArchive7310 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.version = "7.3.10";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchive7413 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.version = "7.4.13";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
+
+		Upgrade.viewUpgrade();
 	}
 
 	@priority = "5"
 	test ViewPortalSmokeArchive70106 {
 		property data.archive.type = "data-archive-portal";
 		property portal.upgrades = "true";
+		property portal.upstream = "true";
 		property portal.version = "7.0.10.6";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@description = "This is a use case for LPS-105035."
 	@priority = "5"
 	test ViewPortalSmokeArchive71103 {
 		property data.archive.type = "data-archive-portal";
-		property database.types = "mariadb,mysql,postgresql";
 		property portal.upgrades = "true";
 		property portal.version = "7.1.10.3";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "4"
 	test ViewPortalSmokeArchive621015 {
 		property data.archive.type = "data-archive-portal";
-		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
 		property portal.upgrades = "false";
 		property portal.version = "6.2.10.15";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@priority = "5"
 	test ViewPortalSmokeArchive621021 {
 		property data.archive.type = "data-archive-portal";
-		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
 		property portal.upgrades = "true";
 		property portal.version = "6.2.10.21";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
+	@ignore = "true"
 	@priority = "4"
 	test ViewPortalSmokeArchiveAutoUpgrade730 {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
 		property database.types = "mariadb,mysql,postgresql";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "7.3.0";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
+	}
 
-		Upgrade.searchForAssetsAfterUpgrade();
+	@priority = "4"
+	test ViewPortalSmokeArchiveAutoUpgrade740 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.4.0";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
 	}
 
 	@ignore = "true"
@@ -183,13 +202,12 @@ definition {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "7.1.10";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@ignore = "true"
@@ -198,14 +216,41 @@ definition {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "7.2.10";
-		property test.assert.warning.exceptions = "true";
 		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
 		property test.run.environment = "EE";
 
 		Upgrade.viewUpgrade();
+	}
 
-		Upgrade.searchForAssetsAfterUpgrade();
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade7310 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.3.10";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade7413 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.4.13";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
+
+		Upgrade.viewUpgrade();
 	}
 
 	@ignore = "true"
@@ -214,13 +259,12 @@ definition {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "7.0.10.6";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@ignore = "true"
@@ -228,15 +272,13 @@ definition {
 	test ViewPortalSmokeArchiveAutoUpgrade71103 {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
-		property database.types = "mariadb,mysql,postgresql";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "7.1.10.3";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 	@ignore = "true"
@@ -244,15 +286,14 @@ definition {
 	test ViewPortalSmokeArchiveAutoUpgrade621021 {
 		property custom.properties = "upgrade.database.auto.run=true";
 		property data.archive.type = "data-archive-portal";
-		property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
 		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
 		property portal.version = "6.2.10.21";
 		property skip.upgrade-legacy-database = "true";
 		property test.assert.warning.exceptions = "true";
 
 		Upgrade.viewUpgrade();
-
-		Upgrade.searchForAssetsAfterUpgrade();
 	}
 
 }

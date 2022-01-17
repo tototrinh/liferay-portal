@@ -83,11 +83,9 @@ public class SimpleRuleHandler implements RuleHandler {
 			return false;
 		}
 
-		if (!isValidMultiValue(mdrRule, PROPERTY_OS, device.getOS())) {
-			return false;
-		}
+		if (!isValidMultiValue(mdrRule, PROPERTY_OS, device.getOS()) ||
+			!isValidBooleanValue(mdrRule, PROPERTY_TABLET, device.isTablet())) {
 
-		if (!isValidBooleanValue(mdrRule, PROPERTY_TABLET, device.isTablet())) {
 			return false;
 		}
 
@@ -96,12 +94,8 @@ public class SimpleRuleHandler implements RuleHandler {
 		if (!isValidRangeValue(
 				mdrRule, PROPERTY_SCREEN_PHYSICAL_HEIGHT_MAX,
 				PROPERTY_SCREEN_PHYSICAL_HEIGHT_MIN,
-				screenPhysicalSize.getHeight())) {
-
-			return false;
-		}
-
-		if (!isValidRangeValue(
+				screenPhysicalSize.getHeight()) ||
+			!isValidRangeValue(
 				mdrRule, PROPERTY_SCREEN_PHYSICAL_WIDTH_MAX,
 				PROPERTY_SCREEN_PHYSICAL_WIDTH_MIN,
 				screenPhysicalSize.getWidth())) {
@@ -114,12 +108,8 @@ public class SimpleRuleHandler implements RuleHandler {
 		if (!isValidRangeValue(
 				mdrRule, PROPERTY_SCREEN_RESOLUTION_HEIGHT_MAX,
 				PROPERTY_SCREEN_RESOLUTION_HEIGHT_MIN,
-				screenResolution.getHeight())) {
-
-			return false;
-		}
-
-		if (!isValidRangeValue(
+				screenResolution.getHeight()) ||
+			!isValidRangeValue(
 				mdrRule, PROPERTY_SCREEN_RESOLUTION_WIDTH_MAX,
 				PROPERTY_SCREEN_RESOLUTION_WIDTH_MIN,
 				screenResolution.getWidth())) {
@@ -166,10 +156,10 @@ public class SimpleRuleHandler implements RuleHandler {
 	protected boolean isValidBooleanValue(
 		MDRRule mdrRule, String property, boolean value) {
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			mdrRule.getTypeSettingsProperties();
 
-		String validValueString = typeSettingsProperties.get(property);
+		String validValueString = typeSettingsUnicodeProperties.get(property);
 
 		if (Validator.isNull(validValueString)) {
 			return true;
@@ -191,10 +181,10 @@ public class SimpleRuleHandler implements RuleHandler {
 	protected boolean isValidMultiValue(
 		MDRRule mdrRule, String property, String value) {
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			mdrRule.getTypeSettingsProperties();
 
-		String validValueString = typeSettingsProperties.get(property);
+		String validValueString = typeSettingsUnicodeProperties.get(property);
 
 		if (Validator.isNull(validValueString)) {
 			return true;
@@ -216,11 +206,11 @@ public class SimpleRuleHandler implements RuleHandler {
 	protected boolean isValidRangeValue(
 		MDRRule mdrRule, String maxProperty, String minProperty, float value) {
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			mdrRule.getTypeSettingsProperties();
 
-		String max = typeSettingsProperties.get(maxProperty);
-		String min = typeSettingsProperties.get(minProperty);
+		String max = typeSettingsUnicodeProperties.get(maxProperty);
+		String min = typeSettingsUnicodeProperties.get(minProperty);
 
 		if (Validator.isNull(max) && Validator.isNull(min)) {
 			logRangeValue(

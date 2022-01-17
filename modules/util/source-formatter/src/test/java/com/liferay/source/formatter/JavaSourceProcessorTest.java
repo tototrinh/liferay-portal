@@ -52,10 +52,7 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 
 	@Test
 	public void testConstructorParameterOrder() throws Exception {
-		test(
-			"ConstructorParameterOrder.testjava",
-			"'_value = value;' should come before '_attribute = attribute;' " +
-				"to match order of constructor parameters");
+		test("ConstructorParameterOrder.testjava");
 	}
 
 	@Test
@@ -285,6 +282,13 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testListUtilUsages() throws Exception {
+		test(
+				"ListUtilUsages.testjava",
+				"Use 'ListUtil.isEmpty(list)' to simplify code", 25);
+	}
+
+	@Test
 	public void testLogLevels() throws Exception {
 		test(
 			"Levels.testjava",
@@ -297,11 +301,6 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
-	public void testLPS28266() throws Exception {
-		test("LPS28266.testjava", "Use rs.getInt(1) for count");
-	}
-
-	@Test
 	public void testMissingAuthor() throws Exception {
 		test("MissingAuthor.testjava", "Missing author", 20);
 	}
@@ -309,6 +308,18 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	@Test
 	public void testMissingEmptyLines() throws Exception {
 		test("MissingEmptyLines.testjava");
+	}
+
+	@Test
+	public void testMissingEmptyLinesAfterMethodCalls() throws Exception {
+		test(
+			"MissingEmptyLinesAfterMethodCalls.testjava",
+			new String[] {
+				"There should be an empty line after 'registry.register'",
+				"There should be an empty line after 'registry.register'",
+				"There should be an empty line after 'registry.register'"
+			},
+			new Integer[] {23, 24, 34});
 	}
 
 	@Test
@@ -325,7 +336,6 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 				"Missing diamond operator '<>' for type 'CopyOnWriteArraySet'",
 				"Missing generic types '<Position, String>' for type 'EnumMap'",
 				"Missing diamond operator '<>' for type 'HashMap'",
-				"Missing generic types '<String, String>' for type 'HashMap'",
 				"Missing diamond operator '<>' for type 'HashSet'",
 				"Missing diamond operator '<>' for type 'Hashtable'",
 				"Missing diamond operator '<>' for type 'IdentityHashMap'",
@@ -336,14 +346,10 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 				"Missing diamond operator '<>' for type 'TreeMap'",
 				"Missing diamond operator '<>' for type 'TreeSet'",
 				"Missing diamond operator '<>' for type 'Vector'",
-				"Missing generic types '<Map<String, String>>' for type " +
-					"'ArrayList'",
-				"Missing generic types '<String, String>' for type 'HashMap'",
-				"Missing generic types '<String, String>' for type 'HashMap'"
 			},
 			new Integer[] {
-				45, 47, 53, 55, 57, 59, 61, 68, 70, 76, 78, 80, 83, 85, 87, 89,
-				91, 93, 95, 97, 99, 110
+				45, 47, 53, 55, 57, 59, 61, 68, 70, 72, 74, 77, 79, 81, 83, 85,
+				87, 89
 			});
 	}
 
@@ -352,6 +358,18 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 		test(
 			"MissingSerialVersionUID.testjava",
 			"Assign ProcessCallable implementation a serialVersionUID");
+	}
+
+	@Test
+	public void testNullAssertionInIfStatement() throws Exception {
+		test(
+			"NullAssertionInIfStatement.testjava",
+			new String[] {
+					"Null check for variable 'list' should always be first in if-statement",
+					"Null check for variable 'list' should always be first in if-statement",
+					"Null check for variable 'nameList1' should always be first in if-statement"
+				},
+				new Integer[] {25, 33, 46});
 	}
 
 	@Test
@@ -377,6 +395,12 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	@Test
 	public void testRedundantCommas() throws Exception {
 		test("RedundantCommas.testjava");
+	}
+
+	@Test
+	public void testResultCountSet() throws Exception {
+		test(
+			"ResultSetCount.testjava", "Use resultSet.getInt(1) for count", 35);
 	}
 
 	@Test
@@ -416,6 +440,7 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 		test("SortJavaTerms2.testjava");
 		test("SortJavaTerms3.testjava");
 		test("SortJavaTerms4.testjava");
+		test("SortJavaTerms5.testjava");
 	}
 
 	@Test
@@ -436,6 +461,20 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	@Test
 	public void testTruncateLongLines() throws Exception {
 		test("TruncateLongLines.testjava");
+	}
+
+	@Test
+	public void testUnnecessaryMethodCalls() throws Exception {
+		test(
+			"UnnecessaryMethodCalls.testjava",
+			new String[] {
+				"Use 'webCachePool' instead of calling method '_getWebCachePool'",
+				"Use 'webCachePool' instead of calling method '_getWebCachePool'",
+				"Use 'this.name' instead of calling method '_getName'",
+				"Use 'webCachePool' instead of calling method '_getWebCachePool'",
+				"Use 'webCachePool_1' instead of calling method 'getWebCachePool'"
+			},
+			new Integer[] {35, 43, 47, 53, 79});
 	}
 
 	@Test

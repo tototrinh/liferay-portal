@@ -12,16 +12,39 @@
 import React, {useEffect, useMemo} from 'react';
 import ReactDOM from 'react-dom';
 
-const Portal = ({children, container, replace}) => {
-	const element = useMemo(() => document.createElement('div'), []);
+const Portal = ({
+	children,
+	className,
+	container,
+	elementId,
+	position = 'appendChild',
+	replace,
+}) => {
+	const portalElement = useMemo(() => document.createElement('div'), []);
 
 	useEffect(() => {
 		if (container) {
+			if (className) {
+				portalElement.classList.add(className);
+			}
+
+			if (elementId) {
+				portalElement.id = elementId;
+			}
+
 			if (replace) {
 				container.innerHTML = '';
 			}
 
-			container.appendChild(element);
+			container[position](portalElement);
+
+			return () => {
+				const currentElement = document.getElementById(elementId);
+
+				if (currentElement && currentElement.parentNode) {
+					currentElement.parentNode.removeChild(currentElement);
+				}
+			};
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
@@ -30,7 +53,8 @@ const Portal = ({children, container, replace}) => {
 		return null;
 	}
 
-	return <>{ReactDOM.createPortal(children, element)}</>;
+	// eslint-disable-next-line @liferay/portal/no-react-dom-create-portal
+	return <>{ReactDOM.createPortal(children, portalElement)}</>;
 };
 
 export default Portal;

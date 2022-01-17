@@ -16,6 +16,8 @@ package com.liferay.portal.model.impl;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ColorScheme;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutBranch;
@@ -37,6 +39,7 @@ import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -123,18 +126,16 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		String portalURL = PortalUtil.getPortalURL(httpServletRequest);
-
-		Layout layout = LayoutLocalServiceUtil.getLayout(getPlid());
-
-		String url = PortalUtil.getLayoutURL(layout, themeDisplay);
+		String url = PortalUtil.getLayoutURL(
+			LayoutLocalServiceUtil.getLayout(getPlid()), themeDisplay);
 
 		if (!CookieKeys.hasSessionId(httpServletRequest) &&
-			(url.startsWith(portalURL) || url.startsWith(StringPool.SLASH))) {
+			(url.startsWith(PortalUtil.getPortalURL(httpServletRequest)) ||
+			 url.startsWith(StringPool.SLASH))) {
 
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			url = PortalUtil.getURLWithSessionId(url, session.getId());
+			url = PortalUtil.getURLWithSessionId(url, httpSession.getId());
 		}
 
 		return url;
@@ -162,9 +163,10 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public String getThemeSetting(String key, String device) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		String value = typeSettingsProperties.getProperty(
+		String value = typeSettingsUnicodeProperties.getProperty(
 			ThemeSettingImpl.namespaceProperty(device, key));
 
 		if (value != null) {
@@ -178,6 +180,9 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 				return theme.getSetting(key);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception, exception);
+				}
 			}
 		}
 
@@ -187,6 +192,9 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 			value = layoutSet.getThemeSetting(key, device);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return value;
@@ -194,36 +202,40 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public String getTypeSettings() {
-		if (_typeSettingsProperties == null) {
+		if (_typeSettingsUnicodeProperties == null) {
 			return super.getTypeSettings();
 		}
 
-		return _typeSettingsProperties.toString();
+		return _typeSettingsUnicodeProperties.toString();
 	}
 
 	@Override
 	public UnicodeProperties getTypeSettingsProperties() {
-		if (_typeSettingsProperties == null) {
-			_typeSettingsProperties = new UnicodeProperties(true);
-
-			_typeSettingsProperties.fastLoad(super.getTypeSettings());
+		if (_typeSettingsUnicodeProperties == null) {
+			_typeSettingsUnicodeProperties = UnicodePropertiesBuilder.create(
+				true
+			).fastLoad(
+				super.getTypeSettings()
+			).build();
 		}
 
-		return _typeSettingsProperties;
+		return _typeSettingsUnicodeProperties;
 	}
 
 	@Override
 	public String getTypeSettingsProperty(String key) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		return typeSettingsProperties.getProperty(key);
+		return typeSettingsUnicodeProperties.getProperty(key);
 	}
 
 	@Override
 	public String getTypeSettingsProperty(String key, String defaultValue) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		return typeSettingsProperties.getProperty(key, defaultValue);
+		return typeSettingsUnicodeProperties.getProperty(key, defaultValue);
 	}
 
 	@Override
@@ -237,10 +249,11 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public boolean isContentDisplayPage() {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
 		String defaultAssetPublisherPortletId =
-			typeSettingsProperties.getProperty(
+			typeSettingsUnicodeProperties.getProperty(
 				LayoutTypePortletConstants.DEFAULT_ASSET_PUBLISHER_PORTLET_ID);
 
 		if (Validator.isNotNull(defaultAssetPublisherPortletId)) {
@@ -292,20 +305,23 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public void setTypeSettings(String typeSettings) {
-		_typeSettingsProperties = null;
+		_typeSettingsUnicodeProperties = null;
 
 		super.setTypeSettings(typeSettings);
 	}
 
 	@Override
 	public void setTypeSettingsProperties(
-		UnicodeProperties typeSettingsProperties) {
+		UnicodeProperties typeSettingsUnicodeProperties) {
 
-		_typeSettingsProperties = typeSettingsProperties;
+		_typeSettingsUnicodeProperties = typeSettingsUnicodeProperties;
 
-		super.setTypeSettings(_typeSettingsProperties.toString());
+		super.setTypeSettings(_typeSettingsUnicodeProperties.toString());
 	}
 
-	private UnicodeProperties _typeSettingsProperties;
+	private static final Log _log = LogFactoryUtil.getLog(
+		LayoutRevisionImpl.class);
+
+	private UnicodeProperties _typeSettingsUnicodeProperties;
 
 }

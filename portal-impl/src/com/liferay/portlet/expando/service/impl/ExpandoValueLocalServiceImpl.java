@@ -14,7 +14,6 @@
 
 package com.liferay.portlet.expando.service.impl;
 
-import com.liferay.expando.kernel.exception.NoSuchRowException;
 import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.expando.kernel.model.ExpandoRow;
@@ -22,20 +21,19 @@ import com.liferay.expando.kernel.model.ExpandoTable;
 import com.liferay.expando.kernel.model.ExpandoTableConstants;
 import com.liferay.expando.kernel.model.ExpandoValue;
 import com.liferay.expando.kernel.util.ExpandoValueDeleteHandler;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.typeconverter.DateArrayConverter;
 import com.liferay.portal.typeconverter.NumberArrayConverter;
 import com.liferay.portal.typeconverter.NumberConverter;
 import com.liferay.portlet.expando.model.impl.ExpandoValueImpl;
 import com.liferay.portlet.expando.service.base.ExpandoValueLocalServiceBaseImpl;
-import com.liferay.registry.collections.ServiceTrackerCollections;
-import com.liferay.registry.collections.ServiceTrackerList;
 
 import java.io.Serializable;
 
@@ -49,7 +47,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import jodd.typeconverter.TypeConverterManager;
-import jodd.typeconverter.TypeConverterManagerBean;
 
 /**
  * @author Raymond Augé
@@ -60,19 +57,12 @@ public class ExpandoValueLocalServiceImpl
 	extends ExpandoValueLocalServiceBaseImpl {
 
 	public ExpandoValueLocalServiceImpl() {
-		TypeConverterManagerBean defaultTypeConverterManager =
-			TypeConverterManager.getDefaultTypeConverterManager();
+		TypeConverterManager typeConverterManager = TypeConverterManager.get();
 
-		defaultTypeConverterManager.register(
-			Date[].class,
-			new DateArrayConverter(
-				defaultTypeConverterManager.getConvertBean()));
-		defaultTypeConverterManager.register(
-			Number.class, new NumberConverter());
-		defaultTypeConverterManager.register(
-			Number[].class,
-			new NumberArrayConverter(
-				defaultTypeConverterManager.getConvertBean()));
+		typeConverterManager.register(Date[].class, new DateArrayConverter());
+		typeConverterManager.register(Number.class, new NumberConverter());
+		typeConverterManager.register(
+			Number[].class, new NumberArrayConverter());
 	}
 
 	@Override
@@ -321,7 +311,7 @@ public class ExpandoValueLocalServiceImpl
 	@Override
 	public ExpandoValue addValue(
 			long companyId, String className, String tableName,
-			String columnName, long classPK, JSONObject data)
+			String columnName, long classPK, JSONObject dataJSONObject)
 		throws PortalException {
 
 		ExpandoTable table = expandoTableLocalService.getTable(
@@ -334,7 +324,7 @@ public class ExpandoValueLocalServiceImpl
 
 		value.setCompanyId(table.getCompanyId());
 		value.setColumnId(column.getColumnId());
-		value.setGeolocationJSONObject(data);
+		value.setGeolocationJSONObject(dataJSONObject);
 
 		return expandoValueLocalService.addValue(
 			table.getClassNameId(), table.getTableId(), column.getColumnId(),
@@ -391,7 +381,7 @@ public class ExpandoValueLocalServiceImpl
 	public ExpandoValue addValue(
 			long companyId, String className, String tableName,
 			String columnName, long classPK, Map<Locale, ?> dataMap,
-			Locale defautlLocale)
+			Locale defaultLocale)
 		throws PortalException {
 
 		ExpandoTable table = expandoTableLocalService.getTable(
@@ -409,10 +399,10 @@ public class ExpandoValueLocalServiceImpl
 
 		if (type == ExpandoColumnConstants.STRING_ARRAY_LOCALIZED) {
 			value.setStringArrayMap(
-				(Map<Locale, String[]>)dataMap, defautlLocale);
+				(Map<Locale, String[]>)dataMap, defaultLocale);
 		}
 		else {
-			value.setStringMap((Map<Locale, String>)dataMap, defautlLocale);
+			value.setStringMap((Map<Locale, String>)dataMap, defaultLocale);
 		}
 
 		return expandoValueLocalService.addValue(
@@ -795,10 +785,9 @@ public class ExpandoValueLocalServiceImpl
 				value.setFloatArray((float[])attributeValue);
 			}
 			else if (type == ExpandoColumnConstants.GEOLOCATION) {
-				JSONObject geolocation = JSONFactoryUtil.createJSONObject(
-					attributeValue.toString());
-
-				value.setGeolocationJSONObject(geolocation);
+				value.setGeolocationJSONObject(
+					JSONFactoryUtil.createJSONObject(
+						attributeValue.toString()));
 			}
 			else if (type == ExpandoColumnConstants.INTEGER) {
 				value.setInteger((Integer)attributeValue);
@@ -888,30 +877,27 @@ public class ExpandoValueLocalServiceImpl
 
 		// Notify delete handlers
 
-		ServiceTrackerList<ExpandoValueDeleteHandler> serviceTrackerList =
-			ServiceTrackerCollections.openList(
-				ExpandoValueDeleteHandler.class,
-				"(model.class.name=" + value.getClassName() + ")");
+		List<ExpandoValueDeleteHandler> expandoValueDeleteHandlers =
+			ExpandoValueDeleteHandlerHolder.getService(value.getClassName());
 
-		for (ExpandoValueDeleteHandler expandoValueDeleteHandler :
-				serviceTrackerList) {
+		if (expandoValueDeleteHandlers != null) {
+			for (ExpandoValueDeleteHandler expandoValueDeleteHandler :
+					expandoValueDeleteHandlers) {
 
-			expandoValueDeleteHandler.deletedExpandoValue(value.getClassPK());
+				expandoValueDeleteHandler.deletedExpandoValue(
+					value.getClassPK());
+			}
 		}
 
 		List<ExpandoValue> values = expandoValuePersistence.findByRowId(
 			value.getRowId());
 
 		if (values.isEmpty()) {
-			try {
-				expandoRowPersistence.remove(value.getRowId());
-			}
-			catch (NoSuchRowException noSuchRowException) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						"Row " + value.getRowId() + " does not exist",
-						noSuchRowException);
-				}
+			ExpandoRow row = expandoRowPersistence.fetchByPrimaryKey(
+				value.getRowId());
+
+			if (row != null) {
+				expandoRowPersistence.remove(row);
 			}
 		}
 	}
@@ -1323,14 +1309,14 @@ public class ExpandoValueLocalServiceImpl
 	@Override
 	public JSONObject getData(
 			long companyId, String className, String tableName,
-			String columnName, long classPK, JSONObject defaultData)
+			String columnName, long classPK, JSONObject defaultDataJSONObject)
 		throws PortalException {
 
 		ExpandoValue value = expandoValueLocalService.getValue(
 			companyId, className, tableName, columnName, classPK);
 
 		if (value == null) {
-			return defaultData;
+			return defaultDataJSONObject;
 		}
 
 		return value.getGeolocationJSONObject();
@@ -1649,56 +1635,58 @@ public class ExpandoValueLocalServiceImpl
 		data = handleCollections(type, data);
 		data = handleStrings(type, data);
 
+		TypeConverterManager typeConverterManager = TypeConverterManager.get();
+
 		if (type == ExpandoColumnConstants.BOOLEAN) {
-			data = TypeConverterManager.convertType(data, Boolean.TYPE);
+			data = typeConverterManager.convertType(data, Boolean.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.BOOLEAN_ARRAY) {
-			data = TypeConverterManager.convertType(data, boolean[].class);
+			data = typeConverterManager.convertType(data, boolean[].class);
 		}
 		else if (type == ExpandoColumnConstants.DATE) {
-			data = TypeConverterManager.convertType(data, Date.class);
+			data = typeConverterManager.convertType(data, Date.class);
 		}
 		else if (type == ExpandoColumnConstants.DATE_ARRAY) {
-			data = TypeConverterManager.convertType(data, Date[].class);
+			data = typeConverterManager.convertType(data, Date[].class);
 		}
 		else if (type == ExpandoColumnConstants.DOUBLE) {
-			data = TypeConverterManager.convertType(data, Double.TYPE);
+			data = typeConverterManager.convertType(data, Double.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.DOUBLE_ARRAY) {
-			data = TypeConverterManager.convertType(data, double[].class);
+			data = typeConverterManager.convertType(data, double[].class);
 		}
 		else if (type == ExpandoColumnConstants.FLOAT) {
-			data = TypeConverterManager.convertType(data, Float.TYPE);
+			data = typeConverterManager.convertType(data, Float.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.FLOAT_ARRAY) {
-			data = TypeConverterManager.convertType(data, float[].class);
+			data = typeConverterManager.convertType(data, float[].class);
 		}
 		else if (type == ExpandoColumnConstants.INTEGER) {
-			data = TypeConverterManager.convertType(data, Integer.TYPE);
+			data = typeConverterManager.convertType(data, Integer.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.INTEGER_ARRAY) {
-			data = TypeConverterManager.convertType(data, int[].class);
+			data = typeConverterManager.convertType(data, int[].class);
 		}
 		else if (type == ExpandoColumnConstants.LONG) {
-			data = TypeConverterManager.convertType(data, Long.TYPE);
+			data = typeConverterManager.convertType(data, Long.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.LONG_ARRAY) {
-			data = TypeConverterManager.convertType(data, long[].class);
+			data = typeConverterManager.convertType(data, long[].class);
 		}
 		else if (type == ExpandoColumnConstants.NUMBER) {
-			data = TypeConverterManager.convertType(data, Number.class);
+			data = typeConverterManager.convertType(data, Number.class);
 		}
 		else if (type == ExpandoColumnConstants.NUMBER_ARRAY) {
-			data = TypeConverterManager.convertType(data, Number[].class);
+			data = typeConverterManager.convertType(data, Number[].class);
 		}
 		else if (type == ExpandoColumnConstants.SHORT) {
-			data = TypeConverterManager.convertType(data, Short.TYPE);
+			data = typeConverterManager.convertType(data, Short.TYPE);
 		}
 		else if (type == ExpandoColumnConstants.SHORT_ARRAY) {
-			data = TypeConverterManager.convertType(data, short[].class);
+			data = typeConverterManager.convertType(data, short[].class);
 		}
 		else if (type == ExpandoColumnConstants.STRING_ARRAY) {
-			data = TypeConverterManager.convertType(data, String[].class);
+			data = typeConverterManager.convertType(data, String[].class);
 		}
 
 		return (T)data;
@@ -1710,20 +1698,24 @@ public class ExpandoValueLocalServiceImpl
 
 		ExpandoRow row = expandoRowPersistence.fetchByT_C(tableId, classPK);
 
+		ExpandoValue value = null;
+
 		if (row == null) {
 			long rowId = counterLocalService.increment();
 
 			row = expandoRowPersistence.create(rowId);
 
 			row.setCompanyId(companyId);
+			row.setModifiedDate(new Date());
 			row.setTableId(tableId);
 			row.setClassPK(classPK);
 
 			row = expandoRowPersistence.update(row);
 		}
-
-		ExpandoValue value = expandoValuePersistence.fetchByC_R(
-			columnId, row.getRowId());
+		else {
+			value = expandoValuePersistence.fetchByC_R(
+				columnId, row.getRowId());
+		}
 
 		if (value == null) {
 			long valueId = counterLocalService.increment();
@@ -1736,9 +1728,12 @@ public class ExpandoValueLocalServiceImpl
 			value.setRowId(row.getRowId());
 			value.setClassNameId(classNameId);
 			value.setClassPK(classPK);
+			value.setData(data);
+
+			return expandoValuePersistence.update(value);
 		}
 
-		if (value.isNew() || !Objects.equals(value.getData(), data)) {
+		if (!Objects.equals(value.getData(), data)) {
 			value.setData(data);
 
 			value = expandoValuePersistence.update(value);
@@ -1900,7 +1895,18 @@ public class ExpandoValueLocalServiceImpl
 		return false;
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		ExpandoValueLocalServiceImpl.class);
+	private static class ExpandoValueDeleteHandlerHolder {
+
+		public static List<ExpandoValueDeleteHandler> getService(String key) {
+			return _serviceTrackerMap.getService(key);
+		}
+
+		private static final ServiceTrackerMap
+			<String, List<ExpandoValueDeleteHandler>> _serviceTrackerMap =
+				ServiceTrackerMapFactory.openMultiValueMap(
+					SystemBundleUtil.getBundleContext(),
+					ExpandoValueDeleteHandler.class, "model.class.name");
+
+	}
 
 }

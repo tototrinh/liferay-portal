@@ -14,35 +14,36 @@
 
 AUI.add(
 	'liferay-logo-editor',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var LogoEditor = A.Component.create({
 			ATTRS: {
 				aspectRatio: {
 					validator: Lang.isNumber,
-					value: null
+					value: null,
 				},
 
 				maxFileSize: {
 					validator: Lang.isNumber,
 					value:
-						Liferay.PropsValues.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE
+						Liferay.PropsValues
+							.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE,
 				},
 
 				preserveRatio: {
-					value: false
+					value: false,
 				},
 
 				previewURL: {
 					validator: Lang.isString,
-					value: null
+					value: null,
 				},
 
 				uploadURL: {
 					validator: Lang.isString,
-					value: null
-				}
+					value: null,
+				},
 			},
 
 			AUGMENTS: [Liferay.PortletBase],
@@ -167,12 +168,12 @@ AUI.add(
 
 						Liferay.Util.fetch(instance.get('uploadURL'), {
 							body: new FormData(form),
-							method: 'POST'
+							method: 'POST',
 						})
-							.then(response => response.json())
-							.then(response => {
+							.then((response) => response.json())
+							.then((response) => {
 								instance.fire('uploadComplete', {
-									response
+									response,
 								});
 							});
 					}
@@ -185,7 +186,7 @@ AUI.add(
 					var portraitPreviewImg = instance._portraitPreviewImg;
 
 					if (
-						portraitPreviewImg.attr('src').indexOf('spacer.png') ==
+						portraitPreviewImg.attr('src').indexOf('spacer.png') ===
 						-1
 					) {
 						var aspectRatio = instance.get('aspectRatio');
@@ -221,7 +222,7 @@ AUI.add(
 								cropHeight,
 								cropWidth,
 								x: 0,
-								y: 0
+								y: 0,
 							});
 						}
 						else {
@@ -229,7 +230,7 @@ AUI.add(
 								cropHeight,
 								cropWidth,
 								preserveRatio: instance.get('preserveRatio'),
-								srcNode: portraitPreviewImg
+								srcNode: portraitPreviewImg,
 							}).render();
 
 							instance._imageCrop = A.one('.image-cropper-crop');
@@ -282,27 +283,21 @@ AUI.add(
 				},
 
 				_showError(message) {
-					new Liferay.Alert({
-						closeable: true,
-						delay: {
-							hide: 3000,
-							show: 0
-						},
-						duration: 500,
+					Liferay.Util.openToast({
 						message,
-						type: 'danger'
-					}).render();
+						type: 'danger',
+					});
 				},
 
 				bindUI() {
 					var instance = this;
 
 					instance.publish('uploadComplete', {
-						defaultFn: A.rbind('_defUploadCompleteFn', instance)
+						defaultFn: A.rbind('_defUploadCompleteFn', instance),
 					});
 
 					instance.publish('uploadStart', {
-						defaultFn: A.rbind('_defUploadStartFn', instance)
+						defaultFn: A.rbind('_defUploadStartFn', instance),
 					});
 
 					instance._fileNameNode.on(
@@ -365,14 +360,14 @@ AUI.add(
 							portraitPreviewImg.height()
 						);
 					}
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.LogoEditor = LogoEditor;
 	},
 	'',
 	{
-		requires: ['aui-image-cropper', 'liferay-alert', 'liferay-portlet-base']
+		requires: ['aui-image-cropper', 'liferay-portlet-base'],
 	}
 );

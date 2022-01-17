@@ -22,6 +22,10 @@ public class SegmentsWebKeys {
 	public static final String EDIT_SEGMENTS_ENTRY_DISPLAY_CONTEXT =
 		"EDIT_SEGMENTS_ENTRY_DISPLAY_CONTEXT";
 
+	public static final String EXCLUDED_ROLE_NAMES = "EXCLUDED_ROLE_NAMES";
+
+	public static final String ITEM_SELECTOR = "ITEM_SELECTOR";
+
 	public static final String PREVIEW_SEGMENTS_ENTRY_CRITERIA =
 		"PREVIEW_SEGMENTS_ENTRY_CRITERIA";
 
@@ -31,13 +35,7 @@ public class SegmentsWebKeys {
 	public static final String SEGMENTS_DISPLAY_CONTEXT =
 		"SEGMENTS_DISPLAY_CONTEXT";
 
-	public static final String SELECT_ORGANIZATIONS_DISPLAY_CONTEXT =
-		"SELECT_ORGANIZATIONS_DISPLAY_CONTEXT";
-
 	public static final String SELECT_SEGMENTS_ENTRY_DISPLAY_CONTEXT =
 		"SELECT_SEGMENTS_ENTRY_DISPLAY_CONTEXT";
-
-	public static final String SELECT_USERS_DISPLAY_CONTEXT =
-		"SELECT_USERS_DISPLAY_CONTEXT";
 
 }

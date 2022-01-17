@@ -15,16 +15,18 @@
 package com.liferay.headless.admin.taxonomy.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.asset.entry.rel.service.AssetEntryAssetCategoryRelLocalServiceUtil;
+import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
+import com.liferay.asset.test.util.AssetTestUtil;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.TaxonomyCategory;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
@@ -45,29 +47,55 @@ public class TaxonomyCategoryResourceTest
 			new ServiceContext());
 	}
 
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLDeleteTaxonomyCategory() {
-	}
-
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLGetTaxonomyCategory() {
-	}
-
 	@Override
 	protected String[] getAdditionalAssertFieldNames() {
 		return new String[] {"description", "name"};
 	}
 
 	@Override
+	protected TaxonomyCategory randomTaxonomyCategory() throws Exception {
+		TaxonomyCategory taxonomyCategory = super.randomTaxonomyCategory();
+
+		taxonomyCategory.setTaxonomyVocabularyId(
+			_assetVocabulary.getVocabularyId());
+
+		return taxonomyCategory;
+	}
+
+	@Override
 	protected TaxonomyCategory testDeleteTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testDeleteTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode_addTaxonomyCategory()
+		throws Exception {
+
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testGetTaxonomyCategoriesRankedPage_addTaxonomyCategory(
+				TaxonomyCategory taxonomyCategory)
+		throws Exception {
+
+		taxonomyCategory =
+			testPostTaxonomyCategoryTaxonomyCategory_addTaxonomyCategory(
+				taxonomyCategory);
+
+		AssetEntry assetEntry = AssetTestUtil.addAssetEntry(
+			testGroup.getGroupId());
+
+		AssetEntryAssetCategoryRelLocalServiceUtil.
+			addAssetEntryAssetCategoryRel(
+				assetEntry.getEntryId(),
+				GetterUtil.getLong(taxonomyCategory.getId()));
+
+		return taxonomyCategory;
 	}
 
 	@Override
@@ -98,11 +126,26 @@ public class TaxonomyCategoryResourceTest
 	}
 
 	@Override
+	protected TaxonomyCategory
+			testGetTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode_addTaxonomyCategory()
+		throws Exception {
+
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory testGraphQLTaxonomyCategory_addTaxonomyCategory()
+		throws Exception {
+
+		return testPostTaxonomyCategoryTaxonomyCategory_addTaxonomyCategory(
+			randomTaxonomyCategory());
+	}
+
+	@Override
 	protected TaxonomyCategory testPatchTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
 	}
 
 	@Override
@@ -121,16 +164,31 @@ public class TaxonomyCategoryResourceTest
 				TaxonomyCategory taxonomyCategory)
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), taxonomyCategory);
+		return testPostTaxonomyCategoryTaxonomyCategory_addTaxonomyCategory(
+			taxonomyCategory);
 	}
 
 	@Override
 	protected TaxonomyCategory testPutTaxonomyCategory_addTaxonomyCategory()
 		throws Exception {
 
-		return taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testPutTaxonomyCategoryPermissionsPage_addTaxonomyCategory()
+		throws Exception {
+
+		return testGetTaxonomyCategory_addTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testPutTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode_addTaxonomyCategory()
+		throws Exception {
+
+		return testGetTaxonomyCategory_addTaxonomyCategory();
 	}
 
 	private AssetVocabulary _assetVocabulary;

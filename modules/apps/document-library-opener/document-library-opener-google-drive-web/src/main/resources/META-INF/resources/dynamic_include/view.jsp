@@ -28,7 +28,7 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 	</portlet:resourceURL>
 
 	<aui:script>
-		(function() {
+		(function () {
 			var TIME_POLLING = 500;
 			var TIME_SHOW_MSG = 2000;
 
@@ -42,7 +42,7 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 
 			showStatusMessage = Liferay.lazyLoad(
 				'frontend-js-web/liferay/toast/commands/OpenToast.es',
-				function(toastCommands, data) {
+				(toastCommands, data) => {
 					toastCommands.openToast(data);
 				}
 			);
@@ -55,16 +55,16 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 
 			function polling() {
 				Liferay.Util.fetch('<%= googleDriveBackgroundTaskStatusURL %>', {
-					method: 'POST'
+					method: 'POST',
 				})
-					.then(function(response) {
+					.then((response) => {
 						if (!response.ok) {
 							throw defaultError;
 						}
 
 						return response.json();
 					})
-					.then(function(response) {
+					.then((response) => {
 						if (response.complete) {
 							url = response.googleDocsEditURL;
 
@@ -77,7 +77,7 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 							setTimeout(polling, TIME_POLLING);
 						}
 					})
-					.catch(function(error) {
+					.catch((error) => {
 						showError(error);
 
 						Liferay.Util.getWindow(dialogId).hide();
@@ -87,8 +87,7 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 			function showError(message) {
 				showStatusMessage({
 					message: message,
-					title: '<liferay-ui:message key="error" />:',
-					type: 'danger'
+					type: 'danger',
 				});
 			}
 
@@ -113,13 +112,13 @@ DLOpenerGoogleDriveFileReference dlOpenerGoogleDriveFileReference = (DLOpenerGoo
 						modal: true,
 						resizable: false,
 						title: '',
-						width: 320
-					}
+						width: 320,
+					},
 				},
-				function() {
+				() => {
 					setTimeout(polling, TIME_POLLING);
 
-					setTimeout(function() {
+					setTimeout(() => {
 						isTimeConsumed = true;
 
 						navigate();

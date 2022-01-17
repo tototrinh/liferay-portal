@@ -20,17 +20,17 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.service.RoleServiceUtil;
 import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.rolesadmin.search.RoleSearch;
@@ -39,7 +39,6 @@ import com.liferay.roles.admin.role.type.contributor.RoleTypeContributor;
 import com.liferay.roles.admin.web.internal.role.type.contributor.util.RoleTypeContributorRetrieverUtil;
 import com.liferay.roles.admin.web.internal.search.RoleChecker;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -81,11 +80,11 @@ public class ViewRolesManagementToolbarDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() throws PortalException {
@@ -151,20 +150,27 @@ public class ViewRolesManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setKeywords(
+			() -> {
+				if (Validator.isNotNull(getKeywords())) {
+					return getKeywords();
+				}
 
-		portletURL.setParameter("mvcPath", "/view.jsp");
-		portletURL.setParameter(
-			"roleType", String.valueOf(_currentRoleTypeContributor.getType()));
-
-		portletURL.setParameter("displayStyle", _displayStyle);
-
-		if (Validator.isNotNull(getKeywords())) {
-			portletURL.setParameter("keywords", getKeywords());
-		}
-
-		portletURL.setParameter("orderByCol", getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
+				return null;
+			}
+		).setParameter(
+			"displayStyle", _displayStyle
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"roleType", _currentRoleTypeContributor.getType()
+		).buildPortletURL();
 
 		if (_roleSearch != null) {
 			portletURL.setParameter(
@@ -184,14 +190,15 @@ public class ViewRolesManagementToolbarDisplayContext {
 		return searchActionURL.toString();
 	}
 
-	public SearchContainer getSearchContainer() throws Exception {
+	public SearchContainer<Role> getSearchContainer() throws Exception {
 		if (_roleSearch != null) {
 			return _roleSearch;
 		}
 
 		RoleSearch roleSearch = new RoleSearch(_renderRequest, getPortletURL());
 
-		roleSearch.setRowChecker(new RoleChecker(_renderResponse));
+		roleSearch.setRowChecker(
+			new RoleChecker(_renderRequest, _renderResponse));
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)_httpServletRequest.getAttribute(
@@ -200,27 +207,14 @@ public class ViewRolesManagementToolbarDisplayContext {
 		RoleSearchTerms roleSearchTerms =
 			(RoleSearchTerms)roleSearch.getSearchTerms();
 
-		LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+		BaseModelSearchResult<Role> baseModelSearchResult =
+			_currentRoleTypeContributor.searchRoles(
+				themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
+				roleSearch.getStart(), roleSearch.getEnd(),
+				roleSearch.getOrderByComparator());
 
-		if (Validator.isNotNull(_currentRoleTypeContributor.getClassName())) {
-			params.put(
-				"classNameId",
-				PortalUtil.getClassNameId(
-					_currentRoleTypeContributor.getClassName()));
-		}
-
-		List<Role> results = RoleServiceUtil.search(
-			themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
-			new Integer[] {_currentRoleTypeContributor.getType()}, params,
-			roleSearch.getStart(), roleSearch.getEnd(),
-			roleSearch.getOrderByComparator());
-
-		int total = RoleServiceUtil.searchCount(
-			themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
-			new Integer[] {_currentRoleTypeContributor.getType()}, params);
-
-		roleSearch.setResults(results);
-		roleSearch.setTotal(total);
+		roleSearch.setResults(baseModelSearchResult.getBaseModels());
+		roleSearch.setTotal(baseModelSearchResult.getLength());
 
 		_roleSearch = roleSearch;
 
@@ -228,13 +222,12 @@ public class ViewRolesManagementToolbarDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public List<ViewTypeItem> getViewTypeItems() {

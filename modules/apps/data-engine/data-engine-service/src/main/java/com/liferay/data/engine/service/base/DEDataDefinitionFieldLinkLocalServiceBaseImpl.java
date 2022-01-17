@@ -16,12 +16,15 @@ package com.liferay.data.engine.service.base;
 
 import com.liferay.data.engine.model.DEDataDefinitionFieldLink;
 import com.liferay.data.engine.service.DEDataDefinitionFieldLinkLocalService;
+import com.liferay.data.engine.service.DEDataDefinitionFieldLinkLocalServiceUtil;
 import com.liferay.data.engine.service.persistence.DEDataDefinitionFieldLinkPersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -44,16 +47,22 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -75,11 +84,15 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DEDataDefinitionFieldLinkLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.data.engine.service.DEDataDefinitionFieldLinkLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DEDataDefinitionFieldLinkLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DEDataDefinitionFieldLinkLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the de data definition field link to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataDefinitionFieldLinkLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param deDataDefinitionFieldLink the de data definition field link
 	 * @return the de data definition field link that was added
@@ -113,6 +126,10 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	/**
 	 * Deletes the de data definition field link with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataDefinitionFieldLinkLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataDefinitionFieldLinkId the primary key of the de data definition field link
 	 * @return the de data definition field link that was removed
 	 * @throws PortalException if a de data definition field link with the primary key could not be found
@@ -130,6 +147,10 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	/**
 	 * Deletes the de data definition field link from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataDefinitionFieldLinkLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataDefinitionFieldLink the de data definition field link
 	 * @return the de data definition field link that was removed
 	 */
@@ -140,6 +161,18 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 
 		return deDataDefinitionFieldLinkPersistence.remove(
 			deDataDefinitionFieldLink);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return deDataDefinitionFieldLinkPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -415,6 +448,7 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -432,6 +466,11 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 		return deDataDefinitionFieldLinkLocalService.
 			deleteDEDataDefinitionFieldLink(
 				(DEDataDefinitionFieldLink)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<DEDataDefinitionFieldLink> getBasePersistence() {
+		return deDataDefinitionFieldLinkPersistence;
 	}
 
 	/**
@@ -529,6 +568,10 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	/**
 	 * Updates the de data definition field link in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DEDataDefinitionFieldLinkLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param deDataDefinitionFieldLink the de data definition field link
 	 * @return the de data definition field link that was updated
 	 */
@@ -541,11 +584,17 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 			deDataDefinitionFieldLink);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			DEDataDefinitionFieldLinkLocalService.class,
-			IdentifiableOSGiService.class, PersistedModelLocalService.class
+			IdentifiableOSGiService.class, CTService.class,
+			PersistedModelLocalService.class
 		};
 	}
 
@@ -553,6 +602,8 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		deDataDefinitionFieldLinkLocalService =
 			(DEDataDefinitionFieldLinkLocalService)aopProxy;
+
+		_setLocalServiceUtilService(deDataDefinitionFieldLinkLocalService);
 	}
 
 	/**
@@ -565,8 +616,23 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 		return DEDataDefinitionFieldLinkLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DEDataDefinitionFieldLink> getCTPersistence() {
+		return deDataDefinitionFieldLinkPersistence;
+	}
+
+	@Override
+	public Class<DEDataDefinitionFieldLink> getModelClass() {
 		return DEDataDefinitionFieldLink.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DEDataDefinitionFieldLink>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(deDataDefinitionFieldLinkPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -598,6 +664,24 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		DEDataDefinitionFieldLinkLocalService
+			deDataDefinitionFieldLinkLocalService) {
+
+		try {
+			Field field =
+				DEDataDefinitionFieldLinkLocalServiceUtil.class.
+					getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, deDataDefinitionFieldLinkLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected DEDataDefinitionFieldLinkLocalService
 		deDataDefinitionFieldLinkLocalService;
 
@@ -608,9 +692,5 @@ public abstract class DEDataDefinitionFieldLinkLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.GroupLocalService
-		groupLocalService;
 
 }

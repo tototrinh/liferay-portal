@@ -23,11 +23,11 @@ definition {
 	macro selectStructure {
 		var key_ddlDataDefinitionName = "${structureName}";
 
-		AssertClick(
-			locator1 = "DDMEditTemplate#DETAILS_SELECT_STRUCTURE",
-			value1 = "Select");
+		Click(
+			buttonId = "selectDDMStructure",
+			locator1 = "Button#BUTTON_ID");
 
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		ClickNoError(
 			locator1 = "DDMSelectStructure#DDM_STRUCTURE_TABLE_NAME_LINK",

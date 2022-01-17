@@ -239,7 +239,7 @@
 		</attributes>
 	</component>
 	<component bodyContent="true" name="Col">
-		<description>Creates a column to display content in an <![CDATA[<code>&lt;aui:row&gt;</code>]]> component.</description>
+		<description>Creates a column to display content in an <![CDATA[<code>&lt;aui:row&gt;</code>]]> component. Deprecated as of Athanasius (7.3.x), replaced by <code>clay:col</code>.</description>
 		<attributes>
 			<attribute>
 				<description>A CSS class for styling the component.</description>
@@ -348,7 +348,7 @@
 		</attributes>
 	</component>
 	<component bodyContent="true" name="Container">
-		<description>Creates a container <![CDATA[<code>&lt;div&gt;</code>]]> tag to wrap <![CDATA[<code>&lt;aui:row&gt;</code>]]> components and offer additional styling.</description>
+		<description>Creates a container <![CDATA[<code>&lt;div&gt;</code>]]> tag to wrap <![CDATA[<code>&lt;aui:row&gt;</code>]]> components and offer additional styling. Deprecated as of Athanasius (7.3.x), replaced by <code>clay:container</code>.</description>
 		<attributes>
 			<attribute>
 				<description>A CSS class for styling the component.</description>
@@ -502,6 +502,12 @@
 			</attribute>
 			<attribute>
 				<name>markupView</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
+				<description>A CSS class for styling the panel-header-link.</description>
+				<name>panelHeaderLinkCssClass</name>
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
 			</attribute>
@@ -667,6 +673,18 @@
 				<outputType>java.lang.Object</outputType>
 			</attribute>
 			<attribute>
+				<description>The SVG icon markup to use in toggle-switch.</description>
+				<name>buttonIconOff</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
+				<description>The SVG icon markup to use in toggle-switch.</description>
+				<name>buttonIconOn</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
 				<description>Whether to reload the page when the value of the input changes. The default value is <![CDATA[<code>false</code>]]>.</description>
 				<name>changesContext</name>
 				<inputType>boolean</inputType>
@@ -757,6 +775,18 @@
 				<defaultValue>input-group-addon</defaultValue>
 			</attribute>
 			<attribute>
+				<description>The SVG icon markup to use in toggle-switch.</description>
+				<name>iconOff</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
+				<description>The SVG icon markup to use in toggle-switch.</description>
+				<name>iconOn</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
 				<description>An ID for the component instance.</description>
 				<name>id</name>
 				<inputType>java.lang.String</inputType>
@@ -783,6 +813,12 @@
 			<attribute>
 				<description>A label for the input component. If not assigned a value, the label is automatically taken from the <![CDATA[<code>name</code>]]> attribute's value.</description>
 				<name>label</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
+			<attribute>
+				<description>A CSS class for styling the label.</description>
+				<name>labelCssClass</name>
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
 			</attribute>
@@ -1297,7 +1333,7 @@
 		</attributes>
 	</component>
 	<component bodyContent="true" name="Row">
-		<description>Creates a row to hold <![CDATA[<code>&lt;aui:col&gt;</code>]]> components.</description>
+		<description>Creates a row to hold <![CDATA[<code>&lt;aui:col&gt;</code>]]> components. Deprecated as of Athanasius (7.3.x), replaced by <code>clay:row</code>.</description>
 		<attributes>
 			<attribute>
 				<description>A CSS class for styling the component.</description>
@@ -1316,6 +1352,11 @@
 	<component dynamicAttributes="false" name="Script" parentClass="com.liferay.taglib.util.PositionTagSupport" writeJSP="false">
 		<description>Creates a script component in which to write JavaScript that facilitates using AlloyUI modules.</description>
 		<attributes>
+			<attribute>
+				<name>load</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
 			<attribute>
 				<description>A position for the script.</description>
 				<name>position</name>
@@ -1609,7 +1650,7 @@
 		</attributes>
 	</component>
 	<component dynamicAttributes="false" name="WorkflowStatus">
-		<description>Creates a UI component that displays the current status of its associated workflow.</description>
+		<description>Creates a UI component that displays the current status of its associated workflow. Deprecated as of Cavanaugh (7.4.x), replaced by <code>liferay-portal-workflow:status</code></description>
 		<attributes>
 			<attribute>
 				<description>A bean associated with the workflow status component.</description>

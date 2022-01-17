@@ -78,8 +78,6 @@ public class JSONNamingCheck extends BaseCheck {
 			!StringUtil.endsWith(name, typeName) &&
 			ArrayUtil.contains(checkTokenTypeNames, tokenTypeName)) {
 
-			System.out.println(typeName);
-			System.out.println(name);
 			log(
 				lineNo, _MSG_RENAME_VARIABLE,
 				StringUtil.toLowerCase(tokenTypeName), name,
@@ -102,6 +100,10 @@ public class JSONNamingCheck extends BaseCheck {
 		}
 
 		if (!typeName.equals(type) && !typeName.endsWith("." + type)) {
+			if (tokenTypeName.equals("Method") && !name.startsWith("get")) {
+				return;
+			}
+
 			String lowerCaseTypeName = StringUtil.toLowerCase(typeName);
 
 			if (!lowerCaseTypeName.endsWith(StringUtil.toLowerCase(type))) {

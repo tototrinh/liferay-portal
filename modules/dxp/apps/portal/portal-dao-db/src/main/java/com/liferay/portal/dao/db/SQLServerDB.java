@@ -18,7 +18,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -60,46 +59,31 @@ public class SQLServerDB extends BaseDB {
 	}
 
 	@Override
-	public List<Index> getIndexes(Connection con) throws SQLException {
+	public List<Index> getIndexes(Connection connection) throws SQLException {
 		List<Index> indexes = new ArrayList<>();
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		try {
-			DatabaseMetaData databaseMetaData = con.getMetaData();
+		if (databaseMetaData.getDatabaseMajorVersion() <= _SQL_SERVER_2000) {
+			return indexes;
+		}
 
-			if (databaseMetaData.getDatabaseMajorVersion() <=
-					_SQL_SERVER_2000) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select sys.tables.name as table_name, sys.indexes.name ",
+					"as index_name, is_unique from sys.indexes inner join ",
+					"sys.tables on sys.tables.object_id = ",
+					"sys.indexes.object_id where sys.indexes.name like ",
+					"'LIFERAY_%' or sys.indexes.name like 'IX_%'"));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-				return indexes;
-			}
-
-			StringBundler sb = new StringBundler(6);
-
-			sb.append("select sys.tables.name as table_name, ");
-			sb.append("sys.indexes.name as index_name, is_unique from ");
-			sb.append("sys.indexes inner join sys.tables on ");
-			sb.append("sys.tables.object_id = sys.indexes.object_id where ");
-			sb.append("sys.indexes.name like 'LIFERAY_%' or sys.indexes.name ");
-			sb.append("like 'IX_%'");
-
-			String sql = sb.toString();
-
-			ps = con.prepareStatement(sql);
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				String indexName = rs.getString("index_name");
-				String tableName = rs.getString("table_name");
-				boolean unique = !rs.getBoolean("is_unique");
+			while (resultSet.next()) {
+				String indexName = resultSet.getString("index_name");
+				String tableName = resultSet.getString("table_name");
+				boolean unique = !resultSet.getBoolean("is_unique");
 
 				indexes.add(new Index(indexName, tableName, unique));
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps, rs);
 		}
 
 		return indexes;
@@ -112,36 +96,14 @@ public class SQLServerDB extends BaseDB {
 
 	@Override
 	public String getPopulateSQL(String databaseName, String sqlContent) {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append("use ");
-		sb.append(databaseName);
-		sb.append(";\n\n");
-		sb.append(sqlContent);
-
-		return sb.toString();
+		return StringBundler.concat("use ", databaseName, ";\n\n", sqlContent);
 	}
 
 	@Override
 	public String getRecreateSQL(String databaseName) {
-		StringBundler sb = new StringBundler(9);
-
-		sb.append("drop database ");
-		sb.append(databaseName);
-		sb.append(";\n");
-		sb.append("create database ");
-		sb.append(databaseName);
-		sb.append(";\n");
-		sb.append("\n");
-		sb.append("go\n");
-		sb.append("\n");
-
-		return sb.toString();
-	}
-
-	@Override
-	public boolean isSupportsAlterColumnType() {
-		return _SUPPORTS_ALTER_COLUMN_TYPE;
+		return StringBundler.concat(
+			"drop database ", databaseName, ";\n", "create database ",
+			databaseName, ";\n\n", "go\n\n");
 	}
 
 	@Override
@@ -181,8 +143,11 @@ public class SQLServerDB extends BaseDB {
 					String[] template = buildColumnTypeTokens(line);
 
 					line = StringUtil.replace(
-						"alter table @table@ alter column @old-column@ @type@;",
+						"alter table @table@ alter column @old-column@ " +
+							"@type@ @nullable@;",
 						REWORD_TEMPLATE, template);
+
+					line = StringUtil.replace(line, " ;", ";");
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);
@@ -224,11 +189,9 @@ public class SQLServerDB extends BaseDB {
 
 	private static final int[] _SQL_TYPES = {
 		Types.LONGVARBINARY, Types.LONGVARBINARY, Types.BIT, Types.TIMESTAMP,
-		Types.DOUBLE, Types.INTEGER, Types.BIGINT, Types.LONGVARCHAR,
-		Types.LONGVARCHAR, Types.VARCHAR
+		Types.DOUBLE, Types.INTEGER, Types.BIGINT, Types.NVARCHAR,
+		Types.NVARCHAR, Types.NVARCHAR
 	};
-
-	private static final boolean _SUPPORTS_ALTER_COLUMN_TYPE = false;
 
 	private static final boolean _SUPPORTS_NEW_UUID_FUNCTION = true;
 

@@ -14,7 +14,7 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalServiceUtil;
 import com.liferay.petra.string.StringPool;
@@ -75,13 +75,13 @@ public class ExportImportDateUtil {
 		LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
 			groupId, privateLayout);
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSet.getSettingsProperties();
 
-		settingsProperties.remove(_LAST_PUBLISH_DATE);
+		settingsUnicodeProperties.remove(_LAST_PUBLISH_DATE);
 
 		LayoutSetLocalServiceUtil.updateSettings(
-			groupId, privateLayout, settingsProperties.toString());
+			groupId, privateLayout, settingsUnicodeProperties.toString());
 	}
 
 	public static Calendar getCalendar(
@@ -246,11 +246,8 @@ public class ExportImportDateUtil {
 
 			// This is a valid scenario in case of group level portlets
 
-			if (portletDataContext.getStartDate() == null) {
-				return portletLastPublishDate;
-			}
-
-			if (portletLastPublishDate.before(
+			if ((portletDataContext.getStartDate() == null) ||
+				portletLastPublishDate.before(
 					portletDataContext.getStartDate())) {
 
 				return portletLastPublishDate;
@@ -344,15 +341,15 @@ public class ExportImportDateUtil {
 			lastPublishDate = new Date();
 		}
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSet.getSettingsProperties();
 
-		settingsProperties.setProperty(
+		settingsUnicodeProperties.setProperty(
 			_LAST_PUBLISH_DATE, String.valueOf(lastPublishDate.getTime()));
 
 		LayoutSetLocalServiceUtil.updateSettings(
 			layoutSet.getGroupId(), layoutSet.isPrivateLayout(),
-			settingsProperties.toString());
+			settingsUnicodeProperties.toString());
 	}
 
 	public static void updateLastPublishDate(
@@ -390,7 +387,8 @@ public class ExportImportDateUtil {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Not updating the portlet setup for " + portletId +
-						" because no setup was returned for the current page");
+						" because no setup was returned for the current page",
+					unsupportedOperationException);
 			}
 		}
 		catch (Exception exception) {
@@ -487,11 +485,11 @@ public class ExportImportDateUtil {
 			}
 		}
 		else if (range.equals(RANGE_LAST)) {
-			Date now = new Date();
+			Date date = new Date();
 
-			startDate = new Date(now.getTime() - (rangeLast * Time.HOUR));
+			startDate = new Date(date.getTime() - (rangeLast * Time.HOUR));
 
-			endDate = now;
+			endDate = date;
 		}
 
 		return new DateRange(startDate, endDate);

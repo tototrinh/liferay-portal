@@ -14,6 +14,8 @@
 
 package com.liferay.saml.opensaml.integration.internal.servlet.profile;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalService;
 
@@ -31,15 +33,15 @@ public class SamlSsoRequestContext implements Serializable {
 	public static final int STAGE_INITIAL = 0;
 
 	public SamlSsoRequestContext(
-		String peerEntityId, String relayState, MessageContext messageContext,
-		UserLocalService userLocalService) {
+		String peerEntityId, String relayState,
+		MessageContext<?> messageContext, UserLocalService userLocalService) {
 
 		this(null, peerEntityId, relayState, messageContext, userLocalService);
 	}
 
 	public SamlSsoRequestContext(
 		String authnRequestXml, String peerEntityId, String relayState,
-		MessageContext messageContext, UserLocalService userLocalService) {
+		MessageContext<?> messageContext, UserLocalService userLocalService) {
 
 		_authnRequestXml = authnRequestXml;
 		_peerEntityId = peerEntityId;
@@ -60,7 +62,7 @@ public class SamlSsoRequestContext implements Serializable {
 		return _relayState;
 	}
 
-	public MessageContext getSAMLMessageContext() {
+	public MessageContext<?> getSAMLMessageContext() {
 		return _messageContext;
 	}
 
@@ -77,6 +79,10 @@ public class SamlSsoRequestContext implements Serializable {
 			return _userLocalService.fetchUserById(_userId);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
 	}
@@ -93,7 +99,7 @@ public class SamlSsoRequestContext implements Serializable {
 		_newSession = newSession;
 	}
 
-	public void setSAMLMessageContext(MessageContext messageContext) {
+	public void setSAMLMessageContext(MessageContext<?> messageContext) {
 		_messageContext = messageContext;
 	}
 
@@ -109,8 +115,11 @@ public class SamlSsoRequestContext implements Serializable {
 		_userId = userId;
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		SamlSsoRequestContext.class);
+
 	private final String _authnRequestXml;
-	private volatile MessageContext _messageContext;
+	private volatile MessageContext<?> _messageContext;
 	private boolean _newSession;
 	private final String _peerEntityId;
 	private final String _relayState;

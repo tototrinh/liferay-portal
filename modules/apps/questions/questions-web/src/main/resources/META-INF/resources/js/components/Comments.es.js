@@ -14,107 +14,110 @@
 
 import ClayButton from '@clayui/button';
 import ClayForm from '@clayui/form';
-import React, {useCallback, useState} from 'react';
+import {useMutation} from 'graphql-hooks';
+import React, {useCallback, useContext, useRef, useState} from 'react';
+import {withRouter} from 'react-router-dom';
 
-import {createComment} from '../utils/client.es';
-import lang from '../utils/lang.es';
+import {AppContext} from '../AppContext.es';
+import {createCommentQuery} from '../utils/client.es';
+import {getContextLink} from '../utils/utils.es';
 import Comment from './Comment.es';
+import DefaultQuestionsEditor from './DefaultQuestionsEditor.es';
 
-export default ({
-	comments,
-	commentsChange,
-	entityId,
-	showNewComment,
-	showNewCommentChange
-}) => {
-	const [comment, setComment] = useState('');
-
-	const postComment = () => {
-		return createComment(comment, entityId).then(data => {
-			setComment('');
-			showNewCommentChange(false);
-			commentsChange([...comments, data]);
-		});
-	};
-
-	const _commentChange = useCallback(
-		comment => {
-			if (commentsChange) {
-				return commentsChange([
-					...comments.filter(o => o.id !== comment.id)
-				]);
-			}
-
-			return null;
+export default withRouter(
+	({
+		comments,
+		commentsChange,
+		editable = true,
+		entityId,
+		match: {
+			params: {questionId, sectionTitle},
 		},
-		[commentsChange, comments]
-	);
+		showNewComment,
+		showNewCommentChange,
+	}) => {
+		const context = useContext(AppContext);
 
-	return (
-		<div>
-			{comments.map(comment => (
-				<Comment
-					comment={comment}
-					commentChange={_commentChange}
-					key={comment.id}
-				/>
-			))}
+		const editorRef = useRef('');
 
-			{showNewComment && (
-				<div
-					className="autofit-padded autofit-row"
-					style={{paddingLeft: '5em'}}
-				>
-					<div className="autofit-col autofit-col-expand">
-						<hr className="question-comment-separator" />
+		const [isReplyButtonDisable, setIsReplyButtonDisable] = useState(false);
 
-						<div>
-							<ClayForm.Group className="form-group-sm">
-								<textarea
-									className="form-control"
-									onChange={event =>
-										setComment(event.target.value)
-									}
-									value={comment}
-								/>
-							</ClayForm.Group>
-						</div>
+		const [createComment] = useMutation(createCommentQuery);
 
-						<div className="autofit-row">
-							<ClayButton.Group spaced={true}>
+		const _commentChange = useCallback(
+			(comment) => {
+				if (commentsChange) {
+					return commentsChange([
+						...comments.filter((o) => o.id !== comment.id),
+					]);
+				}
+
+				return null;
+			},
+			[commentsChange, comments]
+		);
+
+		return (
+			<div>
+				{comments.map((comment) => (
+					<Comment
+						comment={comment}
+						commentChange={_commentChange}
+						editable={editable}
+						key={comment.id}
+					/>
+				))}
+
+				{editable && showNewComment && (
+					<>
+						<ClayForm.Group small>
+							<DefaultQuestionsEditor
+								label={Liferay.Language.get('your-answer')}
+								onContentLengthValid={setIsReplyButtonDisable}
+								ref={editorRef}
+							/>
+
+							<ClayButton.Group className="c-mt-3" spaced>
 								<ClayButton
-									disabled={comment.length < 15}
+									disabled={isReplyButtonDisable}
 									displayType="primary"
-									onClick={postComment}
-									small={true}
+									onClick={() => {
+										createComment({
+											fetchOptionsOverrides: getContextLink(
+												`${sectionTitle}/${questionId}`
+											),
+											variables: {
+												articleBody: editorRef.current.getContent(),
+												parentMessageBoardMessageId: entityId,
+											},
+										}).then(({data}) => {
+											editorRef.current.clearContent();
+											showNewCommentChange(false);
+											commentsChange([
+												...comments,
+												data.createMessageBoardMessageMessageBoardMessage,
+											]);
+										});
+									}}
 								>
-									{Liferay.Language.get('reply')}
+									{context.trustedUser
+										? Liferay.Language.get('reply')
+										: Liferay.Language.get(
+												'submit-for-publication'
+										  )}
 								</ClayButton>
+
 								<ClayButton
 									displayType="secondary"
 									onClick={() => showNewCommentChange(false)}
-									small={true}
 								>
 									{Liferay.Language.get('cancel')}
 								</ClayButton>
 							</ClayButton.Group>
-
-							<div className="autofit-col autofit-col-expand question-comment-validation">
-								{comment.length < 15 && (
-									<span>
-										{lang.sub(
-											Liferay.Language.get(
-												'x-characters-left'
-											),
-											[15 - comment.length]
-										)}
-									</span>
-								)}
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
-		</div>
-	);
-};
+						</ClayForm.Group>
+					</>
+				)}
+			</div>
+		);
+	}
+);

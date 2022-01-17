@@ -23,9 +23,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
-
-import java.util.Dictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -42,21 +40,20 @@ public class CalendarResourceModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", CalendarResource.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<CalendarResource>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				CalendarResource.class, CalendarResource::getCalendarResourceId,
 				_calendarResourceLocalService::getCalendarResource,
 				_portletResourcePermission,
 				(modelResourcePermission, consumer) -> consumer.accept(
 					new StagedModelPermissionLogic<>(
-						_stagingPermission, CalendarPortletKeys.CALENDAR,
+						_stagingPermission, CalendarPortletKeys.CALENDAR_ADMIN,
 						CalendarResource::getCalendarResourceId))),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", CalendarResource.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -72,7 +69,8 @@ public class CalendarResourceModelResourcePermissionRegistrar {
 	)
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<CalendarResource>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

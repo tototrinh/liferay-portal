@@ -16,10 +16,10 @@ definition {
 
 		if ("${pageTemplateType}" == "Content Page Template") {
 			if (isSet(masterLayoutName)) {
-				PageTemplatesAdmin.gotoPageTemplate(pageTemplateName = "${masterLayoutName}");
+				LexiconCard.clickCard(card = "${masterLayoutName}");
 			}
 			else {
-				PageTemplatesAdmin.gotoPageTemplate(pageTemplateName = "Blank");
+				LexiconCard.clickCard(card = "Blank");
 			}
 		}
 
@@ -30,6 +30,10 @@ definition {
 		PortletEntry.inputName(name = "${pageTemplateName}");
 
 		Button.clickSave();
+
+		if (("${pageTemplateType}" == "Content Page Template") && (!(isSet(duplicatePageTemplate)))) {
+			PageEditor.assertFragmentSidebarLoaded();
+		}
 	}
 
 	macro _gotoAddCollection {
@@ -53,6 +57,7 @@ definition {
 
 	macro addDuplicatePageTemplate {
 		PageTemplatesAdmin._addPageTemplate(
+			duplicatePageTemplate = "${duplicatePageTemplate}",
 			menuItem = "${menuItem}",
 			pageTemplateName = "${pageTemplateName}",
 			pageTemplateType = "${pageTemplateType}",
@@ -80,10 +85,6 @@ definition {
 			pageTemplateName = "${pageTemplateName}",
 			pageTemplateType = "${pageTemplateType}",
 			siteTemplate = "${siteTemplate}");
-
-		if ("${pageTemplateType}" == "Content Page Template") {
-			PageEditor.assertFragmentSidebarLoaded();
-		}
 	}
 
 	macro configureWidgetPageTemplateLayout {
@@ -101,13 +102,33 @@ definition {
 	}
 
 	macro gotoPageTemplate {
-		LexiconCard.clickCardTitle(card = "${pageTemplateName}");
+		LexiconCard.clickCardTitleLink(card = "${pageTemplateName}");
 	}
 
 	macro gotoPageTemplateEllipsisItem {
 		LexiconCard.clickEllipsisItem(
 			card = "${pageTemplateName}",
 			item = "${item}");
+	}
+
+	macro importPageTemplatesFromTempFolder {
+		Click.waitForMenuToggleJSClick(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Import");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		var pageTemplateZipFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "page-template-*.zip");
+
+		UploadTempFile(
+			locator1 = "TextInput#FILE",
+			value1 = "${pageTemplateZipFileName}");
+
+		Button.clickImport();
+
+		Alert.viewSuccessMessage();
+
+		IFrame.closeFrame();
 	}
 
 	macro openPageTemplatesAdmin {
@@ -126,6 +147,20 @@ definition {
 		PortletEntry.inputName(name = "${newPageTemplateName}");
 
 		Modal.save();
+	}
+
+	macro selectPageTemplate {
+		LexiconCard.viewCardTitle(card = "${pageTemplateName}");
+
+		Check.checkNotVisible(
+			key_card = "${pageTemplateName}",
+			locator1 = "Card#CARD_CHECKBOX");
+	}
+
+	macro viewEntryWorkflowStatus {
+		LexiconCard.viewCardLabel(
+			card = "${entry}",
+			cardLabel = "${workflowStatus}");
 	}
 
 	macro viewPageTemplateNotPresent {

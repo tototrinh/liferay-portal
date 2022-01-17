@@ -23,7 +23,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.security.service.access.policy.model.SAPEntry;
@@ -64,11 +63,7 @@ public class AssetEntrySAPEntryActivator {
 			AssetEntryService.class.getName() + "#incrementViewCounter";
 
 		Map<Locale, String> titleMap = ResourceBundleUtil.getLocalizationMap(
-			new AggregateResourceBundleLoader(
-				ResourceBundleUtil.getResourceBundleLoader(
-					"content.Language",
-					AssetEntrySAPEntryActivator.class.getClassLoader()),
-				LanguageResources.RESOURCE_BUNDLE_LOADER),
+			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,
 			"service-access-policy-entry-default-asset-entry-title");
 
 		_sapEntryLocalService.addSAPEntry(

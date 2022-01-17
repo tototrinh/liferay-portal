@@ -14,9 +14,9 @@
 
 package com.liferay.dynamic.data.mapping.internal.storage;
 
-import com.liferay.dynamic.data.mapping.internal.util.DDMImpl;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.storage.BaseFieldRenderer;
@@ -57,11 +57,11 @@ public class StringFieldRenderer extends BaseFieldRenderer {
 				continue;
 			}
 
-			if (fieldType.equals(DDMImpl.TYPE_SELECT)) {
+			if (fieldType.equals(DDMFormFieldType.SELECT)) {
 				valueString = handleSelectFieldValue(
 					field, valueString, locale);
 			}
-			else if (fieldType.equals(DDMImpl.TYPE_RADIO)) {
+			else if (fieldType.equals(DDMFormFieldType.RADIO)) {
 				return handleRadioFieldValue(
 					field, String.valueOf(value), locale);
 			}
@@ -86,10 +86,10 @@ public class StringFieldRenderer extends BaseFieldRenderer {
 
 		String valueString = String.valueOf(value);
 
-		if (fieldType.equals(DDMImpl.TYPE_SELECT)) {
+		if (fieldType.equals(DDMFormFieldType.SELECT)) {
 			return handleSelectFieldValue(field, valueString, locale);
 		}
-		else if (fieldType.equals(DDMImpl.TYPE_RADIO)) {
+		else if (fieldType.equals(DDMFormFieldType.RADIO)) {
 			return handleRadioFieldValue(field, valueString, locale);
 		}
 
@@ -128,7 +128,7 @@ public class StringFieldRenderer extends BaseFieldRenderer {
 		LocalizedValue label = getFieldOptionLabel(field, value);
 
 		if (label == null) {
-			return StringPool.BLANK;
+			return value;
 		}
 
 		return GetterUtil.getString(label.getString(locale));
@@ -147,14 +147,16 @@ public class StringFieldRenderer extends BaseFieldRenderer {
 		StringBundler sb = new StringBundler(jsonArray.length() * 2);
 
 		for (int i = 0; i < jsonArray.length(); i++) {
-			LocalizedValue label = getFieldOptionLabel(
+			LocalizedValue localizedValue = getFieldOptionLabel(
 				field, jsonArray.getString(i));
 
-			if (label == null) {
-				continue;
+			if (localizedValue != null) {
+				sb.append(localizedValue.getString(locale));
+			}
+			else {
+				sb.append(jsonArray.getString(i));
 			}
 
-			sb.append(label.getString(locale));
 			sb.append(StringPool.COMMA_AND_SPACE);
 		}
 

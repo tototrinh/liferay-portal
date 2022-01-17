@@ -16,8 +16,10 @@ package com.liferay.portal.service.persistence.impl;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.change.tracking.CTColumnResolutionType;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
@@ -29,6 +31,7 @@ import com.liferay.portal.kernel.exception.NoSuchUserGroupException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.model.UserGroupTable;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -36,13 +39,18 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.GroupPersistence;
 import com.liferay.portal.kernel.service.persistence.TeamPersistence;
 import com.liferay.portal.kernel.service.persistence.UserGroupPersistence;
+import com.liferay.portal.kernel.service.persistence.UserGroupUtil;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.helper.CTPersistenceHelperUtil;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.service.persistence.impl.TableMapper;
 import com.liferay.portal.kernel.service.persistence.impl.TableMapperFactory;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -53,12 +61,16 @@ import com.liferay.portal.model.impl.UserGroupModelImpl;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -169,27 +181,30 @@ public class UserGroupPersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByUuid;
 				finderArgs = new Object[] {uuid};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByUuid;
 			finderArgs = new Object[] {uuid, start, end, orderByComparator};
 		}
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -254,15 +269,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -916,12 +927,21 @@ public class UserGroupPersistenceImpl
 	public int countByUuid(String uuid) {
 		uuid = Objects.toString(uuid, "");
 
-		FinderPath finderPath = _finderPathCountByUuid;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {uuid};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByUuid;
+
+			finderArgs = new Object[] {uuid};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -956,11 +976,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1127,18 +1147,21 @@ public class UserGroupPersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByUuid_C;
 				finderArgs = new Object[] {uuid, companyId};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByUuid_C;
 			finderArgs = new Object[] {
 				uuid, companyId, start, end, orderByComparator
@@ -1147,9 +1170,9 @@ public class UserGroupPersistenceImpl
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -1220,15 +1243,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1923,12 +1942,21 @@ public class UserGroupPersistenceImpl
 	public int countByUuid_C(String uuid, long companyId) {
 		uuid = Objects.toString(uuid, "");
 
-		FinderPath finderPath = _finderPathCountByUuid_C;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {uuid, companyId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByUuid_C;
+
+			finderArgs = new Object[] {uuid, companyId};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1967,11 +1995,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2137,18 +2165,21 @@ public class UserGroupPersistenceImpl
 		OrderByComparator<UserGroup> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByCompanyId;
 				finderArgs = new Object[] {companyId};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByCompanyId;
 			finderArgs = new Object[] {
 				companyId, start, end, orderByComparator
@@ -2157,9 +2188,9 @@ public class UserGroupPersistenceImpl
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -2213,15 +2244,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2841,12 +2868,21 @@ public class UserGroupPersistenceImpl
 	 */
 	@Override
 	public int countByCompanyId(long companyId) {
-		FinderPath finderPath = _finderPathCountByCompanyId;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {companyId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByCompanyId;
+
+			finderArgs = new Object[] {companyId};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -2870,11 +2906,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -3018,18 +3054,21 @@ public class UserGroupPersistenceImpl
 		OrderByComparator<UserGroup> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindByC_P;
 				finderArgs = new Object[] {companyId, parentUserGroupId};
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindByC_P;
 			finderArgs = new Object[] {
 				companyId, parentUserGroupId, start, end, orderByComparator
@@ -3038,9 +3077,9 @@ public class UserGroupPersistenceImpl
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -3101,15 +3140,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -3773,12 +3808,21 @@ public class UserGroupPersistenceImpl
 	 */
 	@Override
 	public int countByC_P(long companyId, long parentUserGroupId) {
-		FinderPath finderPath = _finderPathCountByC_P;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {companyId, parentUserGroupId};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByC_P;
+
+			finderArgs = new Object[] {companyId, parentUserGroupId};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -3806,11 +3850,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -3946,17 +3990,20 @@ public class UserGroupPersistenceImpl
 
 		name = Objects.toString(name, "");
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		Object[] finderArgs = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			finderArgs = new Object[] {companyId, name};
 		}
 
 		Object result = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			result = FinderCacheUtil.getResult(
-				_finderPathFetchByC_N, finderArgs, this);
+				_finderPathFetchByC_N, finderArgs);
 		}
 
 		if (result instanceof UserGroup) {
@@ -4007,7 +4054,7 @@ public class UserGroupPersistenceImpl
 				List<UserGroup> list = query.list();
 
 				if (list.isEmpty()) {
-					if (useFinderCache) {
+					if (useFinderCache && productionMode) {
 						FinderCacheUtil.putResult(
 							_finderPathFetchByC_N, finderArgs, list);
 					}
@@ -4021,11 +4068,6 @@ public class UserGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(
-						_finderPathFetchByC_N, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -4068,12 +4110,21 @@ public class UserGroupPersistenceImpl
 	public int countByC_N(long companyId, String name) {
 		name = Objects.toString(name, "");
 
-		FinderPath finderPath = _finderPathCountByC_N;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {companyId, name};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByC_N;
+
+			finderArgs = new Object[] {companyId, name};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -4112,11 +4163,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -4218,6 +4269,9 @@ public class UserGroupPersistenceImpl
 
 		name = Objects.toString(name, "");
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
@@ -4228,9 +4282,9 @@ public class UserGroupPersistenceImpl
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -4302,15 +4356,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -5006,12 +5056,21 @@ public class UserGroupPersistenceImpl
 	public int countByC_LikeN(long companyId, String name) {
 		name = Objects.toString(name, "");
 
-		FinderPath finderPath = _finderPathWithPaginationCountByC_LikeN;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {companyId, name};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathWithPaginationCountByC_LikeN;
+
+			finderArgs = new Object[] {companyId, name};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -5050,11 +5109,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -5140,8 +5199,8 @@ public class UserGroupPersistenceImpl
 	private static final String _FINDER_COLUMN_C_LIKEN_NAME_3 =
 		"(userGroup.name IS NULL OR userGroup.name LIKE '')";
 
-	private FinderPath _finderPathWithPaginationFindByU_C_P;
-	private FinderPath _finderPathWithPaginationCountByU_C_P;
+	private FinderPath _finderPathWithPaginationFindByGtU_C_P;
+	private FinderPath _finderPathWithPaginationCountByGtU_C_P;
 
 	/**
 	 * Returns all the user groups where userGroupId &gt; &#63; and companyId = &#63; and parentUserGroupId = &#63;.
@@ -5152,10 +5211,10 @@ public class UserGroupPersistenceImpl
 	 * @return the matching user groups
 	 */
 	@Override
-	public List<UserGroup> findByU_C_P(
+	public List<UserGroup> findByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId) {
 
-		return findByU_C_P(
+		return findByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
 	}
@@ -5175,11 +5234,11 @@ public class UserGroupPersistenceImpl
 	 * @return the range of matching user groups
 	 */
 	@Override
-	public List<UserGroup> findByU_C_P(
+	public List<UserGroup> findByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId, int start,
 		int end) {
 
-		return findByU_C_P(
+		return findByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, start, end, null);
 	}
 
@@ -5199,11 +5258,11 @@ public class UserGroupPersistenceImpl
 	 * @return the ordered range of matching user groups
 	 */
 	@Override
-	public List<UserGroup> findByU_C_P(
+	public List<UserGroup> findByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId, int start,
 		int end, OrderByComparator<UserGroup> orderByComparator) {
 
-		return findByU_C_P(
+		return findByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, start, end,
 			orderByComparator, true);
 	}
@@ -5225,15 +5284,18 @@ public class UserGroupPersistenceImpl
 	 * @return the ordered range of matching user groups
 	 */
 	@Override
-	public List<UserGroup> findByU_C_P(
+	public List<UserGroup> findByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId, int start,
 		int end, OrderByComparator<UserGroup> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
-		finderPath = _finderPathWithPaginationFindByU_C_P;
+		finderPath = _finderPathWithPaginationFindByGtU_C_P;
 		finderArgs = new Object[] {
 			userGroupId, companyId, parentUserGroupId, start, end,
 			orderByComparator
@@ -5241,9 +5303,9 @@ public class UserGroupPersistenceImpl
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (UserGroup userGroup : list) {
@@ -5273,11 +5335,11 @@ public class UserGroupPersistenceImpl
 
 			sb.append(_SQL_SELECT_USERGROUP_WHERE);
 
-			sb.append(_FINDER_COLUMN_U_C_P_USERGROUPID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_USERGROUPID_2);
 
-			sb.append(_FINDER_COLUMN_U_C_P_COMPANYID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_COMPANYID_2);
 
-			sb.append(_FINDER_COLUMN_U_C_P_PARENTUSERGROUPID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_PARENTUSERGROUPID_2);
 
 			if (orderByComparator != null) {
 				appendOrderByComparator(
@@ -5309,15 +5371,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -5339,12 +5397,12 @@ public class UserGroupPersistenceImpl
 	 * @throws NoSuchUserGroupException if a matching user group could not be found
 	 */
 	@Override
-	public UserGroup findByU_C_P_First(
+	public UserGroup findByGtU_C_P_First(
 			long userGroupId, long companyId, long parentUserGroupId,
 			OrderByComparator<UserGroup> orderByComparator)
 		throws NoSuchUserGroupException {
 
-		UserGroup userGroup = fetchByU_C_P_First(
+		UserGroup userGroup = fetchByGtU_C_P_First(
 			userGroupId, companyId, parentUserGroupId, orderByComparator);
 
 		if (userGroup != null) {
@@ -5379,11 +5437,11 @@ public class UserGroupPersistenceImpl
 	 * @return the first matching user group, or <code>null</code> if a matching user group could not be found
 	 */
 	@Override
-	public UserGroup fetchByU_C_P_First(
+	public UserGroup fetchByGtU_C_P_First(
 		long userGroupId, long companyId, long parentUserGroupId,
 		OrderByComparator<UserGroup> orderByComparator) {
 
-		List<UserGroup> list = findByU_C_P(
+		List<UserGroup> list = findByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -5404,12 +5462,12 @@ public class UserGroupPersistenceImpl
 	 * @throws NoSuchUserGroupException if a matching user group could not be found
 	 */
 	@Override
-	public UserGroup findByU_C_P_Last(
+	public UserGroup findByGtU_C_P_Last(
 			long userGroupId, long companyId, long parentUserGroupId,
 			OrderByComparator<UserGroup> orderByComparator)
 		throws NoSuchUserGroupException {
 
-		UserGroup userGroup = fetchByU_C_P_Last(
+		UserGroup userGroup = fetchByGtU_C_P_Last(
 			userGroupId, companyId, parentUserGroupId, orderByComparator);
 
 		if (userGroup != null) {
@@ -5444,17 +5502,17 @@ public class UserGroupPersistenceImpl
 	 * @return the last matching user group, or <code>null</code> if a matching user group could not be found
 	 */
 	@Override
-	public UserGroup fetchByU_C_P_Last(
+	public UserGroup fetchByGtU_C_P_Last(
 		long userGroupId, long companyId, long parentUserGroupId,
 		OrderByComparator<UserGroup> orderByComparator) {
 
-		int count = countByU_C_P(userGroupId, companyId, parentUserGroupId);
+		int count = countByGtU_C_P(userGroupId, companyId, parentUserGroupId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<UserGroup> list = findByU_C_P(
+		List<UserGroup> list = findByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, count - 1, count,
 			orderByComparator);
 
@@ -5474,10 +5532,10 @@ public class UserGroupPersistenceImpl
 	 * @return the matching user groups that the user has permission to view
 	 */
 	@Override
-	public List<UserGroup> filterFindByU_C_P(
+	public List<UserGroup> filterFindByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId) {
 
-		return filterFindByU_C_P(
+		return filterFindByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
 	}
@@ -5497,11 +5555,11 @@ public class UserGroupPersistenceImpl
 	 * @return the range of matching user groups that the user has permission to view
 	 */
 	@Override
-	public List<UserGroup> filterFindByU_C_P(
+	public List<UserGroup> filterFindByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId, int start,
 		int end) {
 
-		return filterFindByU_C_P(
+		return filterFindByGtU_C_P(
 			userGroupId, companyId, parentUserGroupId, start, end, null);
 	}
 
@@ -5521,12 +5579,12 @@ public class UserGroupPersistenceImpl
 	 * @return the ordered range of matching user groups that the user has permission to view
 	 */
 	@Override
-	public List<UserGroup> filterFindByU_C_P(
+	public List<UserGroup> filterFindByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId, int start,
 		int end, OrderByComparator<UserGroup> orderByComparator) {
 
 		if (!InlineSQLHelperUtil.isEnabled(companyId, 0)) {
-			return findByU_C_P(
+			return findByGtU_C_P(
 				userGroupId, companyId, parentUserGroupId, start, end,
 				orderByComparator);
 		}
@@ -5548,11 +5606,11 @@ public class UserGroupPersistenceImpl
 			sb.append(_FILTER_SQL_SELECT_USERGROUP_NO_INLINE_DISTINCT_WHERE_1);
 		}
 
-		sb.append(_FINDER_COLUMN_U_C_P_USERGROUPID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_USERGROUPID_2);
 
-		sb.append(_FINDER_COLUMN_U_C_P_COMPANYID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_COMPANYID_2);
 
-		sb.append(_FINDER_COLUMN_U_C_P_PARENTUSERGROUPID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_PARENTUSERGROUPID_2);
 
 		if (!getDB().isSupportsInlineDistinct()) {
 			sb.append(_FILTER_SQL_SELECT_USERGROUP_NO_INLINE_DISTINCT_WHERE_2);
@@ -5622,11 +5680,11 @@ public class UserGroupPersistenceImpl
 	 * @param parentUserGroupId the parent user group ID
 	 */
 	@Override
-	public void removeByU_C_P(
+	public void removeByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId) {
 
 		for (UserGroup userGroup :
-				findByU_C_P(
+				findByGtU_C_P(
 					userGroupId, companyId, parentUserGroupId,
 					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
 
@@ -5643,28 +5701,37 @@ public class UserGroupPersistenceImpl
 	 * @return the number of matching user groups
 	 */
 	@Override
-	public int countByU_C_P(
+	public int countByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId) {
 
-		FinderPath finderPath = _finderPathWithPaginationCountByU_C_P;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {
-			userGroupId, companyId, parentUserGroupId
-		};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathWithPaginationCountByGtU_C_P;
+
+			finderArgs = new Object[] {
+				userGroupId, companyId, parentUserGroupId
+			};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(4);
 
 			sb.append(_SQL_COUNT_USERGROUP_WHERE);
 
-			sb.append(_FINDER_COLUMN_U_C_P_USERGROUPID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_USERGROUPID_2);
 
-			sb.append(_FINDER_COLUMN_U_C_P_COMPANYID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_COMPANYID_2);
 
-			sb.append(_FINDER_COLUMN_U_C_P_PARENTUSERGROUPID_2);
+			sb.append(_FINDER_COLUMN_GTU_C_P_PARENTUSERGROUPID_2);
 
 			String sql = sb.toString();
 
@@ -5685,11 +5752,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -5709,22 +5776,22 @@ public class UserGroupPersistenceImpl
 	 * @return the number of matching user groups that the user has permission to view
 	 */
 	@Override
-	public int filterCountByU_C_P(
+	public int filterCountByGtU_C_P(
 		long userGroupId, long companyId, long parentUserGroupId) {
 
 		if (!InlineSQLHelperUtil.isEnabled(companyId, 0)) {
-			return countByU_C_P(userGroupId, companyId, parentUserGroupId);
+			return countByGtU_C_P(userGroupId, companyId, parentUserGroupId);
 		}
 
 		StringBundler sb = new StringBundler(4);
 
 		sb.append(_FILTER_SQL_COUNT_USERGROUP_WHERE);
 
-		sb.append(_FINDER_COLUMN_U_C_P_USERGROUPID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_USERGROUPID_2);
 
-		sb.append(_FINDER_COLUMN_U_C_P_COMPANYID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_COMPANYID_2);
 
-		sb.append(_FINDER_COLUMN_U_C_P_PARENTUSERGROUPID_2);
+		sb.append(_FINDER_COLUMN_GTU_C_P_PARENTUSERGROUPID_2);
 
 		String sql = InlineSQLHelperUtil.replacePermissionCheck(
 			sb.toString(), UserGroup.class.getName(),
@@ -5760,13 +5827,13 @@ public class UserGroupPersistenceImpl
 		}
 	}
 
-	private static final String _FINDER_COLUMN_U_C_P_USERGROUPID_2 =
+	private static final String _FINDER_COLUMN_GTU_C_P_USERGROUPID_2 =
 		"userGroup.userGroupId > ? AND ";
 
-	private static final String _FINDER_COLUMN_U_C_P_COMPANYID_2 =
+	private static final String _FINDER_COLUMN_GTU_C_P_COMPANYID_2 =
 		"userGroup.companyId = ? AND ";
 
-	private static final String _FINDER_COLUMN_U_C_P_PARENTUSERGROUPID_2 =
+	private static final String _FINDER_COLUMN_GTU_C_P_PARENTUSERGROUPID_2 =
 		"userGroup.parentUserGroupId = ?";
 
 	private FinderPath _finderPathFetchByC_ERC;
@@ -5837,17 +5904,20 @@ public class UserGroupPersistenceImpl
 
 		externalReferenceCode = Objects.toString(externalReferenceCode, "");
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		Object[] finderArgs = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			finderArgs = new Object[] {companyId, externalReferenceCode};
 		}
 
 		Object result = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			result = FinderCacheUtil.getResult(
-				_finderPathFetchByC_ERC, finderArgs, this);
+				_finderPathFetchByC_ERC, finderArgs);
 		}
 
 		if (result instanceof UserGroup) {
@@ -5900,7 +5970,7 @@ public class UserGroupPersistenceImpl
 				List<UserGroup> list = query.list();
 
 				if (list.isEmpty()) {
-					if (useFinderCache) {
+					if (useFinderCache && productionMode) {
 						FinderCacheUtil.putResult(
 							_finderPathFetchByC_ERC, finderArgs, list);
 					}
@@ -5910,7 +5980,7 @@ public class UserGroupPersistenceImpl
 						Collections.sort(list, Collections.reverseOrder());
 
 						if (_log.isWarnEnabled()) {
-							if (!useFinderCache) {
+							if (!productionMode || !useFinderCache) {
 								finderArgs = new Object[] {
 									companyId, externalReferenceCode
 								};
@@ -5931,11 +6001,6 @@ public class UserGroupPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(
-						_finderPathFetchByC_ERC, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -5978,12 +6043,21 @@ public class UserGroupPersistenceImpl
 	public int countByC_ERC(long companyId, String externalReferenceCode) {
 		externalReferenceCode = Objects.toString(externalReferenceCode, "");
 
-		FinderPath finderPath = _finderPathCountByC_ERC;
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
 
-		Object[] finderArgs = new Object[] {companyId, externalReferenceCode};
+		FinderPath finderPath = null;
+		Object[] finderArgs = null;
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = null;
+
+		if (productionMode) {
+			finderPath = _finderPathCountByC_ERC;
+
+			finderArgs = new Object[] {companyId, externalReferenceCode};
+
+			count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
+		}
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -6022,11 +6096,11 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -6047,18 +6121,19 @@ public class UserGroupPersistenceImpl
 		"(userGroup.externalReferenceCode IS NULL OR userGroup.externalReferenceCode = '')";
 
 	public UserGroupPersistenceImpl() {
-		setModelClass(UserGroup.class);
-
-		setModelImplClass(UserGroupImpl.class);
-		setModelPKClass(long.class);
-		setEntityCacheEnabled(UserGroupModelImpl.ENTITY_CACHE_ENABLED);
-
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
 		dbColumnNames.put("uuid", "uuid_");
 		dbColumnNames.put("groups", "groups_");
 
 		setDBColumnNames(dbColumnNames);
+
+		setModelClass(UserGroup.class);
+
+		setModelImplClass(UserGroupImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(UserGroupTable.INSTANCE);
 	}
 
 	/**
@@ -6068,9 +6143,12 @@ public class UserGroupPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(UserGroup userGroup) {
+		if (userGroup.getCtCollectionId() != 0) {
+			return;
+		}
+
 		EntityCacheUtil.putResult(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED, UserGroupImpl.class,
-			userGroup.getPrimaryKey(), userGroup);
+			UserGroupImpl.class, userGroup.getPrimaryKey(), userGroup);
 
 		FinderCacheUtil.putResult(
 			_finderPathFetchByC_N,
@@ -6083,9 +6161,9 @@ public class UserGroupPersistenceImpl
 				userGroup.getCompanyId(), userGroup.getExternalReferenceCode()
 			},
 			userGroup);
-
-		userGroup.resetOriginalValues();
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the user groups in the entity cache if it is enabled.
@@ -6094,15 +6172,22 @@ public class UserGroupPersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<UserGroup> userGroups) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (userGroups.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (UserGroup userGroup : userGroups) {
+			if (userGroup.getCtCollectionId() != 0) {
+				continue;
+			}
+
 			if (EntityCacheUtil.getResult(
-					UserGroupModelImpl.ENTITY_CACHE_ENABLED,
 					UserGroupImpl.class, userGroup.getPrimaryKey()) == null) {
 
 				cacheResult(userGroup);
-			}
-			else {
-				userGroup.resetOriginalValues();
 			}
 		}
 	}
@@ -6111,61 +6196,41 @@ public class UserGroupPersistenceImpl
 	 * Clears the cache for all user groups.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
 		EntityCacheUtil.clearCache(UserGroupImpl.class);
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(UserGroupImpl.class);
 	}
 
 	/**
 	 * Clears the cache for the user group.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(UserGroup userGroup) {
-		EntityCacheUtil.removeResult(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED, UserGroupImpl.class,
-			userGroup.getPrimaryKey());
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((UserGroupModelImpl)userGroup, true);
+		EntityCacheUtil.removeResult(UserGroupImpl.class, userGroup);
 	}
 
 	@Override
 	public void clearCache(List<UserGroup> userGroups) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (UserGroup userGroup : userGroups) {
-			EntityCacheUtil.removeResult(
-				UserGroupModelImpl.ENTITY_CACHE_ENABLED, UserGroupImpl.class,
-				userGroup.getPrimaryKey());
-
-			clearUniqueFindersCache((UserGroupModelImpl)userGroup, true);
+			EntityCacheUtil.removeResult(UserGroupImpl.class, userGroup);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(UserGroupImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
-			EntityCacheUtil.removeResult(
-				UserGroupModelImpl.ENTITY_CACHE_ENABLED, UserGroupImpl.class,
-				primaryKey);
+			EntityCacheUtil.removeResult(UserGroupImpl.class, primaryKey);
 		}
 	}
 
@@ -6176,10 +6241,9 @@ public class UserGroupPersistenceImpl
 			userGroupModelImpl.getCompanyId(), userGroupModelImpl.getName()
 		};
 
+		FinderCacheUtil.putResult(_finderPathCountByC_N, args, Long.valueOf(1));
 		FinderCacheUtil.putResult(
-			_finderPathCountByC_N, args, Long.valueOf(1), false);
-		FinderCacheUtil.putResult(
-			_finderPathFetchByC_N, args, userGroupModelImpl, false);
+			_finderPathFetchByC_N, args, userGroupModelImpl);
 
 		args = new Object[] {
 			userGroupModelImpl.getCompanyId(),
@@ -6187,56 +6251,9 @@ public class UserGroupPersistenceImpl
 		};
 
 		FinderCacheUtil.putResult(
-			_finderPathCountByC_ERC, args, Long.valueOf(1), false);
+			_finderPathCountByC_ERC, args, Long.valueOf(1));
 		FinderCacheUtil.putResult(
-			_finderPathFetchByC_ERC, args, userGroupModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		UserGroupModelImpl userGroupModelImpl, boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				userGroupModelImpl.getCompanyId(), userGroupModelImpl.getName()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByC_N, args);
-			FinderCacheUtil.removeResult(_finderPathFetchByC_N, args);
-		}
-
-		if ((userGroupModelImpl.getColumnBitmask() &
-			 _finderPathFetchByC_N.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				userGroupModelImpl.getOriginalCompanyId(),
-				userGroupModelImpl.getOriginalName()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByC_N, args);
-			FinderCacheUtil.removeResult(_finderPathFetchByC_N, args);
-		}
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				userGroupModelImpl.getCompanyId(),
-				userGroupModelImpl.getExternalReferenceCode()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByC_ERC, args);
-			FinderCacheUtil.removeResult(_finderPathFetchByC_ERC, args);
-		}
-
-		if ((userGroupModelImpl.getColumnBitmask() &
-			 _finderPathFetchByC_ERC.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				userGroupModelImpl.getOriginalCompanyId(),
-				userGroupModelImpl.getOriginalExternalReferenceCode()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByC_ERC, args);
-			FinderCacheUtil.removeResult(_finderPathFetchByC_ERC, args);
-		}
+			_finderPathFetchByC_ERC, args, userGroupModelImpl);
 	}
 
 	/**
@@ -6335,7 +6352,9 @@ public class UserGroupPersistenceImpl
 					UserGroupImpl.class, userGroup.getPrimaryKeyObj());
 			}
 
-			if (userGroup != null) {
+			if ((userGroup != null) &&
+				CTPersistenceHelperUtil.isRemove(userGroup)) {
+
 				session.delete(userGroup);
 			}
 		}
@@ -6384,23 +6403,23 @@ public class UserGroupPersistenceImpl
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if (isNew && (userGroup.getCreateDate() == null)) {
 			if (serviceContext == null) {
-				userGroup.setCreateDate(now);
+				userGroup.setCreateDate(date);
 			}
 			else {
-				userGroup.setCreateDate(serviceContext.getCreateDate(now));
+				userGroup.setCreateDate(serviceContext.getCreateDate(date));
 			}
 		}
 
 		if (!userGroupModelImpl.hasSetModifiedDate()) {
 			if (serviceContext == null) {
-				userGroup.setModifiedDate(now);
+				userGroup.setModifiedDate(date);
 			}
 			else {
-				userGroup.setModifiedDate(serviceContext.getModifiedDate(now));
+				userGroup.setModifiedDate(serviceContext.getModifiedDate(date));
 			}
 		}
 
@@ -6409,10 +6428,13 @@ public class UserGroupPersistenceImpl
 		try {
 			session = openSession();
 
-			if (userGroup.isNew()) {
-				session.save(userGroup);
+			if (CTPersistenceHelperUtil.isInsert(userGroup)) {
+				if (!isNew) {
+					session.evict(
+						UserGroupImpl.class, userGroup.getPrimaryKeyObj());
+				}
 
-				userGroup.setNew(false);
+				session.save(userGroup);
 			}
 			else {
 				userGroup = (UserGroup)session.merge(userGroup);
@@ -6425,139 +6447,24 @@ public class UserGroupPersistenceImpl
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (!UserGroupModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(
-				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			Object[] args = new Object[] {userGroupModelImpl.getUuid()};
-
-			FinderCacheUtil.removeResult(_finderPathCountByUuid, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByUuid, args);
-
-			args = new Object[] {
-				userGroupModelImpl.getUuid(), userGroupModelImpl.getCompanyId()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByUuid_C, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByUuid_C, args);
-
-			args = new Object[] {userGroupModelImpl.getCompanyId()};
-
-			FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByCompanyId, args);
-
-			args = new Object[] {
-				userGroupModelImpl.getCompanyId(),
-				userGroupModelImpl.getParentUserGroupId()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByC_P, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByC_P, args);
-
-			FinderCacheUtil.removeResult(
-				_finderPathCountAll, FINDER_ARGS_EMPTY);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((userGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					userGroupModelImpl.getOriginalUuid()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByUuid, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
-
-				args = new Object[] {userGroupModelImpl.getUuid()};
-
-				FinderCacheUtil.removeResult(_finderPathCountByUuid, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
+		if (userGroup.getCtCollectionId() != 0) {
+			if (isNew) {
+				userGroup.setNew(false);
 			}
 
-			if ((userGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid_C.getColumnBitmask()) !=
-					 0) {
+			userGroup.resetOriginalValues();
 
-				Object[] args = new Object[] {
-					userGroupModelImpl.getOriginalUuid(),
-					userGroupModelImpl.getOriginalCompanyId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByUuid_C, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-
-				args = new Object[] {
-					userGroupModelImpl.getUuid(),
-					userGroupModelImpl.getCompanyId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByUuid_C, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-			}
-
-			if ((userGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByCompanyId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					userGroupModelImpl.getOriginalCompanyId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByCompanyId, args);
-
-				args = new Object[] {userGroupModelImpl.getCompanyId()};
-
-				FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByCompanyId, args);
-			}
-
-			if ((userGroupModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByC_P.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					userGroupModelImpl.getOriginalCompanyId(),
-					userGroupModelImpl.getOriginalParentUserGroupId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByC_P, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByC_P, args);
-
-				args = new Object[] {
-					userGroupModelImpl.getCompanyId(),
-					userGroupModelImpl.getParentUserGroupId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByC_P, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByC_P, args);
-			}
+			return userGroup;
 		}
 
 		EntityCacheUtil.putResult(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED, UserGroupImpl.class,
-			userGroup.getPrimaryKey(), userGroup, false);
+			UserGroupImpl.class, userGroupModelImpl, false, true);
 
-		clearUniqueFindersCache(userGroupModelImpl, false);
 		cacheUniqueFindersCache(userGroupModelImpl);
+
+		if (isNew) {
+			userGroup.setNew(false);
+		}
 
 		userGroup.resetOriginalValues();
 
@@ -6606,12 +6513,138 @@ public class UserGroupPersistenceImpl
 	/**
 	 * Returns the user group with the primary key or returns <code>null</code> if it could not be found.
 	 *
+	 * @param primaryKey the primary key of the user group
+	 * @return the user group, or <code>null</code> if a user group with the primary key could not be found
+	 */
+	@Override
+	public UserGroup fetchByPrimaryKey(Serializable primaryKey) {
+		if (CTPersistenceHelperUtil.isProductionMode(UserGroup.class)) {
+			return super.fetchByPrimaryKey(primaryKey);
+		}
+
+		UserGroup userGroup = null;
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			userGroup = (UserGroup)session.get(UserGroupImpl.class, primaryKey);
+
+			if (userGroup != null) {
+				cacheResult(userGroup);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return userGroup;
+	}
+
+	/**
+	 * Returns the user group with the primary key or returns <code>null</code> if it could not be found.
+	 *
 	 * @param userGroupId the primary key of the user group
 	 * @return the user group, or <code>null</code> if a user group with the primary key could not be found
 	 */
 	@Override
 	public UserGroup fetchByPrimaryKey(long userGroupId) {
 		return fetchByPrimaryKey((Serializable)userGroupId);
+	}
+
+	@Override
+	public Map<Serializable, UserGroup> fetchByPrimaryKeys(
+		Set<Serializable> primaryKeys) {
+
+		if (CTPersistenceHelperUtil.isProductionMode(UserGroup.class)) {
+			return super.fetchByPrimaryKeys(primaryKeys);
+		}
+
+		if (primaryKeys.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Map<Serializable, UserGroup> map =
+			new HashMap<Serializable, UserGroup>();
+
+		if (primaryKeys.size() == 1) {
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			Serializable primaryKey = iterator.next();
+
+			UserGroup userGroup = fetchByPrimaryKey(primaryKey);
+
+			if (userGroup != null) {
+				map.put(primaryKey, userGroup);
+			}
+
+			return map;
+		}
+
+		if ((databaseInMaxParameters > 0) &&
+			(primaryKeys.size() > databaseInMaxParameters)) {
+
+			Iterator<Serializable> iterator = primaryKeys.iterator();
+
+			while (iterator.hasNext()) {
+				Set<Serializable> page = new HashSet<>();
+
+				for (int i = 0;
+					 (i < databaseInMaxParameters) && iterator.hasNext(); i++) {
+
+					page.add(iterator.next());
+				}
+
+				map.putAll(fetchByPrimaryKeys(page));
+			}
+
+			return map;
+		}
+
+		StringBundler sb = new StringBundler((primaryKeys.size() * 2) + 1);
+
+		sb.append(getSelectSQL());
+		sb.append(" WHERE ");
+		sb.append(getPKDBName());
+		sb.append(" IN (");
+
+		for (Serializable primaryKey : primaryKeys) {
+			sb.append((long)primaryKey);
+
+			sb.append(",");
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		sb.append(")");
+
+		String sql = sb.toString();
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			Query query = session.createQuery(sql);
+
+			for (UserGroup userGroup : (List<UserGroup>)query.list()) {
+				map.put(userGroup.getPrimaryKeyObj(), userGroup);
+
+				cacheResult(userGroup);
+			}
+		}
+		catch (Exception exception) {
+			throw processException(exception);
+		}
+		finally {
+			closeSession(session);
+		}
+
+		return map;
 	}
 
 	/**
@@ -6677,27 +6710,30 @@ public class UserGroupPersistenceImpl
 		int start, int end, OrderByComparator<UserGroup> orderByComparator,
 		boolean useFinderCache) {
 
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 			(orderByComparator == null)) {
 
-			if (useFinderCache) {
+			if (useFinderCache && productionMode) {
 				finderPath = _finderPathWithoutPaginationFindAll;
 				finderArgs = FINDER_ARGS_EMPTY;
 			}
 		}
-		else if (useFinderCache) {
+		else if (useFinderCache && productionMode) {
 			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] {start, end, orderByComparator};
 		}
 
 		List<UserGroup> list = null;
 
-		if (useFinderCache) {
+		if (useFinderCache && productionMode) {
 			list = (List<UserGroup>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -6733,15 +6769,11 @@ public class UserGroupPersistenceImpl
 
 				cacheResult(list);
 
-				if (useFinderCache) {
+				if (useFinderCache && productionMode) {
 					FinderCacheUtil.putResult(finderPath, finderArgs, list);
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -6770,8 +6802,15 @@ public class UserGroupPersistenceImpl
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+		boolean productionMode = CTPersistenceHelperUtil.isProductionMode(
+			UserGroup.class);
+
+		Long count = null;
+
+		if (productionMode) {
+			count = (Long)FinderCacheUtil.getResult(
+				_finderPathCountAll, FINDER_ARGS_EMPTY);
+		}
 
 		if (count == null) {
 			Session session = null;
@@ -6783,13 +6822,12 @@ public class UserGroupPersistenceImpl
 
 				count = (Long)query.uniqueResult();
 
-				FinderCacheUtil.putResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				if (productionMode) {
+					FinderCacheUtil.putResult(
+						_finderPathCountAll, FINDER_ARGS_EMPTY, count);
+				}
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -7744,14 +7782,86 @@ public class UserGroupPersistenceImpl
 	}
 
 	@Override
-	protected Map<String, Integer> getTableColumnsMap() {
+	public Set<String> getCTColumnNames(
+		CTColumnResolutionType ctColumnResolutionType) {
+
+		return _ctColumnNamesMap.getOrDefault(
+			ctColumnResolutionType, Collections.emptySet());
+	}
+
+	@Override
+	public List<String> getMappingTableNames() {
+		return _mappingTableNames;
+	}
+
+	@Override
+	public Map<String, Integer> getTableColumnsMap() {
 		return UserGroupModelImpl.TABLE_COLUMNS_MAP;
+	}
+
+	@Override
+	public String getTableName() {
+		return "UserGroup";
+	}
+
+	@Override
+	public List<String[]> getUniqueIndexColumnNames() {
+		return _uniqueIndexColumnNames;
+	}
+
+	private static final Map<CTColumnResolutionType, Set<String>>
+		_ctColumnNamesMap = new EnumMap<CTColumnResolutionType, Set<String>>(
+			CTColumnResolutionType.class);
+	private static final List<String> _mappingTableNames =
+		new ArrayList<String>();
+	private static final List<String[]> _uniqueIndexColumnNames =
+		new ArrayList<String[]>();
+
+	static {
+		Set<String> ctControlColumnNames = new HashSet<String>();
+		Set<String> ctIgnoreColumnNames = new HashSet<String>();
+		Set<String> ctStrictColumnNames = new HashSet<String>();
+
+		ctControlColumnNames.add("mvccVersion");
+		ctControlColumnNames.add("ctCollectionId");
+		ctStrictColumnNames.add("uuid_");
+		ctStrictColumnNames.add("externalReferenceCode");
+		ctStrictColumnNames.add("companyId");
+		ctStrictColumnNames.add("userId");
+		ctStrictColumnNames.add("userName");
+		ctStrictColumnNames.add("createDate");
+		ctIgnoreColumnNames.add("modifiedDate");
+		ctStrictColumnNames.add("parentUserGroupId");
+		ctStrictColumnNames.add("name");
+		ctStrictColumnNames.add("description");
+		ctStrictColumnNames.add("addedByLDAPImport");
+		ctStrictColumnNames.add("groups_");
+		ctStrictColumnNames.add("teams");
+		ctStrictColumnNames.add("users");
+
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.CONTROL, ctControlColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.IGNORE, ctIgnoreColumnNames);
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.PK, Collections.singleton("userGroupId"));
+		_ctColumnNamesMap.put(
+			CTColumnResolutionType.STRICT, ctStrictColumnNames);
+
+		_mappingTableNames.add("Groups_UserGroups");
+		_mappingTableNames.add("UserGroups_Teams");
+		_mappingTableNames.add("Users_UserGroups");
+
+		_uniqueIndexColumnNames.add(new String[] {"companyId", "name"});
 	}
 
 	/**
 	 * Initializes the user group persistence.
 	 */
 	public void afterPropertiesSet() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
+
 		userGroupToGroupTableMapper = TableMapperFactory.getTableMapper(
 			"Groups_UserGroups", "companyId", "userGroupId", "groupId", this,
 			groupPersistence);
@@ -7765,190 +7875,169 @@ public class UserGroupPersistenceImpl
 			userPersistence);
 
 		_finderPathWithPaginationFindAll = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByUuid = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid",
 			new String[] {
 				String.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_"}, true);
 
 		_finderPathWithoutPaginationFindByUuid = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid",
-			new String[] {String.class.getName()},
-			UserGroupModelImpl.UUID_COLUMN_BITMASK |
-			UserGroupModelImpl.NAME_COLUMN_BITMASK);
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			true);
 
 		_finderPathCountByUuid = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid",
-			new String[] {String.class.getName()});
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			false);
 
 		_finderPathWithPaginationFindByUuid_C = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid_C",
 			new String[] {
 				String.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathWithoutPaginationFindByUuid_C = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid_C",
 			new String[] {String.class.getName(), Long.class.getName()},
-			UserGroupModelImpl.UUID_COLUMN_BITMASK |
-			UserGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			UserGroupModelImpl.NAME_COLUMN_BITMASK);
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathCountByUuid_C = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid_C",
-			new String[] {String.class.getName(), Long.class.getName()});
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "companyId"}, false);
 
 		_finderPathWithPaginationFindByCompanyId = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByCompanyId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"companyId"}, true);
 
 		_finderPathWithoutPaginationFindByCompanyId = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByCompanyId",
-			new String[] {Long.class.getName()},
-			UserGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			UserGroupModelImpl.NAME_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"companyId"},
+			true);
 
 		_finderPathCountByCompanyId = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByCompanyId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"companyId"},
+			false);
 
 		_finderPathWithPaginationFindByC_P = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_P",
 			new String[] {
 				Long.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"companyId", "parentUserGroupId"}, true);
 
 		_finderPathWithoutPaginationFindByC_P = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByC_P",
 			new String[] {Long.class.getName(), Long.class.getName()},
-			UserGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			UserGroupModelImpl.PARENTUSERGROUPID_COLUMN_BITMASK |
-			UserGroupModelImpl.NAME_COLUMN_BITMASK);
+			new String[] {"companyId", "parentUserGroupId"}, true);
 
 		_finderPathCountByC_P = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_P",
-			new String[] {Long.class.getName(), Long.class.getName()});
+			new String[] {Long.class.getName(), Long.class.getName()},
+			new String[] {"companyId", "parentUserGroupId"}, false);
 
 		_finderPathFetchByC_N = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_ENTITY, "fetchByC_N",
 			new String[] {Long.class.getName(), String.class.getName()},
-			UserGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			UserGroupModelImpl.NAME_COLUMN_BITMASK);
+			new String[] {"companyId", "name"}, true);
 
 		_finderPathCountByC_N = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_N",
-			new String[] {Long.class.getName(), String.class.getName()});
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"companyId", "name"}, false);
 
 		_finderPathWithPaginationFindByC_LikeN = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_LikeN",
 			new String[] {
 				Long.class.getName(), String.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"companyId", "name"}, true);
 
 		_finderPathWithPaginationCountByC_LikeN = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByC_LikeN",
-			new String[] {Long.class.getName(), String.class.getName()});
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"companyId", "name"}, false);
 
-		_finderPathWithPaginationFindByU_C_P = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByU_C_P",
+		_finderPathWithPaginationFindByGtU_C_P = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGtU_C_P",
 			new String[] {
 				Long.class.getName(), Long.class.getName(),
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"userGroupId", "companyId", "parentUserGroupId"},
+			true);
 
-		_finderPathWithPaginationCountByU_C_P = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByU_C_P",
+		_finderPathWithPaginationCountByGtU_C_P = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByGtU_C_P",
 			new String[] {
 				Long.class.getName(), Long.class.getName(), Long.class.getName()
-			});
+			},
+			new String[] {"userGroupId", "companyId", "parentUserGroupId"},
+			false);
 
 		_finderPathFetchByC_ERC = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, UserGroupImpl.class,
 			FINDER_CLASS_NAME_ENTITY, "fetchByC_ERC",
 			new String[] {Long.class.getName(), String.class.getName()},
-			UserGroupModelImpl.COMPANYID_COLUMN_BITMASK |
-			UserGroupModelImpl.EXTERNALREFERENCECODE_COLUMN_BITMASK);
+			new String[] {"companyId", "externalReferenceCode"}, true);
 
 		_finderPathCountByC_ERC = new FinderPath(
-			UserGroupModelImpl.ENTITY_CACHE_ENABLED,
-			UserGroupModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_ERC",
-			new String[] {Long.class.getName(), String.class.getName()});
+			new String[] {Long.class.getName(), String.class.getName()},
+			new String[] {"companyId", "externalReferenceCode"}, false);
+
+		_setUserGroupUtilPersistence(this);
 	}
 
 	public void destroy() {
+		_setUserGroupUtilPersistence(null);
+
 		EntityCacheUtil.removeCache(UserGroupImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		TableMapperFactory.removeTableMapper("Groups_UserGroups");
 		TableMapperFactory.removeTableMapper("UserGroups_Teams");
 		TableMapperFactory.removeTableMapper("Users_UserGroups");
+	}
+
+	private void _setUserGroupUtilPersistence(
+		UserGroupPersistence userGroupPersistence) {
+
+		try {
+			Field field = UserGroupUtil.class.getDeclaredField("_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, userGroupPersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	@BeanReference(type = GroupPersistence.class)
@@ -8017,5 +8106,10 @@ public class UserGroupPersistenceImpl
 
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
 		new String[] {"uuid", "groups"});
+
+	@Override
+	protected FinderCache getFinderCache() {
+		return FinderCacheUtil.getFinderCache();
+	}
 
 }

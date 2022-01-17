@@ -14,7 +14,7 @@
 
 import ClayButton from '@clayui/button';
 import {useModal} from '@clayui/modal';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 
@@ -30,7 +30,7 @@ const ManageAllowedFragmentButton = ({item}) => {
 			if (isMounted()) {
 				setOpenModal(false);
 			}
-		}
+		},
 	});
 
 	const handleOpenModalClick = () => {
@@ -59,7 +59,7 @@ const ManageAllowedFragmentButton = ({item}) => {
 };
 
 ManageAllowedFragmentButton.propTypes = {
-	item: PropTypes.object
+	item: PropTypes.object,
 };
 
 export {ManageAllowedFragmentButton};

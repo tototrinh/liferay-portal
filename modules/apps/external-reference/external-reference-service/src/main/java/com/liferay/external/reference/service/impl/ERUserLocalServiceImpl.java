@@ -22,11 +22,13 @@ import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroupRole;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
 
 import java.util.List;
 import java.util.Locale;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Dylan Rebelak
@@ -50,21 +52,20 @@ public class ERUserLocalServiceImpl extends ERUserLocalServiceBaseImpl {
 			boolean sendEmail, ServiceContext serviceContext)
 		throws PortalException {
 
-		User user = userLocalService.fetchUserByReferenceCode(
+		User user = _userLocalService.fetchUserByReferenceCode(
 			companyId, externalReferenceCode);
 
 		if (user == null) {
-			user = userLocalService.addUser(
+			user = _userLocalService.addUser(
 				creatorUserId, companyId, autoPassword, password1, password2,
-				autoScreenName, screenName, emailAddress, 0, null, locale,
-				firstName, middleName, lastName, prefixId, suffixId, male,
-				birthdayMonth, birthdayDay, birthdayYear, jobTitle, groupIds,
-				organizationIds, roleIds, userGroupIds, sendEmail,
-				serviceContext);
+				autoScreenName, screenName, emailAddress, locale, firstName,
+				middleName, lastName, prefixId, suffixId, male, birthdayMonth,
+				birthdayDay, birthdayYear, jobTitle, groupIds, organizationIds,
+				roleIds, userGroupIds, sendEmail, serviceContext);
 
 			user.setExternalReferenceCode(externalReferenceCode);
 
-			user = userLocalService.updateUser(user);
+			user = _userLocalService.updateUser(user);
 		}
 		else {
 			Contact contact = user.getContact();
@@ -77,21 +78,23 @@ public class ERUserLocalServiceImpl extends ERUserLocalServiceBaseImpl {
 				hasPortrait = true;
 			}
 
-			user = userLocalService.updateUser(
+			user = _userLocalService.updateUser(
 				user.getUserId(), null, password1, password2, false,
 				user.getReminderQueryQuestion(), user.getReminderQueryAnswer(),
-				screenName, emailAddress, user.getFacebookId(),
-				user.getOpenId(), hasPortrait, null, user.getLanguageId(),
-				user.getTimeZoneId(), user.getGreeting(), user.getComments(),
-				firstName, middleName, lastName, prefixId, suffixId, male,
-				birthdayMonth, birthdayDay, birthdayYear, contact.getSmsSn(),
-				contact.getFacebookSn(), contact.getJabberSn(),
-				contact.getSkypeSn(), contact.getTwitterSn(), jobTitle,
-				groupIds, organizationIds, roleIds, userGroupRoles,
-				userGroupIds, serviceContext);
+				screenName, emailAddress, hasPortrait, null,
+				user.getLanguageId(), user.getTimeZoneId(), user.getGreeting(),
+				user.getComments(), firstName, middleName, lastName, prefixId,
+				suffixId, male, birthdayMonth, birthdayDay, birthdayYear,
+				contact.getSmsSn(), contact.getFacebookSn(),
+				contact.getJabberSn(), contact.getSkypeSn(),
+				contact.getTwitterSn(), jobTitle, groupIds, organizationIds,
+				roleIds, userGroupRoles, userGroupIds, serviceContext);
 		}
 
 		return user;
 	}
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

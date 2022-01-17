@@ -19,9 +19,8 @@ import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.social.kernel.model.BaseSocialActivityInterpreter;
 import com.liferay.social.kernel.model.SocialActivity;
@@ -30,8 +29,6 @@ import com.liferay.social.kernel.model.SocialActivityInterpreter;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Zsolt Berentey
@@ -56,11 +53,6 @@ public class DLFolderActivityInterpreter extends BaseSocialActivityInterpreter {
 
 		return "/document_library/find_folder?folderId=" +
 			activity.getClassPK();
-	}
-
-	@Override
-	protected ResourceBundleLoader getResourceBundleLoader() {
-		return _resourceBundleLoader;
 	}
 
 	@Override
@@ -95,7 +87,7 @@ public class DLFolderActivityInterpreter extends BaseSocialActivityInterpreter {
 			String actionId, ServiceContext serviceContext)
 		throws Exception {
 
-		return ModelResourcePermissionHelper.contains(
+		return ModelResourcePermissionUtil.contains(
 			_folderModelResourcePermission, permissionChecker,
 			activity.getGroupId(), activity.getClassPK(), actionId);
 	}
@@ -106,12 +98,5 @@ public class DLFolderActivityInterpreter extends BaseSocialActivityInterpreter {
 		target = "(model.class.name=com.liferay.portal.kernel.repository.model.Folder)"
 	)
 	private ModelResourcePermission<Folder> _folderModelResourcePermission;
-
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.document.library.web)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
 
 }

@@ -9,94 +9,66 @@
  * distribution rights of the Software.
  */
 
+import '@testing-library/jest-dom/extend-expect';
 import {cleanup, fireEvent, render} from '@testing-library/react';
 import React from 'react';
 
 import EmptyState from '../../../../src/main/resources/META-INF/resources/js/shared/components/empty-state/EmptyState.es';
-import {MockRouter} from '../../../mock/MockRouter.es';
-
-import '@testing-library/jest-dom/extend-expect';
 
 describe('The EmptyState component should', () => {
 	afterEach(cleanup);
 
 	test('Be render with message only', () => {
-		const {getByTestId} = render(
-			<MockRouter>
-				<EmptyState
-					hideAnimation={true}
-					message="No results were found."
-				/>
-			</MockRouter>
-		);
+		const {getByText} = render(<EmptyState filtered hideAnimation />);
 
-		const emptyState = getByTestId('emptyState');
-		const message = getByTestId('emptyStateMsg');
+		const message = getByText('no-results-were-found');
 
-		expect(emptyState.children.length).toEqual(1);
-		expect(message).toHaveTextContent('No results were found.');
+		expect(message).toBeTruthy();
 	});
 
 	test('Be render with message and animation', () => {
-		const {getByTestId} = render(
-			<MockRouter>
-				<EmptyState message="No results were found." type="not-found" />
-			</MockRouter>
-		);
+		const {container, getByText} = render(<EmptyState filtered />);
 
-		const animation = getByTestId('emptyStateAnimation');
-		const emptyState = getByTestId('emptyState');
-		const message = getByTestId('emptyStateMsg');
-
-		expect(animation.className).toBe(
-			'taglib-empty-search-result-message-header'
+		const animation = container.querySelector(
+			'.taglib-empty-search-result-message-header'
 		);
-		expect(emptyState.children.length).toEqual(2);
-		expect(message).toHaveTextContent('No results were found.');
+		const message = getByText('no-results-were-found');
+
+		expect(animation).toBeTruthy();
+		expect(message).toBeTruthy();
 	});
 
 	test('Be render with message, title and animation', () => {
-		const {getByTestId} = render(
-			<MockRouter>
-				<EmptyState
-					message="There is no data at the moment."
-					title="No data"
-				/>
-			</MockRouter>
+		const {container, getByText} = render(<EmptyState title="No data" />);
+
+		const animation = container.querySelector(
+			'.taglib-empty-result-message-header'
 		);
+		const message = getByText('there-is-no-data-at-the-moment');
+		const title = getByText('No data');
 
-		const animation = getByTestId('emptyStateAnimation');
-		const emptyState = getByTestId('emptyState');
-		const message = getByTestId('emptyStateMsg');
-		const title = getByTestId('emptyStateTitle');
-
-		expect(animation.className).toBe('taglib-empty-result-message-header');
-		expect(emptyState.children.length).toEqual(3);
-		expect(message).toHaveTextContent('There is no data at the moment.');
-		expect(title).toHaveTextContent('No data');
+		expect(animation).toBeTruthy();
+		expect(message).toBeTruthy();
+		expect(title).toBeTruthy();
 	});
 
 	test('Be render with message and action button', () => {
 		const mockClick = jest.fn();
 
-		const {getByTestId} = render(
-			<MockRouter>
-				<EmptyState
-					actionButton={<button onClick={mockClick}>Reload</button>}
-					hideAnimation={true}
-					message="Failed to retrieve data, click on 'Reload' to retrying."
-				/>
-			</MockRouter>
+		const {getByText} = render(
+			<EmptyState
+				actionButton={<button onClick={mockClick}>Reload</button>}
+				hideAnimation
+				message="Failed to retrieve data, click on 'Reload' to retrying."
+			/>
 		);
 
-		const emptyState = getByTestId('emptyState');
-		const message = getByTestId('emptyStateMsg');
-		const button = emptyState.children[0].children[1];
-
-		expect(message).toHaveTextContent(
+		const button = getByText('Reload');
+		const message = getByText(
 			"Failed to retrieve data, click on 'Reload' to retrying."
 		);
-		expect(button).toHaveTextContent('Reload');
+
+		expect(message).toBeTruthy();
 
 		fireEvent.click(button);
 

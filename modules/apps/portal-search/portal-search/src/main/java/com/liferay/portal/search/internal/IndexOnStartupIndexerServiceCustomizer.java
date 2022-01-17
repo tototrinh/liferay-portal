@@ -34,6 +34,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -50,14 +53,17 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  */
 @Component(immediate = true, service = ServiceTrackerCustomizer.class)
 public class IndexOnStartupIndexerServiceCustomizer
-	implements ServiceTrackerCustomizer<Indexer, Indexer> {
+	implements ServiceTrackerCustomizer<Indexer<?>, Indexer<?>> {
 
 	@Override
-	public Indexer addingService(ServiceReference<Indexer> serviceReference) {
+	public Indexer<?> addingService(
+		ServiceReference<Indexer<?>> serviceReference) {
+
 		Indexer<?> indexer = _bundleContext.getService(serviceReference);
 
 		boolean indexerIndexOnStartup = GetterUtil.getBoolean(
-			serviceReference.getProperty(PropsKeys.INDEX_ON_STARTUP), true);
+			serviceReference.getProperty(PropsKeys.INDEX_ON_STARTUP),
+			GetterUtil.getBoolean(_props.get(PropsKeys.INDEX_ON_STARTUP)));
 
 		String className = indexer.getClassName();
 
@@ -79,7 +85,7 @@ public class IndexOnStartupIndexerServiceCustomizer
 
 			PortalInstanceLifecycleListener portalInstanceLifecycleListener =
 				new IndexOnStartupPortalInstanceLifecycleListener(
-					_indexWriterHelper, _props, className);
+					_indexWriterHelper, className);
 
 			ServiceRegistration<PortalInstanceLifecycleListener>
 				serviceRegistration = _bundleContext.registerService(
@@ -95,12 +101,12 @@ public class IndexOnStartupIndexerServiceCustomizer
 
 	@Override
 	public void modifiedService(
-		ServiceReference<Indexer> serviceReference, Indexer indexer) {
+		ServiceReference<Indexer<?>> serviceReference, Indexer<?> indexer) {
 	}
 
 	@Override
 	public void removedService(
-		ServiceReference<Indexer> serviceReference, Indexer indexer) {
+		ServiceReference<Indexer<?>> serviceReference, Indexer<?> indexer) {
 
 		synchronized (_serviceRegistrations) {
 			ServiceRegistration<PortalInstanceLifecycleListener>
@@ -117,14 +123,31 @@ public class IndexOnStartupIndexerServiceCustomizer
 	protected void activate(BundleContext bundleContext) {
 		_bundleContext = bundleContext;
 
-		_serviceTracker = new ServiceTracker<>(
-			bundleContext, Indexer.class, this);
+		long indexOnStartupDelay = GetterUtil.getInteger(
+			_props.get(PropsKeys.INDEX_ON_STARTUP_DELAY));
 
-		_serviceTracker.open();
+		ScheduledExecutorService scheduledExecutorService =
+			Executors.newSingleThreadScheduledExecutor();
+
+		scheduledExecutorService.schedule(
+			() -> {
+				if (_bundleContext != null) {
+					_serviceTracker = new ServiceTracker<>(
+						_bundleContext,
+						(Class<Indexer<?>>)(Class<?>)Indexer.class, this);
+
+					_serviceTracker.open();
+				}
+			},
+			indexOnStartupDelay, TimeUnit.SECONDS);
+
+		scheduledExecutorService.shutdown();
 	}
 
 	@Deactivate
 	protected void deactivate() {
+		_bundleContext = null;
+
 		Set<String> removedIndexerClassNames = new HashSet<>();
 
 		synchronized (_serviceRegistrations) {
@@ -145,14 +168,12 @@ public class IndexOnStartupIndexerServiceCustomizer
 			}
 		}
 
-		_bundleContext = null;
-
 		if (_serviceTracker != null) {
 			_serviceTracker.close();
 		}
 	}
 
-	protected boolean isBaseSearcher(Class indexerClass) {
+	protected boolean isBaseSearcher(Class<?> indexerClass) {
 		while ((indexerClass != null) && !Object.class.equals(indexerClass)) {
 			if (indexerClass.equals(BaseSearcher.class)) {
 				return true;
@@ -190,6 +211,6 @@ public class IndexOnStartupIndexerServiceCustomizer
 	private final Map
 		<String, ServiceRegistration<PortalInstanceLifecycleListener>>
 			_serviceRegistrations = new HashMap<>();
-	private ServiceTracker<Indexer, Indexer> _serviceTracker;
+	private ServiceTracker<Indexer<?>, Indexer<?>> _serviceTracker;
 
 }

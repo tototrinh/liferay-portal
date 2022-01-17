@@ -41,15 +41,11 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.reports.engine.console.model.Source;
 import com.liferay.portal.reports.engine.console.service.SourceLocalServiceUtil;
 import com.liferay.portal.reports.engine.console.service.SourceServiceUtil;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -104,16 +100,12 @@ public class SourceServiceTest {
 
 	@Test
 	public void testGetSourcesCountAsAdminUser() throws Exception {
-		int sourcesCount = getSourcesCount(_adminPermissionChecker);
-
-		Assert.assertEquals(10, sourcesCount);
+		Assert.assertEquals(10, getSourcesCount(_adminPermissionChecker));
 	}
 
 	@Test
 	public void testGetSourcesCountAsGuestUser() throws Exception {
-		int sourcesCount = getSourcesCount(_guestPermissionChecker);
-
-		Assert.assertEquals(5, sourcesCount);
+		Assert.assertEquals(5, getSourcesCount(_guestPermissionChecker));
 	}
 
 	@Test
@@ -172,49 +164,47 @@ public class SourceServiceTest {
 	}
 
 	protected void setUpSource() throws Exception {
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"com.liferay.portal.spring.hibernate.DialectDetector",
-					Level.OFF)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.spring.hibernate.DialectDetector",
+				LoggerTestUtil.OFF)) {
 
 			ServiceContext serviceContext =
 				ServiceContextTestUtil.getServiceContext();
 
 			ModelPermissions modelPermissions = ModelPermissionsFactory.create(
-				_SOURCE_GROUP_PERMISSIONS, null);
+				_SOURCE_GROUP_PERMISSIONS, null, Source.class.getName());
 
 			serviceContext.setModelPermissions(modelPermissions);
 
 			for (int i = 0; i < 5; i++) {
-				Map<Locale, String> nameMap = HashMapBuilder.put(
-					LocaleUtil.US, RandomTestUtil.randomString()
-				).build();
-
 				SourceLocalServiceUtil.addSource(
-					TestPropsValues.getUserId(), _group.getGroupId(), nameMap,
-					_DRIVER_CLASSNAME, _URL, _USERNAME, _PASSWORD,
+					TestPropsValues.getUserId(), _group.getGroupId(),
+					HashMapBuilder.put(
+						LocaleUtil.US, RandomTestUtil.randomString()
+					).build(),
+					_DRIVER_CLASS_NAME, _URL, _USER_NAME, _PASSWORD,
 					serviceContext);
 			}
 
 			modelPermissions = ModelPermissionsFactory.create(
-				_SOURCE_GROUP_PERMISSIONS, new String[] {"VIEW"});
+				_SOURCE_GROUP_PERMISSIONS, new String[] {"VIEW"},
+				Source.class.getName());
 
 			serviceContext.setModelPermissions(modelPermissions);
 
 			for (int i = 0; i < 5; i++) {
-				Map<Locale, String> nameMap = HashMapBuilder.put(
-					LocaleUtil.US, RandomTestUtil.randomString()
-				).build();
-
 				SourceLocalServiceUtil.addSource(
-					TestPropsValues.getUserId(), _group.getGroupId(), nameMap,
-					_DRIVER_CLASSNAME, _URL, _USERNAME, _PASSWORD,
+					TestPropsValues.getUserId(), _group.getGroupId(),
+					HashMapBuilder.put(
+						LocaleUtil.US, RandomTestUtil.randomString()
+					).build(),
+					_DRIVER_CLASS_NAME, _URL, _USER_NAME, _PASSWORD,
 					serviceContext);
 			}
 		}
 	}
 
-	private static final String _DRIVER_CLASSNAME =
+	private static final String _DRIVER_CLASS_NAME =
 		"org.hsqldb.jdbc.JDBCDriver";
 
 	private static final String _PASSWORD = StringPool.BLANK;
@@ -225,7 +215,7 @@ public class SourceServiceTest {
 
 	private static final String _URL = "jdbc:hsqldb:mem:testDB;shutdown=true";
 
-	private static final String _USERNAME = "sa";
+	private static final String _USER_NAME = "sa";
 
 	private PermissionChecker _adminPermissionChecker;
 

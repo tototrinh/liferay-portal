@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -45,10 +48,47 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("UserAccount")
+@GraphQLName(description = "Represents a user.", value = "UserAccount")
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "UserAccount")
-public class UserAccount {
+public class UserAccount implements Serializable {
+
+	public static UserAccount toDTO(String json) {
+		return ObjectMapperUtil.readValue(UserAccount.class, json);
+	}
+
+	public static UserAccount unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(UserAccount.class, json);
+	}
+
+	@Schema(description = "A list of the user's account.")
+	@Valid
+	public AccountBrief[] getAccountBriefs() {
+		return accountBriefs;
+	}
+
+	public void setAccountBriefs(AccountBrief[] accountBriefs) {
+		this.accountBriefs = accountBriefs;
+	}
+
+	@JsonIgnore
+	public void setAccountBriefs(
+		UnsafeSupplier<AccountBrief[], Exception> accountBriefsUnsafeSupplier) {
+
+		try {
+			accountBriefs = accountBriefsUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "A list of the user's account.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected AccountBrief[] accountBriefs;
 
 	@Schema
 	@Valid
@@ -107,7 +147,7 @@ public class UserAccount {
 	@GraphQLField(
 		description = "The user's additional name (e.g., middle name)."
 	)
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String additionalName;
 
 	@Schema(description = "The user's alias or screen name.")
@@ -135,7 +175,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's alias or screen name.")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String alternateName;
 
 	@Schema(description = "The user's date of birth, in ISO 8601 format.")
@@ -163,7 +203,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's date of birth, in ISO 8601 format.")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Date birthDate;
 
 	@Schema
@@ -308,8 +348,38 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's main email address.")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String emailAddress;
+
+	@Schema(description = "The optional external key of this user account.")
+	public String getExternalReferenceCode() {
+		return externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		this.externalReferenceCode = externalReferenceCode;
+	}
+
+	@JsonIgnore
+	public void setExternalReferenceCode(
+		UnsafeSupplier<String, Exception> externalReferenceCodeUnsafeSupplier) {
+
+		try {
+			externalReferenceCode = externalReferenceCodeUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "The optional external key of this user account."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String externalReferenceCode;
 
 	@Schema(description = "The user's surname (last name).")
 	public String getFamilyName() {
@@ -336,7 +406,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's surname (last name).")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String familyName;
 
 	@Schema(description = "The user's first name.")
@@ -364,7 +434,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's first name.")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String givenName;
 
 	@Schema(description = "The user's title (e.g., Dr., Mr., Mrs, Ms., etc.).")
@@ -394,7 +464,7 @@ public class UserAccount {
 	@GraphQLField(
 		description = "The user's title (e.g., Dr., Mr., Mrs, Ms., etc.)."
 	)
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String honorificPrefix;
 
 	@Schema(description = "The user's suffix (e.g., II, Jr., PhD, etc.).")
@@ -422,7 +492,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's suffix (e.g., II, Jr., PhD, etc.).")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String honorificSuffix;
 
 	@Schema(description = "The user's ID.")
@@ -504,7 +574,7 @@ public class UserAccount {
 	}
 
 	@GraphQLField(description = "The user's job title.")
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String jobTitle;
 
 	@Schema(description = "A list of keywords describing the user.")
@@ -534,6 +604,34 @@ public class UserAccount {
 	@GraphQLField(description = "A list of keywords describing the user.")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String[] keywords;
+
+	@Schema(description = "The last time the user logged in.")
+	public Date getLastLoginDate() {
+		return lastLoginDate;
+	}
+
+	public void setLastLoginDate(Date lastLoginDate) {
+		this.lastLoginDate = lastLoginDate;
+	}
+
+	@JsonIgnore
+	public void setLastLoginDate(
+		UnsafeSupplier<Date, Exception> lastLoginDateUnsafeSupplier) {
+
+		try {
+			lastLoginDate = lastLoginDateUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The last time the user logged in.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected Date lastLoginDate;
 
 	@Schema(description = "The user's full name.")
 	public String getName() {
@@ -740,6 +838,26 @@ public class UserAccount {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+		if (accountBriefs != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"accountBriefs\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < accountBriefs.length; i++) {
+				sb.append(String.valueOf(accountBriefs[i]));
+
+				if ((i + 1) < accountBriefs.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (actions != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -868,6 +986,20 @@ public class UserAccount {
 			sb.append("\"");
 		}
 
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
+
+			sb.append("\"");
+		}
+
 		if (familyName != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -986,6 +1118,20 @@ public class UserAccount {
 			sb.append("]");
 		}
 
+		if (lastLoginDate != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"lastLoginDate\": ");
+
+			sb.append("\"");
+
+			sb.append(liferayToJSONDateFormat.format(lastLoginDate));
+
+			sb.append("\"");
+		}
+
 		if (name != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -1090,6 +1236,7 @@ public class UserAccount {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.user.dto.v1_0.UserAccount",
 		name = "x-class-name"
 	)
@@ -1099,6 +1246,16 @@ public class UserAccount {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -1115,13 +1272,46 @@ public class UserAccount {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

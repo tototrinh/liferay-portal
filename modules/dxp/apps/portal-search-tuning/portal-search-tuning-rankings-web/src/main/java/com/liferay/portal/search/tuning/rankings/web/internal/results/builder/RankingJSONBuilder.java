@@ -63,11 +63,12 @@ public class RankingJSONBuilder {
 			WebKeys.THEME_DISPLAY);
 
 		_dlAppLocalService = dlAppLocalService;
+		_fastDateFormatFactory = fastDateFormatFactory;
+		_resourceActions = resourceActions;
+
 		_dlConfiguration = ConfigurableUtil.createConfigurable(
 			DLConfiguration.class, new HashMap<String, Object>());
-		_fastDateFormatFactory = fastDateFormatFactory;
 		_locale = themeDisplay.getLocale();
-		_resourceActions = resourceActions;
 		_themeDisplay = themeDisplay;
 	}
 
@@ -78,6 +79,8 @@ public class RankingJSONBuilder {
 			"clicks", _document.getString("clicks")
 		).put(
 			"date", _getDateString()
+		).put(
+			"deleted", _deleted
 		).put(
 			"description", _getDescription()
 		).put(
@@ -92,7 +95,15 @@ public class RankingJSONBuilder {
 			"title", _getTitle()
 		).put(
 			"type", _getType()
+		).put(
+			"viewURL", _viewURL
 		);
+	}
+
+	public RankingJSONBuilder deleted(boolean deleted) {
+		_deleted = deleted;
+
+		return this;
 	}
 
 	public RankingJSONBuilder document(Document document) {
@@ -109,6 +120,12 @@ public class RankingJSONBuilder {
 
 	public RankingJSONBuilder pinned(boolean pinned) {
 		_pinned = pinned;
+
+		return this;
+	}
+
+	public RankingJSONBuilder viewURL(String viewURL) {
+		_viewURL = viewURL;
 
 		return this;
 	}
@@ -314,6 +331,7 @@ public class RankingJSONBuilder {
 	private static final Log _log = LogFactoryUtil.getLog(
 		RankingJSONBuilder.class);
 
+	private boolean _deleted;
 	private final DLAppLocalService _dlAppLocalService;
 	private final DLConfiguration _dlConfiguration;
 	private Document _document;
@@ -323,5 +341,6 @@ public class RankingJSONBuilder {
 	private boolean _pinned;
 	private final ResourceActions _resourceActions;
 	private final ThemeDisplay _themeDisplay;
+	private String _viewURL;
 
 }

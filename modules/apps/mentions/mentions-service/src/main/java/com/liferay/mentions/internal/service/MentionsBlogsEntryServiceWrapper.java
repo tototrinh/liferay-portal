@@ -67,14 +67,10 @@ public class MentionsBlogsEntryServiceWrapper
 			userId, entryId, status, serviceContext, workflowContext);
 
 		if ((status != WorkflowConstants.STATUS_APPROVED) ||
-			(oldStatus == WorkflowConstants.STATUS_IN_TRASH)) {
+			(oldStatus == WorkflowConstants.STATUS_IN_TRASH) ||
+			!MentionsUtil.isMentionsEnabled(
+				_portal.getSiteGroupId(entry.getGroupId()))) {
 
-			return entry;
-		}
-
-		long siteGroupId = _portal.getSiteGroupId(entry.getGroupId());
-
-		if (!MentionsUtil.isMentionsEnabled(siteGroupId)) {
 			return entry;
 		}
 

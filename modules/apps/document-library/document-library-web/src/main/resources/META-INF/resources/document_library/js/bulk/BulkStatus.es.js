@@ -13,7 +13,7 @@
  */
 
 import ClayLoadingIndicator from '@clayui/loading-indicator';
-import {useTimeout} from 'frontend-js-react-web';
+import {useTimeout} from '@liferay/frontend-js-react-web';
 import {fetch, openToast} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useReducer} from 'react';
@@ -29,7 +29,7 @@ function BulkStatus({
 	bulkStatusUrl = '/bulk/v1.0/status',
 	intervalSpeed = 1000,
 	pathModule,
-	waitingTime = 1000
+	waitingTime = 1000,
 }) {
 	const delay = useTimeout();
 
@@ -43,8 +43,8 @@ function BulkStatus({
 			fetch(
 				`${Liferay.ThemeDisplay.getPortalURL()}${pathModule}${bulkStatusUrl}`
 			)
-				.then(response => response.json())
-				.then(response => {
+				.then((response) => response.json())
+				.then((response) => {
 					if (response.actionInProgress) {
 						dispatch({type: 'check'});
 					}
@@ -85,10 +85,10 @@ function BulkStatus({
 			{
 				startWatch: () => {
 					dispatch({type: 'start'});
-				}
+				},
 			},
 			{
-				destroyOnNavigate: true
+				destroyOnNavigate: true,
 			}
 		);
 	}
@@ -111,7 +111,7 @@ BulkStatus.propTypes = {
 	bulkStatusUrl: PropTypes.string,
 	intervalSpeed: PropTypes.number,
 	pathModule: PropTypes.string.isRequired,
-	waitingTime: PropTypes.number
+	waitingTime: PropTypes.number,
 };
 
-export default props => <BulkStatus {...props} />;
+export default BulkStatus;

@@ -46,6 +46,26 @@ public class AdvancedFileSystemStore extends FileSystemStore {
 		super(advancedFileSystemStoreConfiguration);
 	}
 
+	@Override
+	public String[] getFileVersions(
+		long companyId, long repositoryId, String fileName) {
+
+		String[] versions = super.getFileVersions(
+			companyId, repositoryId, fileName);
+
+		for (int i = 0; i < versions.length; i++) {
+			int x = versions[i].lastIndexOf(CharPool.UNDERLINE);
+
+			if (x > -1) {
+				int y = versions[i].lastIndexOf(CharPool.PERIOD);
+
+				versions[i] = versions[i].substring(x + 1, y);
+			}
+		}
+
+		return versions;
+	}
+
 	protected void buildPath(StringBundler sb, String fileNameFragment) {
 		int fileNameFragmentLength = fileNameFragment.length();
 
@@ -167,21 +187,11 @@ public class AdvancedFileSystemStore extends FileSystemStore {
 
 			File repositoryDir = getRepositoryDir(companyId, repositoryId);
 
-			StringBundler pathSB = new StringBundler(11);
-
-			pathSB.append(repositoryDir);
-			pathSB.append(StringPool.SLASH);
-			pathSB.append(sb.toString());
-			pathSB.append(StringPool.SLASH);
-			pathSB.append(fileNameFragment);
-			pathSB.append(ext);
-			pathSB.append(StringPool.SLASH);
-			pathSB.append(fileNameFragment);
-			pathSB.append(StringPool.UNDERLINE);
-			pathSB.append(version);
-			pathSB.append(ext);
-
-			return new File(pathSB.toString());
+			return new File(
+				StringBundler.concat(
+					repositoryDir, StringPool.SLASH, sb.toString(),
+					StringPool.SLASH, fileNameFragment, ext, StringPool.SLASH,
+					fileNameFragment, StringPool.UNDERLINE, version, ext));
 		}
 
 		File fileNameDir = getDirNameDir(companyId, repositoryId, fileName);
@@ -189,16 +199,10 @@ public class AdvancedFileSystemStore extends FileSystemStore {
 		String fileNameFragment = FileUtil.stripExtension(
 			fileName.substring(pos + 1));
 
-		StringBundler pathSB = new StringBundler(6);
-
-		pathSB.append(fileNameDir);
-		pathSB.append(StringPool.SLASH);
-		pathSB.append(fileNameFragment);
-		pathSB.append(StringPool.UNDERLINE);
-		pathSB.append(version);
-		pathSB.append(ext);
-
-		return new File(pathSB.toString());
+		return new File(
+			StringBundler.concat(
+				fileNameDir, StringPool.SLASH, fileNameFragment,
+				StringPool.UNDERLINE, version, ext));
 	}
 
 	@Override

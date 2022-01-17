@@ -15,6 +15,7 @@
 package com.liferay.wiki.service;
 
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.ExportActionableDynamicQuery;
@@ -66,15 +67,26 @@ public interface WikiNodeLocalService
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link WikiNodeLocalServiceUtil} to access the wiki node local service. Add custom service methods to <code>com.liferay.wiki.service.impl.WikiNodeLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.wiki.service.impl.WikiNodeLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the wiki node local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link WikiNodeLocalServiceUtil} if injection and service tracking are not available.
 	 */
 	public WikiNode addDefaultNode(long userId, ServiceContext serviceContext)
 		throws PortalException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addNode(String, long, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	@Indexable(type = IndexableType.REINDEX)
 	public WikiNode addNode(
 			long userId, String name, String description,
 			ServiceContext serviceContext)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public WikiNode addNode(
+			String externalReferenceCode, long userId, String name,
+			String description, ServiceContext serviceContext)
 		throws PortalException;
 
 	public void addNodeResources(
@@ -93,6 +105,10 @@ public interface WikiNodeLocalService
 
 	/**
 	 * Adds the wiki node to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiNodeLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param wikiNode the wiki node
 	 * @return the wiki node that was added
@@ -135,6 +151,10 @@ public interface WikiNodeLocalService
 	/**
 	 * Deletes the wiki node with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiNodeLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param nodeId the primary key of the wiki node
 	 * @return the wiki node that was removed
 	 * @throws PortalException if a wiki node with the primary key could not be found
@@ -145,11 +165,21 @@ public interface WikiNodeLocalService
 	/**
 	 * Deletes the wiki node from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiNodeLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param wikiNode the wiki node
 	 * @return the wiki node that was removed
 	 */
 	@Indexable(type = IndexableType.DELETE)
 	public WikiNode deleteWikiNode(WikiNode wikiNode);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -225,6 +255,25 @@ public interface WikiNodeLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public WikiNode fetchWikiNode(long nodeId);
+
+	/**
+	 * Returns the wiki node with the matching external reference code and group.
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki node's external reference code
+	 * @return the matching wiki node, or <code>null</code> if a matching wiki node could not be found
+	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public WikiNode fetchWikiNodeByExternalReferenceCode(
+		long groupId, String externalReferenceCode);
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchWikiNodeByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public WikiNode fetchWikiNodeByReferenceCode(
+		long groupId, String externalReferenceCode);
 
 	/**
 	 * Returns the wiki node matching the UUID and group.
@@ -311,6 +360,19 @@ public interface WikiNodeLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public WikiNode getWikiNode(long nodeId) throws PortalException;
+
+	/**
+	 * Returns the wiki node with the matching external reference code and group.
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki node's external reference code
+	 * @return the matching wiki node
+	 * @throws PortalException if a matching wiki node could not be found
+	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public WikiNode getWikiNodeByExternalReferenceCode(
+			long groupId, String externalReferenceCode)
+		throws PortalException;
 
 	/**
 	 * Returns the wiki node matching the UUID and group.
@@ -403,6 +465,10 @@ public interface WikiNodeLocalService
 
 	/**
 	 * Updates the wiki node in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiNodeLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param wikiNode the wiki node
 	 * @return the wiki node that was updated

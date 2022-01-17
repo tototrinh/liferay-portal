@@ -27,38 +27,74 @@ DDMStructure ddmStructure = journalEditArticleDisplayContext.getDDMStructure();
 <aui:input name="ddmStructureKey" type="hidden" value="<%= ddmStructure.getStructureKey() %>" />
 
 <c:if test="<%= journalWebConfiguration.changeableDefaultLanguage() %>">
-	<div id="<%= renderResponse.getNamespace() + "-change-default-language" %>">
+	<div id="<%= liferayPortletResponse.getNamespace() + "-change-default-language" %>">
 		<react:component
-			data="<%= journalEditArticleDisplayContext.getChangeDefaultLanguageData() %>"
 			module="js/ChangeDefaultLanguage.es"
+			props="<%= journalEditArticleDisplayContext.getChangeDefaultLanguageData() %>"
 			servletContext="<%= application %>"
 		/>
 	</div>
+</c:if>
+
+<c:if test="<%= journalEditArticleDisplayContext.isShowSelectFolder() %>">
+	<p class="article-folder"><b><liferay-ui:message key="folder" /></b></p>
+
+	<div class="form-group input-group mb-2">
+		<div class="input-group-item">
+			<input class="field form-control lfr-input-text" id="<portlet:namespace />folderName" readonly="readonly" title="<%= LanguageUtil.get(request, "folder-name") %>" type="text" value="<%= journalEditArticleDisplayContext.getFolderName() %>" />
+		</div>
+	</div>
+
+	<div class="form-group">
+		<aui:button name="selectFolderButton" value="select" />
+	</div>
+
+	<liferay-frontend:component
+		context='<%=
+			HashMapBuilder.<String, Object>put(
+				"inputName", "folderId"
+			).put(
+				"selectFolderURL",
+				PortletURLBuilder.createRenderURL(
+					liferayPortletResponse
+				).setMVCPath(
+					"/select_folder.jsp"
+				).setParameter(
+					"folderId", journalEditArticleDisplayContext.getFolderId()
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString()
+			).build()
+		%>'
+		module="js/SelectFolderButton.es"
+	/>
 </c:if>
 
 <p class="article-structure">
 	<b><liferay-ui:message key="structure" /></b>: <%= HtmlUtil.escape(ddmStructure.getName(locale)) %>
 </p>
 
-<c:if test="<%= (article != null) && !article.isNew() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASSNAME_ID_DEFAULT) %>">
+<c:if test="<%= (article != null) && !article.isNew() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASS_NAME_ID_DEFAULT) %>">
 	<p class="article-version-status">
 		<b><liferay-ui:message key="version" /></b>: <%= article.getVersion() %>
 
-		<span class="label label-<%= WorkflowConstants.getStatusStyle(article.getStatus()) %> ml-2 text-uppercase">
-			<liferay-ui:message key="<%= WorkflowConstants.getStatusLabel(article.getStatus()) %>" />
-		</span>
+		<clay:label
+			cssClass="ml-2 text-uppercase"
+			displayType="<%= WorkflowConstants.getStatusStyle(article.getStatus()) %>"
+			label="<%= WorkflowConstants.getStatusLabel(article.getStatus()) %>"
+		/>
 	</p>
 </c:if>
 
 <c:choose>
-	<c:when test="<%= !journalWebConfiguration.journalArticleForceAutogenerateId() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASSNAME_ID_DEFAULT) %>">
+	<c:when test="<%= !journalWebConfiguration.journalArticleForceAutogenerateId() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASS_NAME_ID_DEFAULT) %>">
 		<div class="article-id">
 			<label for="<portlet:namespace />newArticleId"><liferay-ui:message key="id" /></label>
 
 			<aui:input label="" name="newArticleId" type="text" value="<%= (article != null) ? article.getArticleId() : StringPool.BLANK %>" wrapperCssClass="mb-1" />
 
 			<%
-			String taglibOnChange = "Liferay.Util.toggleDisabled('#" + renderResponse.getNamespace() + "newArticleId', event.target.checked);";
+			String taglibOnChange = "Liferay.Util.toggleDisabled('#" + liferayPortletResponse.getNamespace() + "newArticleId', event.target.checked);";
 			%>
 
 			<aui:input checked="<%= false %>" label="autogenerate-id" name="autoArticleId" onChange="<%= taglibOnChange %>" type="checkbox" value="<%= false %>" wrapperCssClass="mb-3" />
@@ -76,7 +112,7 @@ DDMStructure ddmStructure = journalEditArticleDisplayContext.getDDMStructure();
 		<aui:input name="newArticleId" type="hidden" />
 		<aui:input name="autoArticleId" type="hidden" value="<%= true %>" />
 
-		<c:if test="<%= (article != null) && !article.isNew() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASSNAME_ID_DEFAULT) %>">
+		<c:if test="<%= (article != null) && !article.isNew() && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASS_NAME_ID_DEFAULT) %>">
 			<p class="article-id">
 				<b><liferay-ui:message key="id" /></b>: <%= article.getArticleId() %>
 			</p>
@@ -84,18 +120,17 @@ DDMStructure ddmStructure = journalEditArticleDisplayContext.getDDMStructure();
 	</c:otherwise>
 </c:choose>
 
-<div class="article-content-description">
-	<label for="<portlet:namespace />descriptionMapAsXML"><liferay-ui:message key="summary" /></label>
+<div>
+	<label for="<portlet:namespace />descriptionMapAsXML"><liferay-ui:message key="description" /></label>
 
 	<liferay-ui:input-localized
 		availableLocales="<%= journalEditArticleDisplayContext.getAvailableLocales() %>"
 		cssClass="form-control"
 		defaultLanguageId="<%= journalEditArticleDisplayContext.getDefaultArticleLanguageId() %>"
-		editorName="alloyeditor"
+		editorName="ckeditor"
 		formName="fm"
 		ignoreRequestValue="<%= journalEditArticleDisplayContext.isChangeStructure() %>"
 		name="descriptionMapAsXML"
-		placeholder="description"
 		selectedLanguageId="<%= journalEditArticleDisplayContext.getSelectedLanguageId() %>"
 		type="editor"
 		xml="<%= (article != null) ? article.getDescriptionMapAsXML() : StringPool.BLANK %>"

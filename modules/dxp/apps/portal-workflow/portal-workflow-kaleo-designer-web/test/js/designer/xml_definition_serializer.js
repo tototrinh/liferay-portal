@@ -11,32 +11,34 @@
 
 const METADATA = {
 	name: 'definition',
-	version: 1
+	version: 1,
 };
 
 const XML_NAMESPACE = {
-	xmlns: 'urn:liferay.com:liferay-workflow_7.1.0',
+	'xmlns': 'urn:liferay.com:liferay-workflow_7.4.0',
 	'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 	'xsi:schemaLocation':
-		'urn:liferay.com:liferay-workflow_7.1.0 http://www.liferay.com/dtd/liferay-workflow-definition_7_1_0.xsd'
+		'urn:liferay.com:liferay-workflow_7.4.0 http://www.liferay.com/dtd/liferay-workflow-definition_7_4_0.xsd',
 };
 
 describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 	let serializeDefinition;
 
-	beforeEach(done => {
-		require('../../../src/main/resources/META-INF/resources/designer/js/xml_definition_serializer');
-		require('../../../src/main/resources/META-INF/resources/designer/js/utils');
-		require('../../../src/main/resources/META-INF/resources/designer/js/xml_util');
+	beforeEach((done) => {
+		require('../../../src/main/resources/META-INF/resources/designer/js/legacy/xml_definition_serializer');
+		require('../../../src/main/resources/META-INF/resources/designer/js/legacy/utils');
+		require('../../../src/main/resources/META-INF/resources/designer/js/legacy/xml_util');
 		require('../../../../../../../apps/frontend-js/frontend-js-aui-web/src/main/resources/META-INF/resources/liferay/xml_formatter');
 
 		AUI().use(
 			['liferay-kaleo-designer-xml-util', 'liferay-kaleo-designer-utils'],
-			A => {
+			(A) => {
+
 				// Stub for "aui-component", which refuses to load in test env.
+
 				A.Component = {
 					create({ATTRS, prototype, ...properties}) {
-						const constructor = function() {};
+						const constructor = function () {};
 
 						Object.assign(
 							constructor.prototype,
@@ -49,12 +51,12 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 
 								get(key) {
 									return ATTRS[key].value;
-								}
+								},
 							}
 						);
 
 						return constructor;
-					}
+					},
 				};
 
 				AUI().use(
@@ -79,13 +81,13 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 						name: ['notification1'],
 						recipients: [
 							{
-								receptionType: [null]
-							}
-						]
+								receptionType: [null],
+							},
+						],
 					},
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -106,13 +108,13 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 						name: ['notification1'],
 						recipients: [
 							{
-								receptionType: ['']
-							}
-						]
+								receptionType: [''],
+							},
+						],
 					},
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -130,9 +132,9 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 				{
 					assignments: {},
 					name: 'task1',
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -153,13 +155,13 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 						name: ['notification1'],
 						recipients: [
 							{
-								receptionType: 'bcc'
-							}
-						]
+								receptionType: 'bcc',
+							},
+						],
 					},
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -183,13 +185,13 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 								assignmentType: ['user'],
 								emailAddress: [null],
 								screenName: [null],
-								userId: [null]
-							}
-						]
+								userId: [null],
+							},
+						],
 					},
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -201,6 +203,130 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 		expect(definition).toContain('<user');
 	});
 
+	it('serialize <screen-name> element if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: [null],
+								screenName: ['test'],
+								userId: [''],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain('<screen-name>test</screen-name>');
+	});
+
+	it('serialize <email-address> element if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: ['test@liferay.com'],
+								screenName: [''],
+								userId: [''],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain(
+			'<email-address>test@liferay.com</email-address>'
+		);
+	});
+
+	it('serialize <user-id> element if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: [''],
+								screenName: [null],
+								userId: ['0'],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain('<user-id>0</user-id>');
+	});
+
+	it('serialize <email-address>, <screen-name> and <user-id> elements if given.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+								emailAddress: ['test@liferay.com'],
+								screenName: ['test'],
+								userId: ['0'],
+							},
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain(
+			'<email-address>test@liferay.com</email-address>'
+		);
+	});
+
 	it('serializes <user> element even if empty.', () => {
 		const jsonDefinition = {
 			nodes: [
@@ -210,13 +336,13 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 						name: ['notification1'],
 						recipients: [
 							{
-								assignmentType: ['user']
-							}
-						]
+								assignmentType: ['user'],
+							},
+						],
 					},
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -233,12 +359,12 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 			nodes: [
 				{
 					assignments: {
-						assignmentType: 'taskAssignees'
+						assignmentType: 'taskAssignees',
 					},
 					name: 'task1',
-					xmlType: 'task'
-				}
-			]
+					xmlType: 'task',
+				},
+			],
 		};
 
 		const definition = serializeDefinition(
@@ -248,5 +374,37 @@ describe('liferay-kaleo-designer-xml-definition-serializer', () => {
 		);
 
 		expect(definition).toContain('<assignments');
+	});
+
+	it('serializes template element and keep format.', () => {
+		const jsonDefinition = {
+			nodes: [
+				{
+					name: 'task1',
+					notifications: {
+						name: ['notification1'],
+						recipients: [
+							{
+								assignmentType: ['user'],
+							},
+						],
+						template: [
+							'Your submission was reviewed<#if taskComments?has_content> and the reviewer applied the following ${taskComments}</#if>.\nThank You!',
+						],
+					},
+					xmlType: 'task',
+				},
+			],
+		};
+
+		const definition = serializeDefinition(
+			XML_NAMESPACE,
+			METADATA,
+			jsonDefinition
+		);
+
+		expect(definition).toContain(
+			'<![CDATA[Your submission was reviewed<#if taskComments?has_content> and the reviewer applied the following ${taskComments}</#if>.\nThank You!]]'
+		);
 	});
 });

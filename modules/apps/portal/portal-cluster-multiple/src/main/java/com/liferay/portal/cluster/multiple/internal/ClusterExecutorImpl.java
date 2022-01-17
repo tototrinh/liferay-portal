@@ -229,13 +229,9 @@ public class ClusterExecutorImpl implements ClusterExecutor {
 
 		BundleContext bundleContext = componentContext.getBundleContext();
 
-		ClusterExecutorPortalInetSocketAddressEventListener
-			clusterExecutorPortalInetSocketAddressEventListener =
-				new ClusterExecutorPortalInetSocketAddressEventListener();
-
 		_serviceRegistration = bundleContext.registerService(
 			PortalInetSocketAddressEventListener.class,
-			clusterExecutorPortalInetSocketAddressEventListener,
+			new ClusterExecutorPortalInetSocketAddressEventListener(),
 			new HashMapDictionary<String, Object>());
 	}
 
@@ -659,16 +655,16 @@ public class ClusterExecutorImpl implements ClusterExecutor {
 	private static class ClusterNodeStatus implements Serializable {
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
+		public boolean equals(Object object) {
+			if (this == object) {
 				return true;
 			}
 
-			if (!(obj instanceof ClusterNodeStatus)) {
+			if (!(object instanceof ClusterNodeStatus)) {
 				return false;
 			}
 
-			ClusterNodeStatus clusterNodeStatus = (ClusterNodeStatus)obj;
+			ClusterNodeStatus clusterNodeStatus = (ClusterNodeStatus)object;
 
 			if (Objects.equals(_address, clusterNodeStatus._address) &&
 				Objects.equals(_clusterNode, clusterNodeStatus._clusterNode)) {

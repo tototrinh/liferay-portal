@@ -14,6 +14,7 @@
 
 package com.liferay.dynamic.data.mapping.form.renderer.internal;
 
+import com.liferay.dynamic.data.mapping.constants.DDMPortletKeys;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluator;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorEvaluateRequest;
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorEvaluateResponse;
@@ -26,15 +27,26 @@ import com.liferay.dynamic.data.mapping.model.DDMFormLayoutColumn;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayoutPage;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayoutRow;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLayoutLocalService;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
+import com.liferay.google.places.util.GooglePlacesUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +56,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * @author Marcellus Tavares
  */
@@ -51,11 +65,18 @@ public class DDMFormPagesTemplateContextFactory {
 
 	public DDMFormPagesTemplateContextFactory(
 		DDMForm ddmForm, DDMFormLayout ddmFormLayout,
-		DDMFormRenderingContext ddmFormRenderingContext) {
+		DDMFormRenderingContext ddmFormRenderingContext,
+		DDMStructureLayoutLocalService ddmStructureLayoutLocalService,
+		DDMStructureLocalService ddmStructureLocalService,
+		GroupLocalService groupLocalService, JSONFactory jsonFactory) {
 
 		_ddmForm = ddmForm;
 		_ddmFormLayout = ddmFormLayout;
 		_ddmFormRenderingContext = ddmFormRenderingContext;
+		_ddmStructureLayoutLocalService = ddmStructureLayoutLocalService;
+		_ddmStructureLocalService = ddmStructureLocalService;
+		_groupLocalService = groupLocalService;
+		_jsonFactory = jsonFactory;
 
 		DDMFormValues ddmFormValues =
 			ddmFormRenderingContext.getDDMFormValues();
@@ -64,21 +85,15 @@ public class DDMFormPagesTemplateContextFactory {
 			ListUtil.isEmpty(ddmFormValues.getDDMFormFieldValues())) {
 
 			DefaultDDMFormValuesFactory defaultDDMFormValuesFactory =
-				new DefaultDDMFormValuesFactory(
-					ddmForm, ddmFormRenderingContext.getLocale());
+				new DefaultDDMFormValuesFactory(ddmForm);
 
 			ddmFormValues = defaultDDMFormValuesFactory.create();
-		}
-		else {
-			removeStaleDDMFormFieldValues(
-				ddmForm.getDDMFormFieldsMap(true),
-				ddmFormValues.getDDMFormFieldValues());
 		}
 
 		_ddmFormValues = ddmFormValues;
 
 		_ddmFormFieldsMap = ddmForm.getDDMFormFieldsMap(true);
-		_ddmFormFieldValuesMap = ddmFormValues.getDDMFormFieldValuesMap();
+		_ddmFormFieldValuesMap = ddmFormValues.getDDMFormFieldValuesMap(true);
 		_locale = ddmFormRenderingContext.getLocale();
 	}
 
@@ -156,11 +171,13 @@ public class DDMFormPagesTemplateContextFactory {
 	protected List<Object> createFieldTemplateContext(String ddmFormFieldName) {
 		DDMFormFieldTemplateContextFactory ddmFormFieldTemplateContextFactory =
 			new DDMFormFieldTemplateContextFactory(
-				_ddmFormFieldsMap,
+				_ddmFormEvaluator, ddmFormFieldName, _ddmFormFieldsMap,
 				_ddmFormEvaluatorEvaluateResponse.
 					getDDMFormFieldsPropertyChanges(),
 				_ddmFormFieldValuesMap.get(ddmFormFieldName),
-				_ddmFormRenderingContext, _pageEnabled);
+				_ddmFormRenderingContext, _ddmStructureLayoutLocalService,
+				_ddmStructureLocalService, _groupLocalService, _jsonFactory,
+				_pageEnabled, _ddmFormLayout);
 
 		ddmFormFieldTemplateContextFactory.setDDMFormFieldTypeServicesTracker(
 			_ddmFormFieldTypeServicesTracker);
@@ -328,22 +345,42 @@ public class DDMFormPagesTemplateContextFactory {
 
 	private void _evaluate() {
 		try {
+			HttpServletRequest httpServletRequest =
+				_ddmFormRenderingContext.getHttpServletRequest();
+
+			long companyId = PortalUtil.getCompanyId(httpServletRequest);
+
 			DDMFormEvaluatorEvaluateRequest.Builder
-				formEvaluatorEvaluateRequestBuilder =
+				ddmFormEvaluatorEvaluateRequestBuilder =
 					DDMFormEvaluatorEvaluateRequest.Builder.newBuilder(
 						_ddmForm, _ddmFormValues, _locale);
 
-			formEvaluatorEvaluateRequestBuilder.withCompanyId(
-				PortalUtil.getCompanyId(
-					_ddmFormRenderingContext.getHttpServletRequest()));
-			formEvaluatorEvaluateRequestBuilder.withGroupId(
-				_ddmFormRenderingContext.getGroupId());
-			formEvaluatorEvaluateRequestBuilder.withUserId(
-				PortalUtil.getUserId(
-					_ddmFormRenderingContext.getHttpServletRequest()));
+			ddmFormEvaluatorEvaluateRequestBuilder.withCompanyId(
+				companyId
+			).withDDMFormInstanceId(
+				_ddmFormRenderingContext.getDDMFormInstanceId()
+			).withDDMFormLayout(
+				_ddmFormLayout
+			).withEditingFieldValue(
+				Validator.isNotNull(httpServletRequest.getParameter("trigger"))
+			).withGooglePlacesAPIKey(
+				GooglePlacesUtil.getGooglePlacesAPIKey(
+					companyId, _ddmFormRenderingContext.getGroupId(),
+					_groupLocalService)
+			).withGroupId(
+				_ddmFormRenderingContext.getGroupId()
+			).withObjectFieldsJSONArray(
+				_ddmForm.getObjectFieldsJSONArray()
+			).withTimeZoneId(
+				_getTimeZoneId(httpServletRequest)
+			).withUserId(
+				PortalUtil.getUserId(httpServletRequest)
+			).withViewMode(
+				_isViewMode()
+			);
 
 			_ddmFormEvaluatorEvaluateResponse = _ddmFormEvaluator.evaluate(
-				formEvaluatorEvaluateRequestBuilder.build());
+				ddmFormEvaluatorEvaluateRequestBuilder.build());
 		}
 		catch (Exception exception) {
 			_log.error("Unable to evaluate the form", exception);
@@ -351,6 +388,42 @@ public class DDMFormPagesTemplateContextFactory {
 			throw new IllegalStateException(
 				"Unexpected error occurred during form evaluation", exception);
 		}
+	}
+
+	private String _getTimeZoneId(HttpServletRequest httpServletRequest) {
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		if (themeDisplay == null) {
+			return StringPool.BLANK;
+		}
+
+		User user = themeDisplay.getUser();
+
+		return user.getTimeZoneId();
+	}
+
+	private boolean _isViewMode() {
+		Boolean viewMode = _ddmFormRenderingContext.getProperty("viewMode");
+
+		if (viewMode != null) {
+			return viewMode;
+		}
+
+		String portletNamespace =
+			_ddmFormRenderingContext.getPortletNamespace();
+
+		if ((portletNamespace != null) &&
+			!StringUtil.equals(
+				portletNamespace,
+				PortalUtil.getPortletNamespace(
+					DDMPortletKeys.DYNAMIC_DATA_MAPPING_FORM_ADMIN))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -365,6 +438,11 @@ public class DDMFormPagesTemplateContextFactory {
 	private final DDMFormLayout _ddmFormLayout;
 	private final DDMFormRenderingContext _ddmFormRenderingContext;
 	private final DDMFormValues _ddmFormValues;
+	private final DDMStructureLayoutLocalService
+		_ddmStructureLayoutLocalService;
+	private final DDMStructureLocalService _ddmStructureLocalService;
+	private final GroupLocalService _groupLocalService;
+	private final JSONFactory _jsonFactory;
 	private final Locale _locale;
 	private boolean _pageEnabled;
 

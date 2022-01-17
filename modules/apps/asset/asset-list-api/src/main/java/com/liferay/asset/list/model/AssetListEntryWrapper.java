@@ -58,6 +58,8 @@ public class AssetListEntryWrapper
 		attributes.put("assetListEntryKey", getAssetListEntryKey());
 		attributes.put("title", getTitle());
 		attributes.put("type", getType());
+		attributes.put("assetEntrySubtype", getAssetEntrySubtype());
+		attributes.put("assetEntryType", getAssetEntryType());
 		attributes.put("lastPublishDate", getLastPublishDate());
 
 		return attributes;
@@ -143,11 +145,28 @@ public class AssetListEntryWrapper
 			setType(type);
 		}
 
+		String assetEntrySubtype = (String)attributes.get("assetEntrySubtype");
+
+		if (assetEntrySubtype != null) {
+			setAssetEntrySubtype(assetEntrySubtype);
+		}
+
+		String assetEntryType = (String)attributes.get("assetEntryType");
+
+		if (assetEntryType != null) {
+			setAssetEntryType(assetEntryType);
+		}
+
 		Date lastPublishDate = (Date)attributes.get("lastPublishDate");
 
 		if (lastPublishDate != null) {
 			setLastPublishDate(lastPublishDate);
 		}
+	}
+
+	@Override
+	public AssetListEntry cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -248,6 +267,26 @@ public class AssetListEntryWrapper
 		getAssetEntryQuery(long[] segmentsEntryIds) {
 
 		return model.getAssetEntryQuery(segmentsEntryIds);
+	}
+
+	/**
+	 * Returns the asset entry subtype of this asset list entry.
+	 *
+	 * @return the asset entry subtype of this asset list entry
+	 */
+	@Override
+	public String getAssetEntrySubtype() {
+		return model.getAssetEntrySubtype();
+	}
+
+	/**
+	 * Returns the asset entry type of this asset list entry.
+	 *
+	 * @return the asset entry type of this asset list entry
+	 */
+	@Override
+	public String getAssetEntryType() {
+		return model.getAssetEntryType();
 	}
 
 	/**
@@ -430,6 +469,26 @@ public class AssetListEntryWrapper
 	@Override
 	public void persist() {
 		model.persist();
+	}
+
+	/**
+	 * Sets the asset entry subtype of this asset list entry.
+	 *
+	 * @param assetEntrySubtype the asset entry subtype of this asset list entry
+	 */
+	@Override
+	public void setAssetEntrySubtype(String assetEntrySubtype) {
+		model.setAssetEntrySubtype(assetEntrySubtype);
+	}
+
+	/**
+	 * Sets the asset entry type of this asset list entry.
+	 *
+	 * @param assetEntryType the asset entry type of this asset list entry
+	 */
+	@Override
+	public void setAssetEntryType(String assetEntryType) {
+		model.setAssetEntryType(assetEntryType);
 	}
 
 	/**

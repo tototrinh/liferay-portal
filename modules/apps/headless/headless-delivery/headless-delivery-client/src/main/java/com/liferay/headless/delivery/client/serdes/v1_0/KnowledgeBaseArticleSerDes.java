@@ -17,7 +17,7 @@ package com.liferay.headless.delivery.client.serdes.v1_0;
 import com.liferay.headless.delivery.client.dto.v1_0.CustomField;
 import com.liferay.headless.delivery.client.dto.v1_0.KnowledgeBaseArticle;
 import com.liferay.headless.delivery.client.dto.v1_0.RelatedContent;
-import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategory;
+import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.delivery.client.json.BaseJSONParser;
 
 import java.text.DateFormat;
@@ -193,6 +193,20 @@ public class KnowledgeBaseArticleSerDes {
 			sb.append("\"");
 		}
 
+		if (knowledgeBaseArticle.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(knowledgeBaseArticle.getExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
 		if (knowledgeBaseArticle.getFriendlyUrlPath() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -263,6 +277,16 @@ public class KnowledgeBaseArticleSerDes {
 			sb.append(knowledgeBaseArticle.getNumberOfKnowledgeBaseArticles());
 		}
 
+		if (knowledgeBaseArticle.getParentKnowledgeBaseArticleId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"parentKnowledgeBaseArticleId\": ");
+
+			sb.append(knowledgeBaseArticle.getParentKnowledgeBaseArticleId());
+		}
+
 		if (knowledgeBaseArticle.getParentKnowledgeBaseFolder() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -331,24 +355,26 @@ public class KnowledgeBaseArticleSerDes {
 			sb.append(knowledgeBaseArticle.getSubscribed());
 		}
 
-		if (knowledgeBaseArticle.getTaxonomyCategories() != null) {
+		if (knowledgeBaseArticle.getTaxonomyCategoryBriefs() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"taxonomyCategories\": ");
+			sb.append("\"taxonomyCategoryBriefs\": ");
 
 			sb.append("[");
 
 			for (int i = 0;
-				 i < knowledgeBaseArticle.getTaxonomyCategories().length; i++) {
+				 i < knowledgeBaseArticle.getTaxonomyCategoryBriefs().length;
+				 i++) {
 
 				sb.append(
 					String.valueOf(
-						knowledgeBaseArticle.getTaxonomyCategories()[i]));
+						knowledgeBaseArticle.getTaxonomyCategoryBriefs()[i]));
 
 				if ((i + 1) <
-						knowledgeBaseArticle.getTaxonomyCategories().length) {
+						knowledgeBaseArticle.
+							getTaxonomyCategoryBriefs().length) {
 
 					sb.append(", ");
 				}
@@ -477,15 +503,25 @@ public class KnowledgeBaseArticleSerDes {
 				String.valueOf(knowledgeBaseArticle.getCustomFields()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(
-				knowledgeBaseArticle.getDateCreated()));
+		if (knowledgeBaseArticle.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(
+					knowledgeBaseArticle.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(
-				knowledgeBaseArticle.getDateModified()));
+		if (knowledgeBaseArticle.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(
+					knowledgeBaseArticle.getDateModified()));
+		}
 
 		if (knowledgeBaseArticle.getDescription() == null) {
 			map.put("description", null);
@@ -503,6 +539,16 @@ public class KnowledgeBaseArticleSerDes {
 			map.put(
 				"encodingFormat",
 				String.valueOf(knowledgeBaseArticle.getEncodingFormat()));
+		}
+
+		if (knowledgeBaseArticle.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(
+					knowledgeBaseArticle.getExternalReferenceCode()));
 		}
 
 		if (knowledgeBaseArticle.getFriendlyUrlPath() == null) {
@@ -546,6 +592,16 @@ public class KnowledgeBaseArticleSerDes {
 				"numberOfKnowledgeBaseArticles",
 				String.valueOf(
 					knowledgeBaseArticle.getNumberOfKnowledgeBaseArticles()));
+		}
+
+		if (knowledgeBaseArticle.getParentKnowledgeBaseArticleId() == null) {
+			map.put("parentKnowledgeBaseArticleId", null);
+		}
+		else {
+			map.put(
+				"parentKnowledgeBaseArticleId",
+				String.valueOf(
+					knowledgeBaseArticle.getParentKnowledgeBaseArticleId()));
 		}
 
 		if (knowledgeBaseArticle.getParentKnowledgeBaseFolder() == null) {
@@ -593,13 +649,14 @@ public class KnowledgeBaseArticleSerDes {
 				String.valueOf(knowledgeBaseArticle.getSubscribed()));
 		}
 
-		if (knowledgeBaseArticle.getTaxonomyCategories() == null) {
-			map.put("taxonomyCategories", null);
+		if (knowledgeBaseArticle.getTaxonomyCategoryBriefs() == null) {
+			map.put("taxonomyCategoryBriefs", null);
 		}
 		else {
 			map.put(
-				"taxonomyCategories",
-				String.valueOf(knowledgeBaseArticle.getTaxonomyCategories()));
+				"taxonomyCategoryBriefs",
+				String.valueOf(
+					knowledgeBaseArticle.getTaxonomyCategoryBriefs()));
 		}
 
 		if (knowledgeBaseArticle.getTaxonomyCategoryIds() == null) {
@@ -710,6 +767,14 @@ public class KnowledgeBaseArticleSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					knowledgeBaseArticle.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "friendlyUrlPath")) {
 				if (jsonParserFieldValue != null) {
 					knowledgeBaseArticle.setFriendlyUrlPath(
@@ -742,6 +807,14 @@ public class KnowledgeBaseArticleSerDes {
 				if (jsonParserFieldValue != null) {
 					knowledgeBaseArticle.setNumberOfKnowledgeBaseArticles(
 						Integer.valueOf((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "parentKnowledgeBaseArticleId")) {
+
+				if (jsonParserFieldValue != null) {
+					knowledgeBaseArticle.setParentKnowledgeBaseArticleId(
+						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(
@@ -786,17 +859,17 @@ public class KnowledgeBaseArticleSerDes {
 				}
 			}
 			else if (Objects.equals(
-						jsonParserFieldName, "taxonomyCategories")) {
+						jsonParserFieldName, "taxonomyCategoryBriefs")) {
 
 				if (jsonParserFieldValue != null) {
-					knowledgeBaseArticle.setTaxonomyCategories(
+					knowledgeBaseArticle.setTaxonomyCategoryBriefs(
 						Stream.of(
 							toStrings((Object[])jsonParserFieldValue)
 						).map(
-							object -> TaxonomyCategorySerDes.toDTO(
+							object -> TaxonomyCategoryBriefSerDes.toDTO(
 								(String)object)
 						).toArray(
-							size -> new TaxonomyCategory[size]
+							size -> new TaxonomyCategoryBrief[size]
 						));
 				}
 			}
@@ -819,10 +892,6 @@ public class KnowledgeBaseArticleSerDes {
 						KnowledgeBaseArticle.ViewableBy.create(
 							(String)jsonParserFieldValue));
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -852,7 +921,7 @@ public class KnowledgeBaseArticleSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -878,14 +947,17 @@ public class KnowledgeBaseArticleSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

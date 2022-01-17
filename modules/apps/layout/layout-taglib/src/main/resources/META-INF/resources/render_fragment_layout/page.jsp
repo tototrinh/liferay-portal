@@ -17,27 +17,39 @@
 <%@ include file="/render_fragment_layout/init.jsp" %>
 
 <%
+Map<String, Object> fieldValues = (Map<String, Object>)request.getAttribute("liferay-layout:render-fragment-layout:fieldValues");
 LayoutStructure layoutStructure = (LayoutStructure)request.getAttribute("liferay-layout:render-fragment-layout:layoutStructure");
+String mainItemId = (String)request.getAttribute("liferay-layout:render-fragment-layout:mainItemId");
+String mode = (String)request.getAttribute("liferay-layout:render-fragment-layout:mode");
+boolean showPreview = GetterUtil.getBoolean(request.getAttribute("liferay-layout:render-fragment-layout:showPreview"));
 %>
 
-<div class="layout-content portlet-layout" id="main-content" role="main">
+<liferay-util:dynamic-include key="com.liferay.layout,taglib#/render_fragment_layout/page.jsp#pre" />
+
+<c:if test="<%= layoutStructure != null %>">
 
 	<%
 	try {
 		request.setAttribute(WebKeys.SHOW_PORTLET_TOPPER, Boolean.TRUE);
-
-		RenderFragmentLayoutDisplayContext renderFragmentLayoutDisplayContext = new RenderFragmentLayoutDisplayContext(request, response);
-
-		request.setAttribute("render_layout_structure.jsp-renderFragmentLayoutDisplayContext", renderFragmentLayoutDisplayContext);
-
-		LayoutStructureItem layoutStructureItem = layoutStructure.getMainLayoutStructureItem();
-
-		request.setAttribute("render_layout_structure.jsp-childrenItemIds", layoutStructureItem.getChildrenItemIds());
 	%>
 
-		<%= renderFragmentLayoutDisplayContext.getPortletPaths() %>
+		<liferay-util:buffer
+			var="content"
+		>
+			<liferay-layout:render-layout-structure
+				fieldValues="<%= fieldValues %>"
+				layoutStructure="<%= layoutStructure %>"
+				mainItemId="<%= mainItemId %>"
+				mode="<%= mode %>"
+				showPreview="<%= showPreview %>"
+			/>
+		</liferay-util:buffer>
 
-		<liferay-util:include page="/render_fragment_layout/render_layout_structure.jsp" servletContext="<%= application %>" />
+		<%
+		LayoutAdaptiveMediaProcessor layoutAdaptiveMediaProcessor = ServletContextUtil.getLayoutAdaptiveMediaProcessor();
+		%>
+
+		<%= layoutAdaptiveMediaProcessor.processAdaptiveMediaContent(content) %>
 
 	<%
 	}
@@ -46,4 +58,6 @@ LayoutStructure layoutStructure = (LayoutStructure)request.getAttribute("liferay
 	}
 	%>
 
-</div>
+</c:if>
+
+<liferay-util:dynamic-include key="com.liferay.layout,taglib#/render_fragment_layout/page.jsp#post" />

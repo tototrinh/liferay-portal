@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.MessageBoardThreadSerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -28,37 +30,10 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class MessageBoardThread implements Cloneable {
+public class MessageBoardThread implements Cloneable, Serializable {
 
-	public static enum ViewableBy {
-
-		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
-
-		public static ViewableBy create(String value) {
-			for (ViewableBy viewableBy : values()) {
-				if (Objects.equals(viewableBy.getValue(), value)) {
-					return viewableBy;
-				}
-			}
-
-			return null;
-		}
-
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private ViewableBy(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static MessageBoardThread toDTO(String json) {
+		return MessageBoardThreadSerDes.toDTO(json);
 	}
 
 	public Map<String, Map<String, String>> getActions() {
@@ -147,6 +122,28 @@ public class MessageBoardThread implements Cloneable {
 
 	protected Creator creator;
 
+	public CreatorStatistics getCreatorStatistics() {
+		return creatorStatistics;
+	}
+
+	public void setCreatorStatistics(CreatorStatistics creatorStatistics) {
+		this.creatorStatistics = creatorStatistics;
+	}
+
+	public void setCreatorStatistics(
+		UnsafeSupplier<CreatorStatistics, Exception>
+			creatorStatisticsUnsafeSupplier) {
+
+		try {
+			creatorStatistics = creatorStatisticsUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected CreatorStatistics creatorStatistics;
+
 	public CustomField[] getCustomFields() {
 		return customFields;
 	}
@@ -231,6 +228,48 @@ public class MessageBoardThread implements Cloneable {
 
 	protected String encodingFormat;
 
+	public String getFriendlyUrlPath() {
+		return friendlyUrlPath;
+	}
+
+	public void setFriendlyUrlPath(String friendlyUrlPath) {
+		this.friendlyUrlPath = friendlyUrlPath;
+	}
+
+	public void setFriendlyUrlPath(
+		UnsafeSupplier<String, Exception> friendlyUrlPathUnsafeSupplier) {
+
+		try {
+			friendlyUrlPath = friendlyUrlPathUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String friendlyUrlPath;
+
+	public Boolean getHasValidAnswer() {
+		return hasValidAnswer;
+	}
+
+	public void setHasValidAnswer(Boolean hasValidAnswer) {
+		this.hasValidAnswer = hasValidAnswer;
+	}
+
+	public void setHasValidAnswer(
+		UnsafeSupplier<Boolean, Exception> hasValidAnswerUnsafeSupplier) {
+
+		try {
+			hasValidAnswer = hasValidAnswerUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean hasValidAnswer;
+
 	public String getHeadline() {
 		return headline;
 	}
@@ -291,6 +330,27 @@ public class MessageBoardThread implements Cloneable {
 	}
 
 	protected String[] keywords;
+
+	public Boolean getLocked() {
+		return locked;
+	}
+
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
+	}
+
+	public void setLocked(
+		UnsafeSupplier<Boolean, Exception> lockedUnsafeSupplier) {
+
+		try {
+			locked = lockedUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean locked;
 
 	public Long getMessageBoardSectionId() {
 		return messageBoardSectionId;
@@ -385,6 +445,25 @@ public class MessageBoardThread implements Cloneable {
 
 	protected RelatedContent[] relatedContents;
 
+	public Boolean getSeen() {
+		return seen;
+	}
+
+	public void setSeen(Boolean seen) {
+		this.seen = seen;
+	}
+
+	public void setSeen(UnsafeSupplier<Boolean, Exception> seenUnsafeSupplier) {
+		try {
+			seen = seenUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean seen;
+
 	public Boolean getShowAsQuestion() {
 		return showAsQuestion;
 	}
@@ -427,6 +506,27 @@ public class MessageBoardThread implements Cloneable {
 
 	protected Long siteId;
 
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public void setStatus(
+		UnsafeSupplier<String, Exception> statusUnsafeSupplier) {
+
+		try {
+			status = statusUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String status;
+
 	public Boolean getSubscribed() {
 		return subscribed;
 	}
@@ -448,27 +548,29 @@ public class MessageBoardThread implements Cloneable {
 
 	protected Boolean subscribed;
 
-	public TaxonomyCategory[] getTaxonomyCategories() {
-		return taxonomyCategories;
+	public TaxonomyCategoryBrief[] getTaxonomyCategoryBriefs() {
+		return taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(TaxonomyCategory[] taxonomyCategories) {
-		this.taxonomyCategories = taxonomyCategories;
+	public void setTaxonomyCategoryBriefs(
+		TaxonomyCategoryBrief[] taxonomyCategoryBriefs) {
+
+		this.taxonomyCategoryBriefs = taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(
-		UnsafeSupplier<TaxonomyCategory[], Exception>
-			taxonomyCategoriesUnsafeSupplier) {
+	public void setTaxonomyCategoryBriefs(
+		UnsafeSupplier<TaxonomyCategoryBrief[], Exception>
+			taxonomyCategoryBriefsUnsafeSupplier) {
 
 		try {
-			taxonomyCategories = taxonomyCategoriesUnsafeSupplier.get();
+			taxonomyCategoryBriefs = taxonomyCategoryBriefsUnsafeSupplier.get();
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	protected TaxonomyCategory[] taxonomyCategories;
+	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;
@@ -591,6 +693,39 @@ public class MessageBoardThread implements Cloneable {
 
 	public String toString() {
 		return MessageBoardThreadSerDes.toJSON(this);
+	}
+
+	public static enum ViewableBy {
+
+		ANYONE("Anyone"), MEMBERS("Members"), OWNER("Owner");
+
+		public static ViewableBy create(String value) {
+			for (ViewableBy viewableBy : values()) {
+				if (Objects.equals(viewableBy.getValue(), value) ||
+					Objects.equals(viewableBy.name(), value)) {
+
+					return viewableBy;
+				}
+			}
+
+			return null;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ViewableBy(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
 	}
 
 }

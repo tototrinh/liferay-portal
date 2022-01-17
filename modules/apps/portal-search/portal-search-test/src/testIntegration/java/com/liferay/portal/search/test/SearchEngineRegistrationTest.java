@@ -17,6 +17,7 @@ package com.liferay.portal.search.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.search.SearchEngine;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.search.test.util.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -43,8 +44,11 @@ public class SearchEngineRegistrationTest {
 
 		Assert.assertTrue(
 			"The registered search engine vendor is " + vendor,
-			vendor.equals("Elasticsearch") || vendor.equals("Solr"));
+			vendor.equals("Elasticsearch"));
 	}
+
+	@Rule
+	public SearchTestRule searchTestRule = new SearchTestRule();
 
 	@Inject(filter = "search.engine.id=SYSTEM_ENGINE")
 	private SearchEngine _searchEngine;

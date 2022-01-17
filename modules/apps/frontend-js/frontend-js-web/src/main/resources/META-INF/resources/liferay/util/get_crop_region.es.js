@@ -12,7 +12,7 @@
  * details.
  */
 
-import {isObject} from 'metal';
+import isObject from './is_object';
 
 /**
  * Returns dimensions and coordinates representing a cropped region
@@ -53,6 +53,6 @@ export default function getCropRegion(imagePreview, region) {
 		height,
 		width,
 		x,
-		y
+		y,
 	};
 }

@@ -14,20 +14,33 @@
 
 package com.liferay.account.admin.web.internal.dao.search;
 
+import com.liferay.account.admin.web.internal.display.AccountUserDisplay;
+import com.liferay.account.configuration.AccountEntryEmailDomainsConfiguration;
 import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.retriever.AccountUserRetriever;
 import com.liferay.account.service.AccountEntryLocalService;
+import com.liferay.account.service.AccountEntryUserRelLocalService;
+import com.liferay.account.service.AccountRoleLocalService;
+import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.configuration.ConfigurationException;
+import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.vulcan.util.TransformUtil;
 
 import java.util.Objects;
 
@@ -40,16 +53,18 @@ import org.osgi.service.component.annotations.Reference;
 @Component(service = {})
 public class AssignableAccountUserDisplaySearchContainerFactory {
 
-	public static SearchContainer create(
+	public static SearchContainer<AccountUserDisplay> create(
 			long accountEntryId, LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse)
+			LiferayPortletResponse liferayPortletResponse,
+			RowChecker rowChecker)
 		throws PortalException {
 
-		SearchContainer searchContainer = new SearchContainer(
-			liferayPortletRequest,
-			PortletURLUtil.getCurrent(
-				liferayPortletRequest, liferayPortletResponse),
-			null, "no-users-were-found");
+		SearchContainer<AccountUserDisplay> searchContainer =
+			new SearchContainer(
+				liferayPortletRequest,
+				PortletURLUtil.getCurrent(
+					liferayPortletRequest, liferayPortletResponse),
+				null, "no-users-were-found");
 
 		searchContainer.setId("accountUsers");
 
@@ -63,12 +78,14 @@ public class AssignableAccountUserDisplaySearchContainerFactory {
 
 		searchContainer.setOrderByType(orderByType);
 
-		searchContainer.setRowChecker(
-			new SelectAccountUserRowChecker(
-				liferayPortletResponse, accountEntryId));
+		searchContainer.setRowChecker(rowChecker);
 
 		String navigation = ParamUtil.getString(
-			liferayPortletRequest, "navigation", "current-account-users");
+			liferayPortletRequest, "navigation");
+
+		if (Validator.isNull(navigation)) {
+			navigation = _getDefaultNavigation(liferayPortletRequest);
+		}
 
 		String keywords = ParamUtil.getString(
 			liferayPortletRequest, "keywords", null);
@@ -81,7 +98,9 @@ public class AssignableAccountUserDisplaySearchContainerFactory {
 				searchContainer.getDelta(), orderByCol,
 				_isReverseOrder(orderByType));
 
-		searchContainer.setResults(baseModelSearchResult.getBaseModels());
+		searchContainer.setResults(
+			TransformUtil.transform(
+				baseModelSearchResult.getBaseModels(), AccountUserDisplay::of));
 		searchContainer.setTotal(baseModelSearchResult.getLength());
 
 		return searchContainer;
@@ -95,16 +114,62 @@ public class AssignableAccountUserDisplaySearchContainerFactory {
 	}
 
 	@Reference(unbind = "-")
+	protected void setAccountEntryUserRelLocalService(
+		AccountEntryUserRelLocalService accountEntryUserRelLocalService) {
+
+		_accountEntryUserRelLocalService = accountEntryUserRelLocalService;
+	}
+
+	@Reference(unbind = "-")
+	protected void setAccountRoleLocalService(
+		AccountRoleLocalService accountRoleLocalService) {
+
+		_accountRoleLocalService = accountRoleLocalService;
+	}
+
+	@Reference(unbind = "-")
 	protected void setAccountUserRetriever(
 		AccountUserRetriever accountUserRetriever) {
 
 		_accountUserRetriever = accountUserRetriever;
 	}
 
+	@Reference(unbind = "-")
+	protected void setUserGroupRoleLocalService(
+		UserGroupRoleLocalService userGroupRoleLocalService) {
+
+		_userGroupRoleLocalService = userGroupRoleLocalService;
+	}
+
+	private static String _getDefaultNavigation(
+		LiferayPortletRequest liferayPortletRequest) {
+
+		try {
+			AccountEntryEmailDomainsConfiguration
+				accountEntryEmailDomainsConfiguration =
+					ConfigurationProviderUtil.getCompanyConfiguration(
+						AccountEntryEmailDomainsConfiguration.class,
+						PortalUtil.getCompanyId(liferayPortletRequest));
+
+			if (accountEntryEmailDomainsConfiguration.
+					enableEmailDomainValidation()) {
+
+				return "valid-domain-users";
+			}
+		}
+		catch (ConfigurationException configurationException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(configurationException, configurationException);
+			}
+		}
+
+		return "all-users";
+	}
+
 	private static String[] _getEmailAddressDomains(
 		long accountEntryId, String navigation) {
 
-		if (Objects.equals(navigation, "current-account-users")) {
+		if (Objects.equals(navigation, "valid-domain-users")) {
 			AccountEntry accountEntry =
 				_accountEntryLocalService.fetchAccountEntry(accountEntryId);
 
@@ -122,7 +187,14 @@ public class AssignableAccountUserDisplaySearchContainerFactory {
 		return false;
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssignableAccountUserDisplaySearchContainerFactory.class);
+
 	private static AccountEntryLocalService _accountEntryLocalService;
+	private static AccountEntryUserRelLocalService
+		_accountEntryUserRelLocalService;
+	private static AccountRoleLocalService _accountRoleLocalService;
 	private static AccountUserRetriever _accountUserRetriever;
+	private static UserGroupRoleLocalService _userGroupRoleLocalService;
 
 }

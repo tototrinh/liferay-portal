@@ -16,17 +16,17 @@ package com.liferay.dynamic.data.lists.web.internal.display.context;
 
 import com.liferay.dynamic.data.lists.constants.DDLActionKeys;
 import com.liferay.dynamic.data.lists.constants.DDLPortletKeys;
+import com.liferay.dynamic.data.lists.constants.DDLRecordSetConstants;
 import com.liferay.dynamic.data.lists.constants.DDLWebKeys;
 import com.liferay.dynamic.data.lists.model.DDLRecord;
 import com.liferay.dynamic.data.lists.model.DDLRecordSet;
-import com.liferay.dynamic.data.lists.model.DDLRecordSetConstants;
 import com.liferay.dynamic.data.lists.service.DDLRecordSetLocalService;
 import com.liferay.dynamic.data.lists.util.DDL;
 import com.liferay.dynamic.data.lists.util.comparator.DDLRecordSetCreateDateComparator;
 import com.liferay.dynamic.data.lists.util.comparator.DDLRecordSetModifiedDateComparator;
 import com.liferay.dynamic.data.lists.util.comparator.DDLRecordSetNameComparator;
 import com.liferay.dynamic.data.lists.web.internal.configuration.DDLWebConfiguration;
-import com.liferay.dynamic.data.lists.web.internal.display.context.util.DDLRequestHelper;
+import com.liferay.dynamic.data.lists.web.internal.display.context.helper.DDLRequestHelper;
 import com.liferay.dynamic.data.lists.web.internal.search.RecordSetSearch;
 import com.liferay.dynamic.data.lists.web.internal.security.permission.resource.DDLPermission;
 import com.liferay.dynamic.data.lists.web.internal.security.permission.resource.DDLRecordSetPermission;
@@ -48,6 +48,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBu
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -160,12 +161,11 @@ public class DDLDisplayContext {
 	}
 
 	public String getClearResultsURL() throws PortletException {
-		PortletURL clearResultsURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() {
@@ -319,7 +319,6 @@ public class DDLDisplayContext {
 		return NavigationItemListBuilder.add(
 			navigationItem -> {
 				navigationItem.setActive(true);
-				navigationItem.setHref(StringPool.BLANK);
 
 				HttpServletRequest httpServletRequest =
 					_ddlRequestHelper.getRequest();
@@ -343,42 +342,66 @@ public class DDLDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
 
-		portletURL.setParameter("mvcPath", "/view.jsp");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String delta = ParamUtil.getString(_renderRequest, "delta");
+				return null;
+			}
+		).setParameter(
+			"delta",
+			() -> {
+				String delta = ParamUtil.getString(_renderRequest, "delta");
 
-		if (Validator.isNotNull(delta)) {
-			portletURL.setParameter("delta", delta);
-		}
+				if (Validator.isNotNull(delta)) {
+					return delta;
+				}
 
-		String displayStyle = ParamUtil.getString(
-			_renderRequest, "displayStyle");
+				return null;
+			}
+		).setParameter(
+			"displayStyle",
+			() -> {
+				String displayStyle = ParamUtil.getString(
+					_renderRequest, "displayStyle");
 
-		if (Validator.isNotNull(displayStyle)) {
-			portletURL.setParameter("displayStyle", getDisplayStyle());
-		}
+				if (Validator.isNotNull(displayStyle)) {
+					return getDisplayStyle();
+				}
 
-		String keywords = getKeywords();
+				return null;
+			}
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	public DDLRecordSet getRecordSet() {
@@ -422,11 +445,11 @@ public class DDLDisplayContext {
 	}
 
 	public SearchContainer<?> getSearch() {
-		String displayStyle = getDisplayStyle();
-
-		PortletURL portletURL = getPortletURL();
-
-		portletURL.setParameter("displayStyle", displayStyle);
+		PortletURL portletURL = PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).buildPortletURL();
 
 		RecordSetSearch recordSetSearch = new RecordSetSearch(
 			_renderRequest, portletURL);
@@ -459,15 +482,21 @@ public class DDLDisplayContext {
 	}
 
 	public String getSortingURL() throws Exception {
-		PortletURL sortingURL = PortletURLUtil.clone(
-			getPortletURL(), _renderResponse);
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(getPortletURL(), _renderResponse)
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = ParamUtil.getString(
+					_renderRequest, "orderByType");
 
-		String orderByType = ParamUtil.getString(_renderRequest, "orderByType");
+				if (orderByType.equals("asc")) {
+					return "desc";
+				}
 
-		sortingURL.setParameter(
-			"orderByType", orderByType.equals("asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+				return "asc";
+			}
+		).buildString();
 	}
 
 	public int getTotalItems() {
@@ -500,11 +529,7 @@ public class DDLDisplayContext {
 	}
 
 	public boolean isDisabledManagementBar() {
-		if (hasResults()) {
-			return false;
-		}
-
-		if (isSearch()) {
+		if (hasResults() || isSearch()) {
 			return false;
 		}
 

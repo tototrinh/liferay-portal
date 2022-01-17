@@ -14,6 +14,7 @@
 
 package com.liferay.calevent.importer.internal.verify;
 
+import com.liferay.asset.entry.rel.service.AssetEntryAssetCategoryRelLocalService;
 import com.liferay.asset.kernel.exception.NoSuchVocabularyException;
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetEntry;
@@ -98,7 +99,6 @@ import com.liferay.view.count.service.persistence.ViewCountEntryPK;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import java.util.ArrayList;
@@ -137,41 +137,40 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			StringBundler sb = new StringBundler(6);
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						StringBundler.concat(
+							"select uuid_, eventId, groupId, companyId, ",
+							"userId, userName, createDate, modifiedDate, ",
+							"title, description, location, startDate, ",
+							"endDate, durationHour, durationMinute, allDay, ",
+							"type_, repeating, recurrence, remindBy, ",
+							"firstReminder, secondReminder from CalEvent"))) {
 
-			sb.append("select uuid_, eventId, groupId, companyId, userId, ");
-			sb.append("userName, createDate, modifiedDate, title, ");
-			sb.append("description, location, startDate, endDate, ");
-			sb.append("durationHour, durationMinute, allDay, type_, ");
-			sb.append("repeating, recurrence, remindBy, firstReminder, ");
-			sb.append("secondReminder from CalEvent");
+				ResultSet resultSet = preparedStatement.executeQuery();
 
-			try (PreparedStatement ps = connection.prepareStatement(
-					sb.toString())) {
-
-				ResultSet rs = ps.executeQuery();
-
-				while (rs.next()) {
-					String uuid = rs.getString("uuid_");
-					long eventId = rs.getLong("eventId");
-					long groupId = rs.getLong("groupId");
-					long companyId = rs.getLong("companyId");
-					long userId = rs.getLong("userId");
-					String userName = rs.getString("userName");
-					Timestamp createDate = rs.getTimestamp("createDate");
-					Timestamp modifiedDate = rs.getTimestamp("modifiedDate");
-					String title = rs.getString("title");
-					String description = rs.getString("description");
-					String location = rs.getString("location");
-					Timestamp startDate = rs.getTimestamp("startDate");
-					int durationHour = rs.getInt("durationHour");
-					int durationMinute = rs.getInt("durationMinute");
-					boolean allDay = rs.getBoolean("allDay");
-					String type = rs.getString("type_");
-					String recurrence = rs.getString("recurrence");
-					int remindBy = rs.getInt("remindBy");
-					int firstReminder = rs.getInt("firstReminder");
-					int secondReminder = rs.getInt("secondReminder");
+				while (resultSet.next()) {
+					String uuid = resultSet.getString("uuid_");
+					long eventId = resultSet.getLong("eventId");
+					long groupId = resultSet.getLong("groupId");
+					long companyId = resultSet.getLong("companyId");
+					long userId = resultSet.getLong("userId");
+					String userName = resultSet.getString("userName");
+					Timestamp createDate = resultSet.getTimestamp("createDate");
+					Timestamp modifiedDate = resultSet.getTimestamp(
+						"modifiedDate");
+					String title = resultSet.getString("title");
+					String description = resultSet.getString("description");
+					String location = resultSet.getString("location");
+					Timestamp startDate = resultSet.getTimestamp("startDate");
+					int durationHour = resultSet.getInt("durationHour");
+					int durationMinute = resultSet.getInt("durationMinute");
+					boolean allDay = resultSet.getBoolean("allDay");
+					String type = resultSet.getString("type_");
+					String recurrence = resultSet.getString("recurrence");
+					int remindBy = resultSet.getInt("remindBy");
+					int firstReminder = resultSet.getInt("firstReminder");
+					int secondReminder = resultSet.getInt("secondReminder");
 
 					CalendarBooking calendarBooking = _importCalEvent(
 						uuid, eventId, groupId, companyId, userId, userName,
@@ -182,7 +181,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 					if (_log.isInfoEnabled()) {
 						_log.info(
 							"CalendarBooking: " + calendarBooking +
-								" imported sucessfully.");
+								" imported successfully.");
 					}
 				}
 			}
@@ -379,8 +378,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		String uuid, long threadId, long groupId, long companyId, long userId,
 		String userName, Date createDate, Date modifiedDate, long categoryId,
 		long rootMessageId, long rootMessageUserId, String title,
-		int messageCount, long lastPostByUserId, Date lastPostDate,
-		double priority, boolean question, int status, long statusByUserId,
+		long lastPostByUserId, Date lastPostDate, double priority,
+		boolean question, int status, long statusByUserId,
 		String statusByUserName, Date statusDate, long viewCount) {
 
 		MBThread mbThread = _mbThreadLocalService.createMBThread(threadId);
@@ -396,7 +395,6 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		mbThread.setRootMessageId(rootMessageId);
 		mbThread.setRootMessageUserId(rootMessageUserId);
 		mbThread.setTitle(title);
-		mbThread.setMessageCount(messageCount);
 		mbThread.setLastPostByUserId(lastPostByUserId);
 		mbThread.setLastPostDate(lastPostDate);
 		mbThread.setPriority(priority);
@@ -516,6 +514,9 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 				originalRecurrence);
 		}
 		catch (IllegalStateException illegalStateException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(illegalStateException, illegalStateException);
+			}
 
 			// LPS-65972
 
@@ -616,7 +617,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 	private AssetCategory _getAssetCategory(
 			long userId, long companyId, long groupId, String name)
-		throws PortalException {
+		throws Exception {
 
 		ServiceContext serviceContext = new ServiceContext();
 
@@ -678,7 +679,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private CalendarResource _getCalendarResource(long companyId, long groupId)
-		throws PortalException {
+		throws Exception {
 
 		ServiceContext serviceContext = new ServiceContext();
 
@@ -886,8 +887,9 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		}
 
 		for (AssetCategory assetCategory : assetCategories) {
-			_assetEntryLocalService.addAssetCategoryAssetEntry(
-				assetCategory.getCategoryId(), entryId);
+			_assetEntryAssetCategoryRelLocalService.
+				addAssetEntryAssetCategoryRel(
+					entryId, assetCategory.getCategoryId());
 		}
 
 		// Asset links
@@ -912,7 +914,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	private void _importCalendarBookingResourcePermission(
 			ResourcePermission resourcePermission, long calendarBookingId,
 			List<String> modelResourceActions)
-		throws PortalException {
+		throws Exception {
 
 		CalendarBooking calendarBooking =
 			_calendarBookingLocalService.getCalendarBooking(calendarBookingId);
@@ -929,7 +931,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 	private void _importCalendarBookingResourcePermissions(
 			long companyId, long eventId, long calendarBookingId)
-		throws PortalException {
+		throws Exception {
 
 		List<String> modelResourceActions =
 			ResourceActionsUtil.getModelResourceActions(
@@ -948,43 +950,43 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 	private CalendarBooking _importCalEvent(long calEventId) throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			StringBundler sb = new StringBundler(6);
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						StringBundler.concat(
+							"select uuid_, eventId, groupId, companyId, ",
+							"userId, userName, createDate, modifiedDate, ",
+							"title, description, location, startDate, ",
+							"endDate, durationHour, durationMinute, allDay, ",
+							"type_, repeating, recurrence, remindBy, ",
+							"firstReminder, secondReminder from CalEvent ",
+							"where eventId = ?"))) {
 
-			sb.append("select uuid_, eventId, groupId, companyId, userId, ");
-			sb.append("userName, createDate, modifiedDate, title, ");
-			sb.append("description, location, startDate, endDate, ");
-			sb.append("durationHour, durationMinute, allDay, type_, ");
-			sb.append("repeating, recurrence, remindBy, firstReminder, ");
-			sb.append("secondReminder from CalEvent where eventId = ?");
+				preparedStatement.setLong(1, calEventId);
 
-			try (PreparedStatement ps = connection.prepareStatement(
-					sb.toString())) {
+				ResultSet resultSet = preparedStatement.executeQuery();
 
-				ps.setLong(1, calEventId);
-
-				ResultSet rs = ps.executeQuery();
-
-				if (rs.next()) {
-					String uuid = rs.getString("uuid_");
-					long eventId = rs.getLong("eventId");
-					long groupId = rs.getLong("groupId");
-					long companyId = rs.getLong("companyId");
-					long userId = rs.getLong("userId");
-					String userName = rs.getString("userName");
-					Timestamp createDate = rs.getTimestamp("createDate");
-					Timestamp modifiedDate = rs.getTimestamp("modifiedDate");
-					String title = rs.getString("title");
-					String description = rs.getString("description");
-					String location = rs.getString("location");
-					Timestamp startDate = rs.getTimestamp("startDate");
-					int durationHour = rs.getInt("durationHour");
-					int durationMinute = rs.getInt("durationMinute");
-					boolean allDay = rs.getBoolean("allDay");
-					String type = rs.getString("type_");
-					String recurrence = rs.getString("recurrence");
-					int remindBy = rs.getInt("remindBy");
-					int firstReminder = rs.getInt("firstReminder");
-					int secondReminder = rs.getInt("secondReminder");
+				if (resultSet.next()) {
+					String uuid = resultSet.getString("uuid_");
+					long eventId = resultSet.getLong("eventId");
+					long groupId = resultSet.getLong("groupId");
+					long companyId = resultSet.getLong("companyId");
+					long userId = resultSet.getLong("userId");
+					String userName = resultSet.getString("userName");
+					Timestamp createDate = resultSet.getTimestamp("createDate");
+					Timestamp modifiedDate = resultSet.getTimestamp(
+						"modifiedDate");
+					String title = resultSet.getString("title");
+					String description = resultSet.getString("description");
+					String location = resultSet.getString("location");
+					Timestamp startDate = resultSet.getTimestamp("startDate");
+					int durationHour = resultSet.getInt("durationHour");
+					int durationMinute = resultSet.getInt("durationMinute");
+					boolean allDay = resultSet.getBoolean("allDay");
+					String type = resultSet.getString("type_");
+					String recurrence = resultSet.getString("recurrence");
+					int remindBy = resultSet.getInt("remindBy");
+					int firstReminder = resultSet.getInt("firstReminder");
+					int secondReminder = resultSet.getInt("secondReminder");
 
 					return _importCalEvent(
 						uuid, eventId, groupId, companyId, userId, userName,
@@ -1025,7 +1027,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		long startTime = startDate.getTime();
 
 		long endTime =
-			startTime + durationHour * Time.HOUR + durationMinute * Time.MINUTE;
+			startTime + (durationHour * Time.HOUR) +
+				(durationMinute * Time.MINUTE);
 
 		if (allDay) {
 			endTime = endTime - 1;
@@ -1074,14 +1077,14 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 		// Social
 
-		_importSocialActivities(eventId, calendarBookingId);
+		_importSocialActivities(companyId, eventId, calendarBookingId);
 
 		return calendarBooking;
 	}
 
 	private void _importExpando(
 			long companyId, long eventId, long calendarBookingId)
-		throws PortalException {
+		throws Exception {
 
 		long oldClassNameId = _classNameLocalService.getClassNameId(
 			_CLASS_NAME);
@@ -1120,7 +1123,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private void _importMBDiscussion(long eventId, long calendarBookingId)
-		throws PortalException {
+		throws Exception {
 
 		MBDiscussion mbDiscussion = _mbDiscussionLocalService.fetchDiscussion(
 			_CLASS_NAME, eventId);
@@ -1191,7 +1194,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private long _importMBThread(long threadId, long calendarBookingId)
-		throws PortalException {
+		throws Exception {
 
 		MBThread mbThread = _mbThreadLocalService.fetchMBThread(threadId);
 
@@ -1199,7 +1202,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private long _importMBThread(MBThread mbThread, long calendarBookingId)
-		throws PortalException {
+		throws Exception {
 
 		long threadId = _counterLocalService.increment();
 
@@ -1209,9 +1212,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 			mbThread.getUserName(), mbThread.getCreateDate(),
 			mbThread.getModifiedDate(), mbThread.getCategoryId(), 0,
 			mbThread.getRootMessageUserId(), mbThread.getTitle(),
-			mbThread.getMessageCount(), mbThread.getLastPostByUserId(),
-			mbThread.getLastPostDate(), mbThread.getPriority(),
-			mbThread.isQuestion(), mbThread.getStatus(),
+			mbThread.getLastPostByUserId(), mbThread.getLastPostDate(),
+			mbThread.getPriority(), mbThread.isQuestion(), mbThread.getStatus(),
 			mbThread.getStatusByUserId(), mbThread.getStatusByUserName(),
 			mbThread.getStatusDate(),
 			_viewCountEntryLocalService.getViewCount(
@@ -1262,10 +1264,12 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 			ratingsStats.getAverageScore());
 	}
 
-	private void _importSocialActivities(long eventId, long calendarBookingId) {
+	private void _importSocialActivities(
+		long companyId, long eventId, long calendarBookingId) {
+
 		List<SocialActivity> socialActivities =
 			_socialActivityLocalService.getActivities(
-				_CLASS_NAME, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+				companyId, _CLASS_NAME, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 		for (SocialActivity socialActivity : socialActivities) {
 			if (socialActivity.getClassPK() == eventId) {
@@ -1311,28 +1315,25 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private boolean _isAssetLinkImported(long entryId1, long entryId2, int type)
-		throws SQLException {
+		throws Exception {
 
-		StringBundler sb = new StringBundler(3);
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select count(*) from AssetLink where ((entryId1 = ? and ",
+					"entryId2 = ?) or (entryId2 = ? and entryId1 = ?)) and ",
+					"type_ = ?"))) {
 
-		sb.append("select count(*) from AssetLink where ((entryId1 = ? and ");
-		sb.append("entryId2 = ?) or (entryId2 = ? and entryId1 = ?)) and ");
-		sb.append("type_ = ?");
+			preparedStatement.setLong(1, entryId1);
+			preparedStatement.setLong(2, entryId2);
+			preparedStatement.setLong(3, entryId1);
+			preparedStatement.setLong(4, entryId2);
+			preparedStatement.setInt(5, type);
 
-		String sql = sb.toString();
+			ResultSet resultSet = preparedStatement.executeQuery();
 
-		try (PreparedStatement ps = connection.prepareStatement(sql)) {
-			ps.setLong(1, entryId1);
-			ps.setLong(2, entryId2);
-			ps.setLong(3, entryId1);
-			ps.setLong(4, entryId2);
-			ps.setInt(5, type);
+			resultSet.next();
 
-			ResultSet rs = ps.executeQuery();
-
-			rs.next();
-
-			int count = rs.getInt(1);
+			int count = resultSet.getInt(1);
 
 			if (count > 0) {
 				return true;
@@ -1343,7 +1344,7 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	}
 
 	private void _updateMBThreadRootMessageId(long threadId, long rootMessageId)
-		throws PortalException {
+		throws Exception {
 
 		MBThread mbThread = _mbThreadLocalService.getMBThread(threadId);
 
@@ -1391,6 +1392,10 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 	@Reference
 	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@Reference
+	private AssetEntryAssetCategoryRelLocalService
+		_assetEntryAssetCategoryRelLocalService;
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;

@@ -15,6 +15,7 @@
 package com.liferay.ratings.internal.page.ratings.exportimport.data.handler;
 
 import com.liferay.exportimport.kernel.lar.BasePortletDataHandler;
+import com.liferay.exportimport.kernel.lar.DataLevel;
 import com.liferay.exportimport.kernel.lar.ExportImportHelper;
 import com.liferay.exportimport.kernel.lar.ExportImportProcessCallbackRegistry;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
@@ -61,7 +62,7 @@ public class PageRatingsPortletDataHandler extends BasePortletDataHandler {
 
 	public static final String NAMESPACE = "ratings";
 
-	public static final String SCHEMA_VERSION = "1.0.0";
+	public static final String SCHEMA_VERSION = "4.0.0";
 
 	@Override
 	public String getSchemaVersion() {
@@ -71,6 +72,7 @@ public class PageRatingsPortletDataHandler extends BasePortletDataHandler {
 	@Activate
 	protected void activate() {
 		setDataAlwaysStaged(true);
+		setDataLevel(DataLevel.PORTLET_INSTANCE);
 		setDeletionSystemEventStagedModelTypes(
 			new StagedModelType(RatingsEntry.class));
 		setExportControls(
@@ -84,7 +86,7 @@ public class PageRatingsPortletDataHandler extends BasePortletDataHandler {
 
 	@Override
 	protected String doExportData(
-			final PortletDataContext portletDataContext, String portletId,
+			PortletDataContext portletDataContext, String portletId,
 			PortletPreferences portletPreferences)
 		throws Exception {
 
@@ -124,11 +126,11 @@ public class PageRatingsPortletDataHandler extends BasePortletDataHandler {
 
 	@Override
 	protected void doPrepareManifestSummary(
-			final PortletDataContext portletDataContext,
+			PortletDataContext portletDataContext,
 			PortletPreferences portletPreferences)
 		throws Exception {
 
-		final ActionableDynamicQuery actionableDynamicQuery =
+		ActionableDynamicQuery actionableDynamicQuery =
 			getRatingsEntryCountActionableDynamicQuery(portletDataContext);
 
 		actionableDynamicQuery.performCount();
@@ -170,7 +172,7 @@ public class PageRatingsPortletDataHandler extends BasePortletDataHandler {
 	}
 
 	protected ActionableDynamicQuery getRatingsEntryActionableDynamicQuery(
-		final PortletDataContext portletDataContext) {
+		PortletDataContext portletDataContext) {
 
 		ActionableDynamicQuery actionableDynamicQuery =
 			_ratingsEntryLocalService.getExportActionableDynamicQuery(

@@ -15,7 +15,7 @@
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import {useModal} from '@clayui/modal';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {fetch, objectToFormData} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useContext, useState} from 'react';
@@ -26,12 +26,13 @@ import {
 	STATUS_ERROR,
 	STATUS_LOGIN,
 	STATUS_REPORT,
-	STATUS_SUCCESS
+	STATUS_SUCCESS,
 } from '../constants.es';
 import FlagsModal from './FlagsModal.es';
 
 const Flags = ({
 	baseData,
+	captchaURI,
 	companyName,
 	disabled = false,
 	forceLogin = false,
@@ -40,13 +41,15 @@ const Flags = ({
 	pathTermsOfUse,
 	reasons,
 	signedIn = false,
-	uri
+	uri,
+	viewMode,
 }) => {
 	const [isSending, setIsSending] = useState(false);
 	const [reportDialogOpen, setReportDialogOpen] = useState(false);
 	const [status, setStatus] = useState(
 		forceLogin ? STATUS_LOGIN : STATUS_REPORT
 	);
+	const [error, setError] = useState(null);
 
 	const [otherReason, setOtherReason] = useState('');
 	const [reporterEmailAddress, setReporterEmailAddress] = useState('');
@@ -69,10 +72,11 @@ const Flags = ({
 	};
 
 	const handleClickClose = () => {
+		setError(false);
 		setReportDialogOpen(false);
 	};
 
-	const handleInputChange = event => {
+	const handleInputChange = (event) => {
 		const target = event.target;
 		const value =
 			target.type === 'checkbox' ? target.checked : target.value.trim();
@@ -91,14 +95,14 @@ const Flags = ({
 
 	const isMounted = useIsMounted();
 
-	const handleSubmitReport = event => {
+	const handleSubmitReport = (event) => {
 		event.preventDefault();
 
 		setIsSending(true);
 
 		const formDataObj = {
 			...baseData,
-			[`${namespace}reason`]: getReason()
+			[`${namespace}reason`]: getReason(),
 		};
 
 		if (!signedIn) {
@@ -108,16 +112,16 @@ const Flags = ({
 		}
 
 		fetch(uri, {
-			body: objectToFormData(formDataObj),
-			method: 'post'
+			body: objectToFormData(formDataObj, new FormData(event.target)),
+			method: 'post',
 		})
-			.then(({status}) => {
+			.then((res) => res.json())
+			.then(({error}) => {
 				if (isMounted()) {
-					if (status === Liferay.STATUS_CODE.OK) {
+					setError(error);
+					setIsSending(false);
+					if (!error) {
 						setStatus(STATUS_SUCCESS);
-					}
-					else {
-						setStatus(STATUS_ERROR);
 					}
 				}
 			})
@@ -129,7 +133,7 @@ const Flags = ({
 	};
 
 	const {observer, onClose} = useModal({
-		onClose: handleClickClose
+		onClose: handleClickClose,
 	});
 
 	return (
@@ -139,7 +143,7 @@ const Flags = ({
 					onlyIcon ? 'lfr-portal-tooltip' : ''
 				}`}
 				data-title={onlyIcon ? message : undefined}
-				disabled={disabled}
+				disabled={!viewMode || disabled}
 				displayType="secondary"
 				monospaced={onlyIcon}
 				onClick={handleClickShow}
@@ -152,13 +156,16 @@ const Flags = ({
 				>
 					<ClayIcon symbol="flag-empty" />
 				</span>
+
 				<span className={onlyIcon ? 'sr-only' : undefined}>
 					{message}
 				</span>
 			</ClayButton>
 			{reportDialogOpen && (
 				<FlagsModal
+					captchaURI={captchaURI}
 					companyName={companyName}
+					error={error}
 					handleClose={onClose}
 					handleInputChange={handleInputChange}
 					handleSubmit={handleSubmitReport}
@@ -176,6 +183,7 @@ const Flags = ({
 };
 Flags.propTypes = {
 	baseData: PropTypes.object.isRequired,
+	captchaURI: PropTypes.string.isRequired,
 	companyName: PropTypes.string.isRequired,
 	disabled: PropTypes.bool,
 	forceLogin: PropTypes.bool,
@@ -184,7 +192,7 @@ Flags.propTypes = {
 	pathTermsOfUse: PropTypes.string.isRequired,
 	reasons: PropTypes.object.isRequired,
 	signedIn: PropTypes.bool,
-	uri: PropTypes.string.isRequired
+	uri: PropTypes.string.isRequired,
 };
 
 export default Flags;

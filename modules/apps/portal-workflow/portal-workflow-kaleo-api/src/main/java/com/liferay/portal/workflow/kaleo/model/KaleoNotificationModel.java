@@ -233,6 +233,20 @@ public interface KaleoNotificationModel
 	public void setKaleoClassPK(long kaleoClassPK);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo notification.
+	 *
+	 * @return the kaleo definition ID of this kaleo notification
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo notification.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo notification
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo notification.
 	 *
 	 * @return the kaleo definition version ID of this kaleo notification
@@ -350,5 +364,8 @@ public interface KaleoNotificationModel
 	 * @param notificationTypes the notification types of this kaleo notification
 	 */
 	public void setNotificationTypes(String notificationTypes);
+
+	@Override
+	public KaleoNotification cloneWithOriginalValues();
 
 }

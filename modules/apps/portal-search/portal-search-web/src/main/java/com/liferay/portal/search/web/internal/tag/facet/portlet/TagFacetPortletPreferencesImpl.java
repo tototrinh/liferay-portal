@@ -14,7 +14,7 @@
 
 package com.liferay.portal.search.web.internal.tag.facet.portlet;
 
-import com.liferay.portal.search.web.internal.util.PortletPreferencesHelper;
+import com.liferay.portal.search.web.internal.helper.PortletPreferencesHelper;
 
 import java.util.Optional;
 
@@ -55,20 +55,6 @@ public class TagFacetPortletPreferencesImpl
 	public String getParameterName() {
 		return _portletPreferencesHelper.getString(
 			TagFacetPortletPreferences.PREFERENCE_KEY_PARAMETER_NAME, "tag");
-	}
-
-	@Override
-	public boolean isDisplayStyleCloud() {
-		String displayStyle = getDisplayStyle();
-
-		return displayStyle.equals("cloud");
-	}
-
-	@Override
-	public boolean isDisplayStyleList() {
-		String displayStyle = getDisplayStyle();
-
-		return displayStyle.equals("list");
 	}
 
 	@Override

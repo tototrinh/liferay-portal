@@ -11,41 +11,41 @@
 
 AUI.add(
 	'liferay-kaleo-forms-admin',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var STEPS_MAP = {
 			DETAILS: 1,
 			FIELDS: 2,
 			FORMS: 4,
-			WORKFLOW: 3
+			WORKFLOW: 3,
 		};
 
 		var KaleoFormsAdmin = A.Component.create({
 			ATTRS: {
 				currentURL: {
-					value: null
+					value: null,
 				},
 
 				form: {
-					value: null
+					value: null,
 				},
 
 				kaleoProcessId: {
-					value: null
+					value: null,
 				},
 
 				portletId: {
-					value: null
+					value: null,
 				},
 
 				saveInPortletSessionURL: {
-					value: null
+					value: null,
 				},
 
 				tabView: {
-					value: null
-				}
+					value: null,
+				},
 			},
 
 			AUGMENTS: [Liferay.PortletBase],
@@ -127,7 +127,7 @@ AUI.add(
 						'translatedLanguages' + Lang.String.capitalize(name)
 					] = translatedLanguages.join();
 
-					translatedLanguages.forEach(item => {
+					translatedLanguages.forEach((item) => {
 						localizedValuesMap[
 							name + item
 						] = inputLocalized.getValue(item);
@@ -146,16 +146,16 @@ AUI.add(
 						instance.ns('name')
 					);
 
-					var sessionMap = A.merge(
-						instance._getInputLocalizedValuesMap(
+					var sessionMap = {
+						...instance._getInputLocalizedValuesMap(
 							descriptionInputLocalized,
 							'description'
 						),
-						instance._getInputLocalizedValuesMap(
+						...instance._getInputLocalizedValuesMap(
 							nameInputLocalized,
 							'name'
-						)
-					);
+						),
+					};
 
 					var ddmStructureId = instance.one('#ddmStructureId').val();
 					var ddmStructureName = instance
@@ -169,13 +169,14 @@ AUI.add(
 						.one('#workflowDefinition')
 						.val();
 
-					return A.merge(sessionMap, {
+					return {
+						...sessionMap,
 						ddmStructureId,
 						ddmStructureName,
 						ddmTemplateId,
 						kaleoTaskFormPairsData,
-						workflowDefinition
-					});
+						workflowDefinition,
+					};
 				},
 
 				_hideSuccessMessage() {
@@ -250,7 +251,7 @@ AUI.add(
 									formsSearchContainer +
 										' .lfr-icon-menu .dropdown-toggle'
 								),
-								item => {
+								(item) => {
 									Liferay.Menu.register(item.get('id'));
 								}
 							);
@@ -326,7 +327,7 @@ AUI.add(
 
 					instance.formWizard = new Liferay.KaleoFormWizard({
 						form: instance.get('form'),
-						tabView: instance.get('tabView')
+						tabView: instance.get('tabView'),
 					});
 
 					instance.bindUI();
@@ -337,7 +338,7 @@ AUI.add(
 					var instance = this;
 
 					A.io.request(instance.get('saveInPortletSessionURL'), {
-						data: instance.ns(data)
+						data: instance.ns(data),
 					});
 				},
 
@@ -384,7 +385,15 @@ AUI.add(
 						instance.prevBtn.show();
 						instance.submitBtn.hide();
 					}
-				}
+				},
+			},
+		});
+
+		const inputElement = document.querySelector('.lfr-input-text');
+
+		inputElement.addEventListener('keydown', (event) => {
+			if (event.keyCode === 13) {
+				event.preventDefault();
 			}
 		});
 
@@ -400,7 +409,7 @@ AUI.add(
 			'liferay-kaleo-forms-components',
 			'liferay-portlet-url',
 			'liferay-store',
-			'node-load'
-		]
+			'node-load',
+		],
 	}
 );

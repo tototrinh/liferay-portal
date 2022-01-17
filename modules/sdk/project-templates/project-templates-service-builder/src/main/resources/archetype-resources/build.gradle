@@ -1,21 +1,7 @@
-#if (${projectType} != "workspace")buildscript {
-	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins", version: "@com.liferay.gradle.plugins.version@"
-	}
+tasks.withType(JavaCompile) {
 
-	repositories {
-		maven {
-			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
-		}
-	}
+	// Generated classes using Jodd library are unable to be read when compiled against JDK 11
+
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
 }
-
-subprojects {
-	apply plugin: "com.liferay.plugin"
-
-	repositories {
-		maven {
-			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
-		}
-	}
-}#end

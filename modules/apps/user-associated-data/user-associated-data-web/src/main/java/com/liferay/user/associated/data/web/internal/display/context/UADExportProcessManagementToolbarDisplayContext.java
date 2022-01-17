@@ -18,7 +18,9 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.BaseManag
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -45,7 +47,7 @@ public class UADExportProcessManagementToolbarDisplayContext
 		HttpServletRequest httpServletRequest,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
-		SearchContainer searchContainer) {
+		SearchContainer<BackgroundTask> searchContainer) {
 
 		super(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse);
@@ -59,58 +61,58 @@ public class UADExportProcessManagementToolbarDisplayContext
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("navigation", (String)null);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setNavigation(
+			(String)null
+		).buildString();
 	}
 
 	@Override
 	public CreationMenu getCreationMenu() {
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			dropdownItem -> {
-				User selectedUser = PortalUtil.getSelectedUser(request);
+				User selectedUser = PortalUtil.getSelectedUser(
+					httpServletRequest);
 
 				dropdownItem.setHref(
 					liferayPortletResponse.createRenderURL(),
-					"mvcRenderCommandName", "/add_uad_export_processes",
-					"backURL", PortalUtil.getCurrentURL(request), "p_u_i_d",
+					"mvcRenderCommandName",
+					"/user_associated_data/add_uad_export_processes", "backURL",
+					PortalUtil.getCurrentURL(httpServletRequest), "p_u_i_d",
 					String.valueOf(selectedUser.getUserId()));
 
 				dropdownItem.setLabel(
-					LanguageUtil.get(request, "add-export-processes"));
+					LanguageUtil.get(
+						httpServletRequest, "add-export-processes"));
 			}
 		).build();
 	}
 
+	@Override
 	public List<LabelItem> getFilterLabelItems() {
-		return new LabelItemList() {
-			{
-				String navigation = getNavigation();
+		String navigation = getNavigation();
 
-				if (!navigation.equals("all")) {
-					add(
-						labelItem -> {
-							PortletURL removeLabelURL = getPortletURL();
+		return LabelItemListBuilder.add(
+			() -> !navigation.equals("all"),
+			labelItem -> {
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						getPortletURL()
+					).setNavigation(
+						(String)null
+					).buildString());
 
-							removeLabelURL.setParameter(
-								"navigation", (String)null);
+				labelItem.setCloseable(true);
 
-							labelItem.putData(
-								"removeLabelURL", removeLabelURL.toString());
+				String label = String.format(
+					"%s: %s", LanguageUtil.get(httpServletRequest, "status"),
+					LanguageUtil.get(httpServletRequest, navigation));
 
-							labelItem.setCloseable(true);
-
-							String label = String.format(
-								"%s: %s", LanguageUtil.get(request, "status"),
-								LanguageUtil.get(request, navigation));
-
-							labelItem.setLabel(label);
-						});
-				}
+				labelItem.setLabel(label);
 			}
-		};
+		).build();
 	}
 
 	@Override
@@ -118,6 +120,7 @@ public class UADExportProcessManagementToolbarDisplayContext
 		return _searchContainer.getTotal();
 	}
 
+	@Override
 	public PortletURL getPortletURL() {
 		try {
 			return PortletURLUtil.clone(_currentURL, _liferayPortletResponse);
@@ -151,6 +154,6 @@ public class UADExportProcessManagementToolbarDisplayContext
 
 	private final PortletURL _currentURL;
 	private final LiferayPortletResponse _liferayPortletResponse;
-	private final SearchContainer _searchContainer;
+	private final SearchContainer<BackgroundTask> _searchContainer;
 
 }

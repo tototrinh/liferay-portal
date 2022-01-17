@@ -306,17 +306,33 @@ public class WorkflowTaskSerDes {
 			map.put("completed", String.valueOf(workflowTask.getCompleted()));
 		}
 
-		map.put(
-			"dateCompletion",
-			liferayToJSONDateFormat.format(workflowTask.getDateCompletion()));
+		if (workflowTask.getDateCompletion() == null) {
+			map.put("dateCompletion", null);
+		}
+		else {
+			map.put(
+				"dateCompletion",
+				liferayToJSONDateFormat.format(
+					workflowTask.getDateCompletion()));
+		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(workflowTask.getDateCreated()));
+		if (workflowTask.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(workflowTask.getDateCreated()));
+		}
 
-		map.put(
-			"dateDue",
-			liferayToJSONDateFormat.format(workflowTask.getDateDue()));
+		if (workflowTask.getDateDue() == null) {
+			map.put("dateDue", null);
+		}
+		else {
+			map.put(
+				"dateDue",
+				liferayToJSONDateFormat.format(workflowTask.getDateDue()));
+		}
 
 		if (workflowTask.getDescription() == null) {
 			map.put("description", null);
@@ -514,10 +530,6 @@ public class WorkflowTaskSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -546,7 +558,7 @@ public class WorkflowTaskSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -572,14 +584,17 @@ public class WorkflowTaskSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

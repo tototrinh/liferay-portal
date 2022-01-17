@@ -57,7 +57,7 @@ definition {
 	}
 
 	macro definePermissionCP {
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
@@ -97,7 +97,7 @@ definition {
 	}
 
 	macro removePermissionCP {
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");
@@ -136,19 +136,20 @@ definition {
 			roleType = "${roleType}");
 	}
 
-	macro setUpOrgRoleLoginUserPG {
+	macro setUpOrgRoleCP {
 		JSONUser.addUser(
 			userEmailAddress = "${userEmailAddress}",
 			userFirstName = "${userFirstName}",
 			userLastName = "${userLastName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Users and Organizations");
 
 		User.editPasswordCP(
+			currentPassword = "${currentPassword}",
 			newPassword = "${newPassword}",
 			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
 			userEmailAddress = "${userEmailAddress}",
@@ -162,7 +163,50 @@ definition {
 			organizationName = "${orgName}",
 			userEmailAddress = "${userEmailAddress}");
 
-		JSONLayout.addPublicLayoutByGroupName(
+		JSONLayout.addPublicLayout(
+			groupName = "${orgName}",
+			layoutName = "${pageName}");
+
+		Navigator.gotoSitePage(
+			pageName = "${pageName}",
+			siteName = "Organization Name");
+
+		JSONRole.addOrganizationRole(roleTitle = "${roleTitle}");
+
+		JSONGroup.assignGroupRoleToUser(
+			groupName = "${orgName}",
+			roleTitle = "${roleTitle}",
+			userEmailAddress = "${userEmailAddress}");
+	}
+
+	macro setUpOrgRoleLoginUserPG {
+		JSONUser.addUser(
+			userEmailAddress = "${userEmailAddress}",
+			userFirstName = "${userFirstName}",
+			userLastName = "${userLastName}",
+			userScreenName = "${userScreenName}");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Users",
+			panel = "Control Panel",
+			portlet = "Users and Organizations");
+
+		User.editPasswordCP(
+			currentPassword = "${currentPassword}",
+			newPassword = "${newPassword}",
+			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
+			userEmailAddress = "${userEmailAddress}",
+			userScreenName = "${userScreenName}");
+
+		JSONOrganization.addOrganization(
+			organizationName = "${orgName}",
+			organizationSite = "true");
+
+		JSONOrganization.assignUserToOrganization(
+			organizationName = "${orgName}",
+			userEmailAddress = "${userEmailAddress}");
+
+		JSONLayout.addPublicLayout(
 			groupName = "${orgName}",
 			layoutName = "${pageName}");
 
@@ -190,11 +234,6 @@ definition {
 	}
 
 	macro setUpRegRoleLoginUserCP {
-		PortalSettings.gotoConfiguration(
-			configurationCategory = "Users",
-			configurationName = "Default User Associations",
-			configurationScope = "Virtual Instance Scope");
-
 		PortalSettings.editConfigurationUsersDefaultUserAssociationsRolesCP(roleTitle = "");
 
 		JSONUser.addUser(
@@ -203,26 +242,16 @@ definition {
 			userLastName = "${userLastName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.editPasswordCP(
-			newPassword = "${newPassword}",
-			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
-			userEmailAddress = "${userEmailAddress}",
-			userScreenName = "${userScreenName}");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "${userEmailAddress}");
 
 		JSONRole.addRegularRole(roleTitle = "${roleTitle}");
 
 		JSONRole.assignRoleToUser(
 			roleTitle = "${roleTitle}",
 			userEmailAddress = "${userEmailAddress}");
-
-		User.logoutAndLoginPG(
-			userLoginEmailAddress = "${userLoginEmailAddress}",
-			userLoginFullName = "${userLoginFullName}");
 	}
 
 	macro setUpRegRoleLoginUserPG {
@@ -241,16 +270,18 @@ definition {
 	}
 
 	macro setUpRegRolePG {
+		JSONUserAPI._disablePasswordChangeRequired();
+
 		JSONLayout.addPublicLayout(
 			groupName = "Guest",
 			layoutName = "${pageName}");
 
 		Navigator.gotoPage(pageName = "${pageName}");
 
-		Portlet.addPG(
-			i = "${i}",
-			pageName = "${pageName}",
-			portletName = "${portletName}");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Guest",
+			layoutName = "${pageName}",
+			widgetName = "${portletName}");
 
 		JSONUser.addUser(
 			userEmailAddress = "${userEmailAddress}",
@@ -258,12 +289,13 @@ definition {
 			userLastName = "${userLastName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Users and Organizations");
 
 		User.editPasswordCP(
+			currentPassword = "${currentPassword}",
 			newPassword = "${newPassword}",
 			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
 			userEmailAddress = "${userEmailAddress}",
@@ -277,70 +309,31 @@ definition {
 	}
 
 	macro setUpSiteMemberRoleLoginUserPG {
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.addCP(
-			userBirthday = "${userBirthday}",
+		JSONUser.addUser(
 			userEmailAddress = "${userEmailAddress}",
-			userEmailAddressVariation = "${userEmailAddressVariation}",
-			userFirstName = "${userFirstName}",
-			userGender = "${userGender}",
-			userLastName = "${userLastName}",
-			userMiddleName = "${userMiddleName}",
-			userScreenName = "${userScreenName}",
-			userScreenNameVariation = "${userScreenNameVariation}");
-
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.editPasswordCP(
-			newPassword = "${newPassword}",
-			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
-			userEmailAddress = "${userEmailAddress}",
-			userScreenName = "${userScreenName}");
-
-		ProductMenu.gotoPortlet(
-			category = "Sites",
-			panel = "Control Panel",
-			portlet = "Sites");
-
-		Site.addBlankCP(siteName = "${siteName}");
-
-		SitePages.openPagesAdmin(siteURLKey = "${siteName}");
-
-		ProductMenu.gotoPortlet(
-			category = "People",
-			panel = "Site Administration",
-			portlet = "Memberships");
-
-		Site.assignUserAsMemberCP(
 			userFirstName = "${userFirstName}",
 			userLastName = "${userLastName}",
-			userMiddleName = "${userMiddleName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "${userEmailAddress}");
 
-		SitePages.addPublicPage(pageName = "${pageName}");
+		JSONGroup.addGroup(groupName = "${siteName}");
 
-		Navigator.gotoSitePage(
-			pageName = "${pageName}",
-			siteName = "${siteName}");
+		JSONGroup.assignUserToGroup(
+			groupName = "${siteName}",
+			userEmailAddress = "${userEmailAddress}");
 
-		Portlet.addPG(
-			i = "${i}",
-			pageName = "${pageName}",
-			portletName = "${portletName}",
-			siteName = "${siteName}",
-			siteURL = "true");
+		JSONLayout.addPublicLayout(
+			groupName = "${siteName}",
+			layoutName = "${pageName}");
+
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "${siteName}",
+			layoutName = "${pageName}",
+			widgetName = "${portletName}");
 
 		User.logoutAndLoginPG(
 			userLoginEmailAddress = "${userLoginEmailAddress}",
@@ -363,12 +356,13 @@ definition {
 			userLastName = "${userLastName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Users and Organizations");
 
 		User.editPasswordCP(
+			currentPassword = "${currentPassword}",
 			newPassword = "${newPassword}",
 			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
 			userEmailAddress = "${userEmailAddress}",
@@ -414,93 +408,41 @@ definition {
 	}
 
 	macro setUpSiteRoleLoginUserPG {
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.addCP(
-			userBirthday = "${userBirthday}",
+		JSONUser.addUser(
 			userEmailAddress = "${userEmailAddress}",
-			userEmailAddressVariation = "${userEmailAddressVariation}",
-			userFirstName = "${userFirstName}",
-			userGender = "${userGender}",
-			userLastName = "${userLastName}",
-			userMiddleName = "${userMiddleName}",
-			userScreenName = "${userScreenName}",
-			userScreenNameVariation = "${userScreenNameVariation}");
-
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.editPasswordCP(
-			newPassword = "${newPassword}",
-			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
-			userEmailAddress = "${userEmailAddress}",
-			userScreenName = "${userScreenName}");
-
-		ProductMenu.gotoPortlet(
-			category = "Sites",
-			panel = "Control Panel",
-			portlet = "Sites");
-
-		Site.addBlankCP(siteName = "${siteName}");
-
-		ProductMenu.gotoPortlet(
-			category = "People",
-			panel = "Site Administration",
-			portlet = "Memberships");
-
-		Site.assignUserAsMemberCP(
 			userFirstName = "${userFirstName}",
 			userLastName = "${userLastName}",
-			userMiddleName = "${userMiddleName}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "${userEmailAddress}");
 
-		SitePages.addPublicPage(pageName = "${pageName}");
+		JSONGroup.addGroup(groupName = "${siteName}");
 
-		Navigator.gotoSitePage(
-			pageName = "${pageName}",
-			siteName = "${siteName}");
+		JSONGroup.assignUserToGroup(
+			groupName = "${siteName}",
+			userEmailAddress = "${userEmailAddress}");
 
-		Portlet.addPG(
-			i = "${i}",
-			pageName = "${pageName}",
-			portletName = "${portletName}",
-			siteName = "${siteName}",
-			siteURL = "true");
+		JSONLayout.addPublicLayout(
+			groupName = "${siteName}",
+			layoutName = "${pageName}");
 
-		ProductMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Roles");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "${siteName}",
+			layoutName = "${pageName}",
+			widgetName = "${portletName}");
 
-		RoleNavigator.gotoRoleType(roleType = "${roleType}");
-
-		Role.add(
+		JSONRole.addSiteRole(
 			roleDescription = "${roleDescription}",
 			roleKey = "${roleKey}",
 			roleTitle = "${roleTitle}");
 
-		SitePages.openPagesAdmin(siteURLKey = "${siteName}");
-
-		ProductMenu.gotoPortlet(
-			category = "People",
-			panel = "Site Administration",
-			portlet = "Memberships");
-
-		Pause(locator1 = "5000");
-
-		Site.assignSiteRoleCP(
-			resourceName = "${userFirstName} ${userLastName}",
-			roleTitle = "${roleTitle}");
+		JSONGroup.assignGroupRoleToUser(
+			groupName = "${siteName}",
+			roleTitle = "${roleTitle}",
+			userEmailAddress = "${userEmailAddress}");
 
 		User.logoutAndLoginPG(
 			userLoginEmailAddress = "${userLoginEmailAddress}",
@@ -508,7 +450,7 @@ definition {
 	}
 
 	macro setUpSiteTeamRoleLoginUserPG {
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Users and Organizations");
@@ -524,18 +466,19 @@ definition {
 			userScreenName = "${userScreenName}",
 			userScreenNameVariation = "${userScreenNameVariation}");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Users and Organizations");
 
 		User.editPasswordCP(
+			currentPassword = "${currentPassword}",
 			newPassword = "${newPassword}",
 			syntaxCheckingEnabled = "${syntaxCheckingEnabled}",
 			userEmailAddress = "${userEmailAddress}",
 			userScreenName = "${userScreenName}");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Sites",
 			panel = "Control Panel",
 			portlet = "Sites");
@@ -544,7 +487,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "People",
-			panel = "Site Administration",
 			portlet = "Memberships");
 
 		Site.assignUserAsMemberCP(
@@ -557,7 +499,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "People",
-			panel = "Site Administration",
 			portlet = "Teams");
 
 		Team.addCP(
@@ -574,7 +515,6 @@ definition {
 
 		ProductMenu.gotoPortlet(
 			category = "Site Builder",
-			panel = "Site Administration",
 			portlet = "Pages");
 
 		SitePages.addPublicPage(pageName = "${pageName}");
@@ -590,7 +530,7 @@ definition {
 			siteName = "${siteName}",
 			siteURL = "true");
 
-		ProductMenu.gotoPortlet(
+		ApplicationsMenu.gotoPortlet(
 			category = "Users",
 			panel = "Control Panel",
 			portlet = "Roles");

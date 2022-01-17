@@ -22,7 +22,9 @@ patch {
 		autoClean = false
 	}
 
+	fileNames "org/apache/felix/cm/file/ConfigurationHandler.java"
 	fileNames "org/apache/felix/cm/impl/ConfigurationImpl.java"
+	fileNames "org/apache/felix/cm/impl/ConfigurationManager.java"
 	fileNames "org/apache/felix/cm/impl/persistence/PersistenceManagerTracker.java"
 
 	originalLibModuleName = "org.apache.felix.configadmin"

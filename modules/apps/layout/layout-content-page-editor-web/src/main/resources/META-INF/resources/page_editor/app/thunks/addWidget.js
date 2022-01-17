@@ -12,24 +12,32 @@
  * details.
  */
 
-import addFragmentEntryLink from '../actions/addFragmentEntryLink';
+import addFragmentEntryLinks from '../actions/addFragmentEntryLinks';
 import WidgetService from '../services/WidgetService';
 
-export default function addWidget({parentItemId, portletId, position, store}) {
-	return dispatch => {
+export default function addWidget({
+	parentItemId,
+	portletId,
+	portletItemId,
+	position,
+	store,
+}) {
+	return (dispatch) => {
 		const {segmentsExperienceId} = store;
 
 		WidgetService.addPortlet({
 			onNetworkStatus: dispatch,
 			parentItemId,
 			portletId,
+			portletItemId,
 			position,
-			segmentsExperienceId
-		}).then(({fragmentEntryLink, layoutData}) => {
+			segmentsExperienceId,
+		}).then(({addedItemId, fragmentEntryLink, layoutData}) => {
 			dispatch(
-				addFragmentEntryLink({
-					fragmentEntryLink,
-					layoutData
+				addFragmentEntryLinks({
+					addedItemId,
+					fragmentEntryLinks: [fragmentEntryLink],
+					layoutData,
 				})
 			);
 		});

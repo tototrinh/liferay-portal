@@ -17,6 +17,7 @@ package com.liferay.portal.search.tuning.rankings.web.internal.index;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.document.Field;
 import com.liferay.portal.search.internal.document.DocumentBuilderFactoryImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,12 +28,19 @@ import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  * @author André de Oliveira
  */
 public class RankingToDocumentTranslatorTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -44,11 +52,10 @@ public class RankingToDocumentTranslatorTest {
 	public void testBlocks() {
 		Ranking.RankingBuilder rankingBuilder = new Ranking.RankingBuilder();
 
-		rankingBuilder.blocks(Arrays.asList("142857", "285714", "428571"));
+		rankingBuilder.hiddenDocumentIds(
+			Arrays.asList("142857", "285714", "428571"));
 
-		Ranking ranking1 = rankingBuilder.build();
-
-		Document document = translate(ranking1);
+		Document document = translate(rankingBuilder.build());
 
 		Map<String, Field> fieldsMap = document.getFields();
 
@@ -59,14 +66,15 @@ public class RankingToDocumentTranslatorTest {
 			document, null);
 
 		Assert.assertEquals(
-			"[142857, 285714, 428571]", String.valueOf(ranking2.getBlockIds()));
+			"[142857, 285714, 428571]",
+			String.valueOf(ranking2.getHiddenDocumentIds()));
 	}
 
 	@Test
 	public void testDefaults() {
-		Ranking ranking1 = new Ranking.RankingBuilder().build();
+		Ranking.RankingBuilder rankingBuilder = new Ranking.RankingBuilder();
 
-		Document document = translate(ranking1);
+		Document document = translate(rankingBuilder.build());
 
 		Map<String, Field> fieldsMap = document.getFields();
 
@@ -76,7 +84,8 @@ public class RankingToDocumentTranslatorTest {
 			document, null);
 
 		Assert.assertEquals("[]", String.valueOf(ranking2.getAliases()));
-		Assert.assertEquals("[]", String.valueOf(ranking2.getBlockIds()));
+		Assert.assertEquals(
+			"[]", String.valueOf(ranking2.getHiddenDocumentIds()));
 		Assert.assertEquals("[]", String.valueOf(ranking2.getPins()));
 		Assert.assertEquals("[]", String.valueOf(ranking2.getQueryStrings()));
 	}
@@ -88,9 +97,7 @@ public class RankingToDocumentTranslatorTest {
 		rankingBuilder.pins(
 			Collections.singletonList(new Ranking.Pin(142857, "uid")));
 
-		Ranking ranking1 = rankingBuilder.build();
-
-		Document document = translate(ranking1);
+		Document document = translate(rankingBuilder.build());
 
 		Map<String, Field> fieldsMap = document.getFields();
 
@@ -109,9 +116,7 @@ public class RankingToDocumentTranslatorTest {
 
 		rankingBuilder.aliases(Arrays.asList("142857", "285714", "428571"));
 
-		Ranking ranking1 = rankingBuilder.build();
-
-		Document document = translate(ranking1);
+		Document document = translate(rankingBuilder.build());
 
 		Map<String, Field> fieldsMap = document.getFields();
 
@@ -153,7 +158,7 @@ public class RankingToDocumentTranslatorTest {
 
 		return String.valueOf(
 			stream.map(
-				pin -> pin.getPosition() + "=" + pin.getId()
+				pin -> pin.getPosition() + "=" + pin.getDocumentId()
 			).collect(
 				Collectors.toList()
 			));

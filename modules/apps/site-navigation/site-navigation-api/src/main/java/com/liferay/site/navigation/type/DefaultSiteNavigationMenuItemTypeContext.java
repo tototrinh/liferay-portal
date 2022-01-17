@@ -31,14 +31,17 @@ public class DefaultSiteNavigationMenuItemTypeContext
 	}
 
 	public DefaultSiteNavigationMenuItemTypeContext(Group group) {
-		_company = CompanyLocalServiceUtil.fetchCompany(group.getCompanyId());
 		_group = group;
+
+		_company = CompanyLocalServiceUtil.fetchCompany(group.getCompanyId());
 	}
 
+	@Override
 	public Company getCompany() {
 		return _company;
 	}
 
+	@Override
 	public Optional<Group> getGroupOptional() {
 		return Optional.of(_group);
 	}

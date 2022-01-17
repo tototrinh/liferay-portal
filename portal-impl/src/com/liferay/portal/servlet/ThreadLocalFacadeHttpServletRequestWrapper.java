@@ -35,8 +35,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class ThreadLocalFacadeHttpServletRequestWrapper
 	extends PersistentHttpServletRequestWrapper implements Closeable {
 
@@ -49,8 +51,6 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 		_servletRequestWrapper = servletRequestWrapper;
 
 		_nextHttpServletRequestThreadLocal.set(httpServletRequest);
-
-		_locales = new ArrayList<>();
 
 		Enumeration<Locale> enumeration = httpServletRequest.getLocales();
 
@@ -143,10 +143,10 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 	}
 
 	@Override
-	public void setAttribute(String name, Object o) {
+	public void setAttribute(String name, Object object) {
 		ServletRequest servletRequest = getRequest();
 
-		servletRequest.setAttribute(name, o);
+		servletRequest.setAttribute(name, object);
 	}
 
 	@Override
@@ -161,7 +161,7 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 				"._nextHttpServletRequestThreadLocal",
 			null, Function.identity(), true);
 
-	private final List<Locale> _locales;
+	private final List<Locale> _locales = new ArrayList<>();
 	private final ServletRequestWrapper _servletRequestWrapper;
 
 }

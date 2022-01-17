@@ -14,16 +14,16 @@
 
 AUI.add(
 	'liferay-alloy-editor-source',
-	A => {
+	(A) => {
 		var CSS_SHOW_SOURCE = 'show-source';
 
 		var MAP_TOGGLE_STATE = {
 			false: {
-				iconCssClass: 'code'
+				iconCssClass: 'code',
 			},
 			true: {
-				iconCssClass: 'text-editor'
-			}
+				iconCssClass: 'text-editor',
+			},
 		};
 
 		var STR_HOST = 'host';
@@ -38,9 +38,9 @@ AUI.add(
 					value: {
 						cancel: Liferay.Language.get('cancel'),
 						done: Liferay.Language.get('done'),
-						editContent: Liferay.Language.get('edit-content')
-					}
-				}
+						editContent: Liferay.Language.get('edit-content'),
+					},
+				},
 			},
 
 			EXTENDS: A.Plugin.Base,
@@ -74,9 +74,9 @@ AUI.add(
 									'data-title',
 									nextTheme.tooltip
 								);
-							}
+							},
 						},
-						value: host.getHTML()
+						value: host.getHTML(),
 					}).render();
 
 					instance._toggleEditorModeUI();
@@ -87,11 +87,14 @@ AUI.add(
 				_getEditorStateLexiconIcon() {
 					var instance = this;
 
+					var icon;
+
 					var currentState = MAP_TOGGLE_STATE[instance._isVisible];
 
-					var icon = currentState.icon;
-
-					if (!icon) {
+					if (currentState.icon) {
+						icon = currentState.icon.cloneNode(true);
+					}
+					else {
 						icon = Liferay.Util.getLexiconIcon(
 							currentState.iconCssClass
 						);
@@ -141,18 +144,18 @@ AUI.add(
 						Liferay.Util.openWindow(
 							{
 								dialog: {
-									constrain: true,
-									cssClass:
+									'constrain': true,
+									'cssClass':
 										'lfr-fulscreen-source-editor-dialog modal-full-screen',
-									modal: true,
+									'modal': true,
 									'toolbars.footer': [
 										{
 											label: strings.cancel,
 											on: {
 												click() {
 													fullScreenDialog.hide();
-												}
-											}
+												},
+											},
 										},
 										{
 											cssClass: 'btn-primary',
@@ -163,23 +166,23 @@ AUI.add(
 													instance._switchMode({
 														content: fullScreenEditor.get(
 															'value'
-														)
+														),
 													});
-												}
-											}
-										}
-									]
+												},
+											},
+										},
+									],
 								},
-								title: strings.editContent
+								title: strings.editContent,
 							},
-							dialog => {
+							(dialog) => {
 								fullScreenDialog = dialog;
 
 								Liferay.Util.getTop()
 									.AUI()
 									.use(
 										'liferay-fullscreen-source-editor',
-										A => {
+										(A) => {
 											fullScreenEditor = new A.LiferayFullScreenSourceEditor(
 												{
 													boundingBox: dialog
@@ -193,7 +196,7 @@ AUI.add(
 														.dataProcessor,
 													previewCssClass:
 														'alloy-editor alloy-editor-placeholder',
-													value: host.getHTML()
+													value: host.getHTML(),
 												}
 											).render();
 
@@ -213,7 +216,7 @@ AUI.add(
 					instance._isFocused = false;
 
 					instance._toggleSourceSwitchFn({
-						hidden: true
+						hidden: true,
 					});
 				},
 
@@ -223,7 +226,7 @@ AUI.add(
 					instance._isFocused = true;
 
 					instance._toggleSourceSwitchFn({
-						hidden: false
+						hidden: false,
 					});
 				},
 
@@ -316,7 +319,7 @@ AUI.add(
 					);
 
 					instance._toggleSourceSwitchFn({
-						hidden: true
+						hidden: true,
 					});
 				},
 
@@ -424,10 +427,14 @@ AUI.add(
 							instance._getHTML,
 							instance
 						),
-						instance.doAfter('setHTML', instance._setHTML, instance)
+						instance.doAfter(
+							'setHTML',
+							instance._setHTML,
+							instance
+						),
 					];
-				}
-			}
+				},
+			},
 		});
 
 		A.Plugin.LiferayAlloyEditorSource = LiferayAlloyEditorSource;
@@ -438,7 +445,7 @@ AUI.add(
 			'aui-debounce',
 			'liferay-fullscreen-source-editor',
 			'liferay-source-editor',
-			'plugin'
-		]
+			'plugin',
+		],
 	}
 );

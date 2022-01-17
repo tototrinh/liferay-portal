@@ -203,6 +203,20 @@ public interface KaleoConditionModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo condition.
+	 *
+	 * @return the kaleo definition ID of this kaleo condition
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo condition.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo condition
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo condition.
 	 *
 	 * @return the kaleo definition version ID of this kaleo condition
@@ -274,5 +288,8 @@ public interface KaleoConditionModel
 	 * @param scriptRequiredContexts the script required contexts of this kaleo condition
 	 */
 	public void setScriptRequiredContexts(String scriptRequiredContexts);
+
+	@Override
+	public KaleoCondition cloneWithOriginalValues();
 
 }

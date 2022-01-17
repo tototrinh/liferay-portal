@@ -57,7 +57,7 @@ public class NestedPortletsDisplayContext {
 	/**
 	 * @see com.liferay.portal.util.PortalImpl#getOriginalServletRequest
 	 */
-	public HttpServletRequest getLastForwardRequest() {
+	public HttpServletRequest getLastForwardHttpServletRequest() {
 		HttpServletRequest currentHttpServletRequest = _httpServletRequest;
 		HttpServletRequestWrapper currentRequestWrapper = null;
 		HttpServletRequest originalHttpServletRequest = null;
@@ -141,7 +141,7 @@ public class NestedPortletsDisplayContext {
 		layoutTemplates = PluginUtil.restrictPlugins(
 			layoutTemplates, themeDisplay.getUser());
 
-		final List<String> unsupportedLayoutTemplateIds =
+		List<String> unsupportedLayoutTemplateIds =
 			getUnsupportedLayoutTemplateIds();
 
 		return ListUtil.filter(

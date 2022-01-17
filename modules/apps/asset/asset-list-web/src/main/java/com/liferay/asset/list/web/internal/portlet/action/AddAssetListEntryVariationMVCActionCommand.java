@@ -17,7 +17,7 @@ package com.liferay.asset.list.web.internal.portlet.action;
 import com.liferay.asset.list.constants.AssetListEntryTypeConstants;
 import com.liferay.asset.list.constants.AssetListPortletKeys;
 import com.liferay.asset.list.service.AssetListEntryService;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -30,7 +30,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -68,12 +67,12 @@ public class AddAssetListEntryVariationMVCActionCommand
 			ThemeDisplay themeDisplay =
 				(ThemeDisplay)actionRequest.getAttribute(WebKeys.THEME_DISPLAY);
 
-			UnicodeProperties properties = new UnicodeProperties(true);
+			UnicodeProperties unicodeProperties = new UnicodeProperties(true);
 
-			properties.setProperty(
+			unicodeProperties.setProperty(
 				"groupIds", String.valueOf(themeDisplay.getScopeGroupId()));
 
-			typeSettings = properties.toString();
+			typeSettings = unicodeProperties.toString();
 		}
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -91,18 +90,15 @@ public class AddAssetListEntryVariationMVCActionCommand
 		ActionResponse actionResponse, long assetListEntryId,
 		long segmentsEntryId) {
 
-		LiferayPortletResponse liferayPortletResponse =
-			_portal.getLiferayPortletResponse(actionResponse);
-
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/edit_asset_list_entry.jsp");
-		portletURL.setParameter(
-			"assetListEntryId", String.valueOf(assetListEntryId));
-		portletURL.setParameter(
-			"segmentsEntryId", String.valueOf(segmentsEntryId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_portal.getLiferayPortletResponse(actionResponse)
+		).setMVCPath(
+			"/edit_asset_list_entry.jsp"
+		).setParameter(
+			"assetListEntryId", assetListEntryId
+		).setParameter(
+			"segmentsEntryId", segmentsEntryId
+		).buildString();
 	}
 
 	@Reference

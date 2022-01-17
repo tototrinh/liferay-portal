@@ -15,7 +15,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Modal#HEADER",
-			value1 = "Add Component");
+			value1 = "Add Fragment");
 
 		PortletEntry.inputName(name = "${fragmentName}");
 
@@ -26,6 +26,10 @@ definition {
 		LexiconEntry.gotoAdd();
 
 		IFrame.selectConfigurationFrame();
+
+		Pause(locator1 = "3000");
+
+		AssertVisible(locator1 = "ItemSelector#SELECT_FILE_UPLOAD_IMAGE");
 
 		UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
 			locator1 = "TextInput#FILE",
@@ -46,16 +50,44 @@ definition {
 		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Export");
 	}
 
+	macro exportFragment {
+		FragmentsAdminNavigator.gotoCollection(collectionName = "${collectionName}");
+
+		FragmentsAdminNavigator.gotoEntryEllipsisItem(
+			entry = "${fragmentName}",
+			item = "Export");
+	}
+
+	macro exportMultipleCollections {
+		for (var collectionName : list "${collectionNameList}") {
+			Check(
+				key_tableEntry = "${collectionName}",
+				locator1 = "LexiconTable#TABLE_ENTRY_CHECKBOX");
+
+			Pause(locator1 = "3000");
+		}
+
+		SelectFrameTop();
+
+		Button.click(button = "Export");
+
+		Alert.viewSuccessMessage();
+	}
+
 	macro importCollectionFromDependenciesFolder {
 		FragmentsAdminNavigator.gotoImportCollection();
 
-		UploadCommonFile(
-			locator1 = "TextInput#FILE",
-			value1 = "${collectionZipFile}");
+		UploadDependencyFile.uploadArchiveFile(fileName = "${collectionZipFile}");
 
-		Button.click(button = "Import");
+		SelectFrameTop();
+
+		Button.clickImport();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
 
 		Alert.viewSuccessMessage();
+
+		SelectFrameTop();
 
 		IFrame.closeFrame();
 	}
@@ -69,9 +101,41 @@ definition {
 			locator1 = "TextInput#FILE",
 			value1 = "${collectionsZipFileName}");
 
-		Button.click(button = "Import");
+		SelectFrameTop();
+
+		Button.clickImport();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
 
 		Alert.viewSuccessMessage();
+
+		SelectFrameTop();
+
+		IFrame.closeFrame();
+	}
+
+	macro importFragmentFromTempFolder {
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Import");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		var entriesZipFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "entries-*.zip");
+
+		UploadTempFile(
+			locator1 = "TextInput#FILE",
+			value1 = "${entriesZipFileName}");
+
+		SelectFrameTop();
+
+		Button.clickImport();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Alert.viewSuccessMessage();
+
+		SelectFrameTop();
 
 		IFrame.closeFrame();
 	}
@@ -81,7 +145,7 @@ definition {
 	}
 
 	macro selectCollection {
-		SelectFrame(locator1 = "IFrame#DIALOG");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		LexiconCard.clickCard(card = "${collectionName}");
 	}
@@ -98,6 +162,13 @@ definition {
 		LexiconCard.viewCardLabel(
 			card = "${entry}",
 			cardLabel = "${workflowStatus}");
+	}
+
+	macro viewSiteUsages {
+		LexiconTable.viewTableEntryInfo(
+			columnName = "usages",
+			tableEntry = "${siteName}",
+			tableEntryInfo = "${usages}");
 	}
 
 }

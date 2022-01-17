@@ -37,17 +37,17 @@ public class DDLRecordSetCacheModel
 	implements CacheModel<DDLRecordSet>, Externalizable, MVCCModel {
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof DDLRecordSetCacheModel)) {
+		if (!(object instanceof DDLRecordSetCacheModel)) {
 			return false;
 		}
 
 		DDLRecordSetCacheModel ddlRecordSetCacheModel =
-			(DDLRecordSetCacheModel)obj;
+			(DDLRecordSetCacheModel)object;
 
 		if ((recordSetId == ddlRecordSetCacheModel.recordSetId) &&
 			(mvccVersion == ddlRecordSetCacheModel.mvccVersion)) {
@@ -77,10 +77,12 @@ public class DDLRecordSetCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(41);
+		StringBundler sb = new StringBundler(43);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
 		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", recordSetId=");
@@ -129,6 +131,7 @@ public class DDLRecordSetCacheModel
 		DDLRecordSetImpl ddlRecordSetImpl = new DDLRecordSetImpl();
 
 		ddlRecordSetImpl.setMvccVersion(mvccVersion);
+		ddlRecordSetImpl.setCtCollectionId(ctCollectionId);
 
 		if (uuid == null) {
 			ddlRecordSetImpl.setUuid("");
@@ -231,6 +234,8 @@ public class DDLRecordSetCacheModel
 		throws ClassNotFoundException, IOException {
 
 		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		recordSetId = objectInput.readLong();
@@ -256,7 +261,7 @@ public class DDLRecordSetCacheModel
 		minDisplayRows = objectInput.readInt();
 
 		scope = objectInput.readInt();
-		settings = objectInput.readUTF();
+		settings = (String)objectInput.readObject();
 		lastPublishDate = objectInput.readLong();
 
 		_ddmFormValues =
@@ -267,6 +272,8 @@ public class DDLRecordSetCacheModel
 	@Override
 	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
 
 		if (uuid == null) {
 			objectOutput.writeUTF("");
@@ -337,10 +344,10 @@ public class DDLRecordSetCacheModel
 		objectOutput.writeInt(scope);
 
 		if (settings == null) {
-			objectOutput.writeUTF("");
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(settings);
+			objectOutput.writeObject(settings);
 		}
 
 		objectOutput.writeLong(lastPublishDate);
@@ -349,6 +356,7 @@ public class DDLRecordSetCacheModel
 	}
 
 	public long mvccVersion;
+	public long ctCollectionId;
 	public String uuid;
 	public long recordSetId;
 	public long groupId;

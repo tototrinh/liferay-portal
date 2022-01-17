@@ -38,8 +38,6 @@ import com.liferay.portal.kernel.nio.intraband.proxy.annotation.Proxy;
 import com.liferay.portal.kernel.nio.intraband.rpc.RPCResponse;
 import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
-import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
@@ -52,8 +50,11 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.test.aspects.ReflectionUtilAdvice;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.AdviseWith;
-import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.FileImpl;
 import com.liferay.portal.util.PropsValues;
 
@@ -89,7 +90,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -127,7 +127,7 @@ public class IntrabandProxyUtilTest {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
-			AspectJNewEnvTestRule.INSTANCE, CodeCoverageAssertor.INSTANCE);
+			CodeCoverageAssertor.INSTANCE, LiferayUnitTestRule.INSTANCE);
 
 	@Before
 	public void setUp() {
@@ -390,27 +390,26 @@ public class IntrabandProxyUtilTest {
 
 		Object stubObject = null;
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					stubClass.getName(), Level.INFO)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				stubClass.getName(), Level.INFO)) {
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
 			stubObject = constructor.newInstance(
 				testId, registrationReference,
 				WarnLogExceptionHandler.INSTANCE);
 
-			Assert.assertEquals(logRecords.toString(), 2, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 2, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
-
-			Assert.assertEquals(
-				stubClass.getName() + " in <clinit>", logRecord.getMessage());
-
-			logRecord = logRecords.get(1);
+			LogEntry logEntry = logEntries.get(0);
 
 			Assert.assertEquals(
-				stubClass.getName() + " in <init>", logRecord.getMessage());
+				stubClass.getName() + " in <clinit>", logEntry.getMessage());
+
+			logEntry = logEntries.get(1);
+
+			Assert.assertEquals(
+				stubClass.getName() + " in <init>", logEntry.getMessage());
 		}
 
 		Assert.assertSame(
@@ -498,20 +497,19 @@ public class IntrabandProxyUtilTest {
 
 			});
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					stubClass.getName(), Level.INFO)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				stubClass.getName(), Level.INFO)) {
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
 			for (Method copiedMethod : copiedMethods) {
 				ReflectionTestUtil.invoke(
 					stubObject, copiedMethod.getName(), new Class<?>[0]);
 
-				LogRecord logRecord = logRecords.get(logRecords.size() - 1);
+				LogEntry logEntry = logEntries.get(logEntries.size() - 1);
 
 				Assert.assertEquals(
-					copiedMethod.getName(), logRecord.getMessage());
+					copiedMethod.getName(), logEntry.getMessage());
 			}
 		}
 	}
@@ -824,10 +822,9 @@ public class IntrabandProxyUtilTest {
 
 		serializer.writeInt(1);
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					IntrabandProxyUtil.TemplateSkeleton.class.getName(),
-					Level.SEVERE)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				IntrabandProxyUtil.TemplateSkeleton.class.getName(),
+				Level.SEVERE)) {
 
 			testTemplateSkeleton.dispatch(
 				mockRegistrationReference,
@@ -835,15 +832,15 @@ public class IntrabandProxyUtilTest {
 					SystemDataType.PROXY.getValue(), new byte[0]),
 				new Deserializer(serializer.toByteBuffer()));
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals("Unable to dispatch", logRecord.getMessage());
+			Assert.assertEquals("Unable to dispatch", logEntry.getMessage());
 
-			Throwable throwable = logRecord.getThrown();
+			Throwable throwable = logEntry.getThrowable();
 
 			Assert.assertSame(
 				IllegalArgumentException.class, throwable.getClass());
@@ -958,9 +955,8 @@ public class IntrabandProxyUtilTest {
 				templateStub, "_syncSend", new Class<?>[] {Serializer.class},
 				new Serializer()));
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					WarnLogExceptionHandler.class.getName(), Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				WarnLogExceptionHandler.class.getName(), Level.WARNING)) {
 
 			String message = "RPC failure";
 
@@ -971,17 +967,17 @@ public class IntrabandProxyUtilTest {
 					templateStub, "_syncSend",
 					new Class<?>[] {Serializer.class}, new Serializer()));
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Throwable throwable = logRecord.getThrown();
+			Throwable throwable = logEntry.getThrowable();
 
 			Assert.assertEquals(message, throwable.getMessage());
 
-			logRecords.clear();
+			logEntries.clear();
 
 			rpcResponseReference.set(new RPCResponse((Serializable)null));
 
@@ -990,7 +986,7 @@ public class IntrabandProxyUtilTest {
 					templateStub, "_syncSend",
 					new Class<?>[] {Serializer.class}, new Serializer()));
 
-			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
+			Assert.assertTrue(logEntries.toString(), logEntries.isEmpty());
 
 			rpcResponseReference.set(null);
 
@@ -1001,7 +997,7 @@ public class IntrabandProxyUtilTest {
 				ReflectionTestUtil.invoke(
 					templateStub, "_syncSend",
 					new Class<?>[] {Serializer.class}, new Serializer()));
-			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
+			Assert.assertTrue(logEntries.toString(), logEntries.isEmpty());
 		}
 	}
 
@@ -1203,13 +1199,13 @@ public class IntrabandProxyUtilTest {
 	}
 
 	private void _assertLdcInsnNode(
-		AbstractInsnNode abstractInsnNode, int opcode, Object obj) {
+		AbstractInsnNode abstractInsnNode, int opcode, Object object) {
 
 		Assert.assertEquals(opcode, abstractInsnNode.getOpcode());
 
 		LdcInsnNode ldcInsnNode = (LdcInsnNode)abstractInsnNode;
 
-		Assert.assertEquals(obj, ldcInsnNode.cst);
+		Assert.assertEquals(object, ldcInsnNode.cst);
 	}
 
 	private void _assertMethodInsnNode(
@@ -1283,13 +1279,9 @@ public class IntrabandProxyUtilTest {
 		for (int i = 0; i < proxyMethodSignatures.length; i++) {
 			Method proxyMethod = proxyMethods.get(i);
 
-			String name = proxyMethod.getName();
-
-			proxyMethodSignatures[i] = name.concat(
-				StringPool.DASH
-			).concat(
-				Type.getMethodDescriptor(proxyMethod)
-			);
+			proxyMethodSignatures[i] = StringBundler.concat(
+				proxyMethod.getName(), StringPool.DASH,
+				Type.getMethodDescriptor(proxyMethod));
 		}
 
 		return proxyMethodSignatures;
@@ -1662,25 +1654,24 @@ public class IntrabandProxyUtilTest {
 			serializer.writeInt(i);
 
 			if (i == proxyMethods.size()) {
-				try (CaptureHandler captureHandler =
-						JDKLoggerTestUtil.configureJDKLogger(
-							skeletonClass.getName(), Level.SEVERE)) {
+				try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+						skeletonClass.getName(), Level.SEVERE)) {
 
 					intrabandProxySkeleton.dispatch(
 						mockRegistrationReference, datagram,
 						new Deserializer(serializer.toByteBuffer()));
 
-					List<LogRecord> logRecords = captureHandler.getLogRecords();
+					List<LogEntry> logEntries = logCapture.getLogEntries();
 
 					Assert.assertEquals(
-						logRecords.toString(), 1, logRecords.size());
+						logEntries.toString(), 1, logEntries.size());
 
-					LogRecord logRecord = logRecords.get(0);
+					LogEntry logEntry = logEntries.get(0);
 
 					Assert.assertEquals(
-						"Unable to dispatch", logRecord.getMessage());
+						"Unable to dispatch", logEntry.getMessage());
 
-					Throwable throwable = logRecord.getThrown();
+					Throwable throwable = logEntry.getThrowable();
 
 					Assert.assertSame(
 						IllegalArgumentException.class, throwable.getClass());
@@ -1758,7 +1749,7 @@ public class IntrabandProxyUtilTest {
 			_buildProxyMethodSignatures(clazz), proxyMethodSignatures);
 
 		StringBundler sb = new StringBundler(
-			proxyMethodSignatures.length * 4 + 1);
+			(proxyMethodSignatures.length * 4) + 1);
 
 		sb.append(StringPool.OPEN_CURLY_BRACE);
 
@@ -2028,25 +2019,19 @@ public class IntrabandProxyUtilTest {
 			level = Level.INFO;
 		}
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					IntrabandProxyUtil.class.getName(), level)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				IntrabandProxyUtil.class.getName(), level)) {
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
 			IntrabandProxyUtil.toClass(classNode, classLoader);
 
 			if (proxyClassesDumpEnabled) {
-				StringBundler sb = new StringBundler(6);
-
-				sb.append(SystemProperties.get(SystemProperties.TMP_DIR));
-				sb.append(StringPool.SLASH);
-				sb.append(PropsValues.INTRABAND_PROXY_DUMP_CLASSES_DIR);
-				sb.append(StringPool.SLASH);
-				sb.append(classNode.name);
-				sb.append(".class");
-
-				String filePath = sb.toString();
+				String filePath = StringBundler.concat(
+					SystemProperties.get(SystemProperties.TMP_DIR),
+					StringPool.SLASH,
+					PropsValues.INTRABAND_PROXY_DUMP_CLASSES_DIR,
+					StringPool.SLASH, classNode.name, ".class");
 
 				File classFile = new File(filePath);
 
@@ -2066,18 +2051,18 @@ public class IntrabandProxyUtilTest {
 
 				if (logEnabled) {
 					Assert.assertEquals(
-						logRecords.toString(), 1, logRecords.size());
+						logEntries.toString(), 1, logEntries.size());
 
-					LogRecord logRecord = logRecords.get(0);
+					LogEntry logEntry = logEntries.get(0);
 
 					Assert.assertEquals(
-						logRecord.getMessage(),
+						logEntry.getMessage(),
 						"Dumpped class ".concat(filePath));
 				}
 			}
 
 			if (!proxyClassesDumpEnabled || !logEnabled) {
-				Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
+				Assert.assertTrue(logEntries.toString(), logEntries.isEmpty());
 			}
 		}
 
@@ -2465,11 +2450,11 @@ public class IntrabandProxyUtilTest {
 			classLoader.getResourceAsStream(name.concat(".class")));
 	}
 
-	private ClassNode _loadClass(InputStream is) {
+	private ClassNode _loadClass(InputStream inputStream) {
 		ClassReader classReader = null;
 
 		try {
-			classReader = new ClassReader(is);
+			classReader = new ClassReader(inputStream);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -2614,7 +2599,7 @@ public class IntrabandProxyUtilTest {
 	private static class TestExtractMethodsClass2 {
 
 		@Id
-		public String getId(Object obj) {
+		public String getId(Object object) {
 			return null;
 		}
 
@@ -2739,9 +2724,9 @@ public class IntrabandProxyUtilTest {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(Object object) {
 			TestGenerateTargetLocator testGenerateTargetLocator =
-				(TestGenerateTargetLocator)obj;
+				(TestGenerateTargetLocator)object;
 
 			return _clazz.equals(testGenerateTargetLocator._clazz);
 		}
@@ -2793,19 +2778,19 @@ public class IntrabandProxyUtilTest {
 		@Proxy
 		protected abstract short syncCallShort(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		abstract Object syncCallObject(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		abstract String syncCallString(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 	}
@@ -2866,12 +2851,12 @@ public class IntrabandProxyUtilTest {
 	}
 
 	private interface TestGenerateInterface1
-		extends Comparable<String>, Callable<String>, Runnable,
+		extends Callable<String>, Comparable<String>, Runnable,
 				TestEmptyMethodsInterface, TestProxyMethodsInterface {
 	}
 
 	private interface TestGenerateInterface2
-		extends TestIdMethodsInterface, TestGenerateInterface1 {
+		extends TestGenerateInterface1, TestIdMethodsInterface {
 	}
 
 	private interface TestIdMethodsInterface {
@@ -2889,49 +2874,49 @@ public class IntrabandProxyUtilTest {
 		@Proxy
 		public void asyncCall(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public boolean syncCallBoolean(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public byte syncCallByte(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public char syncCallChar(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public double syncCallDouble(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public float syncCallFloat(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public int syncCallInt(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 		@Proxy
 		public long syncCallLong(
 				boolean z, byte b, char c, double d, float f, int i, long j,
-				short s, String string, Date date, Object obj)
+				short s, String string, Date date, Object object)
 			throws InterruptedException, IOException;
 
 	}

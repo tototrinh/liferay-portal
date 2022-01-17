@@ -12,8 +12,6 @@
  * details.
  */
 
-'use strict';
-
 import ns from '../../../src/main/resources/META-INF/resources/liferay/util/ns.es';
 
 describe('Liferay.Util.ns', () => {
@@ -29,10 +27,10 @@ describe('Liferay.Util.ns', () => {
 				arr3: [1, 2, 3, 'foo', 'bar', 'baz'],
 				int3: 3,
 				int4: 4,
-				string3: 'baz'
+				string3: 'baz',
 			},
 			string1: 'foo',
-			string2: 'bar'
+			string2: 'bar',
 		};
 
 		const result = ns(namespace, payload);

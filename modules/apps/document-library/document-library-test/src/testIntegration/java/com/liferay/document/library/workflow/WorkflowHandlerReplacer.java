@@ -14,8 +14,13 @@
 
 package com.liferay.document.library.workflow;
 
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.workflow.WorkflowHandler;
-import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Adolfo Pérez
@@ -25,23 +30,21 @@ public class WorkflowHandlerReplacer<T> implements AutoCloseable {
 	public WorkflowHandlerReplacer(
 		String className, WorkflowHandler<T> replacementWorkflowHandler) {
 
-		_replacementWorkflowHandler = replacementWorkflowHandler;
+		Bundle bundle = FrameworkUtil.getBundle(WorkflowHandlerReplacer.class);
 
-		_originalWorkflowHandler =
-			WorkflowHandlerRegistryUtil.getWorkflowHandler(className);
+		BundleContext bundleContext = bundle.getBundleContext();
 
-		WorkflowHandlerRegistryUtil.unregister(_originalWorkflowHandler);
-
-		WorkflowHandlerRegistryUtil.register(_replacementWorkflowHandler);
+		_serviceRegistration = bundleContext.registerService(
+			(Class<WorkflowHandler<?>>)(Class<?>)WorkflowHandler.class,
+			replacementWorkflowHandler,
+			MapUtil.singletonDictionary("service.ranking", Integer.MAX_VALUE));
 	}
 
 	@Override
-	public void close() throws Exception {
-		WorkflowHandlerRegistryUtil.unregister(_replacementWorkflowHandler);
-		WorkflowHandlerRegistryUtil.register(_originalWorkflowHandler);
+	public void close() {
+		_serviceRegistration.unregister();
 	}
 
-	private final WorkflowHandler<T> _originalWorkflowHandler;
-	private final WorkflowHandler<T> _replacementWorkflowHandler;
+	private final ServiceRegistration<WorkflowHandler<?>> _serviceRegistration;
 
 }

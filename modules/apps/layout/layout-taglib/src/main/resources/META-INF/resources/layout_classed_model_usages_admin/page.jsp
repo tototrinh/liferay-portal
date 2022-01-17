@@ -23,9 +23,13 @@ String className = GetterUtil.getString(request.getAttribute("liferay-layout:lay
 LayoutClassedModelUsagesDisplayContext layoutClassedModelUsagesDisplayContext = new LayoutClassedModelUsagesDisplayContext(renderRequest, renderResponse, className, classPK);
 %>
 
-<div class="container-fluid container-fluid-max-xl container-form-lg">
-	<div class="row">
-		<div class="col-lg-3">
+<clay:container-fluid
+	cssClass="container-form-lg"
+>
+	<clay:row>
+		<clay:col
+			lg="3"
+		>
 			<nav class="menubar menubar-transparent menubar-vertical-expand-lg">
 				<ul class="nav nav-nested">
 					<li class="nav-item">
@@ -35,54 +39,66 @@ LayoutClassedModelUsagesDisplayContext layoutClassedModelUsagesDisplayContext = 
 
 						<ul class="nav nav-stacked">
 							<li class="nav-item">
-
-								<%
-								PortletURL allNavigationURL = layoutClassedModelUsagesDisplayContext.getPortletURL();
-
-								allNavigationURL.setParameter("navigation", "all");
-								allNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>" href="<%= allNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											layoutClassedModelUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"all"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= layoutClassedModelUsagesDisplayContext.getAllUsageCount() %>" key="all-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pagesNavigationURL = layoutClassedModelUsagesDisplayContext.getPortletURL();
-
-								pagesNavigationURL.setParameter("navigation", "pages");
-								pagesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>" href="<%= pagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											layoutClassedModelUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"pages"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= layoutClassedModelUsagesDisplayContext.getPagesUsageCount() %>" key="pages-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pageTemplatesNavigationURL = layoutClassedModelUsagesDisplayContext.getPortletURL();
-
-								pageTemplatesNavigationURL.setParameter("navigation", "page-templates");
-								pageTemplatesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>" href="<%= pageTemplatesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											layoutClassedModelUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"page-templates"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= layoutClassedModelUsagesDisplayContext.getPageTemplatesUsageCount() %>" key="page-templates-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL displayPagesNavigationURL = layoutClassedModelUsagesDisplayContext.getPortletURL();
-
-								displayPagesNavigationURL.setParameter("navigation", "display-page-templates");
-								displayPagesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>" href="<%= displayPagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(layoutClassedModelUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											layoutClassedModelUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"display-page-templates"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= layoutClassedModelUsagesDisplayContext.getDisplayPagesUsageCount() %>" key="display-page-templates-x" />
 								</a>
 							</li>
@@ -90,9 +106,11 @@ LayoutClassedModelUsagesDisplayContext layoutClassedModelUsagesDisplayContext = 
 					</li>
 				</ul>
 			</nav>
-		</div>
+		</clay:col>
 
-		<div class="col-lg-9">
+		<clay:col
+			lg="9"
+		>
 			<div class="sheet">
 				<h3 class="sheet-title">
 					<c:choose>
@@ -112,7 +130,7 @@ LayoutClassedModelUsagesDisplayContext layoutClassedModelUsagesDisplayContext = 
 				</h3>
 
 				<clay:management-toolbar
-					displayContext="<%= new LayoutClassedModelUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutClassedModelUsagesDisplayContext.getSearchContainer()) %>"
+					managementToolbarDisplayContext="<%= new LayoutClassedModelUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutClassedModelUsagesDisplayContext.getSearchContainer()) %>"
 				/>
 
 				<liferay-ui:search-container
@@ -173,6 +191,6 @@ LayoutClassedModelUsagesDisplayContext layoutClassedModelUsagesDisplayContext = 
 					/>
 				</liferay-ui:search-container>
 			</div>
-		</div>
-	</div>
-</div>
+		</clay:col>
+	</clay:row>
+</clay:container-fluid>

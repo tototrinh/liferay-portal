@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-2021 Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,7 +20,9 @@ import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
-import org.mule.runtime.extension.api.annotation.param.display.Placement;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matija Petanjek
@@ -32,15 +34,26 @@ public class BasicCachedConnectionProvider
 
 	@Override
 	public LiferayConnection connect() throws ConnectionException {
+		logger.debug(
+			"Initializing connection to Liferay Portal instance using basic " +
+				"authentication");
+
 		return LiferayConnection.withBasicAuthentication(
-			httpService, openApiSpecPath,
-			_basicAuthenticationConfig.getUsername(),
-			_basicAuthenticationConfig.getPassword(),
+			httpService, basicAuthenticationConfig.getOpenApiSpecPath(),
+			basicAuthenticationConfig.getUsername(),
+			basicAuthenticationConfig.getPassword(),
 			liferayProxyConfig.getProxyConfig());
 	}
 
-	@ParameterGroup(name = "Connection config")
-	@Placement(order = 1)
-	private BasicAuthenticationConfig _basicAuthenticationConfig;
+	@Override
+	protected Logger getLogger() {
+		return logger;
+	}
+
+	private static final Logger logger = LoggerFactory.getLogger(
+		BasicCachedConnectionProvider.class);
+
+	@ParameterGroup(name = ParameterGroup.CONNECTION)
+	private BasicAuthenticationConfig basicAuthenticationConfig;
 
 }

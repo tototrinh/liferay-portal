@@ -1,12 +1,19 @@
 Bundle-Name: ${artifactId}
 Bundle-SymbolicName: ${package}
 Bundle-Version: ${version}
+#if (!(${liferayVersion.startsWith("7.2")} || ${liferayVersion.startsWith("7.3")}))
 Liferay-JS-Config: /META-INF/resources/config.js
+#end
+#if ((!${liferayVersion.startsWith("7.0")} || (!${liferayVersion.startsWith("7.1")}) && !${reactTemplate.equals("true")}))
+Provide-Capability:\
+	soy;\
+		type:String="LiferayFormField"
+#end
 Web-ContextPath: /dynamic-data-${artifactId}-form-field
 #if (${buildType} != "gradle")
 #if (${liferayVersion.startsWith("7.1")})-contract: JavaPortlet,JavaServlet
 #end
--jsp: *.jsp,*.jspf
+-jsp: *.jsp,*.jspf,*.jspx
 -metatype: *
 -plugin.jsp: com.liferay.ant.bnd.jsp.JspAnalyzerPlugin
 -plugin.metatype: com.liferay.ant.bnd.metatype.MetatypePlugin

@@ -11,84 +11,70 @@
 
 import React, {useMemo} from 'react';
 
-import filterConstants from '../../shared/components/filter/util/filterConstants.es';
 import PromisesResolver from '../../shared/components/promises-resolver/PromisesResolver.es';
 import {parse} from '../../shared/components/router/queryString.es';
 import {useFetch} from '../../shared/hooks/useFetch.es';
 import {useFilter} from '../../shared/hooks/useFilter.es';
 import {useProcessTitle} from '../../shared/hooks/useProcessTitle.es';
 import {useTimeRangeFetch} from '../filter/hooks/useTimeRangeFetch.es';
-import {isValidDate} from '../filter/util/timeRangeUtil.es';
-import {Body} from './PerformanceByStepPageBody.es';
-import {Header} from './PerformanceByStepPageHeader.es';
+import {getTimeRangeParams} from '../filter/util/timeRangeUtil.es';
+import Body from './PerformanceByStepPageBody.es';
+import Header from './PerformanceByStepPageHeader.es';
 
-const PerformanceByStepPage = ({query, routeParams}) => {
+function PerformanceByStepPage({query, routeParams}) {
 	useTimeRangeFetch();
 
-	const {processId} = routeParams;
+	const {processId, ...paginationParams} = routeParams;
+	const {search = null} = parse(query);
+	const filterKeys = ['processVersion'];
+	const hideFilters = ['processVersion'];
 
 	useProcessTitle(processId, Liferay.Language.get('performance-by-step'));
 
-	const {search = null} = parse(query);
-
 	const {
-		filterState: {timeRange},
-		hasFilterError,
-		prefixedKeys
-	} = useFilter({});
-
-	const {dateEnd, dateStart} =
-		timeRange && timeRange.length ? timeRange[0] : {};
-
-	let timeRangeParams = {};
-
-	if (isValidDate(dateEnd) && isValidDate(dateStart)) {
-		timeRangeParams = {
-			dateEnd: dateEnd.toISOString(),
-			dateStart: dateStart.toISOString()
-		};
-	}
+		filterValues: {dateEnd, dateStart, processVersion},
+		prefixedKeys,
+		selectedFilters,
+	} = useFilter({filterKeys});
 
 	const {data, fetchData} = useFetch({
 		params: {
 			completed: true,
 			key: search,
-			...routeParams,
-			...timeRangeParams
+			processVersion:
+				processVersion?.indexOf('allVersions') === -1
+					? processVersion
+					: undefined,
+			...paginationParams,
+			...getTimeRangeParams(dateStart, dateEnd),
 		},
-		url: `/processes/${processId}/tasks`
+		url: `/processes/${processId}/nodes/metrics`,
 	});
 
-	const filterError = useMemo(
-		() => hasFilterError(filterConstants.timeRange.key),
-		[hasFilterError]
+	const promises = useMemo(
+		() => [fetchData()],
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[routeParams]
 	);
-
-	const promises = useMemo(() => {
-		if (timeRangeParams.dateEnd && timeRangeParams.dateStart) {
-			return [fetchData()];
-		}
-
-		return [new Promise((_, reject) => reject(filterError))];
-	}, [
-		fetchData,
-		filterError,
-		timeRangeParams.dateEnd,
-		timeRangeParams.dateStart
-	]);
 
 	return (
 		<PromisesResolver promises={promises}>
 			<PerformanceByStepPage.Header
 				filterKeys={prefixedKeys}
+				hideFilters={hideFilters}
 				routeParams={{...routeParams, search}}
-				totalCount={data.totalCount}
+				selectedFilters={selectedFilters}
+				totalCount={data?.totalCount}
 			/>
 
-			<PerformanceByStepPage.Body data={data} filtered={search} />
+			<PerformanceByStepPage.Body
+				{...data}
+				filtered={search || selectedFilters.length > 0}
+			/>
 		</PromisesResolver>
 	);
-};
+}
 
 PerformanceByStepPage.Body = Body;
 PerformanceByStepPage.Header = Header;

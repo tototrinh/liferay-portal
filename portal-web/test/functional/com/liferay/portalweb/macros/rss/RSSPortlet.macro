@@ -1,13 +1,15 @@
 definition {
 
 	macro addFeed {
+		Portlet.gotoPortletOptions(
+			portletName = "RSS Publisher",
+			portletOption = "Configuration");
+
 		var key_buttonRowIndexNumber = "${buttonRowIndexNumber}";
 		var key_feedRowIndexNumber = "${feedRowIndexNumber}";
 		var key_feedTitle = "${feedTitle}";
 
-		SelectFrame(locator1 = "RSSFeed#RSS_CONFIGURATION_IFRAME");
-
-		Panel.expandPanel(panel = "Feeds");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		if (isSet(buttonRowIndexNumber)) {
 			Click(locator1 = "RSSFeed#FEEDS_ADD_ROW_BUTTON");
@@ -22,14 +24,29 @@ definition {
 				locator1 = "RSSFeed#FEEDS_URL_NAME_FIELD",
 				value1 = "file:////");
 
-			UploadCommonFile(
+			var dependencyFilePath = TestCase.getDependenciesDirPath(fileName = "${feedUrlLink}");
+
+			UploadFile(
 				locator1 = "RSSFeed#FEEDS_URL_NAME_FIELD",
-				value1 = "${feedUrlLink}");
+				value1 = "${dependencyFilePath}");
 		}
 		else {
 			Type(
 				locator1 = "RSSFeed#FEEDS_URL_NAME_FIELD",
 				value1 = "${feedUrlLink}");
+		}
+
+		if (isSet(viewWarningMessage)) {
+			Button.clickSave();
+
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "${viewWarningMessage}");
+		}
+		else {
+			PortletEntry.save();
 		}
 	}
 
@@ -37,44 +54,67 @@ definition {
 		var key_fromRowNumber = "${fromRowNumber}";
 		var key_toRowNumber = "${toRowNumber}";
 
-		Panel.expandPanel(panel = "Feeds");
-
-		DragAndDrop(
+		DragAndDrop.dragAndDropReorganizeObjects(
 			locator1 = "RSSFeed#FEEDS_1",
 			locator2 = "RSSFeed#FEEDS_2",
-			value1 = "${rowLocation}");
+			position = "${offset}");
 	}
 
-	macro configureFeedDisplayStyle {
-		SelectFrame(value1 = "relative=top");
+	macro configureDisplaySettings {
+		Portlet.gotoPortletOptions(
+			portletName = "RSS Publisher",
+			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "RSSFeed#RSS_CONFIGURATION_IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		Panel.expandPanel(panel = "Feeds");
+		Navigator.gotoNavTab(navTab = "Display Settings");
 
-		Select(
-			locator1 = "Select#DISPLAY_TEMPLATE",
-			value1 = "${feedDisplayStyle}");
+		if (isSet(numberOfEntriesPerFeed)) {
+			Type(
+				key_fieldLabel = "# of Entries Per Feed",
+				locator1 = "FormFields#NUMBER_FIELD",
+				value1 = "${numberOfEntriesPerFeed}");
+		}
+
+		if (isSet(feedDisplayStyle)) {
+			Select(
+				locator1 = "Select#DISPLAY_TEMPLATE",
+				value1 = "${feedDisplayStyle}");
+		}
+
+		if (!(isSet(configureWithoutSave))) {
+			PortletEntry.save();
+		}
 	}
 
 	macro deleteFeed {
-		var key_buttonRowIndexNumber = "${buttonRowIndexNumber}";
+		Portlet.gotoPortletOptions(
+			portletName = "RSS Publisher",
+			portletOption = "Configuration");
 
-		SelectFrame(locator1 = "RSSFeed#RSS_CONFIGURATION_IFRAME");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		Panel.expandPanel(panel = "Feeds");
+		for (var buttonRowIndexNumber : list "${buttonRowIndexNumberList}") {
+			Click(
+				key_buttonRowIndexNumber = "${buttonRowIndexNumber}",
+				locator1 = "RSSFeed#FEEDS_DELETE_ROW_BUTTON");
 
-		Click(locator1 = "RSSFeed#FEEDS_DELETE_ROW_BUTTON");
+			AssertTextEquals.assertPartialText(
+				locator1 = "RSSFeed#UNDO_LINK",
+				value1 = "Undo");
+		}
 
-		AssertTextEquals.assertPartialText(
-			locator1 = "RSSFeed#UNDO_LINK",
-			value1 = "Undo");
+		PortletEntry.save();
 	}
 
 	macro disableShowFeedTitle {
-		SelectFrame(locator1 = "RSSFeed#RSS_CONFIGURATION_IFRAME");
+		Portlet.gotoPortletOptions(
+			portletName = "RSS Publisher",
+			portletOption = "Configuration");
 
-		Panel.expandPanel(panel = "Feeds");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		Navigator.gotoNavTab(navTab = "Display Settings");
 
 		Uncheck.uncheckToggleSwitch(
 			locator1 = "RSSFeed#DISPLAY_SETTINGS_SHOW_FEED_TITLE",
@@ -83,6 +123,8 @@ definition {
 		Uncheck.uncheckToggleSwitch(
 			locator1 = "RSSFeed#DISPLAY_SETTINGS_SHOW_FEED_DESCRIPTION",
 			value1 = "Show Feed Description");
+
+		PortletEntry.save();
 	}
 
 	macro openFeed {
@@ -165,9 +207,7 @@ definition {
 
 		SelectFrame(value1 = "relative=top");
 
-		SelectFrame(locator1 = "RSSFeed#RSS_CONFIGURATION_IFRAME");
-
-		Panel.expandPanel(panel = "Feeds");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		AssertElementPresent(locator1 = "RSSFeed#FEEDS_DEFAULT");
 
@@ -178,7 +218,7 @@ definition {
 
 	macro viewPortletConfigurationInfo {
 		AssertTextEquals(
-			locator1 = "Message#INFO",
+			locator1 = "Message#INFO_MAIN_CONTENT",
 			value1 = "This application is not visible to users yet. Select at least one valid rss feed to make it visible.");
 	}
 
@@ -194,16 +234,6 @@ definition {
 		AssertTextEquals(
 			locator1 = "RSSFeed#FEED_PANEL_HEADING",
 			value1 = "${feedHeading}");
-	}
-
-	macro viewWarningMessageDisplay {
-		Button.clickSave();
-
-		Alert.viewRequestFailedToComplete();
-
-		AssertTextEquals.assertPartialText(
-			locator1 = "Message#ERROR_1",
-			value1 = "${errorMessage}");
 	}
 
 	macro waitForRSSLoad {

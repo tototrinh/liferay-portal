@@ -1,31 +1,23 @@
 {
 	"dependencies": {
-		"@clayui/alert": "3.2.0",
-		"@clayui/button": "3.2.0",
-		"@clayui/drop-down": "3.2.0",
-		"@clayui/form": "3.5.0",
-		"@clayui/icon": "3.0.3",
-		"@clayui/label": "3.0.3",
-		"@clayui/link": "3.0.3",
-		"@clayui/modal": "3.2.0",
-		"classnames": "2.2.6",
-		"clay-badge": "2.20.2",
-		"clay-checkbox": "2.20.2",
-		"clay-dropdown": "2.20.2",
+		"@clayui/alert": "3.40.0",
+		"@clayui/button": "3.40.0",
+		"@clayui/drop-down": "3.40.0",
+		"@clayui/form": "3.40.0",
+		"@clayui/icon": "3.40.0",
+		"@clayui/label": "3.40.0",
+		"@clayui/layout": "3.40.0",
+		"@clayui/link": "3.40.0",
+		"@clayui/list": "3.40.0",
+		"@clayui/modal": "3.40.0",
+		"@clayui/popover": "3.40.0",
+		"classnames": "2.3.1",
 		"frontend-js-web": "*",
-		"metal": "2.16.8",
-		"metal-component": "2.16.8",
-		"metal-dom": "2.16.8",
-		"metal-drag-drop": "3.3.1",
-		"metal-events": "2.16.8",
-		"metal-position": "2.1.2",
-		"metal-soy": "2.16.8",
 		"metal-state": "2.16.8",
-		"metal-throttle": "3.0.1",
 		"prop-types": "15.7.2",
 		"react": "16.12.0",
-		"react-dnd": "10.0.1",
-		"react-dnd-html5-backend": "10.0.1"
+		"react-dnd": "11.1.1",
+		"react-dnd-html5-backend": "11.1.1"
 	},
 	"name": "layout-admin-web",
 	"scripts": {
@@ -33,5 +25,5 @@
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "4.0.8"
+	"version": "5.0.43"
 }

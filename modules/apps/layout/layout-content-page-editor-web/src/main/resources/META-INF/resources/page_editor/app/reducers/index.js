@@ -13,47 +13,58 @@
  */
 
 import baseReducer from './baseReducer';
+import collectionsReducer from './collectionsReducer';
+import defaultFragmentEntryLinksReducer from './defaultFragmentEntryLinksReducer';
 import fragmentEntryLinksReducer from './fragmentEntryLinksReducer';
-import languageReducer from './languageReducer';
+import fragmentsReducer from './fragmentsReducer';
+import languageIdReducer from './languageIdReducer';
 import layoutDataReducer from './layoutDataReducer';
-import mappingReducer from './mappingReducer';
+import mappingFieldsReducer from './mappingFieldsReducer';
+import masterLayoutReducer from './masterLayoutReducer';
 import networkReducer from './networkReducer';
 import pageContentsReducer from './pageContentsReducer';
 import permissionsReducer from './permissionsReducer';
-import resolvedCommentsReducer from './resolvedCommentsReducer';
+import selectedViewportSizeReducer from './selectedViewportSizeReducer';
+import showResolvedCommentsReducer from './showResolvedCommentsReducer';
 import sidebarReducer from './sidebarReducer';
-import widgetsReducer from './widgetsReducer';
+import undoReducer from './undoReducer';
+
+const combinedReducer = (state, action) =>
+	Object.entries({
+		collections: collectionsReducer,
+		fragmentEntryLinks: fragmentEntryLinksReducer,
+		fragments: fragmentsReducer,
+		languageId: languageIdReducer,
+		layoutData: layoutDataReducer,
+		mappingFields: mappingFieldsReducer,
+		masterLayout: masterLayoutReducer,
+		network: networkReducer,
+		pageContents: pageContentsReducer,
+		permissions: permissionsReducer,
+		reducers: baseReducer,
+		selectedViewportSize: selectedViewportSizeReducer,
+		showResolvedComments: showResolvedCommentsReducer,
+		sidebar: sidebarReducer,
+	}).reduce(
+		(nextState, [namespace, reducer]) => ({
+			...nextState,
+			[namespace]: reducer(nextState[namespace], action),
+		}),
+		state
+	);
 
 /**
  * Runs the base reducer plus any dynamically loaded reducers that have
  * been registered from plugins.
  */
 export function reducer(state, action) {
+	let nextState = undoReducer(state, action);
+	nextState = defaultFragmentEntryLinksReducer(nextState, action);
+
 	return [combinedReducer, ...Object.values(state.reducers || {})].reduce(
 		(nextState, nextReducer) => {
 			return nextReducer(nextState, action);
 		},
-		state
+		nextState
 	);
 }
-
-const combinedReducer = (state, action) =>
-	Object.entries({
-		fragmentEntryLinks: fragmentEntryLinksReducer,
-		languageId: languageReducer,
-		layoutData: layoutDataReducer,
-		mappedInfoItems: mappingReducer,
-		network: networkReducer,
-		pageContents: pageContentsReducer,
-		permissions: permissionsReducer,
-		reducers: baseReducer,
-		showResolvedComments: resolvedCommentsReducer,
-		sidebar: sidebarReducer,
-		widgets: widgetsReducer
-	}).reduce(
-		(nextState, [namespace, reducer]) => ({
-			...nextState,
-			[namespace]: reducer(nextState[namespace], action)
-		}),
-		state
-	);

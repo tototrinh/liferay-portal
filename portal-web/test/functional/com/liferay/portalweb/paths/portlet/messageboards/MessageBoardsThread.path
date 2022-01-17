@@ -2,15 +2,17 @@
 <head>
 <title>MessageBoardsThread</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">MessageBoardsThread</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>TITLE_HEADER</td>
-	<td>//h3</td>
+	<td>//div[contains(@class,'message_boards')]//h3</td>
 	<td></td>
 </tr>
 <tr>
@@ -30,18 +32,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>THREAD_BODY_BOLD</td>
+	<td>//div[contains(@class,'message-content') and contains(.,'${key_threadBody}')]/strong</td>
+	<td></td>
+</tr>
+<tr>
+	<td>THREAD_BODY_IMAGE</td>
+	<td>//div[contains(@class,'message-content') and contains(.,'${key_threadBody}')]//img[contains(@src,'${key_imageFileName}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>THREAD_PUBLISH_BUTTON</td>
-	<td>//div[@class='card list-group-card panel']//button[span[contains(.,'Publish')]]</td>
+	<td>//div[@class='card panel']//button[span[contains(.,'Publish')]]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>THREAD_REPLY_BUTTON</td>
 	<td>//div[@class='thread-container']/button[contains(.,'Reply')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>THREAD_REPLY_EDITOR</td>
-	<td>//div[(contains(@id,'replyMessageBody') or contains(@id,'content')) and contains(@class,'alloy-editor-container')]//div[contains(@class,'alloy-editor-placeholder')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -61,12 +68,12 @@
 </tr>
 <tr>
 	<td>THREAD_USERNAME</td>
-	<td>//div[@class='panel-heading' and contains(.,'${key_threadSubject}')]//h5[contains(.,'${key_userName}')]</td>
+	<td>//div[@class='panel-heading' and contains(.,'${key_threadSubject}')]//span[contains(.,'${key_userName}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>THREAD_USERNAME_2</td>
-	<td>xpath=(//div[@class='panel-heading' and contains(.,'${key_threadSubject}')]//h5[contains(.,'${key_userName}')])[2]</td>
+	<td>xpath=(//div[@class='panel-heading' and contains(.,'${key_threadSubject}')]//span[contains(.,'${key_userName}')])[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -121,13 +128,13 @@
 	<td></td>
 </tr>
 <tr>
-	<td>MESSAGE_RATING_1_UPVOTE</td>
-	<td>xpath=(//div[contains(@id,'ratingThumbContent')]/a[contains(@class,'rating-thumb-up')])[1]</td>
+	<td>MESSAGE_RATING_THUMBS_DOWN</td>
+	<td>//div[contains(@class,'card panel') and contains(.,'${key_threadBody}')]//button[contains(@title,'Rate this as bad.')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>MESSAGE_RATING_2_UPVOTE</td>
-	<td>xpath=(//div[contains(@id,'ratingThumbContent')]/a[contains(@class,'rating-thumb-up')])[2]</td>
+	<td>MESSAGE_RATING_THUMBS_UP</td>
+	<td>//div[contains(@class,'card panel') and contains(.,'${key_threadBody}')]//button[contains(@title,'Rate this as good.')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -148,6 +155,11 @@
 <tr>
 	<td>MESSAGE_BODY_ATTACHMENT_1</td>
 	<td>//li[@class='message-attachment']/span/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>MESSAGE_BODY_ATTACHMENT_LIST</td>
+	<td>//li[@class='message-attachment'][${index}]/span/a</td>
 	<td></td>
 </tr>
 </tbody>

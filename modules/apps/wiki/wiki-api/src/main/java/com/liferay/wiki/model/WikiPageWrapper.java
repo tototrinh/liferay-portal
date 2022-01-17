@@ -53,6 +53,7 @@ public class WikiPageWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("externalReferenceCode", getExternalReferenceCode());
 		attributes.put("nodeId", getNodeId());
 		attributes.put("title", getTitle());
 		attributes.put("version", getVersion());
@@ -132,6 +133,13 @@ public class WikiPageWrapper
 
 		if (modifiedDate != null) {
 			setModifiedDate(modifiedDate);
+		}
+
+		String externalReferenceCode = (String)attributes.get(
+			"externalReferenceCode");
+
+		if (externalReferenceCode != null) {
+			setExternalReferenceCode(externalReferenceCode);
 		}
 
 		Long nodeId = (Long)attributes.get("nodeId");
@@ -234,6 +242,11 @@ public class WikiPageWrapper
 	}
 
 	@Override
+	public WikiPage cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public WikiPage fetchParentPage() {
 		return model.fetchParentPage();
 	}
@@ -263,10 +276,12 @@ public class WikiPageWrapper
 	public java.util.List<com.liferay.portal.kernel.repository.model.FileEntry>
 			getAttachmentsFileEntries(
 				int start, int end,
-				com.liferay.portal.kernel.util.OrderByComparator obc)
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		return model.getAttachmentsFileEntries(start, end, obc);
+		return model.getAttachmentsFileEntries(start, end, orderByComparator);
 	}
 
 	@Override
@@ -274,10 +289,12 @@ public class WikiPageWrapper
 			getAttachmentsFileEntries(
 				String[] mimeTypes, int start, int end,
 				com.liferay.portal.kernel.util.OrderByComparator
-					<com.liferay.portal.kernel.repository.model.FileEntry> obc)
+					<com.liferay.portal.kernel.repository.model.FileEntry>
+						orderByComparator)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		return model.getAttachmentsFileEntries(mimeTypes, start, end, obc);
+		return model.getAttachmentsFileEntries(
+			mimeTypes, start, end, orderByComparator);
 	}
 
 	@Override
@@ -375,6 +392,16 @@ public class WikiPageWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return model.getDeletedAttachmentsFileEntriesCount();
+	}
+
+	/**
+	 * Returns the external reference code of this wiki page.
+	 *
+	 * @return the external reference code of this wiki page
+	 */
+	@Override
+	public String getExternalReferenceCode() {
+		return model.getExternalReferenceCode();
 	}
 
 	/**
@@ -898,6 +925,16 @@ public class WikiPageWrapper
 	@Override
 	public void setCreateDate(Date createDate) {
 		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets the external reference code of this wiki page.
+	 *
+	 * @param externalReferenceCode the external reference code of this wiki page
+	 */
+	@Override
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		model.setExternalReferenceCode(externalReferenceCode);
 	}
 
 	/**

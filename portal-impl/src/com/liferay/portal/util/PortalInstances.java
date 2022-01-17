@@ -184,25 +184,24 @@ public class PortalInstances {
 	public static long[] getCompanyIdsBySQL() throws SQLException {
 		List<Long> companyIds = new ArrayList<>();
 
-		Connection con = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+		long defaultCompanyId = getDefaultCompanyIdBySQL();
 
-		try {
-			con = DataAccess.getConnection();
-
-			ps = con.prepareStatement(_GET_COMPANY_IDS);
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				long companyId = rs.getLong("companyId");
-
-				companyIds.add(companyId);
-			}
+		if (defaultCompanyId != 0) {
+			companyIds.add(defaultCompanyId);
 		}
-		finally {
-			DataAccess.cleanUp(con, ps, rs);
+
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				_GET_COMPANY_IDS);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				long companyId = resultSet.getLong("companyId");
+
+				if (companyId != defaultCompanyId) {
+					companyIds.add(companyId);
+				}
+			}
 		}
 
 		return ArrayUtil.toArray(companyIds.toArray(new Long[0]));
@@ -210,6 +209,21 @@ public class PortalInstances {
 
 	public static long getDefaultCompanyId() {
 		return _companyIds[0];
+	}
+
+	public static long getDefaultCompanyIdBySQL() throws SQLException {
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"select companyId from Company where webId = '" +
+					PropsValues.COMPANY_DEFAULT_WEB_ID + "'");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getLong(1);
+			}
+		}
+
+		return 0;
 	}
 
 	public static String[] getWebIds() {
@@ -222,21 +236,19 @@ public class PortalInstances {
 		}
 
 		try {
-			List<Company> companies = CompanyLocalServiceUtil.getCompanies(
-				false);
+			List<String> webIdsList = new ArrayList<>();
 
-			List<String> webIdsList = new ArrayList<>(companies.size());
+			CompanyLocalServiceUtil.forEachCompany(
+				company -> {
+					String webId = company.getWebId();
 
-			for (Company company : companies) {
-				String webId = company.getWebId();
-
-				if (webId.equals(PropsValues.COMPANY_DEFAULT_WEB_ID)) {
-					webIdsList.add(0, webId);
-				}
-				else {
-					webIdsList.add(webId);
-				}
-			}
+					if (webId.equals(PropsValues.COMPANY_DEFAULT_WEB_ID)) {
+						webIdsList.add(0, webId);
+					}
+					else {
+						webIdsList.add(webId);
+					}
+				});
 
 			_webIds = webIdsList.toArray(new String[0]);
 		}
@@ -263,12 +275,14 @@ public class PortalInstances {
 		long companyId = 0;
 
 		try {
-			Company company = CompanyLocalServiceUtil.checkCompany(webId);
+			Company company = CompanyLocalServiceUtil.getCompanyByWebId(webId);
 
 			companyId = company.getCompanyId();
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
+
+			return companyId;
 		}
 
 		Long currentThreadCompanyId = CompanyThreadLocal.getCompanyId();
@@ -277,6 +291,13 @@ public class PortalInstances {
 
 		try {
 			CompanyThreadLocal.setCompanyId(companyId);
+
+			try {
+				CompanyLocalServiceUtil.checkCompany(webId);
+			}
+			catch (Exception exception) {
+				_log.error(exception, exception);
+			}
 
 			String principalName = null;
 

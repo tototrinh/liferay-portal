@@ -16,12 +16,17 @@ package com.liferay.journal.web.internal.info.item.renderer;
 
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.info.item.renderer.InfoItemRenderer;
 import com.liferay.info.item.renderer.InfoItemTemplatedRenderer;
 import com.liferay.info.item.renderer.template.InfoItemRendererTemplate;
 import com.liferay.journal.model.JournalArticle;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.staging.StagingGroupHelper;
@@ -29,7 +34,9 @@ import com.liferay.staging.StagingGroupHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -38,14 +45,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Eudaldo Alonso
  */
 @Component(
-	property = "service.ranking:Integer=300", service = InfoItemRenderer.class
+	property = "service.ranking:Integer=100", service = InfoItemRenderer.class
 )
 public class JournalArticleDDMTemplateInfoItemTemplatedRenderer
 	implements InfoItemTemplatedRenderer<JournalArticle> {
@@ -73,6 +78,39 @@ public class JournalArticleDDMTemplateInfoItemTemplatedRenderer
 	}
 
 	@Override
+	public List<InfoItemRendererTemplate> getInfoItemRendererTemplates(
+		String className, String classTypeKey, Locale locale) {
+
+		List<DDMStructure> ddmStructures =
+			_ddmStructureLocalService.getClassStructures(
+				CompanyThreadLocal.getCompanyId(),
+				_portal.getClassNameId(className));
+
+		if (Validator.isNotNull(classTypeKey)) {
+			ddmStructures = ListUtil.filter(
+				ddmStructures,
+				ddmStructure -> Objects.equals(
+					ddmStructure.getStructureId(),
+					GetterUtil.getLong(classTypeKey)));
+		}
+
+		Stream<DDMStructure> stream = ddmStructures.stream();
+
+		return stream.flatMap(
+			ddmStructure -> {
+				List<DDMTemplate> ddmTemplates = ddmStructure.getTemplates();
+
+				return ddmTemplates.stream();
+			}
+		).map(
+			ddmTemplate -> new InfoItemRendererTemplate(
+				ddmTemplate.getName(locale), ddmTemplate.getTemplateKey())
+		).collect(
+			Collectors.toList()
+		);
+	}
+
+	@Override
 	public String getInfoItemRendererTemplatesGroupLabel(
 		JournalArticle article, Locale locale) {
 
@@ -82,11 +120,32 @@ public class JournalArticleDDMTemplateInfoItemTemplatedRenderer
 	}
 
 	@Override
-	public String getLabel(Locale locale) {
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(locale);
+	public String getInfoItemRendererTemplatesGroupLabel(
+		String className, String classTypeKey, Locale locale) {
 
-		return LanguageUtil.get(resourceBundle, "ddm-template");
+		List<DDMStructure> ddmStructures =
+			_ddmStructureLocalService.getClassStructures(
+				CompanyThreadLocal.getCompanyId(),
+				_portal.getClassNameId(className));
+
+		ddmStructures = ListUtil.filter(
+			ddmStructures,
+			ddmStructure -> Objects.equals(
+				ddmStructure.getStructureId(),
+				GetterUtil.getLong(classTypeKey)));
+
+		if (ddmStructures.size() != 1) {
+			return StringPool.BLANK;
+		}
+
+		DDMStructure ddmStructure = ddmStructures.get(0);
+
+		return ddmStructure.getName(locale);
+	}
+
+	@Override
+	public String getLabel(Locale locale) {
+		return LanguageUtil.get(locale, "ddm-template");
 	}
 
 	@Override
@@ -124,12 +183,11 @@ public class JournalArticleDDMTemplateInfoItemTemplatedRenderer
 		_servletContext = servletContext;
 	}
 
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.journal.web)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
+	@Reference
+	private DDMStructureLocalService _ddmStructureLocalService;
+
+	@Reference
+	private Portal _portal;
 
 	private ServletContext _servletContext;
 

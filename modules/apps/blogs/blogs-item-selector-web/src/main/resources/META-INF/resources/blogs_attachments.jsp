@@ -29,7 +29,7 @@ int end = startAndEnd[1];
 
 Folder folder = blogsItemSelectorViewDisplayContext.fetchAttachmentsFolder(themeDisplay.getUserId(), scopeGroupId);
 
-List portletFileEntries = null;
+List<RepositoryEntry> portletFileEntries = new ArrayList<>();
 int portletFileEntriesCount = 0;
 
 if (folder != null) {
@@ -44,11 +44,7 @@ if (folder != null) {
 
 		portletFileEntriesCount = hits.getLength();
 
-		Document[] docs = hits.getDocs();
-
-		portletFileEntries = new ArrayList(docs.length);
-
-		for (Document doc : docs) {
+		for (Document doc : hits.getDocs()) {
 			long fileEntryId = GetterUtil.getLong(doc.get(Field.ENTRY_CLASS_PK));
 
 			FileEntry fileEntry = null;
@@ -68,13 +64,15 @@ if (folder != null) {
 		}
 	}
 	else {
-		portletFileEntries = PortletFileRepositoryUtil.getPortletFileEntries(scopeGroupId, folder.getFolderId(), WorkflowConstants.STATUS_APPROVED, start, end, blogsItemSelectorViewDisplayContext.getOrderByComparator());
+		portletFileEntries.addAll(PortletFileRepositoryUtil.getPortletFileEntries(scopeGroupId, folder.getFolderId(), WorkflowConstants.STATUS_APPROVED, start, end, blogsItemSelectorViewDisplayContext.getOrderByComparator()));
 		portletFileEntriesCount = PortletFileRepositoryUtil.getPortletFileEntriesCount(scopeGroupId, folder.getFolderId(), WorkflowConstants.STATUS_APPROVED);
 	}
 }
 %>
 
 <liferay-item-selector:repository-entry-browser
+	allowedCreationMenuUIItemKeys="<%= blogsItemSelectorViewDisplayContext.getAllowedCreationMenuUIItemKeys() %>"
+	editImageURL="<%= blogsItemSelectorViewDisplayContext.getEditImageURL(liferayPortletResponse) %>"
 	emptyResultsMessage='<%= LanguageUtil.get(resourceBundle, "there-are-no-blog-attachments") %>'
 	extensions="<%= ListUtil.fromArray(blogsItemSelectorViewDisplayContext.getImageExtensions()) %>"
 	itemSelectedEventName="<%= blogsItemSelectorViewDisplayContext.getItemSelectedEventName() %>"
@@ -89,5 +87,5 @@ if (folder != null) {
 />
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("com_liferay_blogs_item_selector_web.blogs_attachments_jsp");
+private static final Log _log = LogFactoryUtil.getLog("com_liferay_blogs_item_selector_web.blogs_attachments_jsp");
 %>

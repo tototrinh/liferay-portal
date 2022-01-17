@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-calendar-util',
-	A => {
+	(A) => {
 		var DateMath = A.DataType.DateMath;
 		var Lang = A.Lang;
 
@@ -22,7 +22,7 @@ AUI.add(
 
 		var isDate = Lang.isDate;
 
-		var toInt = function(value) {
+		var toInt = function (value) {
 			return Lang.toInt(value, 10, 0);
 		};
 
@@ -43,7 +43,7 @@ AUI.add(
 			TIME_DESC: ['weeks', 'days', 'hours', 'minutes'],
 
 			getDescription(milliseconds) {
-				var desc = 'minutes';
+				var description = 'minutes';
 				var value = 0;
 
 				if (milliseconds > 0) {
@@ -51,22 +51,22 @@ AUI.add(
 						Time.WEEK,
 						Time.DAY,
 						Time.HOUR,
-						Time.MINUTE
+						Time.MINUTE,
 					];
 
 					timeArray.some((item, index) => {
 						value = milliseconds / item;
-						desc = Time.TIME_DESC[index];
+						description = Time.TIME_DESC[index];
 
 						return milliseconds % item === 0;
 					});
 				}
 
 				return {
-					desc,
-					value
+					description,
+					value,
 				};
-			}
+			},
 		};
 
 		Liferay.Time = Time;
@@ -113,7 +113,7 @@ AUI.add(
 					secondReminder: calendarBooking.secondReminder,
 					secondReminderType: calendarBooking.secondReminderType,
 					startDate: startDate.getTime(),
-					status: calendarBooking.status
+					status: calendarBooking.status,
 				});
 
 				return schedulerEvent;
@@ -210,10 +210,10 @@ AUI.add(
 							recurrence: data.recurrence,
 							recurringCalendarBookingId:
 								data.recurringCalendarBookingId,
-							status: data.status
+							status: data.status,
 						},
 						{
-							silent: true
+							silent: true,
 						}
 					);
 
@@ -246,7 +246,7 @@ AUI.add(
 			},
 
 			updateSchedulerEvents(schedulerEvents, calendarBooking) {
-				A.each(schedulerEvents, schedulerEvent => {
+				A.each(schedulerEvents, (schedulerEvent) => {
 					if (schedulerEvent.isRecurring()) {
 						var scheduler = schedulerEvent.get('scheduler');
 
@@ -255,13 +255,13 @@ AUI.add(
 
 					schedulerEvent.set('status', calendarBooking.status);
 				});
-			}
+			},
 		};
 
 		Liferay.CalendarUtil = CalendarUtil;
 
 		var CalendarWorkflow = {
-			STATUS_MAYBE: 9
+			STATUS_MAYBE: 9,
 		};
 
 		A.mix(CalendarWorkflow, Workflow);
@@ -275,7 +275,7 @@ AUI.add(
 			'aui-scheduler',
 			'aui-toolbar',
 			'autocomplete',
-			'autocomplete-highlighters'
-		]
+			'autocomplete-highlighters',
+		],
 	}
 );

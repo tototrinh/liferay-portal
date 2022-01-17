@@ -13,55 +13,67 @@
  */
 
 import {
-	ADD_FRAGMENT_ENTRY_LINK,
+	ADD_FRAGMENT_ENTRY_LINKS,
+	ADD_ITEM,
+	DELETE_ITEM,
+	DUPLICATE_ITEM,
+	MOVE_ITEM,
+	UPDATE_COLLECTION_DISPLAY_COLLECTION,
 	UPDATE_COL_SIZE,
-	UPDATE_LAYOUT_DATA
+	UPDATE_FRAGMENT_ENTRY_LINK_CONFIGURATION,
+	UPDATE_ITEM_CONFIG,
+	UPDATE_LAYOUT_DATA,
+	UPDATE_PREVIEW_IMAGE,
+	UPDATE_ROW_COLUMNS,
 } from '../actions/types';
+import {setIn} from '../utils/setIn';
 
 export const INITIAL_STATE = {
-	items: {}
+	items: {},
 };
 
 export default function layoutDataReducer(layoutData = INITIAL_STATE, action) {
 	switch (action.type) {
-		case UPDATE_COL_SIZE: {
-			let items = layoutData.items;
+		case UPDATE_COL_SIZE:
+		case UPDATE_COLLECTION_DISPLAY_COLLECTION:
+		case UPDATE_LAYOUT_DATA:
+		case ADD_FRAGMENT_ENTRY_LINKS:
+		case ADD_ITEM:
+		case DELETE_ITEM:
+		case DUPLICATE_ITEM:
+		case MOVE_ITEM:
+		case UPDATE_FRAGMENT_ENTRY_LINK_CONFIGURATION:
+		case UPDATE_ITEM_CONFIG:
+		case UPDATE_ROW_COLUMNS:
+			return action.layoutData;
 
-			if (action.itemId in items) {
-				items = {
-					...items,
-					[action.itemId]: {
-						...items[action.itemId],
-						config: {
-							...items[action.itemId].config,
-							size: action.size
-						}
-					}
-				};
+		case UPDATE_PREVIEW_IMAGE: {
+			const newItems = Object.fromEntries(
+				Object.entries(layoutData.items).map(([key, value]) => {
+					const newValue =
+						value.config?.styles?.backgroundImage?.classPK ===
+						action.fileEntryId
+							? setIn(
+									value,
+									[
+										'config',
+										'styles',
+										'backgroundImage',
+										'url',
+									],
+									action.previewURL
+							  )
+							: value;
 
-				if (action.nextColumnItemId in items) {
-					items = {
-						...items,
-						[action.nextColumnItemId]: {
-							...items[action.nextColumnItemId],
-							config: {
-								...items[action.nextColumnItemId].config,
-								size: action.nextColumnSize
-							}
-						}
-					};
-				}
-			}
+					return [key, newValue];
+				})
+			);
 
 			return {
 				...layoutData,
-				items
+				items: newItems,
 			};
 		}
-
-		case UPDATE_LAYOUT_DATA:
-		case ADD_FRAGMENT_ENTRY_LINK:
-			return action.layoutData;
 
 		default:
 			return layoutData;

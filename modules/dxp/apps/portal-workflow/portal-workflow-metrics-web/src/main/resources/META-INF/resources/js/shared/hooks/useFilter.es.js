@@ -9,78 +9,54 @@
  * distribution rights of the Software.
  */
 
-import {useCallback, useContext, useEffect, useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {FilterContext} from '../components/filter/FilterContext.es';
 import {useFiltersConstants} from '../components/filter/hooks/useFiltersConstants.es';
 import {
 	getCapitalizedFilterKey,
 	getFilterResults,
-	getFilterValues,
-	getSelectedItems
+	getSelectedItems,
 } from '../components/filter/util/filterUtil.es';
 import {useRouterParams} from './useRouterParams.es';
 
 const useFilter = ({
 	filterKeys = [],
 	prefixKeys = [''],
-	withoutRouteParams
+	withoutRouteParams,
 }) => {
-	const {
-		dispatch,
-		dispatchFilter,
-		filterState,
-		filterValues,
-		setFilterValues
-	} = useContext(FilterContext);
+	const {dispatch, dispatchFilter, filterState, filterValues} = useContext(
+		FilterContext
+	);
 
 	const {filters} = useRouterParams();
 	const {keys, pinnedValues, titles} = useFiltersConstants(filterKeys);
 
-	const prefixedKeys = useMemo(() => {
-		const newKeys = [];
+	const filtersError = filterKeys
+		.map((filterKey) => filterState.errors?.includes(filterKey))
+		.some((hasError) => hasError);
 
-		keys.forEach(key =>
-			prefixKeys.forEach(prefix => {
-				newKeys.push(getCapitalizedFilterKey(prefix, key));
-			})
-		);
-
-		return newKeys;
-	}, [keys, prefixKeys]);
-
-	const filterResults = useMemo(
-		() => getFilterResults(prefixedKeys, pinnedValues, titles, filterState),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[filterState, prefixedKeys]
+	const prefixedKeys = keys.reduce(
+		(keys, key) => [
+			...keys,
+			...prefixKeys.map((prefix) => getCapitalizedFilterKey(prefix, key)),
+		],
+		[]
 	);
 
-	const hasFilterError = useCallback(
-		filterKey => {
-			const {errors = []} = filterState;
-
-			return errors.includes(filterKey);
-		},
+	const selectedFilters = useMemo(
+		() =>
+			getSelectedItems(
+				getFilterResults(
+					prefixedKeys,
+					pinnedValues,
+					titles,
+					filterState
+				)
+			),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[filterState]
 	);
-
-	const filtersError = useMemo(
-		() =>
-			filterKeys
-				.map(hasFilterError)
-				.reduce((current, next) => current || next, false),
-		[filterKeys, hasFilterError]
-	);
-
-	const selectedFilters = useMemo(() => getSelectedItems(filterResults), [
-		filterResults
-	]);
-
-	useEffect(() => {
-		const newFilterValues = getFilterValues(filterState);
-		setFilterValues(newFilterValues);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [filterState]);
 
 	return {
 		dispatch,
@@ -88,9 +64,8 @@ const useFilter = ({
 		filterState,
 		filterValues: withoutRouteParams ? filterValues : filters,
 		filtersError,
-		hasFilterError,
 		prefixedKeys,
-		selectedFilters
+		selectedFilters,
 	};
 };
 

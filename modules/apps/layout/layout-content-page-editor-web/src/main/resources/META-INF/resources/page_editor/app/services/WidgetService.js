@@ -16,6 +16,7 @@ import {config} from '../config/index';
 import serviceFetch from './serviceFetch';
 
 export default {
+
 	/**
 	 * Adds a Widget to the current layout
 	 * @param {object} options
@@ -31,8 +32,9 @@ export default {
 		onNetworkStatus,
 		parentItemId,
 		portletId,
+		portletItemId,
 		position,
-		segmentsExperienceId
+		segmentsExperienceId,
 	}) {
 		return serviceFetch(
 			config.addPortletURL,
@@ -40,12 +42,21 @@ export default {
 				body: {
 					parentItemId,
 					portletId,
+					portletItemId,
 					position,
-					segmentsExperienceId
-				}
+					segmentsExperienceId,
+				},
 			},
 			onNetworkStatus,
 			{requestGenerateDraft: true}
 		);
-	}
+	},
+
+	getWidgets(segmentsExperienceId) {
+		return serviceFetch(
+			config.getWidgetsURL,
+			{body: {segmentsExperienceId}},
+			() => {}
+		);
+	},
 };

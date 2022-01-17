@@ -18,6 +18,7 @@ import com.liferay.marketplace.app.manager.web.internal.util.AppDisplay;
 import com.liferay.marketplace.app.manager.web.internal.util.AppDisplayFactoryUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.BundleManagerUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.comparator.ModuleServiceReferenceComparator;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -56,11 +57,11 @@ public class ViewModuleManagementToolbarDisplayContext
 	}
 
 	public String getApp() {
-		return ParamUtil.getString(request, "app");
+		return ParamUtil.getString(httpServletRequest, "app");
 	}
 
 	public AppDisplay getAppDisplay() {
-		String app = ParamUtil.getString(request, "app");
+		String app = ParamUtil.getString(httpServletRequest, "app");
 
 		AppDisplay appDisplay = null;
 
@@ -73,37 +74,44 @@ public class ViewModuleManagementToolbarDisplayContext
 
 		if (appDisplay == null) {
 			appDisplay = AppDisplayFactoryUtil.getAppDisplay(
-				allBundles, app, request.getLocale());
+				allBundles, app, httpServletRequest.getLocale());
 		}
 
 		return appDisplay;
 	}
 
 	public Bundle getBundle() {
-		String symbolicName = ParamUtil.getString(request, "symbolicName");
-		String version = ParamUtil.getString(request, "version");
+		String symbolicName = ParamUtil.getString(
+			httpServletRequest, "symbolicName");
+		String version = ParamUtil.getString(httpServletRequest, "version");
 
 		return BundleManagerUtil.getBundle(symbolicName, version);
 	}
 
 	public String getPluginType() {
-		return ParamUtil.getString(request, "pluginType", "components");
+		return ParamUtil.getString(
+			httpServletRequest, "pluginType", "components");
 	}
 
 	@Override
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view_module.jsp");
-		portletURL.setParameter("app", getApp());
-
 		Bundle bundle = getBundle();
 
-		portletURL.setParameter("symbolicName", bundle.getSymbolicName());
-		portletURL.setParameter("version", String.valueOf(bundle.getVersion()));
-
-		portletURL.setParameter("pluginType", getPluginType());
-		portletURL.setParameter("orderByType", getOrderByType());
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCPath(
+			"/view_module.jsp"
+		).setParameter(
+			"app", getApp()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"pluginType", getPluginType()
+		).setParameter(
+			"symbolicName", bundle.getSymbolicName()
+		).setParameter(
+			"version", bundle.getVersion()
+		).buildPortletURL();
 
 		if (_searchContainer != null) {
 			portletURL.setParameter(
@@ -118,7 +126,7 @@ public class ViewModuleManagementToolbarDisplayContext
 	}
 
 	@Override
-	public SearchContainer getSearchContainer() throws Exception {
+	public SearchContainer<Object> getSearchContainer() throws Exception {
 		if (_searchContainer != null) {
 			return _searchContainer;
 		}
@@ -131,7 +139,7 @@ public class ViewModuleManagementToolbarDisplayContext
 			emptyResultsMessage = "no-components-were-found";
 		}
 
-		SearchContainer searchContainer = new SearchContainer(
+		SearchContainer<Object> searchContainer = new SearchContainer(
 			liferayPortletRequest, getPortletURL(), null, emptyResultsMessage);
 
 		searchContainer.setOrderByCol(getOrderByCol());
@@ -178,8 +186,10 @@ public class ViewModuleManagementToolbarDisplayContext
 			end = serviceReferences.size();
 		}
 
+		List<Object> results = new ArrayList<>(serviceReferences);
+
 		searchContainer.setResults(
-			serviceReferences.subList(searchContainer.getStart(), end));
+			results.subList(searchContainer.getStart(), end));
 
 		searchContainer.setTotal(serviceReferences.size());
 
@@ -188,6 +198,6 @@ public class ViewModuleManagementToolbarDisplayContext
 		return _searchContainer;
 	}
 
-	private SearchContainer _searchContainer;
+	private SearchContainer<Object> _searchContainer;
 
 }

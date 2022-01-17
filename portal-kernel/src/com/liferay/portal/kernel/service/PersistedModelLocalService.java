@@ -14,8 +14,10 @@
 
 package com.liferay.portal.kernel.service;
 
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
 import java.io.Serializable;
 
@@ -33,6 +35,14 @@ public interface PersistedModelLocalService {
 
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException;
+
+	public <T> T dslQuery(DSLQuery dslQuery);
+
+	public int dslQueryCount(DSLQuery dslQuery);
+
+	public default BasePersistence<?> getBasePersistence() {
+		throw new UnsupportedOperationException();
+	}
 
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;

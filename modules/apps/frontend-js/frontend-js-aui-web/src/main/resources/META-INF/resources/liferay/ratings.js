@@ -12,9 +12,12 @@
  * details.
  */
 
+/**
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
+ */
 AUI.add(
 	'liferay-ratings',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var CSS_ICON_STAR = 'icon-star-on';
@@ -37,7 +40,7 @@ AUI.add(
 
 		var STR_YOUR_SCORE = 'yourScore';
 
-		var TPL_LABEL_SCORE = '{desc} ({totalEntries} {voteLabel})';
+		var TPL_LABEL_SCORE = '{description} ({totalEntries} {voteLabel})';
 		var TPL_LABEL_SCORE_STACKED = '({totalEntries} {voteLabel})';
 
 		var buffer = [];
@@ -77,10 +80,10 @@ AUI.add(
 			},
 
 			_registerTask: A.debounce(() => {
-				buffer.forEach(item => {
+				buffer.forEach((item) => {
 					var handle = item.container.on(
 						EVENT_INTERACTIONS_RENDER,
-						event => {
+						(event) => {
 							handle.detach();
 
 							var config = item.config;
@@ -97,8 +100,8 @@ AUI.add(
 
 			_thumbScoreMap: {
 				'-1': -1,
-				down: 0,
-				up: 1
+				'down': 0,
+				'up': 1,
 			},
 
 			ATTRS: {
@@ -137,8 +140,8 @@ AUI.add(
 						}
 
 						return yourScore;
-					}
-				}
+					},
+				},
 			},
 
 			EXTENDS: A.Base,
@@ -177,7 +180,7 @@ AUI.add(
 					return prefix + score;
 				},
 
-				_getLabel(desc, totalEntries) {
+				_getLabel(description, totalEntries) {
 					var instance = this;
 
 					var tplLabel = '';
@@ -199,9 +202,9 @@ AUI.add(
 					}
 
 					return Lang.sub(tplLabel, {
-						desc,
+						description,
 						totalEntries,
-						voteLabel
+						voteLabel,
 					});
 				},
 
@@ -216,7 +219,7 @@ AUI.add(
 						className: instance.get('className'),
 						classPK: instance.get('classPK'),
 						ratingType: instance.get('type'),
-						score
+						score,
 					});
 
 					var data = {
@@ -224,15 +227,15 @@ AUI.add(
 						classPK: instance.get('classPK'),
 						p_auth: Liferay.authToken,
 						p_l_id: themeDisplay.getPlid(),
-						score
+						score,
 					};
 
 					Liferay.Util.fetch(url, {
 						body: Liferay.Util.objectToFormData(data),
-						method: 'POST'
+						method: 'POST',
 					})
-						.then(response => response.json())
-						.then(response => callback.call(instance, response));
+						.then((response) => response.json())
+						.then((response) => callback.call(instance, response));
 				},
 
 				_showScoreTooltip(event) {
@@ -251,10 +254,9 @@ AUI.add(
 						message = Liferay.Language.get('stars');
 					}
 
-					Liferay.Portal.ToolTip.show(
-						event.currentTarget,
-						stars + ' ' + message
-					);
+					var currentTarget = event.currentTarget.getDOM();
+
+					currentTarget.setAttribute('title', stars + ' ' + message);
 				},
 
 				_updateAverageScoreText(averageScore) {
@@ -280,7 +282,7 @@ AUI.add(
 
 						var averageRatingText = Lang.sub(message, [
 							averageScore,
-							instance.get(STR_SIZE)
+							instance.get(STR_SIZE),
 						]);
 
 						firstNode.attr('title', averageRatingText);
@@ -323,7 +325,7 @@ AUI.add(
 							'title',
 							Lang.sub(ratingMessage, [
 								ratingScore,
-								instance.get(STR_SIZE)
+								instance.get(STR_SIZE),
 							])
 						);
 					});
@@ -333,7 +335,7 @@ AUI.add(
 					var instance = this;
 
 					instance._renderRatings();
-				}
+				},
 			},
 
 			register(config) {
@@ -347,7 +349,7 @@ AUI.add(
 				if (container) {
 					buffer.push({
 						config,
-						container: A.one(container)
+						container: A.one(container),
 					});
 
 					instance._registerTask();
@@ -355,14 +357,14 @@ AUI.add(
 				else {
 					instance._registerRating(config);
 				}
-			}
+			},
 		});
 
 		var StarRating = A.Component.create({
 			ATTRS: {
 				initialFocus: {
-					validator: Lang.isBoolean
-				}
+					validator: Lang.isBoolean,
+				},
 			},
 
 			EXTENDS: Ratings,
@@ -407,17 +409,14 @@ AUI.add(
 								element: CSS_ICON_STAR_EMPTY,
 								hover: CSS_ICON_STAR,
 								off: CSS_ICON_STAR_EMPTY,
-								on: CSS_ICON_STAR
+								on: CSS_ICON_STAR,
 							},
 							defaultSelected: yourScore,
-							srcNode: '#' + namespace + 'ratingStarContent'
+							srcNode: '#' + namespace + 'ratingStarContent',
 						}).render();
 
 						if (instance.get(STR_INITIAL_FOCUS)) {
-							instance.ratings
-								.get('elements')
-								.item(0)
-								.focus();
+							instance.ratings.get('elements').item(0).focus();
 						}
 
 						instance._bindRatings();
@@ -471,15 +470,15 @@ AUI.add(
 
 					instance._updateAverageScoreText(formattedAverageScore);
 					instance._updateScoreText(score);
-				}
-			}
+				},
+			},
 		});
 
 		var ThumbRating = A.Component.create({
 			ATTRS: {
 				initialFocus: {
-					validator: Lang.isBoolean
-				}
+					validator: Lang.isBoolean,
+				},
 			},
 
 			EXTENDS: Ratings,
@@ -498,9 +497,9 @@ AUI.add(
 							hover: 'rating-on',
 							off: 'rating-off',
 							on: 'rating-on',
-							up: ''
+							up: '',
 						},
-						srcNode: '#' + namespace + 'ratingThumbContent'
+						srcNode: '#' + namespace + 'ratingThumbContent',
 					}).render();
 				},
 
@@ -511,7 +510,7 @@ AUI.add(
 
 					return {
 						negativeVotes,
-						positiveVotes
+						positiveVotes,
 					};
 				},
 
@@ -678,8 +677,8 @@ AUI.add(
 								.html(thumbScore.positiveVotes);
 						}
 					}
-				}
-			}
+				},
+			},
 		});
 
 		var LikeRatingImpl = A.Component.create({
@@ -699,8 +698,8 @@ AUI.add(
 
 					elements.addClass(cssClasses.off);
 					elements.item(0).addClass(cssClasses.up);
-				}
-			}
+				},
+			},
 		});
 
 		var LikeRating = A.Component.create({
@@ -722,18 +721,18 @@ AUI.add(
 							hover: 'rating-on',
 							off: 'rating-off',
 							on: 'rating-on',
-							up: ''
+							up: '',
 						},
-						srcNode: '#' + namespace + 'ratingLikeContent'
+						srcNode: '#' + namespace + 'ratingLikeContent',
 					}).render();
 				},
 
 				_getThumbScores(entries) {
 					return {
-						positiveVotes: entries
+						positiveVotes: entries,
 					};
-				}
-			}
+				},
+			},
 		});
 
 		Ratings.LikeRating = LikeRating;
@@ -744,6 +743,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-rating']
+		requires: ['aui-rating'],
 	}
 );

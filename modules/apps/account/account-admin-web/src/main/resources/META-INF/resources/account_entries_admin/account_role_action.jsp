@@ -22,6 +22,8 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 ResultRow row = (ResultRow)request.getAttribute(WebKeys.SEARCH_CONTAINER_RESULT_ROW);
 
 AccountRoleDisplay accountRoleDisplay = (AccountRoleDisplay)row.getObject();
+
+Role role = accountRoleDisplay.getRole();
 %>
 
 <liferay-ui:icon-menu
@@ -31,19 +33,31 @@ AccountRoleDisplay accountRoleDisplay = (AccountRoleDisplay)row.getObject();
 	message="<%= StringPool.BLANK %>"
 	showWhenSingleIcon="<%= true %>"
 >
-	<c:if test="<%= !AccountRoleConstants.isRequiredRole(accountRoleDisplay.getRole()) %>">
-		<portlet:renderURL var="editAccountRoleURL">
-			<portlet:param name="mvcPath" value="/account_entries_admin/edit_account_role.jsp" />
-			<portlet:param name="backURL" value="<%= currentURL %>" />
-			<portlet:param name="accountEntryId" value="<%= String.valueOf(accountEntryDisplay.getAccountEntryId()) %>" />
-			<portlet:param name="accountRoleId" value="<%= String.valueOf(accountRoleDisplay.getAccountRoleId()) %>" />
-		</portlet:renderURL>
+	<portlet:renderURL var="editAccountRoleURL">
+		<portlet:param name="mvcPath" value="/account_entries_admin/edit_account_role.jsp" />
+		<portlet:param name="backURL" value="<%= currentURL %>" />
+		<portlet:param name="accountEntryId" value="<%= String.valueOf(accountEntryDisplay.getAccountEntryId()) %>" />
+		<portlet:param name="accountRoleId" value="<%= String.valueOf(accountRoleDisplay.getAccountRoleId()) %>" />
+	</portlet:renderURL>
 
+	<c:if test="<%= !AccountRoleConstants.isSharedRole(role) %>">
 		<liferay-ui:icon
 			message="edit"
 			url="<%= editAccountRoleURL %>"
 		/>
 
+		<liferay-ui:icon
+			message="define-permissions"
+			url='<%= HttpUtil.setParameter(editAccountRoleURL, liferayPortletResponse.getNamespace() + "screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_DEFINE_PERMISSIONS) %>'
+		/>
+	</c:if>
+
+	<liferay-ui:icon
+		message="assign-users"
+		url='<%= HttpUtil.setParameter(editAccountRoleURL, liferayPortletResponse.getNamespace() + "screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_ASSIGNEES) %>'
+	/>
+
+	<c:if test="<%= !AccountRoleConstants.isSharedRole(role) %>">
 		<portlet:actionURL name="/account_admin/delete_account_roles" var="deleteAccountRolesURL">
 			<portlet:param name="redirect" value="<%= currentURL %>" />
 			<portlet:param name="accountRoleIds" value="<%= String.valueOf(accountRoleDisplay.getAccountRoleId()) %>" />

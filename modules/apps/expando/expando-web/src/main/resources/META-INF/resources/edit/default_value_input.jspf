@@ -21,7 +21,9 @@
 		boolean curValue = true;
 
 		if (defaultValue != null) {
-			curValue = ((Boolean)defaultValue).booleanValue();
+			Boolean defaultValueBoolean = (Boolean)defaultValue;
+
+			curValue = defaultValueBoolean.booleanValue();
 		}
 		%>
 
@@ -127,43 +129,17 @@
 			/>
 		</div>
 
-		<aui:script require="map-common/js/MapBase.es as MapBase">
-			var geolocationField = {
-				init: function() {
-					Liferay.MapBase.get('<portlet:namespace /><%= name %>', function(map) {
-						map.on(
-							'positionChange',
-							geolocationField.onPositionChange,
-							geolocationField
-						);
-					});
-				},
-				onPositionChange: function(event) {
-					var inputName = '<portlet:namespace /><%= name %>';
-					var inputNode = document.querySelector('[name="' + inputName + '"]');
-
-					var location = event.newVal.location;
-
-					if (inputNode) {
-						inputNode.setAttribute(
-							'value',
-							JSON.stringify({
-								latitude: location.lat,
-								longitude: location.lng
-							})
-						);
-					}
-
-					var locationNode = document.getElementById(inputName + 'Location');
-
-					if (locationNode) {
-						locationNode.innerHTML = event.newVal.address;
-					}
-				}
-			};
-
-			geolocationField.init();
-		</aui:script>
+		<liferay-frontend:component
+			componentId="GeoLocationField"
+			context='<%=
+				HashMapBuilder.<String, Object>put(
+					"inputName", "<portlet:namespace /><%= name %>"
+				).put(
+					"mapName", "<portlet:namespace /><%= name %>"
+				).build()
+			%>'
+			module="js/GeoLocationField"
+		/>
 
 		<aui:input name="<%= name %>" type="hidden" value="<%= value.toString() %>" />
 	</c:when>
@@ -200,7 +176,7 @@
 
 		<c:if test="<%= ((type == ExpandoColumnConstants.STRING) || (type == ExpandoColumnConstants.STRING_LOCALIZED)) && (expandoColumn == null) %>">
 			<div id="<portlet:namespace />textFieldLocalizedCheckbox">
-				<aui:input label="make-field-localizable" name="Property--localize-field--" onChange='<%= renderResponse.getNamespace() + "onLocalizeFieldChange(event);" %>' type="checkbox" value="<%= type == ExpandoColumnConstants.STRING_LOCALIZED %>" />
+				<aui:input label="make-field-localizable" name="Property--localize-field--" onChange='<%= liferayPortletResponse.getNamespace() + "onLocalizeFieldChange(event);" %>' type="checkbox" value="<%= type == ExpandoColumnConstants.STRING_LOCALIZED %>" />
 
 				<aui:script>
 					Liferay.Util.toggleBoxes(
@@ -249,7 +225,7 @@
 					[
 						'indexTypeSearchableAsKeyword',
 						'indexTypeSearchableAsKeywordToggleSwitch',
-						'precisionTypeSelect'
+						'precisionTypeSelect',
 					],
 					'disable'
 				);
@@ -258,7 +234,7 @@
 					[
 						'indexTypeKeyword',
 						'indexTypeText',
-						'searchableKeyWordOrText'
+						'searchableKeyWordOrText',
 					],
 					'enable'
 				);
@@ -287,7 +263,7 @@
 					[
 						'indexTypeKeyword',
 						'indexTypeText',
-						'searchableKeyWordOrText'
+						'searchableKeyWordOrText',
 					],
 					'disable'
 				);
@@ -296,7 +272,7 @@
 					[
 						'indexTypeSearchableAsKeyword',
 						'indexTypeSearchableAsKeywordToggleSwitch',
-						'precisionTypeSelect'
+						'precisionTypeSelect',
 					],
 					'enable'
 				);
@@ -321,7 +297,7 @@
 	}
 
 	function updateElement(formElementIds, action) {
-		formElementIds.forEach(function(formElementId) {
+		formElementIds.forEach((formElementId) => {
 			var formElement = document.getElementById(
 				'<portlet:namespace />' + formElementId
 			);

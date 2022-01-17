@@ -3,8 +3,8 @@ definition {
 
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testray.component.names = "Page Templates";
-	property testray.main.component.name = "Page Templates";
+	property testray.component.names = "Widget Page Templates";
+	property testray.main.component.name = "Widget Page Templates";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -23,17 +23,24 @@ definition {
 		}
 	}
 
+	@description = "Assert could not add page via page template action."
 	@priority = "3"
 	test ViewNoAddPageTabViaPageTemplatesCP {
-		var siteName = TestCase.getSiteName(siteName = "${siteName}");
+		property test.name.skip.portal.instance = "WidgetPageTemplatesUseCase#ViewNoAddPageTabViaPageTemplatesCP";
 
-		PageTemplatesAdminGlobalSite.openGlobalPageTemplatesAdmin();
+		task ("Get site name and go to page template in global site") {
+			var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
-		PageTemplatesAdminGlobalSite.gotoPageTemplateViaEdit(pageTemplateName = "Wiki");
+			PageTemplatesAdminGlobalSite.openGlobalPageTemplatesAdmin();
+		}
 
-		SelectWindow(locator1 = "title=Wiki - ${siteName}");
+		task ("Assert could not add page via Wiki page template") {
+			PageTemplatesAdminGlobalSite.gotoPageTemplateViaEdit(pageTemplateName = "Wiki");
 
-		Dockbar.viewAddTabsWithNoAddPagePermission();
+			SelectWindow(locator1 = "title=Wiki - ${siteName}");
+
+			Dockbar.viewAddTabsWithNoAddPagePermission();
+		}
 	}
 
 }

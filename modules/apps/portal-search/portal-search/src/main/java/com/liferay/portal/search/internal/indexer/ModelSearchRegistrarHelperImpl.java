@@ -42,7 +42,14 @@ public class ModelSearchRegistrarHelperImpl
 		Class<? extends BaseModel<?>> clazz, BundleContext bundleContext,
 		ModelSearchDefinitionContributor modelSearchDefinitionContributor) {
 
-		String className = clazz.getName();
+		return register(
+			clazz.getName(), bundleContext, modelSearchDefinitionContributor);
+	}
+
+	@Override
+	public ServiceRegistration<?> register(
+		String className, BundleContext bundleContext,
+		ModelSearchDefinitionContributor modelSearchDefinitionContributor) {
 
 		ModelSearchDefinitionImpl modelSearchDefinitionImpl =
 			new ModelSearchDefinitionImpl(className);
@@ -105,6 +112,11 @@ public class ModelSearchRegistrarHelperImpl
 		}
 
 		@Override
+		public void setSearchEngineId(String searchEngineId) {
+			_modelSearchSettingsImpl.setSearchEngineId(searchEngineId);
+		}
+
+		@Override
 		public void setSearchResultPermissionFilterSuppressed(
 			boolean searchResultPermissionFilterSuppressed) {
 
@@ -115,6 +127,11 @@ public class ModelSearchRegistrarHelperImpl
 		@Override
 		public void setSelectAllLocales(boolean selectAllLocales) {
 			_modelSearchSettingsImpl.setSelectAllLocales(selectAllLocales);
+		}
+
+		@Override
+		public void setStagingAware(boolean stagingAware) {
+			_modelSearchSettingsImpl.setStagingAware(stagingAware);
 		}
 
 		private ModelIndexerWriterContributor<?> _modelIndexWriterContributor;

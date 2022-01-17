@@ -14,6 +14,8 @@
 
 package com.liferay.password.policies.admin.web.internal.display.context;
 
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
@@ -23,7 +25,7 @@ import com.liferay.password.policies.admin.web.internal.search.AddOrganizationPa
 import com.liferay.password.policies.admin.web.internal.search.AddUserPasswordPolicyChecker;
 import com.liferay.password.policies.admin.web.internal.search.DeleteOrganizationPasswordPolicyChecker;
 import com.liferay.password.policies.admin.web.internal.search.DeleteUserPasswordPolicyChecker;
-import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -82,19 +84,16 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 	public List<DropdownItem> getActionDropdownItems() {
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				String methodName = StringPool.BLANK;
+				String action = StringPool.BLANK;
 
 				if (_tabs2.equals("users")) {
-					methodName = "deleteUsers();";
+					action = "deleteUsers";
 				}
 				else if (_tabs2.equals("organizations")) {
-					methodName = "deleteOrganizations();";
+					action = "deleteOrganizations";
 				}
 
-				dropdownItem.setHref(
-					StringBundler.concat(
-						"javascript:", _renderResponse.getNamespace(),
-						methodName));
+				dropdownItem.putData("action", action);
 				dropdownItem.setIcon("trash");
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "delete"));
@@ -104,11 +103,18 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
+	}
 
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+	public CreationMenu getCreationMenu() {
+		return CreationMenuBuilder.addPrimaryDropdownItem(
+			dropdownItem -> {
+			}
+		).build();
 	}
 
 	public List<DropdownItem> getFilterDropdownItems() {
@@ -151,7 +157,7 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 		return _orderByType;
 	}
 
-	public SearchContainer getOrganizationSearchContainer()
+	public SearchContainer<Organization> getOrganizationSearchContainer()
 		throws PortalException {
 
 		OrganizationSearch organizationSearch = new OrganizationSearch(
@@ -204,27 +210,33 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			_mvcPath
+		).setRedirect(
+			ParamUtil.getString(_httpServletRequest, "redirect")
+		).setKeywords(
+			() -> {
+				if (Validator.isNotNull(getKeywords())) {
+					return getKeywords();
+				}
 
-		portletURL.setParameter("mvcPath", _mvcPath);
-		portletURL.setParameter("tabs1", "assignees");
-		portletURL.setParameter("tabs2", getTabs2());
-		portletURL.setParameter(
-			"passwordPolicyId",
-			String.valueOf(_passwordPolicy.getPasswordPolicyId()));
-
-		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
-
-		portletURL.setParameter("redirect", redirect);
-
-		portletURL.setParameter("displayStyle", _displayStyle);
-
-		if (Validator.isNotNull(getKeywords())) {
-			portletURL.setParameter("keywords", getKeywords());
-		}
-
-		portletURL.setParameter("orderByCol", getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
+				return null;
+			}
+		).setTabs1(
+			"assignees"
+		).setTabs2(
+			getTabs2()
+		).setParameter(
+			"displayStyle", _displayStyle
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"passwordPolicyId", _passwordPolicy.getPasswordPolicyId()
+		).buildPortletURL();
 
 		if (_searchContainer != null) {
 			portletURL.setParameter(
@@ -244,7 +256,7 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 		return searchActionURL.toString();
 	}
 
-	public SearchContainer getSearchContainer() throws Exception {
+	public SearchContainer<?> getSearchContainer() throws Exception {
 		if (Objects.equals(getTabs2(), "organizations")) {
 			_searchContainer = getOrganizationSearchContainer();
 		}
@@ -256,13 +268,12 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public String getTabs2() {
@@ -273,7 +284,7 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 		return _tabs2;
 	}
 
-	public SearchContainer getUserSearchContainer() {
+	public SearchContainer<User> getUserSearchContainer() {
 		UserSearch userSearch = new UserSearch(_renderRequest, getPortletURL());
 
 		RowChecker rowChecker = new AddUserPasswordPolicyChecker(
@@ -372,7 +383,7 @@ public class EditPasswordPolicyAssignmentsManagementToolbarDisplayContext {
 	private final PasswordPolicy _passwordPolicy;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
-	private SearchContainer _searchContainer;
+	private SearchContainer<?> _searchContainer;
 	private String _tabs2;
 
 }

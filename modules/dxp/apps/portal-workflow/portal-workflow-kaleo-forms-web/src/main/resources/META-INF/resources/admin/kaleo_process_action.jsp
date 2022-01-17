@@ -51,7 +51,7 @@ KaleoProcess kaleoProcess = (KaleoProcess)row.getObject();
 		StringBundler sb = new StringBundler(5);
 
 		sb.append("javascript:");
-		sb.append(renderResponse.getNamespace());
+		sb.append(liferayPortletResponse.getNamespace());
 		sb.append("exportKaleoProcess('");
 		sb.append(exportURL);
 		sb.append("');");
@@ -96,7 +96,7 @@ KaleoProcess kaleoProcess = (KaleoProcess)row.getObject();
 	</c:if>
 
 	<c:if test="<%= KaleoProcessPermission.contains(permissionChecker, kaleoProcess, ActionKeys.DELETE) %>">
-		<portlet:actionURL name="deleteKaleoProcess" var="deleteURL">
+		<portlet:actionURL name="/kaleo_forms_admin/delete_kaleo_process" var="deleteURL">
 			<portlet:param name="redirect" value="<%= currentURL %>" />
 			<portlet:param name="kaleoProcessId" value="<%= String.valueOf(kaleoProcess.getKaleoProcessId()) %>" />
 		</portlet:actionURL>

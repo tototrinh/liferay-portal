@@ -24,6 +24,9 @@ import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutSetLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
@@ -93,19 +96,17 @@ public class MDRRuleGroupInstanceServiceImpl
 		String className, long classPK, int start, int end,
 		OrderByComparator<MDRRuleGroupInstance> orderByComparator) {
 
-		long groupId = getGroupId(className, classPK);
-
 		return mdrRuleGroupInstancePersistence.filterFindByG_C_C(
-			groupId, classNameLocalService.getClassNameId(className), classPK,
-			start, end, orderByComparator);
+			getGroupId(className, classPK),
+			_classNameLocalService.getClassNameId(className), classPK, start,
+			end, orderByComparator);
 	}
 
 	@Override
 	public int getRuleGroupInstancesCount(String className, long classPK) {
-		long groupId = getGroupId(className, classPK);
-
 		return mdrRuleGroupInstancePersistence.filterCountByG_C_C(
-			groupId, classNameLocalService.getClassNameId(className), classPK);
+			getGroupId(className, classPK),
+			_classNameLocalService.getClassNameId(className), classPK);
 	}
 
 	@Override
@@ -129,14 +130,15 @@ public class MDRRuleGroupInstanceServiceImpl
 		long groupId = 0;
 
 		if (className.equals(Layout.class.getName())) {
-			Layout layout = layoutLocalService.fetchLayout(classPK);
+			Layout layout = _layoutLocalService.fetchLayout(classPK);
 
 			if (layout != null) {
 				groupId = layout.getGroupId();
 			}
 		}
 		else if (className.equals(LayoutSet.class.getName())) {
-			LayoutSet layoutSet = layoutSetLocalService.fetchLayoutSet(classPK);
+			LayoutSet layoutSet = _layoutSetLocalService.fetchLayoutSet(
+				classPK);
 
 			if (layoutSet != null) {
 				groupId = layoutSet.getGroupId();
@@ -145,6 +147,15 @@ public class MDRRuleGroupInstanceServiceImpl
 
 		return groupId;
 	}
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
+	@Reference
+	private LayoutLocalService _layoutLocalService;
+
+	@Reference
+	private LayoutSetLocalService _layoutSetLocalService;
 
 	@Reference(
 		target = "(model.class.name=com.liferay.mobile.device.rules.model.MDRRuleGroupInstance)"

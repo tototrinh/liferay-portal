@@ -20,42 +20,15 @@
 OrganizationItemSelectorViewDisplayContext organizationItemSelectorViewDisplayContext = (OrganizationItemSelectorViewDisplayContext)request.getAttribute(OrganizationItemSelectorViewConstants.ORGANIZATION_ITEM_SELECTOR_VIEW_DISPLAY_CONTEXT);
 
 String itemSelectedEventName = organizationItemSelectorViewDisplayContext.getItemSelectedEventName();
-
-PortletURL portletURL = organizationItemSelectorViewDisplayContext.getPortletURL();
 %>
 
-<liferay-frontend:management-bar
-	includeCheckBox="<%= true %>"
-	searchContainerId="organizations"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new OrganizationItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, organizationItemSelectorViewDisplayContext) %>"
+/>
+
+<clay:container-fluid
+	id='<%= liferayPortletResponse.getNamespace() + "organizationSelectorWrapper" %>'
 >
-	<liferay-frontend:management-bar-buttons>
-		<liferay-frontend:management-bar-display-buttons
-			displayViews='<%= new String[] {"list"} %>'
-			portletURL="<%= portletURL %>"
-			selectedDisplayStyle="list"
-		/>
-	</liferay-frontend:management-bar-buttons>
-
-	<liferay-frontend:management-bar-filters>
-		<liferay-frontend:management-bar-navigation
-			navigationKeys='<%= new String[] {"all"} %>'
-			portletURL="<%= portletURL %>"
-		/>
-
-		<liferay-frontend:management-bar-sort
-			orderByCol="<%= organizationItemSelectorViewDisplayContext.getOrderByCol() %>"
-			orderByType="<%= organizationItemSelectorViewDisplayContext.getOrderByType() %>"
-			orderColumns='<%= new String[] {"name", "type"} %>'
-			portletURL="<%= portletURL %>"
-		/>
-
-		<li>
-			<liferay-item-selector:search />
-		</li>
-	</liferay-frontend:management-bar-filters>
-</liferay-frontend:management-bar>
-
-<div class="container-fluid-1280" id="<portlet:namespace />organizationSelectorWrapper">
 	<liferay-ui:search-container
 		id="organizations"
 		searchContainer="<%= organizationItemSelectorViewDisplayContext.getSearchContainer() %>"
@@ -68,27 +41,27 @@ PortletURL portletURL = organizationItemSelectorViewDisplayContext.getPortletURL
 		>
 
 			<%
-			Map<String, Object> data = new HashMap<>();
-
-			data.put("id", organization.getOrganizationId());
-			data.put("name", organization.getName());
-
-			row.setData(data);
+			row.setData(
+				HashMapBuilder.<String, Object>put(
+					"id", organization.getOrganizationId()
+				).put(
+					"name", organization.getName()
+				).build());
 			%>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				property="name"
 			/>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="path"
 				value="<%= organizationItemSelectorViewDisplayContext.getPath(organization) %>"
 			/>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				property="type"
 			/>
 		</liferay-ui:search-container-row>
@@ -99,33 +72,33 @@ PortletURL portletURL = organizationItemSelectorViewDisplayContext.getPortletURL
 			searchContainer="<%= organizationItemSelectorViewDisplayContext.getSearchContainer() %>"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>
 
 <aui:script use="liferay-search-container">
 	var searchContainer = Liferay.SearchContainer.get(
 		'<portlet:namespace />organizations'
 	);
 
-	searchContainer.on('rowToggled', function(event) {
+	searchContainer.on('rowToggled', (event) => {
 		var allSelectedElements = event.elements.allSelectedElements;
 
 		var arr = [];
 
-		allSelectedElements.each(function() {
+		allSelectedElements.each(function () {
 			var row = this.ancestor('tr');
 
 			var data = row.getDOM().dataset;
 
 			arr.push({
 				id: data.id,
-				name: data.name
+				name: data.name,
 			});
 		});
 
 		Liferay.Util.getOpener().Liferay.fire(
 			'<%= HtmlUtil.escapeJS(itemSelectedEventName) %>',
 			{
-				data: arr
+				data: arr,
 			}
 		);
 	});

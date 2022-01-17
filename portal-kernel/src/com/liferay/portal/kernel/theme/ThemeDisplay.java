@@ -19,6 +19,7 @@ import com.liferay.exportimport.kernel.staging.StagingUtil;
 import com.liferay.mobile.device.rules.kernel.MDRRuleGroupInstance;
 import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
@@ -26,7 +27,6 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mobile.device.Device;
-import com.liferay.portal.kernel.model.Account;
 import com.liferay.portal.kernel.model.ColorScheme;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Contact;
@@ -137,19 +137,6 @@ public class ThemeDisplay
 		portletDisplay.setThemeDisplay(themeDisplay);
 
 		return themeDisplay;
-	}
-
-	public Account getAccount() {
-		if ((_account == null) && (_company != null)) {
-			try {
-				_account = _company.getAccount();
-			}
-			catch (PortalException portalException) {
-				ReflectionUtil.throwException(portalException);
-			}
-		}
-
-		return _account;
 	}
 
 	/**
@@ -455,11 +442,9 @@ public class ThemeDisplay
 
 			Group group = layout.getGroup();
 
-			return VirtualLayoutConstants.CANONICAL_URL_SEPARATOR.concat(
-				group.getFriendlyURL()
-			).concat(
-				_getFriendlyURL(layout)
-			);
+			return StringBundler.concat(
+				VirtualLayoutConstants.CANONICAL_URL_SEPARATOR,
+				group.getFriendlyURL(), _getFriendlyURL(layout));
 		}
 
 		return _getFriendlyURL(layout);
@@ -567,6 +552,10 @@ public class ThemeDisplay
 		return _pathContext;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public String getPathFlash() {
 		return _pathFlash;
 	}
@@ -947,11 +936,9 @@ public class ThemeDisplay
 	public String getThemeSetting(String key) {
 		Theme theme = getTheme();
 
-		String device = theme.getDevice();
-
 		Layout layout = getLayout();
 
-		return layout.getThemeSetting(key, device);
+		return layout.getThemeSetting(key, theme.getDevice());
 	}
 
 	/**
@@ -1272,10 +1259,6 @@ public class ThemeDisplay
 		return this;
 	}
 
-	public void setAccount(Account account) {
-		_account = account;
-	}
-
 	public void setAddSessionIdToURL(boolean addSessionIdToURL) {
 		_addSessionIdToURL = addSessionIdToURL;
 	}
@@ -1508,6 +1491,10 @@ public class ThemeDisplay
 		_pathContext = pathContext;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void setPathFlash(String pathFlash) {
 		_pathFlash = pathFlash;
 	}
@@ -1889,7 +1876,6 @@ public class ThemeDisplay
 
 	private static int _layoutManagePagesInitialChildren = Integer.MIN_VALUE;
 
-	private Account _account;
 	private boolean _addSessionIdToURL;
 	private boolean _ajax;
 	private boolean _async;
@@ -1957,7 +1943,7 @@ public class ThemeDisplay
 	private String _portalDomain = StringPool.BLANK;
 	private String _portalURL = StringPool.BLANK;
 	private PortletDisplay _portletDisplay = new PortletDisplay();
-	private Map<EmbeddedPortletCacheKey, Boolean> _portletEmbeddedMap =
+	private final Map<EmbeddedPortletCacheKey, Boolean> _portletEmbeddedMap =
 		new HashMap<>();
 	private String _ppid = StringPool.BLANK;
 	private String _realCompanyLogo = StringPool.BLANK;

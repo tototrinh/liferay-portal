@@ -179,10 +179,26 @@ public class CTAutoResolutionInfoPersistenceTest {
 	}
 
 	@Test
-	public void testCountByCTCollectionId() throws Exception {
-		_persistence.countByCTCollectionId(RandomTestUtil.nextLong());
+	public void testCountByCtCollectionId() throws Exception {
+		_persistence.countByCtCollectionId(RandomTestUtil.nextLong());
 
-		_persistence.countByCTCollectionId(0L);
+		_persistence.countByCtCollectionId(0L);
+	}
+
+	@Test
+	public void testCountByC_MCNI_SMCPK() throws Exception {
+		_persistence.countByC_MCNI_SMCPK(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextLong());
+
+		_persistence.countByC_MCNI_SMCPK(0L, 0L, 0L);
+	}
+
+	@Test
+	public void testCountByC_MCNI_SMCPKArrayable() throws Exception {
+		_persistence.countByC_MCNI_SMCPK(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			new long[] {RandomTestUtil.nextLong(), 0L});
 	}
 
 	@Test

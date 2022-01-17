@@ -17,15 +17,14 @@
 <%@ include file="/site_browser/init.jsp" %>
 
 <%
-String eventName = GetterUtil.getString(request.getAttribute("liferay-site:site-browser:eventName"));
 long[] selectedGroupIds = GetterUtil.getLongValues(request.getAttribute("liferay-site:site-browser:selectedGroupIds"));
 %>
 
 <clay:management-toolbar
-	displayContext="<%= new SiteBrowserManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteBrowserDisplayContext) %>"
+	managementToolbarDisplayContext="<%= new SiteBrowserManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteBrowserDisplayContext) %>"
 />
 
-<aui:form action="<%= siteBrowserDisplayContext.getPortletURL() %>" cssClass="container-fluid-1280" method="post" name="selectGroupFm">
+<aui:form action="<%= siteBrowserDisplayContext.getPortletURL() %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="selectGroupFm">
 	<liferay-ui:search-container
 		searchContainer="<%= siteBrowserDisplayContext.getSearchContainer() %>"
 	>
@@ -39,14 +38,19 @@ long[] selectedGroupIds = GetterUtil.getLongValues(request.getAttribute("liferay
 		>
 
 			<%
-			Map<String, Object> data = new HashMap<String, Object>();
-
-			data.put("groupdescriptivename", group.getDescriptiveName(locale));
-			data.put("groupid", group.getGroupId());
-			data.put("groupscopelabel", group.getScopeLabel(themeDisplay));
-			data.put("grouptype", LanguageUtil.get(request, group.getTypeLabel()));
-			data.put("url", group.getDisplayURL(themeDisplay));
-			data.put("uuid", group.getUuid());
+			Map<String, Object> data = HashMapBuilder.<String, Object>put(
+				"groupdescriptivename", group.getDescriptiveName(locale)
+			).put(
+				"groupid", group.getGroupId()
+			).put(
+				"groupscopelabel", LanguageUtil.get(request, group.getScopeLabel(themeDisplay))
+			).put(
+				"grouptype", LanguageUtil.get(request, group.getTypeLabel())
+			).put(
+				"url", group.getDisplayURL(themeDisplay)
+			).put(
+				"uuid", group.getUuid()
+			).build();
 			%>
 
 			<c:choose>
@@ -79,11 +83,6 @@ long[] selectedGroupIds = GetterUtil.getLongValues(request.getAttribute("liferay
 					</liferay-ui:search-container-column-text>
 				</c:when>
 				<c:when test='<%= Objects.equals(siteBrowserDisplayContext.getDisplayStyle(), "icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<clay:vertical-card
 							verticalCard="<%= new SiteVerticalCard(group, renderRequest, selectedGroupIds) %>"
@@ -123,10 +122,3 @@ long[] selectedGroupIds = GetterUtil.getLongValues(request.getAttribute("liferay
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script use="aui-base">
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectGroupFm',
-		'<%= HtmlUtil.escapeJS(eventName) %>'
-	);
-</aui:script>

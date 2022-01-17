@@ -21,6 +21,8 @@ import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -29,8 +31,10 @@ import java.util.Map;
  *
  * @author Brian Wing Shun Chan
  * @see DDMContent
+ * @deprecated
  * @generated
  */
+@Deprecated
 public class DDMContentWrapper
 	extends BaseModelWrapper<DDMContent>
 	implements DDMContent, ModelWrapper<DDMContent> {
@@ -44,6 +48,7 @@ public class DDMContentWrapper
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("uuid", getUuid());
 		attributes.put("contentId", getContentId());
 		attributes.put("groupId", getGroupId());
@@ -65,6 +70,12 @@ public class DDMContentWrapper
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
 		}
 
 		String uuid = (String)attributes.get("uuid");
@@ -135,6 +146,11 @@ public class DDMContentWrapper
 	}
 
 	@Override
+	public DDMContent cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
+	@Override
 	public String[] getAvailableLanguageIds() {
 		return model.getAvailableLanguageIds();
 	}
@@ -167,6 +183,16 @@ public class DDMContentWrapper
 	@Override
 	public Date getCreateDate() {
 		return model.getCreateDate();
+	}
+
+	/**
+	 * Returns the ct collection ID of this ddm content.
+	 *
+	 * @return the ct collection ID of this ddm content
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
 	}
 
 	/**
@@ -401,6 +427,16 @@ public class DDMContentWrapper
 	}
 
 	/**
+	 * Sets the ct collection ID of this ddm content.
+	 *
+	 * @param ctCollectionId the ct collection ID of this ddm content
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
 	 * Sets the data of this ddm content.
 	 *
 	 * @param data the data of this ddm content
@@ -561,6 +597,20 @@ public class DDMContentWrapper
 	@Override
 	public void setUuid(String uuid) {
 		model.setUuid(uuid);
+	}
+
+	@Override
+	public Map<String, Function<DDMContent, Object>>
+		getAttributeGetterFunctions() {
+
+		return model.getAttributeGetterFunctions();
+	}
+
+	@Override
+	public Map<String, BiConsumer<DDMContent, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override

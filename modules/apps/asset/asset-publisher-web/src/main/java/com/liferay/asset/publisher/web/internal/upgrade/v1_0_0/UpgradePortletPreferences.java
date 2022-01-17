@@ -25,7 +25,7 @@ import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletPreferences;
+import com.liferay.portal.kernel.upgrade.BasePortletPreferencesUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -46,13 +46,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.portlet.PortletPreferences;
 
 /**
  * @author Sam Ziemer
  */
-public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
+public class UpgradePortletPreferences
+	extends BasePortletPreferencesUpgradeProcess {
 
 	public UpgradePortletPreferences(
 		DDMStructureLocalService ddmStructureLocalService,
@@ -96,22 +99,19 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 	protected String getJournalArticleResourceUuid(String journalArticleUuid)
 		throws Exception {
 
-		StringBundler sb = new StringBundler(5);
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select JournalArticleResource.uuid_ from ",
+					"JournalArticleResource inner join JournalArticle on ",
+					"JournalArticle.resourcePrimKey = ",
+					"JournalArticleResource.resourcePrimKey where ",
+					"JournalArticle.uuid_ = ?"))) {
 
-		sb.append("select JournalArticleResource.uuid_ from ");
-		sb.append("JournalArticleResource inner join JournalArticle on ");
-		sb.append("JournalArticle.resourcePrimKey = ");
-		sb.append("JournalArticleResource.resourcePrimKey where ");
-		sb.append("JournalArticle.uuid_ = ?");
+			preparedStatement.setString(1, journalArticleUuid);
 
-		try (PreparedStatement ps = connection.prepareStatement(
-				sb.toString())) {
-
-			ps.setString(1, journalArticleUuid);
-
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					return rs.getString("uuid_");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getString("uuid_");
 				}
 
 				return null;
@@ -133,7 +133,9 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 			return false;
 		}
 
-		if (Objects.equals("ddm-date", ddmFormField.getType())) {
+		if (Objects.equals("date", ddmFormField.getType()) ||
+			Objects.equals("ddm-date", ddmFormField.getType())) {
+
 			return true;
 		}
 
@@ -189,9 +191,10 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 				portletPreferences.getValue(_DDM_STRUCTURE_FIELD_NAME, null));
 
 			for (DDMStructureLink ddmStructureLink : ddmStructureLinks) {
-				DDMForm ddmForm = getDDMForm(ddmStructureLink.getStructureId());
+				if (isDateField(
+						getDDMForm(ddmStructureLink.getStructureId()),
+						selectedFieldName)) {
 
-				if (isDateField(ddmForm, selectedFieldName)) {
 					transformDateFieldValue(portletPreferences);
 
 					break;
@@ -246,23 +249,26 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 			if (values.length == 3) {
 				long structureId = GetterUtil.getLong(values[1]);
 
+				String fieldName = values[2];
+
+				Matcher matcher = _invalidFieldNameCharsPattern.matcher(
+					fieldName);
+
+				if (matcher.find()) {
+					fieldName = fieldName.replaceAll(
+						_INVALID_FIELD_NAME_CHARS_REGEX, StringPool.BLANK);
+				}
+
 				DDMFormField ddmFormField = getDDMFormField(
-					getDDMForm(structureId), values[2]);
+					getDDMForm(structureId), fieldName);
 
 				if ((ddmFormField != null) &&
 					Validator.isNotNull(ddmFormField.getIndexType())) {
 
-					StringBundler sb = new StringBundler(7);
-
-					sb.append(values[0]);
-					sb.append(_DDM_FIELD_SEPARATOR);
-					sb.append(ddmFormField.getIndexType());
-					sb.append(_DDM_FIELD_SEPARATOR);
-					sb.append(values[1]);
-					sb.append(_DDM_FIELD_SEPARATOR);
-					sb.append(values[2]);
-
-					value = sb.toString();
+					value = StringBundler.concat(
+						values[0], _DDM_FIELD_SEPARATOR,
+						ddmFormField.getIndexType(), _DDM_FIELD_SEPARATOR,
+						values[1], _DDM_FIELD_SEPARATOR, fieldName);
 				}
 			}
 			else if ((values.length == 4) && oldDDMPreferenceValueFormat) {
@@ -291,6 +297,15 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 			PortletPreferencesFactoryUtil.fromXML(
 				companyId, ownerId, ownerType, plid, portletId, xml);
 
+		portletPreferences = upgradePreferences(portletPreferences);
+
+		return PortletPreferencesFactoryUtil.toXML(portletPreferences);
+	}
+
+	protected PortletPreferences upgradePreferences(
+			PortletPreferences portletPreferences)
+		throws Exception {
+
 		String[] assetEntryXmls = portletPreferences.getValues(
 			"asset-entry-xml", new String[0]);
 
@@ -316,11 +331,11 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 			else if (journalFilterByFieldEnable) {
 				upgradeJournalDateFieldValue(portletPreferences);
 			}
-
-			upgradeOrderByColumns(portletPreferences);
 		}
 
-		return PortletPreferencesFactoryUtil.toXML(portletPreferences);
+		upgradeOrderByColumns(portletPreferences);
+
+		return portletPreferences;
 	}
 
 	protected void upgradeUuids(String[] assetEntryXmls) throws Exception {
@@ -383,6 +398,9 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 	private static final String _DL_FILTER_BY_FIELD_ENABLED_KEY =
 		"subtypeFieldsFilterEnabledDLFileEntryAssetRendererFactory";
 
+	private static final String _INVALID_FIELD_NAME_CHARS_REGEX =
+		"([\\p{Punct}&&[^_]]|\\p{Space})+";
+
 	private static final String _JOURNAL_CLASS_TYPE =
 		"anyClassTypeJournalArticleAssetRendererFactory";
 
@@ -395,6 +413,8 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 
 	private static final Map<Long, DDMForm> _ddmSructureDDMForms =
 		new HashMap<>();
+	private static final Pattern _invalidFieldNameCharsPattern =
+		Pattern.compile(_INVALID_FIELD_NAME_CHARS_REGEX);
 
 	private final DDMStructureLinkLocalService _ddmStructureLinkLocalService;
 	private final DDMStructureLocalService _ddmStructureLocalService;

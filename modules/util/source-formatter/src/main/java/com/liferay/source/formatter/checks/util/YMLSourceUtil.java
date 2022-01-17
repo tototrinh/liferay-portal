@@ -72,6 +72,14 @@ public class YMLSourceUtil {
 				continue;
 			}
 
+			if (line.matches(" +")) {
+				sb.append(line);
+
+				sb.append("\n");
+
+				continue;
+			}
+
 			if (!line.startsWith(indent)) {
 				continue;
 			}
@@ -117,6 +125,39 @@ public class YMLSourceUtil {
 		}
 
 		return StringPool.BLANK;
+	}
+
+	public static List<String> splitDirectives(String content) {
+		List<String> directives = new ArrayList<>();
+
+		String[] lines = content.split("\n");
+
+		StringBundler sb = new StringBundler();
+
+		for (String line : lines) {
+			if (!line.equals("---")) {
+				sb.append(line);
+				sb.append("\n");
+
+				continue;
+			}
+
+			if (sb.index() > 0) {
+				sb.setIndex(sb.index() - 1);
+
+				directives.add(sb.toString());
+
+				sb.setIndex(0);
+			}
+		}
+
+		if (sb.index() > 0) {
+			sb.setIndex(sb.index() - 1);
+
+			directives.add(sb.toString());
+		}
+
+		return directives;
 	}
 
 }

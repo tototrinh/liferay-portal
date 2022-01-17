@@ -29,7 +29,7 @@ import com.liferay.rss.util.RSSUtil;
 import com.liferay.wiki.configuration.WikiGroupServiceOverriddenConfiguration;
 import com.liferay.wiki.constants.WikiPortletKeys;
 import com.liferay.wiki.service.WikiPageService;
-import com.liferay.wiki.web.internal.display.context.util.WikiRequestHelper;
+import com.liferay.wiki.web.internal.display.context.helper.WikiRequestHelper;
 import com.liferay.wiki.web.internal.util.WikiUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -75,10 +75,6 @@ public class RSSStrutsAction implements StrutsAction {
 	protected byte[] getRSS(HttpServletRequest httpServletRequest)
 		throws Exception {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 		String rss = StringPool.BLANK;
 
 		long nodeId = ParamUtil.getLong(httpServletRequest, "nodeId");
@@ -86,6 +82,10 @@ public class RSSStrutsAction implements StrutsAction {
 		if (nodeId <= 0) {
 			return rss.getBytes(StringPool.UTF8);
 		}
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		String title = ParamUtil.getString(httpServletRequest, "title");
 		int max = ParamUtil.getInteger(
@@ -100,14 +100,8 @@ public class RSSStrutsAction implements StrutsAction {
 		String layoutFullURL = _portal.getLayoutFullURL(
 			themeDisplay.getScopeGroupId(), WikiPortletKeys.WIKI);
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(layoutFullURL);
-		sb.append(Portal.FRIENDLY_URL_SEPARATOR);
-		sb.append("wiki/");
-		sb.append(nodeId);
-
-		String feedURL = sb.toString();
+		String feedURL = StringBundler.concat(
+			layoutFullURL, Portal.FRIENDLY_URL_SEPARATOR, "wiki/", nodeId);
 
 		String entryURL = feedURL + StringPool.SLASH + title;
 

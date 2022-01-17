@@ -31,10 +31,9 @@ else {
 
 ViewModuleManagementToolbarDisplayContext viewModuleManagementToolbarDisplayContext = new ViewModuleManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse);
 
-AppDisplay appDisplay = viewModuleManagementToolbarDisplayContext.getAppDisplay();
 Bundle bundle = viewModuleManagementToolbarDisplayContext.getBundle();
 String pluginType = viewModuleManagementToolbarDisplayContext.getPluginType();
-SearchContainer searchContainer = viewModuleManagementToolbarDisplayContext.getSearchContainer();
+SearchContainer<Object> searchContainer = viewModuleManagementToolbarDisplayContext.getSearchContainer();
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(backURL.toString());
@@ -46,21 +45,22 @@ String bundleName = GetterUtil.getString(headers.get(Constants.BUNDLE_NAME));
 renderResponse.setTitle(bundleName);
 
 if (Validator.isNull(app)) {
-	PortletURL viewURL = renderResponse.createRenderURL();
-
-	viewURL.setParameter("mvcPath", "/view.jsp");
-
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "app-manager"), viewURL.toString());
+	PortalUtil.addPortletBreadcrumbEntry(
+		request, LanguageUtil.get(request, "app-manager"),
+		PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).buildString());
 
 	PortalUtil.addPortletBreadcrumbEntry(request, bundleName, null);
 }
 else {
-	MarketplaceAppManagerUtil.addPortletBreadcrumbEntry(appDisplay, bundle, request, renderResponse);
+	MarketplaceAppManagerUtil.addPortletBreadcrumbEntry(viewModuleManagementToolbarDisplayContext.getAppDisplay(), bundle, request, renderResponse);
 }
 %>
 
 <clay:navigation-bar
-	inverted="<%= true %>"
 	navigationItems="<%= appManagerDisplayContext.getModuleNavigationItems() %>"
 />
 
@@ -74,7 +74,7 @@ else {
 	sortingURL="<%= viewModuleManagementToolbarDisplayContext.getSortingURL() %>"
 />
 
-<div class="container-fluid container-fluid-max-xl">
+<clay:container-fluid>
 	<liferay-ui:breadcrumb
 		showCurrentGroup="<%= false %>"
 		showGuestGroup="<%= false %>"
@@ -147,4 +147,4 @@ else {
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>

@@ -16,10 +16,13 @@ package com.liferay.portlet.exportimport.service.persistence.impl;
 
 import com.liferay.exportimport.kernel.exception.NoSuchConfigurationException;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
+import com.liferay.exportimport.kernel.model.ExportImportConfigurationTable;
 import com.liferay.exportimport.kernel.service.persistence.ExportImportConfigurationPersistence;
+import com.liferay.exportimport.kernel.service.persistence.ExportImportConfigurationUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
@@ -32,7 +35,10 @@ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portlet.exportimport.model.impl.ExportImportConfigurationImpl;
@@ -40,6 +46,7 @@ import com.liferay.portlet.exportimport.model.impl.ExportImportConfigurationMode
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
 import java.util.Date;
@@ -175,7 +182,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (ExportImportConfiguration exportImportConfiguration :
@@ -236,10 +243,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -550,8 +553,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId};
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -578,8 +580,6 @@ public class ExportImportConfigurationPersistenceImpl
 				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -691,7 +691,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (ExportImportConfiguration exportImportConfiguration :
@@ -752,10 +752,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1066,8 +1062,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		Object[] finderArgs = new Object[] {companyId};
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -1094,8 +1089,6 @@ public class ExportImportConfigurationPersistenceImpl
 				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1211,7 +1204,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (ExportImportConfiguration exportImportConfiguration :
@@ -1278,10 +1271,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1610,8 +1599,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId, type};
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1642,8 +1630,6 @@ public class ExportImportConfigurationPersistenceImpl
 				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1762,7 +1748,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (ExportImportConfiguration exportImportConfiguration :
@@ -1829,10 +1815,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2161,8 +2143,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId, status};
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -2193,8 +2174,6 @@ public class ExportImportConfigurationPersistenceImpl
 				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2320,7 +2299,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (ExportImportConfiguration exportImportConfiguration :
@@ -2392,10 +2371,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2742,8 +2717,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId, type, status};
 
-		Long count = (Long)FinderCacheUtil.getResult(
-			finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(4);
@@ -2778,8 +2752,6 @@ public class ExportImportConfigurationPersistenceImpl
 				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2800,19 +2772,19 @@ public class ExportImportConfigurationPersistenceImpl
 		"exportImportConfiguration.status = ?";
 
 	public ExportImportConfigurationPersistenceImpl() {
-		setModelClass(ExportImportConfiguration.class);
-
-		setModelImplClass(ExportImportConfigurationImpl.class);
-		setModelPKClass(long.class);
-		setEntityCacheEnabled(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED);
-
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
 		dbColumnNames.put("type", "type_");
 		dbColumnNames.put("settings", "settings_");
 
 		setDBColumnNames(dbColumnNames);
+
+		setModelClass(ExportImportConfiguration.class);
+
+		setModelImplClass(ExportImportConfigurationImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(ExportImportConfigurationTable.INSTANCE);
 	}
 
 	/**
@@ -2825,13 +2797,12 @@ public class ExportImportConfigurationPersistenceImpl
 		ExportImportConfiguration exportImportConfiguration) {
 
 		EntityCacheUtil.putResult(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
 			ExportImportConfigurationImpl.class,
 			exportImportConfiguration.getPrimaryKey(),
 			exportImportConfiguration);
-
-		exportImportConfiguration.resetOriginalValues();
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the export import configurations in the entity cache if it is enabled.
@@ -2842,18 +2813,22 @@ public class ExportImportConfigurationPersistenceImpl
 	public void cacheResult(
 		List<ExportImportConfiguration> exportImportConfigurations) {
 
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (exportImportConfigurations.size() >
+				 _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (ExportImportConfiguration exportImportConfiguration :
 				exportImportConfigurations) {
 
 			if (EntityCacheUtil.getResult(
-					ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
 					ExportImportConfigurationImpl.class,
 					exportImportConfiguration.getPrimaryKey()) == null) {
 
 				cacheResult(exportImportConfiguration);
-			}
-			else {
-				exportImportConfiguration.resetOriginalValues();
 			}
 		}
 	}
@@ -2862,23 +2837,21 @@ public class ExportImportConfigurationPersistenceImpl
 	 * Clears the cache for all export import configurations.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
 		EntityCacheUtil.clearCache(ExportImportConfigurationImpl.class);
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(ExportImportConfigurationImpl.class);
 	}
 
 	/**
 	 * Clears the cache for the export import configuration.
 	 *
 	 * <p>
-	 * The <code>EntityCache</code> and <code>com.liferay.portal.kernel.dao.orm.FinderCache</code> are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
@@ -2886,40 +2859,27 @@ public class ExportImportConfigurationPersistenceImpl
 		ExportImportConfiguration exportImportConfiguration) {
 
 		EntityCacheUtil.removeResult(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
-			exportImportConfiguration.getPrimaryKey());
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+			ExportImportConfigurationImpl.class, exportImportConfiguration);
 	}
 
 	@Override
 	public void clearCache(
 		List<ExportImportConfiguration> exportImportConfigurations) {
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (ExportImportConfiguration exportImportConfiguration :
 				exportImportConfigurations) {
 
 			EntityCacheUtil.removeResult(
-				ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-				ExportImportConfigurationImpl.class,
-				exportImportConfiguration.getPrimaryKey());
+				ExportImportConfigurationImpl.class, exportImportConfiguration);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(ExportImportConfigurationImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
 			EntityCacheUtil.removeResult(
-				ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
 				ExportImportConfigurationImpl.class, primaryKey);
 		}
 	}
@@ -3065,25 +3025,25 @@ public class ExportImportConfigurationPersistenceImpl
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if (isNew && (exportImportConfiguration.getCreateDate() == null)) {
 			if (serviceContext == null) {
-				exportImportConfiguration.setCreateDate(now);
+				exportImportConfiguration.setCreateDate(date);
 			}
 			else {
 				exportImportConfiguration.setCreateDate(
-					serviceContext.getCreateDate(now));
+					serviceContext.getCreateDate(date));
 			}
 		}
 
 		if (!exportImportConfigurationModelImpl.hasSetModifiedDate()) {
 			if (serviceContext == null) {
-				exportImportConfiguration.setModifiedDate(now);
+				exportImportConfiguration.setModifiedDate(date);
 			}
 			else {
 				exportImportConfiguration.setModifiedDate(
-					serviceContext.getModifiedDate(now));
+					serviceContext.getModifiedDate(date));
 			}
 		}
 
@@ -3092,10 +3052,8 @@ public class ExportImportConfigurationPersistenceImpl
 		try {
 			session = openSession();
 
-			if (exportImportConfiguration.isNew()) {
+			if (isNew) {
 				session.save(exportImportConfiguration);
-
-				exportImportConfiguration.setNew(false);
 			}
 			else {
 				exportImportConfiguration =
@@ -3110,182 +3068,13 @@ public class ExportImportConfigurationPersistenceImpl
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (!ExportImportConfigurationModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(
-				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			Object[] args = new Object[] {
-				exportImportConfigurationModelImpl.getGroupId()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByGroupId, args);
-
-			args = new Object[] {
-				exportImportConfigurationModelImpl.getCompanyId()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByCompanyId, args);
-
-			args = new Object[] {
-				exportImportConfigurationModelImpl.getGroupId(),
-				exportImportConfigurationModelImpl.getType()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByG_T, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByG_T, args);
-
-			args = new Object[] {
-				exportImportConfigurationModelImpl.getGroupId(),
-				exportImportConfigurationModelImpl.getStatus()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByG_S, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByG_S, args);
-
-			args = new Object[] {
-				exportImportConfigurationModelImpl.getGroupId(),
-				exportImportConfigurationModelImpl.getType(),
-				exportImportConfigurationModelImpl.getStatus()
-			};
-
-			FinderCacheUtil.removeResult(_finderPathCountByG_T_S, args);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindByG_T_S, args);
-
-			FinderCacheUtil.removeResult(
-				_finderPathCountAll, FINDER_ARGS_EMPTY);
-			FinderCacheUtil.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((exportImportConfigurationModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByGroupId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					exportImportConfigurationModelImpl.getOriginalGroupId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-
-				args = new Object[] {
-					exportImportConfigurationModelImpl.getGroupId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-			}
-
-			if ((exportImportConfigurationModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByCompanyId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					exportImportConfigurationModelImpl.getOriginalCompanyId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByCompanyId, args);
-
-				args = new Object[] {
-					exportImportConfigurationModelImpl.getCompanyId()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByCompanyId, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByCompanyId, args);
-			}
-
-			if ((exportImportConfigurationModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByG_T.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					exportImportConfigurationModelImpl.getOriginalGroupId(),
-					exportImportConfigurationModelImpl.getOriginalType()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_T, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_T, args);
-
-				args = new Object[] {
-					exportImportConfigurationModelImpl.getGroupId(),
-					exportImportConfigurationModelImpl.getType()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_T, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_T, args);
-			}
-
-			if ((exportImportConfigurationModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByG_S.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					exportImportConfigurationModelImpl.getOriginalGroupId(),
-					exportImportConfigurationModelImpl.getOriginalStatus()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_S, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_S, args);
-
-				args = new Object[] {
-					exportImportConfigurationModelImpl.getGroupId(),
-					exportImportConfigurationModelImpl.getStatus()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_S, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_S, args);
-			}
-
-			if ((exportImportConfigurationModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByG_T_S.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					exportImportConfigurationModelImpl.getOriginalGroupId(),
-					exportImportConfigurationModelImpl.getOriginalType(),
-					exportImportConfigurationModelImpl.getOriginalStatus()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_T_S, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_T_S, args);
-
-				args = new Object[] {
-					exportImportConfigurationModelImpl.getGroupId(),
-					exportImportConfigurationModelImpl.getType(),
-					exportImportConfigurationModelImpl.getStatus()
-				};
-
-				FinderCacheUtil.removeResult(_finderPathCountByG_T_S, args);
-				FinderCacheUtil.removeResult(
-					_finderPathWithoutPaginationFindByG_T_S, args);
-			}
-		}
-
 		EntityCacheUtil.putResult(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
 			ExportImportConfigurationImpl.class,
-			exportImportConfiguration.getPrimaryKey(),
-			exportImportConfiguration, false);
+			exportImportConfigurationModelImpl, false, true);
+
+		if (isNew) {
+			exportImportConfiguration.setNew(false);
+		}
 
 		exportImportConfiguration.resetOriginalValues();
 
@@ -3431,7 +3220,7 @@ public class ExportImportConfigurationPersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<ExportImportConfiguration>)FinderCacheUtil.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -3473,10 +3262,6 @@ public class ExportImportConfigurationPersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					FinderCacheUtil.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -3506,7 +3291,7 @@ public class ExportImportConfigurationPersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)FinderCacheUtil.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -3523,9 +3308,6 @@ public class ExportImportConfigurationPersistenceImpl
 					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception exception) {
-				FinderCacheUtil.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -3565,170 +3347,145 @@ public class ExportImportConfigurationPersistenceImpl
 	 * Initializes the export import configuration persistence.
 	 */
 	public void afterPropertiesSet() {
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
+
 		_finderPathWithPaginationFindAll = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByGroupId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId"}, true);
 
 		_finderPathWithoutPaginationFindByGroupId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
-			new String[] {Long.class.getName()},
-			ExportImportConfigurationModelImpl.GROUPID_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			true);
 
 		_finderPathCountByGroupId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
 
 		_finderPathWithPaginationFindByCompanyId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByCompanyId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"companyId"}, true);
 
 		_finderPathWithoutPaginationFindByCompanyId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByCompanyId",
-			new String[] {Long.class.getName()},
-			ExportImportConfigurationModelImpl.COMPANYID_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"companyId"},
+			true);
 
 		_finderPathCountByCompanyId = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByCompanyId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"companyId"},
+			false);
 
 		_finderPathWithPaginationFindByG_T = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_T",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId", "type_"}, true);
 
 		_finderPathWithoutPaginationFindByG_T = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_T",
 			new String[] {Long.class.getName(), Integer.class.getName()},
-			ExportImportConfigurationModelImpl.GROUPID_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.TYPE_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {"groupId", "type_"}, true);
 
 		_finderPathCountByG_T = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_T",
-			new String[] {Long.class.getName(), Integer.class.getName()});
+			new String[] {Long.class.getName(), Integer.class.getName()},
+			new String[] {"groupId", "type_"}, false);
 
 		_finderPathWithPaginationFindByG_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_S",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId", "status"}, true);
 
 		_finderPathWithoutPaginationFindByG_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_S",
 			new String[] {Long.class.getName(), Integer.class.getName()},
-			ExportImportConfigurationModelImpl.GROUPID_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.STATUS_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {"groupId", "status"}, true);
 
 		_finderPathCountByG_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_S",
-			new String[] {Long.class.getName(), Integer.class.getName()});
+			new String[] {Long.class.getName(), Integer.class.getName()},
+			new String[] {"groupId", "status"}, false);
 
 		_finderPathWithPaginationFindByG_T_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_T_S",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId", "type_", "status"}, true);
 
 		_finderPathWithoutPaginationFindByG_T_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED,
-			ExportImportConfigurationImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_T_S",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName()
 			},
-			ExportImportConfigurationModelImpl.GROUPID_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.TYPE_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.STATUS_COLUMN_BITMASK |
-			ExportImportConfigurationModelImpl.CREATEDATE_COLUMN_BITMASK);
+			new String[] {"groupId", "type_", "status"}, true);
 
 		_finderPathCountByG_T_S = new FinderPath(
-			ExportImportConfigurationModelImpl.ENTITY_CACHE_ENABLED,
-			ExportImportConfigurationModelImpl.FINDER_CACHE_ENABLED, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_T_S",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName()
-			});
+			},
+			new String[] {"groupId", "type_", "status"}, false);
+
+		_setExportImportConfigurationUtilPersistence(this);
 	}
 
 	public void destroy() {
+		_setExportImportConfigurationUtilPersistence(null);
+
 		EntityCacheUtil.removeCache(
 			ExportImportConfigurationImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+	}
+
+	private void _setExportImportConfigurationUtilPersistence(
+		ExportImportConfigurationPersistence
+			exportImportConfigurationPersistence) {
+
+		try {
+			Field field = ExportImportConfigurationUtil.class.getDeclaredField(
+				"_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, exportImportConfigurationPersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	private static final String _SQL_SELECT_EXPORTIMPORTCONFIGURATION =
@@ -3757,5 +3514,10 @@ public class ExportImportConfigurationPersistenceImpl
 
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
 		new String[] {"type", "settings"});
+
+	@Override
+	protected FinderCache getFinderCache() {
+		return FinderCacheUtil.getFinderCache();
+	}
 
 }

@@ -46,10 +46,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.registry.Filter;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceTracker;
+import com.liferay.redirect.model.RedirectEntry;
+import com.liferay.redirect.service.RedirectEntryLocalService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -63,6 +61,7 @@ import java.util.Objects;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -93,10 +92,8 @@ public class FriendlyURLServletTest {
 
 		LanguageUtil.init();
 
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext();
-
-		ServiceContextThreadLocal.pushServiceContext(serviceContext);
+		ServiceContextThreadLocal.pushServiceContext(
+			ServiceContextTestUtil.getServiceContext());
 
 		_group = GroupTestUtil.addGroup();
 
@@ -108,19 +105,6 @@ public class FriendlyURLServletTest {
 		GroupTestUtil.updateDisplaySettings(
 			_group.getGroupId(), availableLocales, LocaleUtil.US);
 
-		Registry registry = RegistryUtil.getRegistry();
-
-		Filter filter = registry.getFilter(
-			StringBundler.concat(
-				"(&(servlet.type=friendly-url)(servlet.init.private=false)",
-				"(objectClass=", Servlet.class.getName(), "))"));
-
-		_serviceTracker = registry.trackServices(filter);
-
-		_serviceTracker.open();
-
-		_servlet = _serviceTracker.getService();
-
 		Class<?> clazz = _servlet.getClass();
 
 		ClassLoader classLoader = clazz.getClassLoader();
@@ -129,7 +113,8 @@ public class FriendlyURLServletTest {
 			"com.liferay.friendly.url.internal.servlet.FriendlyURLServlet");
 
 		_getRedirectMethod = clazz.getDeclaredMethod(
-			"getRedirect", HttpServletRequest.class, String.class);
+			"getRedirect", HttpServletRequest.class, HttpServletResponse.class,
+			String.class);
 
 		clazz = classLoader.loadClass(
 			"com.liferay.friendly.url.internal.servlet.FriendlyURLServlet" +
@@ -151,8 +136,6 @@ public class FriendlyURLServletTest {
 			PropsUtil.get(PropsKeys.LOCALE_USE_DEFAULT_IF_NOT_AVAILABLE));
 
 		LanguageUtil.init();
-
-		_serviceTracker.close();
 	}
 
 	@Test
@@ -246,12 +229,12 @@ public class FriendlyURLServletTest {
 		nameMap.put(locale, "friendly");
 		friendlyURLMap.put(locale, "/friendly");
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			_group.getTypeSettingsProperties();
 
-		typeSettingsProperties.put("url", careerLayout.getFriendlyURL());
+		typeSettingsUnicodeProperties.put("url", careerLayout.getFriendlyURL());
 
-		String typeSettings = typeSettingsProperties.toString();
+		String typeSettings = typeSettingsUnicodeProperties.toString();
 
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(groupId);
@@ -285,6 +268,102 @@ public class FriendlyURLServletTest {
 	}
 
 	@Test
+	public void testServiceForwardToDefaultLayoutWith404OnDisabledLocale()
+		throws Throwable {
+
+		Group group = GroupTestUtil.addGroup();
+
+		Locale locale = LocaleUtil.getSiteDefault();
+
+		Layout homeLayout = LayoutTestUtil.addLayout(
+			group.getGroupId(), false,
+			HashMapBuilder.put(
+				locale, "home"
+			).build(),
+			HashMapBuilder.put(
+				locale, "/home"
+			).put(
+				LocaleUtil.GERMANY, "/home1"
+			).build());
+
+		GroupTestUtil.updateDisplaySettings(
+			group.getGroupId(), Arrays.asList(LocaleUtil.GERMANY),
+			LocaleUtil.GERMANY);
+
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
+		testGetRedirect(
+			new MockHttpServletRequest(
+				"GET",
+				StringBundler.concat(
+					PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+					group.getFriendlyURL(), "/home")),
+			mockHttpServletResponse, getPath(group, homeLayout) + "/home",
+			Portal.PATH_MAIN,
+			_redirectConstructor1.newInstance(getURL(homeLayout)));
+
+		Assert.assertEquals(404, mockHttpServletResponse.getStatus());
+	}
+
+	@Test
+	public void testServiceForwardToDefaultLayoutWith404OnMissingLayout()
+		throws Throwable {
+
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
+		testGetRedirect(
+			new MockHttpServletRequest(
+				"GET",
+				StringBundler.concat(
+					PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+					_group.getFriendlyURL(), "/path")),
+			mockHttpServletResponse, getPath(_group, _layout) + "/path",
+			Portal.PATH_MAIN,
+			_redirectConstructor1.newInstance(getURL(_layout)));
+
+		Assert.assertEquals(404, mockHttpServletResponse.getStatus());
+	}
+
+	@Test
+	public void testServiceLinkToURLRedirectWithQueryParams() throws Throwable {
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		Layout redirectLayout = LayoutTestUtil.addLayout(_group);
+
+		redirectLayout.setType(LayoutConstants.TYPE_URL);
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			_group.getTypeSettingsProperties();
+
+		typeSettingsUnicodeProperties.put("url", _layout.getFriendlyURL());
+
+		redirectLayout.setTypeSettingsProperties(typeSettingsUnicodeProperties);
+
+		_layoutLocalService.updateLayout(redirectLayout);
+
+		mockHttpServletRequest.setParameter("param", "true");
+		mockHttpServletRequest.setPathInfo(StringPool.SLASH);
+
+		String requestURI =
+			PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING +
+				getPath(_group, redirectLayout);
+
+		mockHttpServletRequest.setRequestURI(requestURI);
+
+		MockHttpServletResponse mockHttpServletResponse =
+			new MockHttpServletResponse();
+
+		_servlet.service(mockHttpServletRequest, mockHttpServletResponse);
+
+		String redirectedURL = mockHttpServletResponse.getRedirectedUrl();
+
+		Assert.assertTrue(redirectedURL.contains("?param=true"));
+	}
+
+	@Test
 	public void testServiceRedirect() throws Throwable {
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
@@ -293,12 +372,12 @@ public class FriendlyURLServletTest {
 
 		redirectLayout.setType(LayoutConstants.TYPE_URL);
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			_group.getTypeSettingsProperties();
 
-		typeSettingsProperties.put("url", _layout.getFriendlyURL());
+		typeSettingsUnicodeProperties.put("url", _layout.getFriendlyURL());
 
-		redirectLayout.setTypeSettingsProperties(typeSettingsProperties);
+		redirectLayout.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 
 		_layoutLocalService.updateLayout(redirectLayout);
 
@@ -320,6 +399,78 @@ public class FriendlyURLServletTest {
 			mockHttpServletResponse.getRedirectedUrl());
 
 		Assert.assertEquals(302, mockHttpServletResponse.getStatus());
+	}
+
+	@Test
+	public void testServiceRedirectWithMatchingPermanentRedirectEntry()
+		throws Exception {
+
+		RedirectEntry redirectEntry =
+			_redirectEntryLocalService.addRedirectEntry(
+				_group.getGroupId(), "http://www.liferay.com", null, true,
+				"path", ServiceContextTestUtil.getServiceContext());
+
+		try {
+			MockHttpServletResponse mockHttpServletResponse =
+				new MockHttpServletResponse();
+
+			_servlet.service(
+				new MockHttpServletRequest(
+					"GET",
+					StringBundler.concat(
+						PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+						_group.getFriendlyURL(), "/path")),
+				mockHttpServletResponse);
+
+			Assert.assertEquals(301, mockHttpServletResponse.getStatus());
+			Assert.assertEquals(
+				"http://www.liferay.com",
+				mockHttpServletResponse.getHeader("Location"));
+
+			redirectEntry = _redirectEntryLocalService.fetchRedirectEntry(
+				_group.getGroupId(), "path");
+
+			Assert.assertNotNull(redirectEntry.getLastOccurrenceDate());
+		}
+		finally {
+			_redirectEntryLocalService.deleteRedirectEntry(redirectEntry);
+		}
+	}
+
+	@Test
+	public void testServiceRedirectWithMatchingTemporaryRedirectEntry()
+		throws Exception {
+
+		RedirectEntry redirectEntry =
+			_redirectEntryLocalService.addRedirectEntry(
+				_group.getGroupId(), "http://www.liferay.com", null, false,
+				"path", ServiceContextTestUtil.getServiceContext());
+
+		try {
+			MockHttpServletResponse mockHttpServletResponse =
+				new MockHttpServletResponse();
+
+			_servlet.service(
+				new MockHttpServletRequest(
+					"GET",
+					StringBundler.concat(
+						PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+						_group.getFriendlyURL(), "/path")),
+				mockHttpServletResponse);
+
+			Assert.assertEquals(302, mockHttpServletResponse.getStatus());
+			Assert.assertEquals(
+				"http://www.liferay.com",
+				mockHttpServletResponse.getHeader("Location"));
+
+			redirectEntry = _redirectEntryLocalService.fetchRedirectEntry(
+				_group.getGroupId(), "path");
+
+			Assert.assertNotNull(redirectEntry.getLastOccurrenceDate());
+		}
+		finally {
+			_redirectEntryLocalService.deleteRedirectEntry(redirectEntry);
+		}
 	}
 
 	protected String getI18nLanguageId(HttpServletRequest httpServletRequest) {
@@ -408,18 +559,30 @@ public class FriendlyURLServletTest {
 	}
 
 	protected void testGetRedirect(
-			HttpServletRequest httpServletRequest, String path, String mainPath,
-			Object expectedRedirect)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String path,
+			String mainPath, Object expectedRedirect)
 		throws Throwable {
 
 		try {
 			Assert.assertEquals(
 				expectedRedirect,
-				_getRedirectMethod.invoke(_servlet, httpServletRequest, path));
+				_getRedirectMethod.invoke(
+					_servlet, httpServletRequest, httpServletResponse, path));
 		}
 		catch (InvocationTargetException invocationTargetException) {
 			throw invocationTargetException.getCause();
 		}
+	}
+
+	protected void testGetRedirect(
+			HttpServletRequest httpServletRequest, String path, String mainPath,
+			Object expectedRedirect)
+		throws Throwable {
+
+		testGetRedirect(
+			httpServletRequest, new MockHttpServletResponse(), path, mainPath,
+			expectedRedirect);
 	}
 
 	@Inject
@@ -433,7 +596,13 @@ public class FriendlyURLServletTest {
 	private Layout _layout;
 	private Constructor<?> _redirectConstructor1;
 	private Constructor<?> _redirectConstructor2;
-	private ServiceTracker<Servlet, Servlet> _serviceTracker;
+
+	@Inject
+	private RedirectEntryLocalService _redirectEntryLocalService;
+
+	@Inject(
+		filter = "(&(servlet.type=friendly-url)(servlet.init.private=false))"
+	)
 	private Servlet _servlet;
 
 	@DeleteAfterTestRun

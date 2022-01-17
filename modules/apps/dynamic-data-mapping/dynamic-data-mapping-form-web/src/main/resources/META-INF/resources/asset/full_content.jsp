@@ -20,6 +20,9 @@
 DDMFormViewFormInstanceRecordDisplayContext ddmFormViewFormInstanceRecordDisplayContext = (DDMFormViewFormInstanceRecordDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
 %>
 
-<div class="container-fluid-1280">
-	<%= ddmFormViewFormInstanceRecordDisplayContext.getDDMFormHTML(renderRequest) %>
-</div>
+<clay:container-fluid>
+	<react:component
+		module="admin/js/FormView.link.es"
+		props="<%= ddmFormViewFormInstanceRecordDisplayContext.getDDMFormContext(renderRequest) %>"
+	/>
+</clay:container-fluid>

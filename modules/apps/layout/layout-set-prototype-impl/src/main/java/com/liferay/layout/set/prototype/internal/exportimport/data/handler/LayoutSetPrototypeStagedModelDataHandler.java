@@ -137,11 +137,13 @@ public class LayoutSetPrototypeStagedModelDataHandler
 		long userId = portletDataContext.getUserId(
 			layoutSetPrototype.getUserUuid());
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSetPrototype.getSettingsProperties();
 
 		boolean layoutsUpdateable = GetterUtil.getBoolean(
-			settingsProperties.getProperty("layoutsUpdateable"), true);
+			settingsUnicodeProperties.getProperty("layoutsUpdateable"), true);
+		boolean readyForPropagation = GetterUtil.getBoolean(
+			settingsUnicodeProperties.getProperty("readyForPropagation"), true);
 
 		ServiceContext serviceContext = portletDataContext.createServiceContext(
 			layoutSetPrototype);
@@ -166,7 +168,7 @@ public class LayoutSetPrototypeStagedModelDataHandler
 						layoutSetPrototype.getNameMap(),
 						layoutSetPrototype.getDescriptionMap(),
 						layoutSetPrototype.isActive(), layoutsUpdateable,
-						serviceContext);
+						readyForPropagation, serviceContext);
 			}
 			else {
 				importedLayoutSetPrototype =
@@ -175,7 +177,7 @@ public class LayoutSetPrototypeStagedModelDataHandler
 						layoutSetPrototype.getNameMap(),
 						layoutSetPrototype.getDescriptionMap(),
 						layoutSetPrototype.isActive(), layoutsUpdateable,
-						serviceContext);
+						readyForPropagation, serviceContext);
 			}
 		}
 		else {
@@ -185,7 +187,7 @@ public class LayoutSetPrototypeStagedModelDataHandler
 					layoutSetPrototype.getNameMap(),
 					layoutSetPrototype.getDescriptionMap(),
 					layoutSetPrototype.isActive(), layoutsUpdateable,
-					serviceContext);
+					readyForPropagation, serviceContext);
 		}
 
 		importLayoutPrototypes(portletDataContext, layoutSetPrototype);

@@ -2,5 +2,5 @@
 
 Check | Category | Description
 ----- | -------- | -----------
-SoyEmptyLinesCheck | Miscellaneous | |
-WhitespaceCheck | Miscellaneous | |
+SoyEmptyLinesCheck | [Styling](styling_checks.markdown#styling-checks) | Finds missing and unnecessary empty lines. |
+WhitespaceCheck | [Styling](styling_checks.markdown#styling-checks) | Finds missing and unnecessary whitespace. |

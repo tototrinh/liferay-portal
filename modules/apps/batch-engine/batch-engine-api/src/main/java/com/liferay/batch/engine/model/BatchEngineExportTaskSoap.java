@@ -24,11 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class is used by SOAP remote services.
+ * This class is used by SOAP remote services, specifically {@link com.liferay.batch.engine.service.http.BatchEngineExportTaskServiceSoap}.
  *
  * @author Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
+@Deprecated
 public class BatchEngineExportTaskSoap implements Serializable {
 
 	public static BatchEngineExportTaskSoap toSoapModel(
@@ -53,7 +55,10 @@ public class BatchEngineExportTaskSoap implements Serializable {
 		soapModel.setFieldNames(model.getFieldNames());
 		soapModel.setExecuteStatus(model.getExecuteStatus());
 		soapModel.setParameters(model.getParameters());
+		soapModel.setProcessedItemsCount(model.getProcessedItemsCount());
 		soapModel.setStartTime(model.getStartTime());
+		soapModel.setTaskItemDelegateName(model.getTaskItemDelegateName());
+		soapModel.setTotalItemsCount(model.getTotalItemsCount());
 
 		return soapModel;
 	}
@@ -244,12 +249,36 @@ public class BatchEngineExportTaskSoap implements Serializable {
 		_parameters = parameters;
 	}
 
+	public int getProcessedItemsCount() {
+		return _processedItemsCount;
+	}
+
+	public void setProcessedItemsCount(int processedItemsCount) {
+		_processedItemsCount = processedItemsCount;
+	}
+
 	public Date getStartTime() {
 		return _startTime;
 	}
 
 	public void setStartTime(Date startTime) {
 		_startTime = startTime;
+	}
+
+	public String getTaskItemDelegateName() {
+		return _taskItemDelegateName;
+	}
+
+	public void setTaskItemDelegateName(String taskItemDelegateName) {
+		_taskItemDelegateName = taskItemDelegateName;
+	}
+
+	public int getTotalItemsCount() {
+		return _totalItemsCount;
+	}
+
+	public void setTotalItemsCount(int totalItemsCount) {
+		_totalItemsCount = totalItemsCount;
 	}
 
 	private long _mvccVersion;
@@ -268,6 +297,9 @@ public class BatchEngineExportTaskSoap implements Serializable {
 	private String _fieldNames;
 	private String _executeStatus;
 	private Map<String, Serializable> _parameters;
+	private int _processedItemsCount;
 	private Date _startTime;
+	private String _taskItemDelegateName;
+	private int _totalItemsCount;
 
 }

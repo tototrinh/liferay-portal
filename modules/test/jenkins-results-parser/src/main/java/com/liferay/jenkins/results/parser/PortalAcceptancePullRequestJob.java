@@ -25,43 +25,40 @@ import java.util.TreeSet;
 public class PortalAcceptancePullRequestJob
 	extends PortalAcceptanceTestSuiteJob {
 
-	public PortalAcceptancePullRequestJob(String jobName) {
-		this(jobName, "default");
-	}
-
 	public PortalAcceptancePullRequestJob(
-		String jobName, String testSuiteName) {
+		String jobName, BuildProfile buildProfile, String testSuiteName,
+		String branchName) {
 
-		super(jobName, testSuiteName);
+		super(jobName, buildProfile, testSuiteName, branchName);
 	}
 
 	@Override
-	public Set<String> getBatchNames() {
-		Set<String> testBatchNamesSet = super.getBatchNames();
+	protected Set<String> getRawBatchNames() {
+		Set<String> batchNames = super.getRawBatchNames();
 
 		if (_isRelevantTestSuite() && _isPortalWebOnly()) {
 			String[] portalWebOnlyBatchNameMarkers = {
 				"compile-jsp", "functional", "portal-web", "source-format"
 			};
 
-			Set<String> portalWebOnlyBatchNamesSet = new TreeSet<>();
+			Set<String> portalWebOnlyBatchNames = new TreeSet<>();
 
-			for (String testBatchName : testBatchNamesSet) {
+			for (String batchName : batchNames) {
 				for (String portalWebOnlyBatchNameMarker :
 						portalWebOnlyBatchNameMarkers) {
 
-					if (testBatchName.contains(portalWebOnlyBatchNameMarker)) {
-						portalWebOnlyBatchNamesSet.add(testBatchName);
+					if (batchName.contains(portalWebOnlyBatchNameMarker)) {
+						portalWebOnlyBatchNames.add(batchName);
 
 						break;
 					}
 				}
 			}
 
-			return portalWebOnlyBatchNamesSet;
+			return portalWebOnlyBatchNames;
 		}
 
-		return testBatchNamesSet;
+		return batchNames;
 	}
 
 	private boolean _isPortalWebOnly() {

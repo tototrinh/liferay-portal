@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.workflow;
 
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.workflow.search.WorkflowModelSearchResult;
 
 import java.io.Serializable;
 
@@ -34,7 +35,7 @@ public class WorkflowInstanceManagerUtil {
 			long companyId, long workflowInstanceId)
 		throws WorkflowException {
 
-		getWorkflowInstanceManager().deleteWorkflowInstance(
+		_workflowInstanceManager.deleteWorkflowInstance(
 			companyId, workflowInstanceId);
 	}
 
@@ -42,7 +43,7 @@ public class WorkflowInstanceManagerUtil {
 			long companyId, long userId, long workflowInstanceId)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getNextTransitionNames(
+		return _workflowInstanceManager.getNextTransitionNames(
 			companyId, userId, workflowInstanceId);
 	}
 
@@ -50,8 +51,16 @@ public class WorkflowInstanceManagerUtil {
 			long companyId, long workflowInstanceId)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstance(
+		return _workflowInstanceManager.getWorkflowInstance(
 			companyId, workflowInstanceId);
+	}
+
+	public static WorkflowInstance getWorkflowInstance(
+			long companyId, long userId, long workflowInstanceId)
+		throws WorkflowException {
+
+		return _workflowInstanceManager.getWorkflowInstance(
+			companyId, userId, workflowInstanceId);
 	}
 
 	public static int getWorkflowInstanceCount(
@@ -59,7 +68,7 @@ public class WorkflowInstanceManagerUtil {
 			Long assetClassPK, Boolean completed)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstanceCount(
+		return _workflowInstanceManager.getWorkflowInstanceCount(
 			companyId, userId, assetClassName, assetClassPK, completed);
 	}
 
@@ -68,7 +77,7 @@ public class WorkflowInstanceManagerUtil {
 			Boolean completed)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstanceCount(
+		return _workflowInstanceManager.getWorkflowInstanceCount(
 			companyId, userId, assetClassNames, completed);
 	}
 
@@ -77,7 +86,7 @@ public class WorkflowInstanceManagerUtil {
 			Integer workflowDefinitionVersion, Boolean completed)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstanceCount(
+		return _workflowInstanceManager.getWorkflowInstanceCount(
 			companyId, workflowDefinitionName, workflowDefinitionVersion,
 			completed);
 	}
@@ -92,7 +101,7 @@ public class WorkflowInstanceManagerUtil {
 			OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstances(
+		return _workflowInstanceManager.getWorkflowInstances(
 			companyId, userId, assetClassName, assetClassPK, completed, start,
 			end, orderByComparator);
 	}
@@ -103,7 +112,7 @@ public class WorkflowInstanceManagerUtil {
 			OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstances(
+		return _workflowInstanceManager.getWorkflowInstances(
 			companyId, userId, assetClassNames, completed, start, end,
 			orderByComparator);
 	}
@@ -114,25 +123,8 @@ public class WorkflowInstanceManagerUtil {
 			int end, OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().getWorkflowInstances(
+		return _workflowInstanceManager.getWorkflowInstances(
 			companyId, workflowDefinitionName, workflowDefinitionVersion,
-			completed, start, end, orderByComparator);
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #search(long, Long,
-	 *             String, String, String, String, String, Boolean, int, int,
-	 *             OrderByComparator)}
-	 */
-	@Deprecated
-	public static List<WorkflowInstance> search(
-			long companyId, Long userId, String assetType, String nodeName,
-			String kaleoDefinitionName, Boolean completed, int start, int end,
-			OrderByComparator<WorkflowInstance> orderByComparator)
-		throws WorkflowException {
-
-		return getWorkflowInstanceManager().search(
-			companyId, userId, assetType, nodeName, kaleoDefinitionName,
 			completed, start, end, orderByComparator);
 	}
 
@@ -143,36 +135,36 @@ public class WorkflowInstanceManagerUtil {
 			OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().search(
+		return _workflowInstanceManager.search(
 			companyId, userId, assetClassName, assetTitle, assetDescription,
 			nodeName, kaleoDefinitionName, completed, start, end,
 			orderByComparator);
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link #searchCount(long,
-	 *             Long, String, String, String, String, String, Boolean)}
-	 */
-	@Deprecated
-	public static int searchCount(
-			long companyId, Long userId, String assetType, String nodeName,
-			String kaleoDefinitionName, Boolean completed)
-		throws WorkflowException {
-
-		return getWorkflowInstanceManager().searchCount(
-			companyId, userId, assetType, nodeName, kaleoDefinitionName,
-			completed);
-	}
-
 	public static int searchCount(
 			long companyId, Long userId, String assetClassName,
 			String assetTitle, String assetDescription, String nodeName,
 			String kaleoDefinitionName, Boolean completed)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().searchCount(
+		return _workflowInstanceManager.searchCount(
 			companyId, userId, assetClassName, assetTitle, assetDescription,
 			nodeName, kaleoDefinitionName, completed);
+	}
+
+	public static WorkflowModelSearchResult<WorkflowInstance>
+			searchWorkflowInstances(
+				long companyId, Long userId, String assetClassName,
+				String assetTitle, String assetDescription, String nodeName,
+				String kaleoDefinitionName, Boolean completed,
+				boolean searchByActiveWorkflowHandlers, int start, int end,
+				OrderByComparator<WorkflowInstance> orderByComparator)
+		throws WorkflowException {
+
+		return _workflowInstanceManager.searchWorkflowInstances(
+			companyId, userId, assetClassName, assetTitle, assetDescription,
+			nodeName, kaleoDefinitionName, completed,
+			searchByActiveWorkflowHandlers, start, end, orderByComparator);
 	}
 
 	public static WorkflowInstance signalWorkflowInstance(
@@ -180,9 +172,20 @@ public class WorkflowInstanceManagerUtil {
 			String transitionName, Map<String, Serializable> workflowContext)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().signalWorkflowInstance(
+		return _workflowInstanceManager.signalWorkflowInstance(
 			companyId, userId, workflowInstanceId, transitionName,
 			workflowContext);
+	}
+
+	public static WorkflowInstance signalWorkflowInstance(
+			long companyId, long userId, long workflowInstanceId,
+			String transitionName, Map<String, Serializable> workflowContext,
+			boolean waitForCompletion)
+		throws WorkflowException {
+
+		return _workflowInstanceManager.signalWorkflowInstance(
+			companyId, userId, workflowInstanceId, transitionName,
+			workflowContext, waitForCompletion);
 	}
 
 	public static WorkflowInstance startWorkflowInstance(
@@ -191,9 +194,22 @@ public class WorkflowInstanceManagerUtil {
 			String transitionName, Map<String, Serializable> workflowContext)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().startWorkflowInstance(
+		return _workflowInstanceManager.startWorkflowInstance(
 			companyId, groupId, userId, workflowDefinitionName,
 			workflowDefinitionVersion, transitionName, workflowContext);
+	}
+
+	public static WorkflowInstance startWorkflowInstance(
+			long companyId, long groupId, long userId,
+			String workflowDefinitionName, Integer workflowDefinitionVersion,
+			String transitionName, Map<String, Serializable> workflowContext,
+			boolean waitForCompletion)
+		throws WorkflowException {
+
+		return _workflowInstanceManager.startWorkflowInstance(
+			companyId, groupId, userId, workflowDefinitionName,
+			workflowDefinitionVersion, transitionName, workflowContext,
+			waitForCompletion);
 	}
 
 	public static WorkflowInstance updateWorkflowContext(
@@ -201,7 +217,7 @@ public class WorkflowInstanceManagerUtil {
 			Map<String, Serializable> workflowContext)
 		throws WorkflowException {
 
-		return getWorkflowInstanceManager().updateWorkflowContext(
+		return _workflowInstanceManager.updateWorkflowContext(
 			companyId, workflowInstanceId, workflowContext);
 	}
 

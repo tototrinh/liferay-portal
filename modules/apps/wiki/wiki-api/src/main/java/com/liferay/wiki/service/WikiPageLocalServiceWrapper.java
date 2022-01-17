@@ -32,6 +32,12 @@ public class WikiPageLocalServiceWrapper
 		_wikiPageLocalService = wikiPageLocalService;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addPage(String, long, long, String, double, String, String, boolean,
+	 String, boolean, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public com.liferay.wiki.model.WikiPage addPage(
 			long userId, long nodeId, String title, double version,
@@ -54,6 +60,21 @@ public class WikiPageLocalServiceWrapper
 
 		return _wikiPageLocalService.addPage(
 			userId, nodeId, title, content, summary, minorEdit, serviceContext);
+	}
+
+	@Override
+	public com.liferay.wiki.model.WikiPage addPage(
+			String externalReferenceCode, long userId, long nodeId,
+			String title, double version, String content, String summary,
+			boolean minorEdit, String format, boolean head, String parentTitle,
+			String redirectTitle,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _wikiPageLocalService.addPage(
+			externalReferenceCode, userId, nodeId, title, version, content,
+			summary, minorEdit, format, head, parentTitle, redirectTitle,
+			serviceContext);
 	}
 
 	@Override
@@ -134,6 +155,10 @@ public class WikiPageLocalServiceWrapper
 
 	/**
 	 * Adds the wiki page to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiPageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param wikiPage the wiki page
 	 * @return the wiki page that was added
@@ -252,6 +277,10 @@ public class WikiPageLocalServiceWrapper
 	/**
 	 * Deletes the wiki page with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiPageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param pageId the primary key of the wiki page
 	 * @return the wiki page that was removed
 	 * @throws PortalException if a wiki page with the primary key could not be found
@@ -265,6 +294,10 @@ public class WikiPageLocalServiceWrapper
 
 	/**
 	 * Deletes the wiki page from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiPageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param wikiPage the wiki page
 	 * @return the wiki page that was removed
@@ -281,6 +314,18 @@ public class WikiPageLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		_wikiPageLocalService.discardDraft(nodeId, title, version);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _wikiPageLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _wikiPageLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -397,6 +442,24 @@ public class WikiPageLocalServiceWrapper
 			nodeId, title, status, preferApproved);
 	}
 
+	/**
+	 * Returns the latest wiki page matching the group and the external
+	 * reference code
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki page external reference code
+	 * @return the latest matching wiki page, or <code>null</code> if no
+	 matching wiki page could be found
+	 */
+	@Override
+	public com.liferay.wiki.model.WikiPage
+		fetchLatestPageByExternalReferenceCode(
+			long groupId, String externalReferenceCode) {
+
+		return _wikiPageLocalService.fetchLatestPageByExternalReferenceCode(
+			groupId, externalReferenceCode);
+	}
+
 	@Override
 	public com.liferay.wiki.model.WikiPage fetchPage(long resourcePrimKey) {
 		return _wikiPageLocalService.fetchPage(resourcePrimKey);
@@ -469,10 +532,12 @@ public class WikiPageLocalServiceWrapper
 	@Override
 	public java.util.List<com.liferay.wiki.model.WikiPage> getChildren(
 		long nodeId, boolean head, String parentTitle, int status, int start,
-		int end, com.liferay.portal.kernel.util.OrderByComparator obc) {
+		int end,
+		com.liferay.portal.kernel.util.OrderByComparator
+			<com.liferay.wiki.model.WikiPage> orderByComparator) {
 
 		return _wikiPageLocalService.getChildren(
-			nodeId, head, parentTitle, status, start, end, obc);
+			nodeId, head, parentTitle, status, start, end, orderByComparator);
 	}
 
 	@Override
@@ -569,6 +634,24 @@ public class WikiPageLocalServiceWrapper
 
 		return _wikiPageLocalService.getLatestPage(
 			nodeId, title, status, preferApproved);
+	}
+
+	/**
+	 * Returns the latest wiki page matching the group and the external
+	 * reference code
+	 *
+	 * @param groupId the primary key of the group
+	 * @param externalReferenceCode the wiki page external reference code
+	 * @return the latest matching wiki page
+	 * @throws PortalException if a portal exception occurred
+	 */
+	@Override
+	public com.liferay.wiki.model.WikiPage getLatestPageByExternalReferenceCode(
+			long groupId, String externalReferenceCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _wikiPageLocalService.getLatestPageByExternalReferenceCode(
+			groupId, externalReferenceCode);
 	}
 
 	@Override
@@ -717,19 +800,20 @@ public class WikiPageLocalServiceWrapper
 	public java.util.List<com.liferay.wiki.model.WikiPage> getPages(
 		long nodeId, boolean head, int status, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator
-			<com.liferay.wiki.model.WikiPage> obc) {
+			<com.liferay.wiki.model.WikiPage> orderByComparator) {
 
 		return _wikiPageLocalService.getPages(
-			nodeId, head, status, start, end, obc);
+			nodeId, head, status, start, end, orderByComparator);
 	}
 
 	@Override
 	public java.util.List<com.liferay.wiki.model.WikiPage> getPages(
 		long nodeId, boolean head, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator
-			<com.liferay.wiki.model.WikiPage> obc) {
+			<com.liferay.wiki.model.WikiPage> orderByComparator) {
 
-		return _wikiPageLocalService.getPages(nodeId, head, start, end, obc);
+		return _wikiPageLocalService.getPages(
+			nodeId, head, start, end, orderByComparator);
 	}
 
 	@Override
@@ -743,9 +827,10 @@ public class WikiPageLocalServiceWrapper
 	public java.util.List<com.liferay.wiki.model.WikiPage> getPages(
 		long nodeId, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator
-			<com.liferay.wiki.model.WikiPage> obc) {
+			<com.liferay.wiki.model.WikiPage> orderByComparator) {
 
-		return _wikiPageLocalService.getPages(nodeId, start, end, obc);
+		return _wikiPageLocalService.getPages(
+			nodeId, start, end, orderByComparator);
 	}
 
 	@Override
@@ -781,9 +866,10 @@ public class WikiPageLocalServiceWrapper
 	public java.util.List<com.liferay.wiki.model.WikiPage> getPages(
 		long nodeId, String title, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator
-			<com.liferay.wiki.model.WikiPage> obc) {
+			<com.liferay.wiki.model.WikiPage> orderByComparator) {
 
-		return _wikiPageLocalService.getPages(nodeId, title, start, end, obc);
+		return _wikiPageLocalService.getPages(
+			nodeId, title, start, end, orderByComparator);
 	}
 
 	@Override
@@ -1165,6 +1251,10 @@ public class WikiPageLocalServiceWrapper
 
 	/**
 	 * Updates the wiki page in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect WikiPageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param wikiPage the wiki page
 	 * @return the wiki page that was updated

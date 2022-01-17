@@ -18,7 +18,6 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 import com.liferay.source.formatter.parser.JavaParameter;
 import com.liferay.source.formatter.parser.JavaSignature;
@@ -52,13 +51,7 @@ public class JavaAPISignatureCheck extends BaseJavaTermCheck {
 			String fileContent)
 		throws IOException {
 
-		if (javaTerm.hasAnnotation("Override")) {
-			return javaTerm.getContent();
-		}
-
-		String accessModifier = javaTerm.getAccessModifier();
-
-		if (!accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PUBLIC)) {
+		if (!javaTerm.isPublic() || javaTerm.hasAnnotation("Override")) {
 			return javaTerm.getContent();
 		}
 
@@ -144,7 +137,7 @@ public class JavaAPISignatureCheck extends BaseJavaTermCheck {
 				StringUtil.splitLines(FileUtil.read(file)));
 		}
 
-		for (int i = 0; i < ToolsUtil.PORTAL_MAX_DIR_LEVEL; i++) {
+		for (int i = 0; i < getMaxDirLevel(); i++) {
 			File file = new File(getBaseDirName() + fileName);
 
 			if (file.exists()) {
@@ -213,7 +206,8 @@ public class JavaAPISignatureCheck extends BaseJavaTermCheck {
 	private static final String[] _PACKAGE_NAME_WHITELIST = {
 		".*\\.alloy\\.mvc(\\..*)?", ".*\\.auth(\\..*)?", ".*\\.axis(\\..*)?",
 		".*\\.display\\.context(\\..*)?", ".*\\.http(\\..*)?",
-		".*\\.jsp(\\..*)?", ".*\\.layoutconfiguration\\.util(\\..*)?",
+		".*\\.jaxrs(\\..*)?", ".*\\.jsp(\\..*)?",
+		".*\\.layoutconfiguration\\.util(\\..*)?",
 		".*\\.portal\\.action(\\..*)?", ".*\\.portal\\.events(\\..*)?",
 		".*\\.portlet(\\..*)?", ".*\\.server\\.manager(\\..*)?",
 		".*\\.servlet(\\..*)?", ".*\\.spi\\.agent(\\..*)?", ".*\\.sso(\\..*)?",

@@ -12,7 +12,7 @@
  * details.
  */
 
-import {useTimeout} from 'frontend-js-react-web';
+import {useTimeout} from '@liferay/frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useReducer, useRef, useState} from 'react';
 
@@ -36,9 +36,12 @@ function addLinks(nodes, parentId = null) {
 		return {
 			...node,
 			children,
-			nextSiblingId: next != null ? next.id : null,
+			nextSiblingId: next !== null && next !== undefined ? next.id : null,
 			parentId,
-			previousSiblingId: previous != null ? previous.id : null
+			previousSiblingId:
+				previous !== null && previous !== undefined
+					? previous.id
+					: null,
 		};
 	});
 }
@@ -54,7 +57,7 @@ function computeParentSelection(nodeId, selectedNodeIds, nodes) {
 		return selectedNodeIds;
 	}
 
-	const allChildrenSelected = node.children.every(children =>
+	const allChildrenSelected = node.children.every((children) =>
 		selectedNodeIds.has(children.id)
 	);
 
@@ -67,31 +70,43 @@ function computeParentSelection(nodeId, selectedNodeIds, nodes) {
 	}
 	else {
 		nextSelectedNodeIds = selectedNodeIds.has(nodeId)
-			? new Set([...selectedNodeIds].filter(id => id !== nodeId))
+			? new Set([...selectedNodeIds].filter((id) => id !== nodeId))
 			: selectedNodeIds;
 	}
 
 	return computeParentSelection(node.parentId, nextSelectedNodeIds, nodes);
 }
 
-function filterNodes(nodes, filterQuery) {
-	if (!filterQuery) {
+function getFilterFn(filter) {
+	if (!filter) {
 		return null;
 	}
 
-	filterQuery = filterQuery.toLowerCase();
+	if (typeof filter === 'function') {
+		return filter;
+	}
+
+	const filterLowerCase = filter.toString().toLowerCase();
+
+	return (node) => node.name.toLowerCase().indexOf(filterLowerCase) !== -1;
+}
+
+function filterNodes(nodes, filter) {
+	if (!filter) {
+		return null;
+	}
 
 	const filteredNodes = [];
 
-	nodes.forEach(node => {
-		if (node.name.toLowerCase().indexOf(filterQuery) !== -1) {
+	nodes.forEach((node) => {
+		if (filter(node)) {
 			filteredNodes.push({
 				...node,
-				children: []
+				children: [],
 			});
 		}
 
-		filteredNodes.push(...filterNodes(node.children, filterQuery));
+		filteredNodes.push(...filterNodes(node.children, filter));
 	});
 
 	return filteredNodes;
@@ -101,7 +116,7 @@ function filterNodes(nodes, filterQuery) {
  * Recursively get all the children of a parent.
  */
 function getChildrenIds(node, childrenIds = []) {
-	node.children.forEach(children => {
+	node.children.forEach((children) => {
 		childrenIds.push(children.id);
 
 		getChildrenIds(children, childrenIds);
@@ -128,23 +143,23 @@ function getLastVisible(node) {
  * Prepares the initial reducer state given the supplied props.
  */
 function init({
-	filterQuery,
+	filter,
 	inheritSelection,
 	initialNodes,
 	initialSelectedNodeIds,
-	multiSelection
+	multiSelection,
 }) {
 	const selectedNodeIds = new Set(initialSelectedNodeIds);
 
 	const nodeMap = {};
 
-	const nodes = addLinks(initialNodes).map(node => {
+	const nodes = addLinks(initialNodes).map((node) => {
 		return visit(
 			node,
-			node => {
+			(node) => {
 				const expanded =
 					node.expanded ||
-					node.children.some(child => {
+					node.children.some((child) => {
 						return child.expanded || child.selected;
 					});
 
@@ -153,23 +168,25 @@ function init({
 				return {
 					...node,
 					expanded,
-					selected
+					selected,
 				};
 			},
 			nodeMap
 		);
 	});
 
+	const filterFn = getFilterFn(filter);
+
 	return {
 		active: false,
-		filterQuery,
-		filteredNodes: filterNodes(nodes, filterQuery),
+		filter: filterFn,
+		filteredNodes: filterNodes(nodes, filterFn),
 		focusedNodeId: null,
 		inheritSelection,
 		multiSelection,
 		nodeMap,
 		nodes,
-		selectedNodeIds
+		selectedNodeIds,
 	};
 }
 
@@ -188,27 +205,30 @@ function updateNode(state, id, callback) {
 	let node = callback(nodeMap[id]);
 
 	if (node === nodeMap[id]) {
+
 		// Node didn't change, so leave state as-is.
+
 		return state.nodes;
 	}
 
 	nodeMap[id] = node;
 
 	// Walk back to root updating subtrees.
+
 	while (node.parentId) {
 		const parent = nodeMap[node.parentId];
 
 		node = {
 			...parent,
-			children: parent.children.map(child => {
+			children: parent.children.map((child) => {
 				return child.id === node.id ? node : child;
-			})
+			}),
 		};
 
 		nodeMap[node.id] = node;
 	}
 
-	return state.nodes.map(child => {
+	return state.nodes.map((child) => {
 		return child.id === node.id ? node : child;
 	});
 }
@@ -223,35 +243,38 @@ function reducer(state, action) {
 
 	switch (action.type) {
 		case 'ACTIVATE': {
-			const focusedNodeId =
-				state.focusedNodeId || (nodes[0] && nodes[0].id);
+			const focusedNodeId = action.mouseNavigation
+				? state.focusedNodeId
+				: state.focusedNodeId || (nodes[0] && nodes[0].id);
 
 			return {
 				...state,
 				active: true,
-				focusedNodeId
+				focusedNodeId,
 			};
 		}
 
 		case 'DEACTIVATE':
 			return {
 				...state,
-				active: false
+				active: false,
 			};
 
 		case 'COLLAPSE':
+
 			// eg double click
+
 			if (!filteredNodes) {
 				return {
 					...state,
-					nodes: updateNode(state, action.nodeId, node => {
+					nodes: updateNode(state, action.nodeId, (node) => {
 						return node.expanded
 							? {
 									...node,
-									expanded: false
+									expanded: false,
 							  }
 							: node;
-					})
+					}),
 				};
 			}
 			break;
@@ -263,7 +286,7 @@ function reducer(state, action) {
 				if (state.focusedNodeId !== rootId) {
 					return {
 						...state,
-						focusedNodeId: rootId
+						focusedNodeId: rootId,
 					};
 				}
 			}
@@ -284,23 +307,29 @@ function reducer(state, action) {
 				else {
 					while (node) {
 						if (node.id !== action.nodeId) {
+
 							// Not the first iteration and we found a match: done.
+
 							break;
 						}
 
 						if (node.expanded && node.children.length) {
+
 							// Expanded, so go to first visible child.
+
 							node = node.children[0];
 							break;
 						}
 
 						// No visible children, so go to first visible sibling.
+
 						if (node.nextSiblingId) {
 							node = nodeMap[node.nextSiblingId];
 							continue;
 						}
 
 						// As last resort, go to parent's sibling.
+
 						if (node.parentId) {
 							const nextId = nodeMap[node.parentId].nextSiblingId;
 
@@ -311,6 +340,7 @@ function reducer(state, action) {
 						}
 
 						// Give up.
+
 						node = null;
 						break;
 					}
@@ -319,7 +349,7 @@ function reducer(state, action) {
 				if (node) {
 					return {
 						...state,
-						focusedNodeId: node.id
+						focusedNodeId: node.id,
 					};
 				}
 			}
@@ -351,7 +381,9 @@ function reducer(state, action) {
 							break;
 						}
 						else {
+
 							// Go to parent.
+
 							node = nodeMap[node.parentId];
 							break;
 						}
@@ -361,7 +393,7 @@ function reducer(state, action) {
 				if (node) {
 					return {
 						...state,
-						focusedNodeId: node.id
+						focusedNodeId: node.id,
 					};
 				}
 			}
@@ -394,24 +426,26 @@ function reducer(state, action) {
 				if (lastId && state.focusedNodeId !== lastId) {
 					return {
 						...state,
-						focusedNodeId: lastId
+						focusedNodeId: lastId,
 					};
 				}
 			}
 			break;
 
 		case 'TOGGLE_EXPANDED':
+
 			// Toggles the expanded or collapsed state of the selected
 			// parent node. eg. by double clicking; doesn't select a child.
+
 			if (!filteredNodes) {
 				return {
 					...state,
-					nodes: updateNode(state, action.nodeId, node => {
+					nodes: updateNode(state, action.nodeId, (node) => {
 						return {
 							...node,
-							expanded: !node.expanded
+							expanded: !node.expanded,
 						};
-					})
+					}),
 				};
 			}
 			break;
@@ -419,14 +453,14 @@ function reducer(state, action) {
 		case 'EXPAND_ALL':
 			{
 				if (!filteredNodes) {
-					const nodes = state.nodes.map(node =>
+					const nodes = state.nodes.map((node) =>
 						visit(
 							node,
-							node =>
+							(node) =>
 								!node.expanded
 									? {
 											...node,
-											expanded: true
+											expanded: true,
 									  }
 									: node,
 							nodeMap
@@ -435,7 +469,7 @@ function reducer(state, action) {
 
 					return {
 						...state,
-						nodes
+						nodes,
 					};
 				}
 			}
@@ -444,43 +478,45 @@ function reducer(state, action) {
 		case 'FILTER':
 			return {
 				...state,
-				filterQuery: action.filterQuery,
-				filteredNodes: filterNodes(state.nodes, action.filterQuery),
-				focusedNodeId: null
+				filter: action.filter,
+				filteredNodes: filterNodes(state.nodes, action.filter),
+				focusedNodeId: null,
 			};
 
 		case 'FOCUS':
 			if (action.nodeId !== state.focusedNodeId) {
 				return {
 					...state,
-					focusedNodeId: action.nodeId
+					focusedNodeId: action.nodeId,
 				};
 			}
 			break;
 
 		case 'COLLAPSE_PARENT':
 			{
+
 				// Collapse the currently selected parent node if it is
 				// expanded; otherwise move to the previous parent node
 				// (if possible).
+
 				if (!filteredNodes) {
 					const node = nodeMap[action.nodeId];
 
 					if (node.expanded) {
 						return {
 							...state,
-							nodes: updateNode(state, action.nodeId, node => {
+							nodes: updateNode(state, action.nodeId, (node) => {
 								return {
 									...node,
-									expanded: false
+									expanded: false,
 								};
-							})
+							}),
 						};
 					}
 					else if (node.parentId) {
 						return {
 							...state,
-							focusedNodeId: node.parentId
+							focusedNodeId: node.parentId,
 						};
 					}
 				}
@@ -489,26 +525,28 @@ function reducer(state, action) {
 
 		case 'EXPAND_AND_ENTER':
 			{
+
 				// Expand the currently selected parent node if it is closed;
 				// move to the first child list item if it was already expanded.
+
 				if (!filteredNodes) {
 					const node = nodeMap[action.nodeId];
 
 					if (!node.expanded) {
 						return {
 							...state,
-							nodes: updateNode(state, action.nodeId, node => {
+							nodes: updateNode(state, action.nodeId, (node) => {
 								return {
 									...node,
-									expanded: true
+									expanded: true,
 								};
-							})
+							}),
 						};
 					}
 					else if (node.children.length) {
 						return {
 							...state,
-							focusedNodeId: node.children[0].id
+							focusedNodeId: node.children[0].id,
 						};
 					}
 				}
@@ -528,7 +566,7 @@ function reducer(state, action) {
 
 					const parentAndChildrenIds = [
 						id,
-						...getChildrenIds(selectedNode)
+						...getChildrenIds(selectedNode),
 					];
 
 					let nextSelectedNodeIds;
@@ -536,7 +574,7 @@ function reducer(state, action) {
 					if (selectedNodeIds.has(id)) {
 						nextSelectedNodeIds = new Set(
 							[...selectedNodeIds].filter(
-								selectedId =>
+								(selectedId) =>
 									!parentAndChildrenIds.includes(selectedId)
 							)
 						);
@@ -544,7 +582,7 @@ function reducer(state, action) {
 					else {
 						nextSelectedNodeIds = new Set([
 							...selectedNodeIds,
-							...parentAndChildrenIds
+							...parentAndChildrenIds,
 						]);
 					}
 
@@ -558,7 +596,7 @@ function reducer(state, action) {
 					if (selectedNodeIds.has(id)) {
 						selectedNodeIds = new Set(
 							[...selectedNodeIds].filter(
-								selectedId => selectedId !== id
+								(selectedId) => selectedId !== id
 							)
 						);
 					}
@@ -574,39 +612,41 @@ function reducer(state, action) {
 					...state,
 					filteredNodes:
 						filteredNodes &&
-						filteredNodes.map(node =>
+						filteredNodes.map((node) =>
 							toggleNode(node, selectedNodeIds)
 						),
 					focusedNodeId: id,
-					nodes: state.nodes.map(node =>
+					nodes: state.nodes.map((node) =>
 						visit(
 							node,
-							node => toggleNode(node, selectedNodeIds),
+							(node) => toggleNode(node, selectedNodeIds),
 							nodeMap
 						)
 					),
-					selectedNodeIds
+					selectedNodeIds,
 				};
 			}
 			break;
 		}
 
 		case 'EXIT':
+
 			// Navigate away from tree.
+
 			break;
 
 		case 'UPDATE_NODES': {
-			const nodes = addLinks(action.newNodes).map(node => {
+			const nodes = addLinks(action.newNodes).map((node) => {
 				return visit(
 					node,
-					node => {
+					(node) => {
 						const {selectedNodeIds} = state;
-						const oldNode = nodeMap[node.id];
+						const oldNode = nodeMap[node.id] || {};
 
 						const expanded =
 							oldNode.expanded ||
 							node.expanded ||
-							node.children.some(child => {
+							node.children.some((child) => {
 								return child.expanded || child.selected;
 							});
 
@@ -616,7 +656,7 @@ function reducer(state, action) {
 						return {
 							...node,
 							expanded,
-							selected
+							selected,
 						};
 					},
 					nodeMap
@@ -625,7 +665,7 @@ function reducer(state, action) {
 
 			return {
 				...state,
-				nodes
+				nodes,
 			};
 		}
 
@@ -647,7 +687,7 @@ function toggleNode(node, selectedNodeIds) {
 	if (node.selected !== selectedNodeIds.has(node.id)) {
 		return {
 			...node,
-			selected: !node.selected
+			selected: !node.selected,
 		};
 	}
 	else {
@@ -692,27 +732,27 @@ function visit(node, callback, nodeMap) {
 
 function Treeview({
 	NodeComponent,
-	filterQuery,
+	filter,
 	inheritSelection,
 	initialSelectedNodeIds,
 	multiSelection,
 	nodes: initialNodes,
-	onSelectedNodesChange
+	onSelectedNodesChange,
 }) {
 	const delay = useTimeout();
 
-	const focusTimer = useRef();
+	const focusTimerRef = useRef();
 
 	const [, setHasFocus] = useState(false);
 
 	const [state, dispatch] = useReducer(
 		reducer,
 		{
-			filterQuery,
+			filter,
 			inheritSelection,
 			initialNodes,
 			initialSelectedNodeIds,
-			multiSelection
+			multiSelection,
 		},
 		init
 	);
@@ -720,8 +760,10 @@ function Treeview({
 	const {filteredNodes, nodes, selectedNodeIds} = state;
 
 	useEffect(() => {
-		dispatch({filterQuery, type: 'FILTER'});
-	}, [filterQuery]);
+		const filterFn = getFilterFn(filter);
+
+		dispatch({filter: filterFn, type: 'FILTER'});
+	}, [filter]);
 
 	useEffect(() => {
 		dispatch({newNodes: initialNodes, type: 'UPDATE_NODES'});
@@ -734,16 +776,31 @@ function Treeview({
 	}, [onSelectedNodesChange, selectedNodeIds]);
 
 	const cancelTimer = () => {
-		if (focusTimer.current) {
-			focusTimer.current();
-			focusTimer.current = null;
+		if (focusTimerRef.current) {
+			focusTimerRef.current();
+			focusTimerRef.current = null;
 		}
+	};
+
+	const handleMouseDown = () => {
+		cancelTimer();
+
+		setHasFocus((hadFocus) => {
+			if (!hadFocus) {
+				dispatch({
+					mouseNavigation: true,
+					type: 'ACTIVATE',
+				});
+			}
+
+			return true;
+		});
 	};
 
 	const handleFocus = () => {
 		cancelTimer();
 
-		setHasFocus(hadFocus => {
+		setHasFocus((hadFocus) => {
 			if (!hadFocus) {
 				dispatch({type: 'ACTIVATE'});
 			}
@@ -759,8 +816,9 @@ function Treeview({
 		// immediately after this "blur" (eg. when moving around inside
 		// the treeview); so, we defer this state update until the next
 		// tick, giving us a chance to cancel it if needed.
-		focusTimer.current = delay(() => {
-			setHasFocus(hadFocus => {
+
+		focusTimerRef.current = delay(() => {
+			setHasFocus((hadFocus) => {
 				if (hadFocus) {
 					dispatch({type: 'DEACTIVATE'});
 				}
@@ -777,6 +835,7 @@ function Treeview({
 				nodes={filteredNodes || nodes}
 				onBlur={handleBlur}
 				onFocus={handleFocus}
+				onMouseDown={handleMouseDown}
 				role="tree"
 				tabIndex={0}
 			/>
@@ -786,21 +845,23 @@ function Treeview({
 
 Treeview.defaultProps = {
 	NodeComponent: TreeviewLabel,
-	multiSelection: true
+	multiSelection: true,
 };
 
 Treeview.propTypes = {
 	NodeComponent: PropTypes.func,
+	filter: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
+	inheritSelection: PropTypes.bool,
 	initialSelectedNodeIds: PropTypes.arrayOf(PropTypes.string),
 	multiSelection: PropTypes.bool,
 	nodes: PropTypes.arrayOf(
 		PropTypes.shape({
 			children: PropTypes.array,
 			expanded: PropTypes.bool,
-			id: PropTypes.string.isRequired
+			id: PropTypes.string.isRequired,
 		})
 	).isRequired,
-	onSelectedNodesChange: PropTypes.func
+	onSelectedNodesChange: PropTypes.func,
 };
 
 Treeview.Card = TreeviewCard;

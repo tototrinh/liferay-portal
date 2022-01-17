@@ -18,7 +18,7 @@ export function durationAsMilliseconds(days, fullHours) {
 		.duration({
 			days,
 			hours,
-			minutes
+			minutes,
 		})
 		.asMilliseconds();
 }
@@ -29,17 +29,17 @@ export function formatDuration(millisecondsDuration) {
 	const durationParts = [
 		{
 			label: Liferay.Language.get('days-abbreviation'),
-			value: duration.days
+			value: duration.days,
 		},
 		{
 			label: Liferay.Language.get('hours-abbreviation'),
-			value: duration.hours
+			value: duration.hours,
 		},
 		{
 			label: Liferay.Language.get('minutes-abbreviation'),
-			value: duration.minutes
-		}
-	].filter(part => part.value > 0);
+			value: duration.minutes,
+		},
+	].filter((part) => part.value > 0);
 
 	if (!durationParts.length) {
 		return `${duration.seconds ? 1 : 0}${Liferay.Language.get(
@@ -47,11 +47,11 @@ export function formatDuration(millisecondsDuration) {
 		)}`;
 	}
 
-	return durationParts.map(part => `${part.value}${part.label}`).join(' ');
+	return durationParts.map((part) => `${part.value}${part.label}`).join(' ');
 }
 
 export function formatHours(hours, minutes) {
-	const padHours = value =>
+	const padHours = (value) =>
 		(value && value.toString().padStart(2, '0')) || '00';
 
 	if (hours || minutes) {
@@ -69,6 +69,55 @@ export function getDurationValues(durationValue) {
 		days: parseInt(fullDuration.asDays()) || null,
 		hours: fullDuration.hours() || null,
 		minutes: fullDuration.minutes() || null,
-		seconds: fullDuration.seconds() || null
+		seconds: fullDuration.seconds() || null,
 	};
+}
+
+export function remainingTimeFormat(
+	onTime,
+	remainingTime,
+	ignoreZeros = false
+) {
+	const remainingTimePositive = onTime ? remainingTime : remainingTime * -1;
+
+	const remainingTimeUTC = moment.utc(remainingTimePositive);
+
+	const days = remainingTimeUTC.format('D') - 1;
+
+	const hours = remainingTimeUTC.format('HH');
+
+	const minutes = remainingTimeUTC.format('mm');
+
+	let durationText = '';
+
+	if (ignoreZeros) {
+		if (Number(days) > 0) {
+			durationText += `${days}d `;
+		}
+
+		if (Number(hours) > 0) {
+			durationText += `${hours}h `;
+		}
+
+		if (Number(minutes) > 0) {
+			durationText += `${minutes}min`;
+		}
+
+		if (!durationText) {
+			const seconds = remainingTimeUTC.format('ss');
+
+			durationText += `${seconds}sec`;
+		}
+
+		durationText = String(durationText).trimEnd();
+	}
+	else {
+		durationText = `${days}d ${hours}h ${minutes}min`;
+	}
+
+	const onTimeText = onTime
+		? Liferay.Language.get('left')
+		: Liferay.Language.get('overdue');
+
+	return [durationText, onTimeText];
 }

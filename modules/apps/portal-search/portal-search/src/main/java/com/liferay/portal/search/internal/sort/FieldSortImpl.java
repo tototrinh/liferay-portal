@@ -22,7 +22,7 @@ import com.liferay.portal.search.sort.SortVisitor;
 /**
  * @author Michael C. Han
  */
-public class FieldSortImpl extends SortImpl implements FieldSort {
+public class FieldSortImpl extends BaseSortImpl implements FieldSort {
 
 	public FieldSortImpl(String field) {
 		_field = field;
@@ -33,30 +33,37 @@ public class FieldSortImpl extends SortImpl implements FieldSort {
 		return sortVisitor.visit(this);
 	}
 
+	@Override
 	public String getField() {
 		return _field;
 	}
 
+	@Override
 	public Object getMissing() {
 		return _missing;
 	}
 
+	@Override
 	public NestedSort getNestedSort() {
 		return _nestedSort;
 	}
 
+	@Override
 	public SortMode getSortMode() {
 		return _sortMode;
 	}
 
+	@Override
 	public void setMissing(Object missing) {
 		_missing = missing;
 	}
 
+	@Override
 	public void setNestedSort(NestedSort nestedSort) {
 		_nestedSort = nestedSort;
 	}
 
+	@Override
 	public void setSortMode(SortMode sortMode) {
 		_sortMode = sortMode;
 	}

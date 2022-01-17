@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-portlet-dynamic-data-lists',
-	A => {
+	(A) => {
 		var AArray = A.Array;
 
 		var DateMath = A.DataType.DateMath;
@@ -25,10 +25,6 @@ AUI.add(
 
 		var EMPTY_FN = A.Lang.emptyFn;
 
-		var FIELDS_DISPLAY_INSTANCE_SEPARATOR = '_INSTANCE_';
-
-		var FIELDS_DISPLAY_NAME = '_fieldsDisplay';
-
 		var STR_EMPTY = '';
 
 		var isArray = Array.isArray;
@@ -38,18 +34,23 @@ AUI.add(
 			ATTRS: {
 				portletNamespace: {
 					validator: Lang.isString,
-					value: STR_EMPTY
+					value: STR_EMPTY,
 				},
 
 				recordsetId: {
 					validator: isNumber,
-					value: 0
+					value: 0,
 				},
 
 				structure: {
 					validator: isArray,
-					value: []
-				}
+					value: [],
+				},
+
+				updateRecordURL: {
+					validator: Lang.isString,
+					value: STR_EMPTY,
+				},
 			},
 
 			CSS_PREFIX: 'table',
@@ -57,7 +58,7 @@ AUI.add(
 			DATATYPE_VALIDATOR: {
 				double: 'number',
 				integer: 'digits',
-				long: 'digits'
+				long: 'digits',
 			},
 
 			EXTENDS: A.DataTable,
@@ -65,7 +66,7 @@ AUI.add(
 			NAME: A.DataTable.Base.NAME,
 
 			TYPE_EDITOR: {
-				checkbox: A.CheckboxCellEditor,
+				'checkbox': A.CheckboxCellEditor,
 				'ddm-color':
 					FormBuilder.CUSTOM_CELL_EDITORS['color-cell-editor'],
 				'ddm-date': A.DateCellEditor,
@@ -78,10 +79,10 @@ AUI.add(
 				'ddm-link-to-page':
 					FormBuilder.CUSTOM_CELL_EDITORS['link-to-page-cell-editor'],
 				'ddm-number': A.TextCellEditor,
-				radio: A.RadioCellEditor,
-				select: A.DropDownCellEditor,
-				text: A.TextCellEditor,
-				textarea: A.TextAreaCellEditor
+				'radio': A.RadioCellEditor,
+				'select': A.DropDownCellEditor,
+				'text': A.TextCellEditor,
+				'textarea': A.TextAreaCellEditor,
 			},
 
 			addRecord(recordsetId, displayIndex, fieldsMap, callback) {
@@ -99,8 +100,8 @@ AUI.add(
 						serviceContext: JSON.stringify({
 							scopeGroupId: themeDisplay.getScopeGroupId(),
 							userId: themeDisplay.getUserId(),
-							workflowAction: Liferay.Workflow.ACTION_PUBLISH
-						})
+							workflowAction: Liferay.Workflow.ACTION_PUBLISH,
+						}),
 					},
 					callback
 				);
@@ -109,7 +110,7 @@ AUI.add(
 			buildDataTableColumns(columns, locale, structure, editable) {
 				var instance = this;
 
-				columns.forEach(item => {
+				columns.forEach((item) => {
 					var dataType = item.dataType;
 					var label = item.label;
 					var name = item.name;
@@ -125,11 +126,11 @@ AUI.add(
 						strings: {
 							cancel: Liferay.Language.get('cancel'),
 							edit: Liferay.Language.get('edit'),
-							save: Liferay.Language.get('save')
+							save: Liferay.Language.get('save'),
 						},
 						validator: {
-							rules: {}
-						}
+							rules: {},
+						},
 					};
 
 					var required = item.required;
@@ -146,10 +147,10 @@ AUI.add(
 
 					if (type === 'checkbox') {
 						config.options = {
-							true: Liferay.Language.get('true')
+							true: Liferay.Language.get('true'),
 						};
 
-						config.inputFormatter = function(value) {
+						config.inputFormatter = function (value) {
 							if (Array.isArray(value) && value.length > 0) {
 								value = value[0];
 							}
@@ -163,8 +164,8 @@ AUI.add(
 							return checkedValue;
 						};
 
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var value = data[name];
 
@@ -179,14 +180,14 @@ AUI.add(
 						};
 					}
 					else if (type === 'ddm-date') {
-						config.inputFormatter = function(val) {
-							return val.map(item => {
+						config.inputFormatter = function (val) {
+							return val.map((item) => {
 								return A.DataType.Date.format(item);
 							});
 						};
 
-						config.outputFormatter = function(val) {
-							return val.map(item => {
+						config.outputFormatter = function (val) {
+							return val.map((item) => {
 								var date;
 
 								if (item !== STR_EMPTY) {
@@ -206,8 +207,8 @@ AUI.add(
 							});
 						};
 
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var value = data[name];
 
@@ -223,7 +224,7 @@ AUI.add(
 						type === 'ddm-integer' ||
 						type === 'ddm-number'
 					) {
-						config.outputFormatter = function(value) {
+						config.outputFormatter = function (value) {
 							var number = A.DataType.Number.parse(value);
 
 							var numberValue = STR_EMPTY;
@@ -235,8 +236,8 @@ AUI.add(
 							return numberValue;
 						};
 
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var value = A.DataType.Number.parse(data[name]);
 
@@ -248,8 +249,8 @@ AUI.add(
 						};
 					}
 					else if (type === 'ddm-documentlibrary') {
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var label = STR_EMPTY;
 							var value = data[name];
@@ -268,8 +269,8 @@ AUI.add(
 						};
 					}
 					else if (type === 'ddm-link-to-page') {
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var label = STR_EMPTY;
 							var value = data[name];
@@ -315,14 +316,14 @@ AUI.add(
 							locale
 						);
 
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var label = [];
 							var value = data[name];
 
 							if (isArray(value)) {
-								value.forEach(item1 => {
+								value.forEach((item1) => {
 									label.push(options[item1]);
 								});
 							}
@@ -337,8 +338,8 @@ AUI.add(
 					else if (type === 'textarea') {
 						item.allowHTML = true;
 
-						item.formatter = function(obj) {
-							var data = obj.data;
+						item.formatter = function (object) {
+							var data = object.data;
 
 							var value = data[name];
 
@@ -357,7 +358,7 @@ AUI.add(
 
 					validatorRules[name] = A.mix(
 						{
-							required
+							required,
 						},
 						validatorRules[name]
 					);
@@ -395,7 +396,7 @@ AUI.add(
 
 				var structureField;
 
-				AArray.some(fieldsArray, item => {
+				AArray.some(fieldsArray, (item) => {
 					var nestedFieldsArray = item.fields;
 
 					if (item[attributeName] === attributeValue) {
@@ -418,7 +419,7 @@ AUI.add(
 			getCellEditorOptions(options, locale) {
 				var normalized = {};
 
-				options.forEach(item => {
+				options.forEach((item) => {
 					normalized[item.value] = item.label;
 
 					var localizationMap = item.localizationMap;
@@ -434,7 +435,7 @@ AUI.add(
 			getRecordModel(keys) {
 				var recordModel = {};
 
-				keys.forEach(item => {
+				keys.forEach((item) => {
 					recordModel[item] = STR_EMPTY;
 				});
 
@@ -496,12 +497,7 @@ AUI.add(
 					}
 				},
 
-				_normalizeFieldData(
-					item,
-					record,
-					fieldsDisplayValues,
-					normalized
-				) {
+				_normalizeFieldData(item, record, normalized) {
 					var instance = this;
 
 					var type = item.type;
@@ -526,20 +522,27 @@ AUI.add(
 						value = JSON.stringify(value);
 					}
 
-					normalized[item.name] = instance._normalizeValue(value);
+					var fieldValue = {
+						instanceId: instance._randomString(8),
+						name: item.name,
+					};
 
-					fieldsDisplayValues.push(
-						item.name +
-							FIELDS_DISPLAY_INSTANCE_SEPARATOR +
-							instance._randomString(8)
-					);
+					if (item.localizable) {
+						fieldValue['value'] = {
+							[themeDisplay.getLanguageId()]: value,
+						};
+					}
+					else {
+						fieldValue['value'] = value;
+					}
+
+					normalized['fieldValues'].push(fieldValue);
 
 					if (isArray(item.fields)) {
-						item.fields.forEach(item => {
+						item.fields.forEach((item) => {
 							instance._normalizeFieldData(
 								item,
 								record,
-								fieldsDisplayValues,
 								normalized
 							);
 						});
@@ -551,30 +554,30 @@ AUI.add(
 
 					var structure = instance.get('structure');
 
-					var fieldsDisplayValues = [];
-					var normalized = {};
+					var normalized = {
+						availableLanguageIds: [themeDisplay.getLanguageId()],
+						defaultLanguageId: themeDisplay.getLanguageId(),
+						fieldValues: [],
+					};
 
-					structure.forEach(item => {
-						instance._normalizeFieldData(
-							item,
-							record,
-							fieldsDisplayValues,
-							normalized
-						);
+					structure.forEach((item) => {
+						instance._normalizeFieldData(item, record, normalized);
+
+						if (item.fields) {
+							item.fields.forEach((nestedField) =>
+								instance._normalizeFieldData(
+									nestedField,
+									record,
+									normalized
+								)
+							);
+						}
 					});
-
-					normalized[FIELDS_DISPLAY_NAME] = fieldsDisplayValues.join(
-						','
-					);
 
 					delete normalized.displayIndex;
 					delete normalized.recordId;
 
 					return normalized;
-				},
-
-				_normalizeValue(value) {
-					return String(value);
 				},
 
 				_onDataChange(event) {
@@ -612,7 +615,7 @@ AUI.add(
 							record,
 							recordsetId,
 							structure,
-							zIndex: Liferay.zIndex.OVERLAY
+							zIndex: Liferay.zIndex.OVERLAY,
 						});
 					}
 				},
@@ -642,7 +645,9 @@ AUI.add(
 								recordId,
 								recordIndex,
 								fieldsMap,
-								true
+								false,
+								instance.get('portletNamespace'),
+								instance.get('updateRecordURL')
 							);
 						}
 						else {
@@ -650,10 +655,10 @@ AUI.add(
 								recordsetId,
 								recordIndex,
 								fieldsMap,
-								json => {
+								(json) => {
 									if (json.recordId > 0) {
 										record.set('recordId', json.recordId, {
-											silent: true
+											silent: true,
 										});
 									}
 								}
@@ -671,7 +676,7 @@ AUI.add(
 				},
 
 				_setDataStableSort(data) {
-					data.sort = function(options) {
+					data.sort = function (options) {
 						if (this.comparator) {
 							options = options || {};
 
@@ -682,10 +687,11 @@ AUI.add(
 								A.bind(this._sort, this)
 							);
 
-							var facade = A.merge(options, {
+							var facade = {
+								...options,
 								models,
-								src: 'sort'
-							});
+								src: 'sort',
+							};
 
 							if (options.silent) {
 								this._defResetFn(facade);
@@ -705,7 +711,7 @@ AUI.add(
 					var columns = instance.get('columns');
 					var data = instance.get('data');
 
-					var keys = columns.map(item => {
+					var keys = columns.map((item) => {
 						return item.key;
 					});
 
@@ -738,35 +744,43 @@ AUI.add(
 							recordSetId: recordsetId,
 							serviceContext: JSON.stringify({
 								scopeGroupId: themeDisplay.getScopeGroupId(),
-								userId: themeDisplay.getUserId()
-							})
+								userId: themeDisplay.getUserId(),
+							}),
 						},
 						callback
 					);
-				}
+				},
 			},
 
-			updateRecord(recordId, displayIndex, fieldsMap, merge, callback) {
+			updateRecord(
+				recordId,
+				displayIndex,
+				ddmFormValues,
+				majorVersion,
+				portletNamespace,
+				updateRecordURL,
+				callback
+			) {
 				var instance = this;
 
 				callback = (callback && A.bind(callback, instance)) || EMPTY_FN;
 
-				Liferay.Service(
-					'/ddl.ddlrecord/update-record',
-					{
+				A.io.request(updateRecordURL, {
+					data: Liferay.Util.ns(portletNamespace, {
+						ddmFormValues: JSON.stringify(ddmFormValues),
 						displayIndex,
-						fieldsMap: JSON.stringify(fieldsMap),
-						mergeFields: merge,
+						majorVersion,
 						recordId,
-						serviceContext: JSON.stringify({
-							scopeGroupId: themeDisplay.getScopeGroupId(),
-							userId: themeDisplay.getUserId(),
-							workflowAction: Liferay.Workflow.ACTION_PUBLISH
-						})
+					}),
+					dataType: 'JSON',
+					method: 'POST',
+					on: {
+						success() {
+							callback();
+						},
 					},
-					callback
-				);
-			}
+				});
+			},
 		});
 
 		Liferay.SpreadSheet = SpreadSheet;
@@ -780,9 +794,9 @@ AUI.add(
 				if (!previewDialog) {
 					previewDialog = Liferay.Util.Window.getWindow({
 						dialog: {
-							bodyContent: content
+							bodyContent: content,
 						},
-						title: Liferay.Language.get('preview')
+						title: Liferay.Language.get('preview'),
 					});
 
 					instance.previewDialog = previewDialog;
@@ -794,7 +808,7 @@ AUI.add(
 				}
 			},
 
-			previewDialog: null
+			previewDialog: null,
 		};
 
 		Liferay.DDLUtil = DDLUtil;
@@ -804,11 +818,12 @@ AUI.add(
 		requires: [
 			'aui-arraysort',
 			'aui-datatable',
+			'aui-io-deprecated',
 			'datatable-sort',
 			'json',
 			'liferay-portlet-dynamic-data-mapping-custom-fields',
 			'liferay-portlet-url',
-			'liferay-util-window'
-		]
+			'liferay-util-window',
+		],
 	}
 );

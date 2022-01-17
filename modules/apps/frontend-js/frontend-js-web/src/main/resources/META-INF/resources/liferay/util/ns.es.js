@@ -14,7 +14,7 @@
 
 import memoize from 'lodash.memoize';
 
-const cached = fn => {
+const cached = (fn) => {
 	return memoize(fn, (...args) => {
 		return args.length > 1
 			? Array.prototype.join.call(args, '_')
@@ -30,22 +30,22 @@ const nsCached = cached((namespace, str) => {
 	return str;
 });
 
-export default function(namespace, obj) {
+export default function (namespace, object) {
 	let value;
 
-	if (typeof obj !== 'object') {
-		value = nsCached(namespace, obj);
+	if (typeof object !== 'object') {
+		value = nsCached(namespace, object);
 	}
 	else {
 		value = {};
 
-		const keys = Object.keys(obj);
+		const keys = Object.keys(object);
 
-		keys.forEach(item => {
+		keys.forEach((item) => {
 			const originalItem = item;
 
 			item = nsCached(namespace, item);
-			value[item] = obj[originalItem];
+			value[item] = object[originalItem];
 		});
 	}
 

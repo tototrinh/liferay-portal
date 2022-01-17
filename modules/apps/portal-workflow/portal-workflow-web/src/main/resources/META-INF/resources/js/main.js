@@ -14,10 +14,8 @@
 
 AUI.add(
 	'liferay-workflow-web',
-	A => {
+	(A) => {
 		var WorkflowWeb = {
-			_alert: null,
-
 			_doToggleDefinitionLinkEditionMode(namespace) {
 				var instance = this;
 
@@ -139,7 +137,7 @@ AUI.add(
 
 				var editMode = inputEditModeNode.val();
 
-				var boolEditMode = editMode == 'true';
+				var boolEditMode = editMode === 'true' || editMode === true;
 
 				inputEditModeNode.val(!boolEditMode);
 			},
@@ -165,13 +163,11 @@ AUI.add(
 				for (var index in elementsList) {
 					var element = elementsList[parseInt(index, 10)];
 
-					var hidden = element.getAttribute('hidden');
-
-					if (hidden) {
-						element.removeAttribute('hidden');
+					if (element.classList.contains('d-none')) {
+						element.classList.remove('d-none');
 					}
 					else {
-						element.setAttribute('hidden', true);
+						element.classList.add('d-none');
 					}
 				}
 			},
@@ -222,8 +218,8 @@ AUI.add(
 											}
 
 											dialog.destroy();
-										}
-									}
+										},
+									},
 								},
 								{
 									cssClass: 'btn btn-primary',
@@ -236,18 +232,18 @@ AUI.add(
 											}
 
 											dialog.hide();
-										}
-									}
-								}
+										},
+									},
+								},
 							],
 							header: [
 								{
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -257,14 +253,14 @@ AUI.add(
 											}
 
 											dialog.destroy();
-										}
-									}
-								}
-							]
+										},
+									},
+								},
+							],
 						},
-						width: 500
+						width: 500,
 					},
-					title
+					title,
 				});
 
 				instance._duplicationDialog = dialog;
@@ -286,8 +282,8 @@ AUI.add(
 									on: {
 										click() {
 											window.location.assign(actionUrl);
-										}
-									}
+										},
+									},
 								},
 								{
 									cssClass: 'btn btn-secondary',
@@ -296,18 +292,18 @@ AUI.add(
 									on: {
 										click() {
 											dialog.destroy();
-										}
-									}
-								}
+										},
+									},
+								},
 							],
 							header: [
 								{
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -315,14 +311,14 @@ AUI.add(
 											dialog.destroy();
 
 											event.domEvent.stopPropagation();
-										}
-									}
-								}
-							]
+										},
+									},
+								},
+							],
 						},
-						width: 600
+						width: 600,
 					},
-					title
+					title,
 				});
 			},
 
@@ -340,8 +336,8 @@ AUI.add(
 									on: {
 										click() {
 											dialog.destroy();
-										}
-									}
+										},
+									},
 								},
 								{
 									cssClass: 'btn btn-primary',
@@ -350,18 +346,18 @@ AUI.add(
 									on: {
 										click() {
 											window.location.assign(actionUrl);
-										}
-									}
-								}
+										},
+									},
+								},
 							],
 							header: [
 								{
 									cssClass: 'close',
 									discardDefaultButtonCssClasses: true,
 									labelHTML:
-										'<svg class="lexicon-icon" focusable="false"><use data-href="' +
+										'<svg class="lexicon-icon" focusable="false"><use href="' +
 										Liferay.ThemeDisplay.getPathThemeImages() +
-										'/lexicon/icons.svg#times" /><title>' +
+										'/clay/icons.svg#times" /><title>' +
 										Liferay.Language.get('close') +
 										'</title></svg>',
 									on: {
@@ -369,14 +365,14 @@ AUI.add(
 											dialog.destroy();
 
 											event.domEvent.stopPropagation();
-										}
-									}
-								}
-							]
-						}
+										},
+									},
+								},
+							],
+						},
 					},
 					title,
-					uri: renderUrl
+					uri: renderUrl,
 				});
 			},
 
@@ -391,38 +387,16 @@ AUI.add(
 			},
 
 			showActionUndoneSuccessMessage() {
-				var instance = this;
-
 				var successMessage = Liferay.Language.get('action-undone');
 
-				var alert = instance._alert;
-
-				if (alert) {
-					alert.destroy();
-				}
-
-				alert = new Liferay.Alert({
-					closeable: true,
-					delay: {
-						hide: 5000,
-						show: 0
-					},
+				Liferay.Util.openToast({
+					container: document.querySelector('.portlet-column'),
 					message: successMessage,
-					type: 'success'
+					type: 'success',
 				});
-
-				if (!alert.get('rendered')) {
-					alert.render('.portlet-column');
-				}
-
-				alert.show();
-
-				instance._alert = alert;
 			},
 
 			showDefinitionImportSuccessMessage(namespace) {
-				var instance = this;
-
 				var undo = Liferay.Language.get('undo');
 
 				var undoEvent = "'" + namespace + "undoDefinition'";
@@ -435,34 +409,15 @@ AUI.add(
 					'</a>';
 
 				var successMessage =
-					Liferay.Language.get('definition-imported-sucessfully') +
+					Liferay.Language.get('definition-imported-successfully') +
 					'&nbsp;';
 
 				successMessage += undoLink;
 
-				var alert = instance._alert;
-
-				if (alert) {
-					alert.destroy();
-				}
-
-				alert = new Liferay.Alert({
-					closeable: true,
-					delay: {
-						hide: 10000,
-						show: 0
-					},
+				Liferay.Util.openToast({
+					container: document.querySelector('.lfr-alert-container'),
 					message: successMessage,
-					type: 'success'
 				});
-
-				if (!alert.get('rendered')) {
-					alert.render('.portlet-column');
-				}
-
-				alert.show();
-
-				instance._alert = alert;
 			},
 
 			toggleDefinitionLinkEditionMode(event, namespace) {
@@ -519,13 +474,13 @@ AUI.add(
 						instance._doToggleDefinitionLinkEditionMode(namespace);
 					}
 				}
-			}
+			},
 		};
 
 		Liferay.WorkflowWeb = WorkflowWeb;
 	},
 	'',
 	{
-		requires: ['liferay-alert', 'liferay-util-window']
+		requires: ['liferay-util-window'],
 	}
 );

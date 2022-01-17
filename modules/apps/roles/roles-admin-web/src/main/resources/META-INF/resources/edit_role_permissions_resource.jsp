@@ -29,43 +29,42 @@ String curPortletId = StringPool.BLANK;
 
 if (Validator.isNotNull(curPortletResource)) {
 	curPortlet = PortletLocalServiceUtil.getPortletById(themeDisplay.getCompanyId(), curPortletResource);
+
 	curPortletId = curPortlet.getPortletId();
 }
 
-List resourceActions = ResourceActionsUtil.getResourceActions(curPortletResource, curModelResource);
+List<String> resourceActions = ResourceActionsUtil.getResourceActions(curPortletResource, curModelResource);
 
 resourceActions = ListUtil.sort(resourceActions, new ActionComparator(locale));
 
-List guestUnsupportedActions = ResourceActionsUtil.getResourceGuestUnsupportedActions(curPortletResource, curModelResource);
+List<String> guestUnsupportedActions = ResourceActionsUtil.getResourceGuestUnsupportedActions(curPortletResource, curModelResource);
 
 List<String> headerNames = new ArrayList<String>();
 
 headerNames.add("action");
 
-boolean showScope = _isShowScope(request, role, curModelResource, curPortletId);
+boolean showScope = _isShowScope(request, role, curModelResource, curPortletId, roleDisplayContext);
 
 if (showScope) {
-	headerNames.add("sites");
+	headerNames.add("scope");
 }
 
-SearchContainer searchContainer = new SearchContainer(liferayPortletRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, liferayPortletResponse.createRenderURL(), headerNames, "there-are-no-actions");
+SearchContainer<String> searchContainer = new SearchContainer(liferayPortletRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, liferayPortletResponse.createRenderURL(), headerNames, "there-are-no-actions");
 
 searchContainer.setRowChecker(new ResourceActionRowChecker(liferayPortletResponse));
 
-int total = resourceActions.size();
+searchContainer.setTotal(resourceActions.size());
 
-searchContainer.setTotal(total);
-
-List results = resourceActions;
+List<String> results = resourceActions;
 
 searchContainer.setResults(results);
 
-List resultRows = searchContainer.getResultRows();
+List<com.liferay.portal.kernel.dao.search.ResultRow> resultRows = searchContainer.getResultRows();
 
 for (int i = 0; i < results.size(); i++) {
-	String actionId = (String)results.get(i);
+	String actionId = results.get(i);
 
-	if (role.getName().equals(RoleConstants.GUEST) && guestUnsupportedActions.contains(actionId)) {
+	if (Objects.equals(role.getName(), RoleConstants.GUEST) && guestUnsupportedActions.contains(actionId)) {
 		continue;
 	}
 
@@ -102,7 +101,7 @@ for (int i = 0; i < results.size(); i++) {
 
 	List<String> groupNames = new ArrayList<String>();
 
-	if (role.getType() == RoleConstants.TYPE_REGULAR) {
+	if (roleDisplayContext.isAllowGroupScope()) {
 		if (Validator.isNotNull(portletResource)) {
 			Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(), portletResource);
 
@@ -115,18 +114,19 @@ for (int i = 0; i < results.size(); i++) {
 			supportsFilterByGroup = true;
 		}
 
-		LinkedHashMap<String, Object> groupParams = new LinkedHashMap<String, Object>();
-
 		RolePermissions rolePermissions = new RolePermissions(curResource, ResourceConstants.SCOPE_GROUP, actionId, role.getRoleId());
 
-		groupParams.put("rolePermissions", rolePermissions);
-
-		groups = GroupLocalServiceUtil.search(company.getCompanyId(), GroupTypeContributorUtil.getClassNameIds(), null, null, groupParams, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+		groups = GroupLocalServiceUtil.search(
+			company.getCompanyId(), GroupTypeContributorUtil.getClassNameIds(), null, null,
+			LinkedHashMapBuilder.<String, Object>put(
+				"rolePermissions", rolePermissions
+			).build(),
+			true, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 		groupIdsArray = new long[groups.size()];
 
 		for (int j = 0; j < groups.size(); j++) {
-			Group group = (Group)groups.get(j);
+			Group group = groups.get(j);
 
 			groupIdsArray[j] = group.getGroupId();
 

@@ -22,15 +22,8 @@ import java.util.Set;
 /**
  * @author Michael Hashimoto
  */
-public class DefaultPortalJob extends BaseJob implements PortalTestClassJob {
-
-	@Override
-	public Set<String> getBatchNames() {
-		String testBatchNames = JenkinsResultsParserUtil.getProperty(
-			getJobProperties(), "test.batch.names");
-
-		return getSetFromString(testBatchNames);
-	}
+public class DefaultPortalJob
+	extends BaseJob implements PortalTestClassJob, TestSuiteJob {
 
 	@Override
 	public Set<String> getDistTypes() {
@@ -69,7 +62,7 @@ public class DefaultPortalJob extends BaseJob implements PortalTestClassJob {
 				portalRepositoryName);
 
 		if (!(gitWorkingDirectory instanceof PortalGitWorkingDirectory)) {
-			throw new RuntimeException("Invalid portal git working directory");
+			throw new RuntimeException("Invalid portal Git working directory");
 		}
 
 		_portalGitWorkingDirectory =
@@ -78,8 +71,17 @@ public class DefaultPortalJob extends BaseJob implements PortalTestClassJob {
 		return _portalGitWorkingDirectory;
 	}
 
-	protected DefaultPortalJob(String jobName) {
-		super(jobName);
+	@Override
+	public String getTestSuiteName() {
+		return _testSuiteName;
+	}
+
+	protected DefaultPortalJob(
+		String jobName, BuildProfile buildProfile, String testSuiteName) {
+
+		super(jobName, buildProfile);
+
+		_testSuiteName = testSuiteName;
 
 		PortalGitWorkingDirectory portalGitWorkingDirectory =
 			getPortalGitWorkingDirectory();
@@ -95,6 +97,14 @@ public class DefaultPortalJob extends BaseJob implements PortalTestClassJob {
 		readJobProperties();
 	}
 
+	@Override
+	protected Set<String> getRawBatchNames() {
+		return getSetFromString(
+			JenkinsResultsParserUtil.getProperty(
+				getJobProperties(), "test.batch.names"));
+	}
+
 	private PortalGitWorkingDirectory _portalGitWorkingDirectory;
+	private final String _testSuiteName;
 
 }

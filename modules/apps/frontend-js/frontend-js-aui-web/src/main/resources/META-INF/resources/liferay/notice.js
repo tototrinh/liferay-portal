@@ -12,9 +12,12 @@
  * details.
  */
 
+/**
+ * @deprecated As of Athanasius (7.3.x), replaced by `Liferay.Util.openToast`.
+ */
 AUI.add(
 	'liferay-notice',
-	A => {
+	(A) => {
 		var ADOM = A.DOM;
 		var ANode = A.Node;
 		var Do = A.Do;
@@ -33,7 +36,7 @@ AUI.add(
 		var STR_SHOW = 'show';
 
 		/**
-		 * @deprecated
+		 * @deprecated As of Wilberforce (7.0.x)
 		 *
 		 * OPTIONS
 		 *
@@ -53,7 +56,12 @@ AUI.add(
 		 * onClose {function}: Called when the toolbar is closed.
 		 */
 
-		var Notice = function(options) {
+		/**
+		 * @deprecated As of Athanasius (7.3.x), replaced by `Liferay.Util.openToast`.
+		 * @module liferay-notice
+		 */
+
+		var Notice = function (options) {
 			var instance = this;
 
 			options = options || {};
@@ -76,13 +84,14 @@ AUI.add(
 			instance._animationConfig = options.animationConfig || {
 				duration: 2,
 				easing: 'ease-out',
-				top: '50px'
+				top: '50px',
 			};
 
 			instance._useAnimation = options.useAnimation;
 
 			instance._timeout = options.timeout;
 
+			// eslint-disable-next-line @liferay/aui/no-get-body
 			instance._body = A.getBody();
 
 			instance._useToggleButton = false;
@@ -92,13 +101,13 @@ AUI.add(
 			if (options.toggleText !== false) {
 				instance.toggleText = A.mix(options.toggleText, {
 					hide: null,
-					show: null
+					show: null,
 				});
 
 				instance._useToggleButton = true;
 			}
 
-			if (instance._noticeType == 'warning') {
+			if (instance._noticeType === 'warning') {
 				instance._noticeClass = 'alert-danger popup-alert-warning';
 			}
 
@@ -130,7 +139,7 @@ AUI.add(
 
 				if (instance._useCloseButton) {
 					var html =
-						'<button class="btn btn-secondary submit popup-alert-close">' +
+						'<button class="btn btn-secondary c-ml-1 submit">' +
 						instance._closeText +
 						'</button>';
 
@@ -233,7 +242,7 @@ AUI.add(
 
 				Liferay.fire('noticeShow', {
 					notice: instance,
-					useAnimation: instance._useAnimation
+					useAnimation: instance._useAnimation,
 				});
 			},
 
@@ -243,8 +252,9 @@ AUI.add(
 				var returnVal;
 
 				if (instance._useAnimation) {
+					// eslint-disable-next-line @liferay/aui/no-merge
 					var animationConfig = A.merge(instance._animationConfig, {
-						top: -instance._notice.get('offsetHeight') + STR_PX
+						top: -instance._notice.get('offsetHeight') + STR_PX,
 					});
 
 					instance._notice.transition(animationConfig, () => {
@@ -256,7 +266,7 @@ AUI.add(
 
 				Liferay.fire('noticeHide', {
 					notice: instance,
-					useAnimation: instance._useAnimation
+					useAnimation: instance._useAnimation,
 				});
 
 				return returnVal;
@@ -284,7 +294,7 @@ AUI.add(
 					notice.html(content);
 				}
 
-				instance._noticeClass.split(' ').forEach(item => {
+				instance._noticeClass.split(' ').forEach((item) => {
 					notice.addClass(item);
 				});
 
@@ -349,6 +359,7 @@ AUI.add(
 					instance._useCloseButton = true;
 
 					if (!instance._body) {
+						// eslint-disable-next-line @liferay/aui/no-get-body
 						instance._body = A.getBody();
 					}
 
@@ -356,13 +367,13 @@ AUI.add(
 
 					alerts.each(instance._addCloseButton, instance);
 				}
-			}
+			},
 		};
 
 		Liferay.Notice = Notice;
 	},
 	'',
 	{
-		requires: ['aui-base']
+		requires: ['aui-base'],
 	}
 );

@@ -12,7 +12,7 @@
  * details.
  */
 
-import {EventHandler} from 'metal-events';
+import {EventHandler} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 
@@ -24,7 +24,7 @@ export default function Editor({
 	id,
 	initialValue,
 	onChange,
-	placeholder
+	placeholder,
 }) {
 	const editorConfig =
 		config.defaultEditorConfigurations[configurationName].editorConfig;
@@ -73,7 +73,7 @@ export default function Editor({
 			...editorConfig,
 			enterMode: 1,
 			startupFocus: autoFocus,
-			title: false
+			title: false,
 		});
 
 		let ready = false;
@@ -101,7 +101,9 @@ export default function Editor({
 				}
 			}
 			catch (_err) {
+
 				// https://github.com/liferay/alloy-editor/issues/1306
+
 			}
 		};
 	}, [autoFocus, editorConfig]);
@@ -112,7 +114,7 @@ export default function Editor({
 			id={`${config.portletNamespace}${id}`}
 		>
 			<div
-				className="alloy-editor alloy-editor-placeholder form-control form-control-sm page-editor__editor"
+				className="alloy-editor form-control form-control-sm page-editor__editor"
 				contentEditable={false}
 				data-placeholder={placeholder}
 				data-required={false}
@@ -120,6 +122,8 @@ export default function Editor({
 				name={id}
 				ref={wrapperRef}
 			/>
+
+			<div className="alloy-editor-placeholder">{placeholder}</div>
 		</div>
 	);
 }
@@ -132,5 +136,5 @@ Editor.propTypes = {
 	id: PropTypes.string.isRequired,
 	initialValue: PropTypes.string.isRequired,
 	onChange: PropTypes.func.isRequired,
-	placeholder: PropTypes.string.isRequired
+	placeholder: PropTypes.string.isRequired,
 };

@@ -238,9 +238,8 @@ public class RecurrenceUtil {
 
 			jCalendar.set(Calendar.DAY_OF_WEEK, weekday.getCalendarWeekday());
 
-			jCalendar = JCalendarUtil.getJCalendar(jCalendar, timeZone);
-
-			weekday = Weekday.getWeekday(jCalendar);
+			weekday = Weekday.getWeekday(
+				JCalendarUtil.getJCalendar(jCalendar, timeZone));
 
 			positionalWeekday = new PositionalWeekday(
 				weekday, positionalWeekday.getPosition());
@@ -273,16 +272,18 @@ public class RecurrenceUtil {
 		List<CalendarBooking> calendarBookingInstances = expandCalendarBooking(
 			calendarBooking, calendarBooking.getStartTime(), Long.MAX_VALUE, 0);
 
-		return calendarBookingInstances.get(
-			calendarBookingInstances.size() - 1);
+		if (!calendarBookingInstances.isEmpty()) {
+			return calendarBookingInstances.get(
+				calendarBookingInstances.size() - 1);
+		}
+
+		return calendarBooking;
 	}
 
 	protected static boolean hasLimit(Recurrence recurrence) {
-		if (recurrence.getUntilJCalendar() != null) {
-			return true;
-		}
+		if ((recurrence.getUntilJCalendar() != null) ||
+			(recurrence.getCount() != 0)) {
 
-		if (recurrence.getCount() != 0) {
 			return true;
 		}
 

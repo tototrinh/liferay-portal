@@ -230,13 +230,10 @@ public class WikiPageFinderImpl
 			closeSession(session);
 		}
 
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("No WikiPage exists with the key {resourcePrimKey");
-		sb.append(resourcePrimKey);
-		sb.append("}");
-
-		throw new NoSuchPageException(sb.toString());
+		throw new NoSuchPageException(
+			StringBundler.concat(
+				"No WikiPage exists with the key {resourcePrimKey",
+				resourcePrimKey, "}"));
 	}
 
 	@Override
@@ -340,10 +337,10 @@ public class WikiPageFinderImpl
 			queryPos.add(true);
 			queryPos.add(WorkflowConstants.STATUS_APPROVED);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -398,10 +395,10 @@ public class WikiPageFinderImpl
 			queryPos.add(true);
 			queryPos.add(WorkflowConstants.STATUS_APPROVED);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -456,10 +453,10 @@ public class WikiPageFinderImpl
 
 			queryPos.add(queryDefinition.getStatus());
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();

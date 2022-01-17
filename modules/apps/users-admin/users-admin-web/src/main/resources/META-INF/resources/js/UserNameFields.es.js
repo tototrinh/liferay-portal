@@ -13,24 +13,20 @@
  */
 
 import {PortletBase, createPortletURL} from 'frontend-js-web';
-import dom from 'metal-dom';
-import {EventHandler} from 'metal-events';
 import {Config} from 'metal-state';
 
 /**
  * Handles actions to display user name field for a given locale.
  */
 class UserNameFields extends PortletBase {
+
 	/**
 	 * @inheritDoc
 	 */
 	attached() {
-		this._eventHandler.add(
-			dom.on(
-				this.languageIdSelectNode,
-				'change',
-				this._handleSelectChange.bind(this)
-			)
+		this.languageIdSelectNode.addEventListener(
+			'change',
+			this._handleSelectChange
 		);
 	}
 
@@ -38,7 +34,7 @@ class UserNameFields extends PortletBase {
 	 * @inheritDoc
 	 */
 	created() {
-		this._eventHandler = new EventHandler();
+		this._handleSelectChange = this._handleSelectChange.bind(this);
 
 		this._formDataCache = {};
 		this._maxLengthsCache = {};
@@ -52,7 +48,10 @@ class UserNameFields extends PortletBase {
 	detached() {
 		super.detached();
 
-		this._eventHandler.removeAllListeners();
+		this.languageIdSelectNode.removeEventListener(
+			'change',
+			this._handleSelectChange
+		);
 	}
 
 	/**
@@ -67,7 +66,7 @@ class UserNameFields extends PortletBase {
 
 		this._getURL(languageId)
 			.then(fetch)
-			.then(response => response.text())
+			.then((response) => response.text())
 			.then(this._insertUserNameFields.bind(this))
 			.then(this._cleanUp.bind(this))
 			.catch(this._handleError.bind(this));
@@ -81,6 +80,10 @@ class UserNameFields extends PortletBase {
 	 */
 	_cacheData() {
 		const formData = new FormData(this.formNode);
+
+		if (!formData.forEach) {
+			return;
+		}
 
 		formData.forEach((value, name) => {
 			const field = this.userNameFieldsNode.querySelector('#' + name);
@@ -109,7 +112,7 @@ class UserNameFields extends PortletBase {
 			this._loadingAnimationMarkupText
 		);
 
-		dom.addClasses(this.userNameFieldsNode, 'hide');
+		this.userNameFieldsNode.classList.add('hide');
 	}
 
 	_cleanUp() {
@@ -127,9 +130,9 @@ class UserNameFields extends PortletBase {
 	 * @return {Promise} A promise to be resolved with the constructed URL
 	 */
 	_getURL(languageId) {
-		return new Promise(resolve => {
+		return new Promise((resolve) => {
 			const url = createPortletURL(this.baseURL, {
-				languageId
+				languageId,
 			});
 
 			resolve(url);
@@ -166,7 +169,7 @@ class UserNameFields extends PortletBase {
 	 * @protected
 	 */
 	_insertUserNameFields(markupText) {
-		const temp = document.implementation.createHTMLDocument();
+		const temp = document.implementation.createHTMLDocument('');
 
 		temp.body.innerHTML = markupText;
 
@@ -211,9 +214,13 @@ class UserNameFields extends PortletBase {
 	 * @protected
 	 */
 	_removeLoadingIndicator() {
-		dom.exitDocument(this.one('#loadingUserNameFields'));
+		const loadingUserNameFields = this.one('#loadingUserNameFields');
 
-		dom.removeClasses(this.userNameFieldsNode, 'hide');
+		if (loadingUserNameFields) {
+			loadingUserNameFields.remove();
+		}
+
+		this.userNameFieldsNode.classList.remove('hide');
 	}
 
 	/**
@@ -230,15 +237,14 @@ class UserNameFields extends PortletBase {
 }
 
 UserNameFields.STATE = {
+
 	/**
 	 * Uri to return the user name data.
 	 * @instance
 	 * @memberof UserNameFields
 	 * @type {String}
 	 */
-	baseURL: Config.required()
-		.string()
-		.writeOnce(),
+	baseURL: Config.required().string().writeOnce(),
 
 	/**
 	 * Form node.
@@ -247,7 +253,7 @@ UserNameFields.STATE = {
 	 * @type {String}
 	 */
 	formNode: Config.required()
-		.setter(dom.toElement)
+		.setter((selector) => document.querySelector(selector))
 		.writeOnce(),
 
 	/**
@@ -257,7 +263,7 @@ UserNameFields.STATE = {
 	 * @type {String}
 	 */
 	languageIdSelectNode: Config.required()
-		.setter(dom.toElement)
+		.setter((selector) => document.querySelector(selector))
 		.writeOnce(),
 
 	/**
@@ -267,8 +273,8 @@ UserNameFields.STATE = {
 	 * @type {String}
 	 */
 	userNameFieldsNode: Config.required()
-		.setter(dom.toElement)
-		.writeOnce()
+		.setter((selector) => document.querySelector(selector))
+		.writeOnce(),
 };
 
 export default UserNameFields;

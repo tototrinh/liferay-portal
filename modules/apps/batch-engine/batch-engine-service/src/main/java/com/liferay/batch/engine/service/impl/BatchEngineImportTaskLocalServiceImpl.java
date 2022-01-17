@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.dao.jdbc.OutputBlob;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.io.Serializable;
 
@@ -45,7 +46,8 @@ public class BatchEngineImportTaskLocalServiceImpl
 		long companyId, long userId, long batchSize, String callbackURL,
 		String className, byte[] content, String contentType,
 		String executeStatus, Map<String, String> fieldNameMappingMap,
-		String operation, Map<String, Serializable> parameters) {
+		String operation, Map<String, Serializable> parameters,
+		String taskItemDelegateName) {
 
 		BatchEngineImportTask batchEngineImportTask =
 			batchEngineImportTaskPersistence.create(
@@ -73,7 +75,26 @@ public class BatchEngineImportTaskLocalServiceImpl
 			batchEngineImportTask.setParameters(parameters);
 		}
 
+		batchEngineImportTask.setTaskItemDelegateName(taskItemDelegateName);
+
 		return batchEngineImportTaskPersistence.update(batchEngineImportTask);
+	}
+
+	@Override
+	public List<BatchEngineImportTask> getBatchEngineImportTasks(
+		long companyId, int start, int end) {
+
+		return batchEngineImportTaskPersistence.findByCompanyId(
+			companyId, start, end);
+	}
+
+	@Override
+	public List<BatchEngineImportTask> getBatchEngineImportTasks(
+		long companyId, int start, int end,
+		OrderByComparator<BatchEngineImportTask> orderByComparator) {
+
+		return batchEngineImportTaskPersistence.findByCompanyId(
+			companyId, start, end, orderByComparator);
 	}
 
 	@Override
@@ -82,6 +103,11 @@ public class BatchEngineImportTaskLocalServiceImpl
 
 		return batchEngineImportTaskPersistence.findByExecuteStatus(
 			executeStatus);
+	}
+
+	@Override
+	public int getBatchEngineImportTasksCount(long companyId) {
+		return batchEngineImportTaskPersistence.countByCompanyId(companyId);
 	}
 
 }

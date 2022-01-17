@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.util;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.io.ProtectedObjectInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
@@ -45,22 +46,26 @@ public class Base64 {
 		return _encode(raw, 0, raw.length, true);
 	}
 
-	public static String objectToString(Object o) {
-		if (o == null) {
+	public static String objectToString(Object object) {
+		if (object == null) {
 			return null;
 		}
 
-		UnsyncByteArrayOutputStream ubaos = new UnsyncByteArrayOutputStream(
-			32000);
+		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream(32000);
 
-		try (ObjectOutputStream os = new ObjectOutputStream(ubaos)) {
-			os.writeObject(o);
+		try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+				unsyncByteArrayOutputStream)) {
+
+			objectOutputStream.writeObject(object);
 		}
 		catch (Exception exception) {
 			_log.error(exception, exception);
 		}
 
-		return _encode(ubaos.unsafeGetByteArray(), 0, ubaos.size(), false);
+		return _encode(
+			unsyncByteArrayOutputStream.unsafeGetByteArray(), 0,
+			unsyncByteArrayOutputStream.size(), false);
 	}
 
 	public static Object stringToObject(String s) {
@@ -88,7 +93,7 @@ public class Base64 {
 			pad++;
 		}
 
-		int length = (base64.length() * 6) / 8 - pad;
+		int length = ((base64.length() * 6) / 8) - pad;
 
 		byte[] raw = new byte[length];
 
@@ -116,8 +121,8 @@ public class Base64 {
 
 		int lastIndex = Math.min(raw.length, offset + length);
 
-		StringBuilder sb = new StringBuilder(
-			((lastIndex - offset) / 3 + 1) * 4);
+		StringBundler sb = new StringBundler(
+			(((lastIndex - offset) / 3) + 1) * 4);
 
 		for (int i = offset; i < lastIndex; i += 3) {
 			sb.append(_encodeBlock(raw, i, lastIndex, url));
@@ -257,21 +262,22 @@ public class Base64 {
 
 		byte[] bytes = _decode(s, false);
 
-		UnsyncByteArrayInputStream ubais = new UnsyncByteArrayInputStream(
-			bytes);
+		UnsyncByteArrayInputStream unsyncByteArrayInputStream =
+			new UnsyncByteArrayInputStream(bytes);
 
 		try {
-			ObjectInputStream is = null;
+			ObjectInputStream objectInputStream = null;
 
 			if (classLoader == null) {
-				is = new ProtectedObjectInputStream(ubais);
+				objectInputStream = new ProtectedObjectInputStream(
+					unsyncByteArrayInputStream);
 			}
 			else {
-				is = new ProtectedClassLoaderObjectInputStream(
-					ubais, classLoader);
+				objectInputStream = new ProtectedClassLoaderObjectInputStream(
+					unsyncByteArrayInputStream, classLoader);
 			}
 
-			return is.readObject();
+			return objectInputStream.readObject();
 		}
 		catch (Exception exception) {
 			if (!silent) {

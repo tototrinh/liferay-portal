@@ -14,7 +14,6 @@
 
 package com.liferay.segments.experiment.web.internal.portlet.action;
 
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -79,8 +78,8 @@ public class AddSegmentsExperimentMVCActionCommand
 			jsonObject = TransactionInvokerUtil.invoke(
 				_transactionConfig, callable);
 		}
-		catch (Throwable t) {
-			_log.error(t, t);
+		catch (Throwable throwable) {
+			_log.error(throwable, throwable);
 
 			HttpServletResponse httpServletResponse =
 				_portal.getHttpServletResponse(actionResponse);
@@ -100,7 +99,7 @@ public class AddSegmentsExperimentMVCActionCommand
 	}
 
 	private JSONObject _addSegmentsExperiment(ActionRequest actionRequest)
-		throws PortalException {
+		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -116,22 +115,20 @@ public class AddSegmentsExperimentMVCActionCommand
 				ParamUtil.getString(actionRequest, "goalTarget"),
 				ServiceContextFactory.getInstance(actionRequest));
 
-		JSONObject jsonObject = JSONUtil.put(
-			"segmentsExperiment",
-			SegmentsExperimentUtil.toSegmentsExperimentJSONObject(
-				themeDisplay.getLocale(), segmentsExperiment));
-
 		SegmentsExperimentRel segmentsExperimentRel =
 			_segmentsExperimentRelService.getSegmentsExperimentRel(
 				segmentsExperiment.getSegmentsExperimentId(),
 				segmentsExperiment.getSegmentsExperienceId());
 
-		jsonObject.put(
+		return JSONUtil.put(
+			"segmentsExperiment",
+			SegmentsExperimentUtil.toSegmentsExperimentJSONObject(
+				themeDisplay.getLocale(), segmentsExperiment)
+		).put(
 			"segmentsExperimentRel",
 			SegmentsExperimentUtil.toSegmentsExperimentRelJSONObject(
-				themeDisplay.getLocale(), segmentsExperimentRel));
-
-		return jsonObject;
+				themeDisplay.getLocale(), segmentsExperimentRel)
+		);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

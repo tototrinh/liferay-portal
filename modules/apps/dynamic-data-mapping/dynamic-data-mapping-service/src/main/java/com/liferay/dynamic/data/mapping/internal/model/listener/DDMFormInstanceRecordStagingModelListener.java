@@ -57,7 +57,9 @@ public class DDMFormInstanceRecordStagingModelListener
 	}
 
 	@Override
-	public void onAfterUpdate(DDMFormInstanceRecord ddmFormInstanceRecord)
+	public void onAfterUpdate(
+			DDMFormInstanceRecord originalDDMFormInstanceRecord,
+			DDMFormInstanceRecord ddmFormInstanceRecord)
 		throws ModelListenerException {
 
 		if (_isSkipEvent(ddmFormInstanceRecord)) {
@@ -69,10 +71,13 @@ public class DDMFormInstanceRecordStagingModelListener
 
 	private boolean _isSkipEvent(DDMFormInstanceRecord ddmFormInstanceRecord) {
 		try {
-			StagedModelDataHandler stagedModelDataHandler =
-				StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(
-					ExportImportClassedModelUtil.getClassName(
-						ddmFormInstanceRecord));
+			StagedModelDataHandler<DDMFormInstanceRecord>
+				stagedModelDataHandler =
+					(StagedModelDataHandler<DDMFormInstanceRecord>)
+						StagedModelDataHandlerRegistryUtil.
+							getStagedModelDataHandler(
+								ExportImportClassedModelUtil.getClassName(
+									ddmFormInstanceRecord));
 
 			if (stagedModelDataHandler != null) {
 				int[] exportableStatuses =

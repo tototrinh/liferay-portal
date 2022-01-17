@@ -9,106 +9,92 @@
  * distribution rights of the Software.
  */
 
+import ClayTable from '@clayui/table';
 import React, {useContext} from 'react';
 
 import filterConstants from '../../../shared/components/filter/util/filterConstants.es';
-import {ChildLink} from '../../../shared/components/router/routerWrapper.es';
+import ChildLink from '../../../shared/components/router/ChildLink.es';
 import {getFormattedPercentage} from '../../../shared/util/util.es';
 import {AppContext} from '../../AppContext.es';
 import {processStatusConstants} from '../../filter/ProcessStatusFilter.es';
 import {slaStatusConstants} from '../../filter/SLAStatusFilter.es';
 
-const Item = ({
+function Item({
+	assignee: {id, name},
 	currentTab,
-	id,
-	name,
 	onTimeTaskCount,
 	overdueTaskCount,
 	processId,
 	processStepKey,
-	taskCount
-}) => {
-	const currentCount =
-		currentTab === 'overdue'
-			? overdueTaskCount
-			: currentTab === 'onTime'
-			? onTimeTaskCount
-			: taskCount;
+	taskCount,
+}) {
 	const {defaultDelta} = useContext(AppContext);
 
-	const formattedPercentage = getFormattedPercentage(currentCount, taskCount);
-
-	const getFiltersQuery = () => {
-		const filterParams = {
-			[filterConstants.assignee.key]: [id],
-			[filterConstants.processStatus.key]: [
-				processStatusConstants.pending
-			],
-			[filterConstants.slaStatus.key]: [slaStatusConstants[currentTab]]
-		};
-
-		if (processStepKey && processStepKey !== 'allSteps') {
-			filterParams[filterConstants.processStep.key] = [processStepKey];
-		}
-
-		return filterParams;
+	const counts = {
+		onTime: onTimeTaskCount,
+		overdue: overdueTaskCount,
+		total: taskCount,
 	};
 
-	const instancesListPath = `/instance/${processId}/${defaultDelta}/1`;
+	const filters = {
+		[filterConstants.assignee.key]: [id],
+		[filterConstants.processStatus.key]: [processStatusConstants.pending],
+		[filterConstants.processStep.key]: [processStepKey],
+		[filterConstants.slaStatus.key]: [slaStatusConstants[currentTab]],
+	};
+
+	const formattedPercentage = getFormattedPercentage(
+		counts[currentTab],
+		taskCount
+	);
 
 	return (
-		<tr>
-			<td
-				className="assignee-name border-0"
-				data-testid="workloadByAssigneeCardItem"
-			>
+		<ClayTable.Row>
+			<ClayTable.Cell className="assignee-name border-0">
 				<ChildLink
-					className={'workload-by-assignee-link'}
-					query={{filters: getFiltersQuery()}}
-					to={instancesListPath}
+					className="workload-by-assignee-link"
+					query={{filters}}
+					to={`/instance/${processId}/${defaultDelta}/1/dateOverdue:asc`}
 				>
-					<span data-testid="assigneeName">{name}</span>
+					<span>{name}</span>
 				</ChildLink>
-			</td>
+			</ClayTable.Cell>
 
-			<td className="border-0 text-right" data-testid="taskCount">
-				<span className="task-count-value" data-testid="taskCountValue">
-					{currentCount}
-				</span>
+			<ClayTable.Cell className="border-0 text-right">
+				<span className="task-count-value">{counts[currentTab]}</span>
 
 				{currentTab !== 'total' && (
-					<span
-						className="task-count-percentage"
-						data-testid="taskCountPercentage"
-					>
+					<span className="task-count-percentage">
 						{' / '}
 
 						{formattedPercentage}
 					</span>
 				)}
-			</td>
-		</tr>
+			</ClayTable.Cell>
+		</ClayTable.Row>
 	);
-};
+}
 
-const Table = ({currentTab, items = [], processId, processStepKey}) => (
-	<div className="mb-3 table-fit-panel">
-		<table className="table table-autofit table-hover">
-			<tbody>
-				{items.map((item, index) => (
-					<Table.Item
-						{...item}
-						currentTab={currentTab}
-						key={index}
-						processId={processId}
-						processStepKey={processStepKey}
-					/>
-				))}
-			</tbody>
-		</table>
-	</div>
-);
+function Table({currentTab, items = [], processId, processStepKey}) {
+	return (
+		<div className="mb-3 table-fit-panel">
+			<ClayTable borderless>
+				<ClayTable.Body>
+					{items.map((item, index) => (
+						<Table.Item
+							{...item}
+							currentTab={currentTab}
+							key={index}
+							processId={processId}
+							processStepKey={processStepKey}
+						/>
+					))}
+				</ClayTable.Body>
+			</ClayTable>
+		</div>
+	);
+}
 
 Table.Item = Item;
 
-export {Table};
+export default Table;

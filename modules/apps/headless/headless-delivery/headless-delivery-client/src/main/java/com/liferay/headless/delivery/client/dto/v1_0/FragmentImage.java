@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.FragmentImageSerDes;
 
+import java.io.Serializable;
+
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -26,7 +28,57 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class FragmentImage implements Cloneable {
+public class FragmentImage implements Cloneable, Serializable {
+
+	public static FragmentImage toDTO(String json) {
+		return FragmentImageSerDes.toDTO(json);
+	}
+
+	public Object getDescription() {
+		return description;
+	}
+
+	public void setDescription(Object description) {
+		this.description = description;
+	}
+
+	public void setDescription(
+		UnsafeSupplier<Object, Exception> descriptionUnsafeSupplier) {
+
+		try {
+			description = descriptionUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Object description;
+
+	public FragmentImageClassPKReference getFragmentImageClassPKReference() {
+		return fragmentImageClassPKReference;
+	}
+
+	public void setFragmentImageClassPKReference(
+		FragmentImageClassPKReference fragmentImageClassPKReference) {
+
+		this.fragmentImageClassPKReference = fragmentImageClassPKReference;
+	}
+
+	public void setFragmentImageClassPKReference(
+		UnsafeSupplier<FragmentImageClassPKReference, Exception>
+			fragmentImageClassPKReferenceUnsafeSupplier) {
+
+		try {
+			fragmentImageClassPKReference =
+				fragmentImageClassPKReferenceUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected FragmentImageClassPKReference fragmentImageClassPKReference;
 
 	public Object getTitle() {
 		return title;

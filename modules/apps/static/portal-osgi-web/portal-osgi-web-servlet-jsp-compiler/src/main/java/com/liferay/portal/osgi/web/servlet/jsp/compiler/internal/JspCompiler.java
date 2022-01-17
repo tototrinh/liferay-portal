@@ -208,7 +208,7 @@ public class JspCompiler extends Jsr199JavaCompiler {
 
 		if (_log.isInfoEnabled()) {
 			StringBundler sb = new StringBundler(
-				_bundleWiringPackageNames.size() * 4 + 6);
+				(_bundleWiringPackageNames.size() * 4) + 6);
 
 			sb.append("JSP compiler for bundle ");
 			sb.append(bundle.getSymbolicName());
@@ -255,7 +255,8 @@ public class JspCompiler extends Jsr199JavaCompiler {
 			catch (ClassNotFoundException classNotFoundException) {
 				_log.error(
 					"Unable to add depedency " + className +
-						" to the classpath");
+						" to the classpath",
+					classNotFoundException);
 			}
 		}
 	}

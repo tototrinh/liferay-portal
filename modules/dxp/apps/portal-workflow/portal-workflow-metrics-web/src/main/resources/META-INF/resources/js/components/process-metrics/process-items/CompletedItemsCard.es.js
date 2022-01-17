@@ -13,6 +13,7 @@ import React from 'react';
 
 import {useFilter} from '../../../shared/hooks/useFilter.es';
 import TimeRangeFilter from '../../filter/TimeRangeFilter.es';
+import {getTimeRangeParams} from '../../filter/util/timeRangeUtil.es';
 import ProcessItemsCard from './ProcessItemsCard.es';
 
 const CompletedItemsCard = ({routeParams}) => {
@@ -21,26 +22,28 @@ const CompletedItemsCard = ({routeParams}) => {
 	const prefixKeys = [prefixKey];
 
 	const {
-		filterState: {completedTimeRange = []},
-		filtersError
+		filterValues: {
+			completionDateEnd,
+			completionDateStart,
+			completionTimeRange: [key] = [],
+		},
+		filtersError,
 	} = useFilter({filterKeys, prefixKeys});
 
-	const timeRange = completedTimeRange[0] || {};
+	const timeRange = getTimeRangeParams(
+		completionDateStart,
+		completionDateEnd
+	);
 
 	return (
 		<ProcessItemsCard
 			completed={true}
 			description={Liferay.Language.get('completed-items-description')}
-			filtersError={filtersError}
-			timeRange={timeRange}
+			timeRange={{key, ...timeRange}}
 			title={Liferay.Language.get('completed-items')}
 			{...routeParams}
 		>
-			<TimeRangeFilter
-				disabled={filtersError}
-				options={{position: 'right'}}
-				prefixKey={prefixKey}
-			/>
+			<TimeRangeFilter disabled={filtersError} prefixKey={prefixKey} />
 		</ProcessItemsCard>
 	);
 };

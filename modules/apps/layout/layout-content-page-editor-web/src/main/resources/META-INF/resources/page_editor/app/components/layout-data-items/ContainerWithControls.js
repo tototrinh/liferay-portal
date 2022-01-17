@@ -12,111 +12,110 @@
  * details.
  */
 
-import {useModal} from '@clayui/modal';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
+import useSetRef from '../../../core/hooks/useSetRef';
+import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
+import {CONTAINER_WIDTH_TYPES} from '../../config/constants/containerWidthTypes';
 import {
-	LayoutDataPropTypes,
-	getLayoutDataItemPropTypes
-} from '../../../prop-types/index';
-import {LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS} from '../../config/constants/layoutDataFloatingToolbarButtons';
-import selectShowLayoutItemTopper from '../../selectors/selectShowLayoutItemTopper';
-import {useDispatch, useSelector} from '../../store/index';
-import duplicateItem from '../../thunks/duplicateItem';
-import {useSelectItem} from '../Controls';
+	useHoveredItemId,
+	useHoveredItemType,
+} from '../../contexts/ControlsContext';
+import {useSelector} from '../../contexts/StoreContext';
+import selectCanUpdateItemConfiguration from '../../selectors/selectCanUpdateItemConfiguration';
+import {getFrontendTokenValue} from '../../utils/getFrontendTokenValue';
+import {getResponsiveConfig} from '../../utils/getResponsiveConfig';
+import {isValidSpacingOption} from '../../utils/isValidSpacingOption';
 import Topper from '../Topper';
-import FloatingToolbar from '../floating-toolbar/FloatingToolbar';
-import SaveFragmentCompositionModal from '../floating-toolbar/SaveFragmentCompositionModal';
 import Container from './Container';
+import isHovered from './isHovered';
 
-const ContainerWithControls = React.forwardRef(
-	({children, item, layoutData}, ref) => {
-		const dispatch = useDispatch();
-		const isMounted = useIsMounted();
-		const [
-			openSaveFragmentCompositionModal,
-			setOpenSaveFragmentCompositionModal
-		] = useState(false);
-		const {observer, onClose} = useModal({
-			onClose: () => {
-				if (isMounted()) {
-					setOpenSaveFragmentCompositionModal(false);
-				}
-			}
-		});
+const ContainerWithControls = React.forwardRef(({children, item}, ref) => {
+	const canUpdateItemConfiguration = useSelector(
+		selectCanUpdateItemConfiguration
+	);
+	const hoveredItemType = useHoveredItemType();
+	const hoveredItemId = useHoveredItemId();
+	const [hovered, setHovered] = useState(false);
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
+	);
 
-		const segmentsExperienceId = useSelector(
-			state => state.segmentsExperienceId
-		);
-		const selectItem = useSelectItem();
-		const showLayoutItemTopper = useSelector(selectShowLayoutItemTopper);
+	const [setRef, itemElement] = useSetRef(ref);
 
-		const handleButtonClick = id => {
-			if (id === LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.duplicateItem.id) {
-				dispatch(
-					duplicateItem({
-						itemId: item.itemId,
-						selectItem,
-						store: {segmentsExperienceId}
-					})
-				);
-			}
-			else if (
-				id ===
-				LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.saveFragmentComposition.id
-			) {
-				setOpenSaveFragmentCompositionModal(true);
-			}
-		};
+	const itemConfig = getResponsiveConfig(item.config, selectedViewportSize);
 
-		const content = (
+	const {widthType} = itemConfig;
+
+	const {
+		display,
+		height,
+		marginLeft,
+		marginRight,
+		maxWidth,
+		minWidth,
+		shadow,
+		width,
+	} = itemConfig.styles;
+
+	const style = {};
+
+	style.boxShadow = getFrontendTokenValue(shadow);
+	style.display = display;
+	style.maxWidth = maxWidth;
+	style.minWidth = minWidth;
+	style.width = width;
+
+	useEffect(() => {
+		const backgroundImage = item.config?.styles?.backgroundImage;
+
+		if (backgroundImage?.classNameId && backgroundImage?.classPK) {
+			setHovered(
+				isHovered({
+					editableValue: backgroundImage,
+					hoveredItemId,
+					hoveredItemType,
+				})
+			);
+		}
+	}, [hoveredItemId, hoveredItemType, item]);
+
+	return (
+		<Topper
+			className={classNames({
+				[`container-fluid`]: widthType === CONTAINER_WIDTH_TYPES.fixed,
+				[`container-fluid-max-xl`]:
+					widthType === CONTAINER_WIDTH_TYPES.fixed,
+				[`ml-${marginLeft}`]:
+					isValidSpacingOption(marginLeft) &&
+					widthType !== CONTAINER_WIDTH_TYPES.fixed,
+				[`mr-${marginRight}`]:
+					isValidSpacingOption(marginRight) &&
+					widthType !== CONTAINER_WIDTH_TYPES.fixed,
+				'p-0': widthType === CONTAINER_WIDTH_TYPES.fixed,
+				'page-editor__topper--hovered': hovered,
+			})}
+			item={item}
+			itemElement={itemElement}
+			style={style}
+		>
 			<Container
-				className={classNames('page-editor__container', {
-					empty: !item.children.length
+				className={classNames({
+					'empty': !item.children.length && !height,
+					'page-editor__container': canUpdateItemConfiguration,
 				})}
 				item={item}
-				ref={ref}
+				ref={setRef}
 			>
-				<FloatingToolbar
-					buttons={[
-						LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.duplicateItem,
-						LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.saveFragmentComposition,
-						LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.containerConfiguration
-					]}
-					item={item}
-					itemRef={ref}
-					onButtonClick={handleButtonClick}
-				/>
-
 				{children}
-
-				{openSaveFragmentCompositionModal && (
-					<SaveFragmentCompositionModal
-						errorMessage={''}
-						itemId={item.itemId}
-						observer={observer}
-						onClose={onClose}
-						onErrorDismiss={() => true}
-					/>
-				)}
 			</Container>
-		);
-
-		return showLayoutItemTopper ? (
-			<Topper item={item} itemRef={ref} layoutData={layoutData}>
-				{() => content}
-			</Topper>
-		) : (
-			content
-		);
-	}
-);
+		</Topper>
+	);
+});
 
 ContainerWithControls.propTypes = {
 	item: getLayoutDataItemPropTypes().isRequired,
-	layoutData: LayoutDataPropTypes.isRequired
 };
 
 export default ContainerWithControls;

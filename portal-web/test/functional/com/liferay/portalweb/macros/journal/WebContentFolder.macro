@@ -35,7 +35,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Portlet#HEADER",
-			value1 = "${folderName}");
+			value1 = "Web Content");
 
 		LexiconEntry.gotoAdd();
 
@@ -71,7 +71,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Portlet#HEADER",
-			value1 = "${folderName}");
+			value1 = "Web Content");
 
 		MouseOver(locator1 = "Button#PLUS");
 
@@ -104,7 +104,7 @@ definition {
 
 			SelectFrame(value1 = "relative=top");
 
-			SelectFrame(locator1 = "IFrame#DIALOG");
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 			var key_ddlDataDefinitionName = "${structureName}";
 
@@ -144,7 +144,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Portlet#HEADER",
-			value1 = "${folderName}");
+			value1 = "Web Content");
 	}
 
 	macro gotoEditCP {
@@ -159,6 +159,22 @@ definition {
 		Click(locator1 = "WC#ENTRY_LIST_MENULIST_ICON");
 
 		MenuItem.click(menuItem = "Edit");
+	}
+
+	macro gotoPublish {
+		var key_webContentTitle = "${folderName}";
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "WC#ENTRY_LIST_TITLE",
+			value1 = "${webContentTitle}");
+
+		WebContentNavigator.gotoEntryMenuItem(
+			entry = "${folderName}",
+			menuItem = "Publish to Live");
+
+		AssertConfirm(value1 = "Are you sure you want to publish the selected folder?");
 	}
 
 	macro moveToRecycleBinCP {
@@ -176,7 +192,7 @@ definition {
 
 		AssertConfirm(value1 = "Are you sure you want to move this to the Recycle Bin?");
 
-		AssertElementPresent(locator1 = "Message#SUCCESS");
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
 	}
 
 	macro selectFolderTreeNode {

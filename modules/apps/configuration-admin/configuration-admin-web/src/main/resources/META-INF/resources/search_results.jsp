@@ -28,10 +28,13 @@ if (Validator.isNull(redirect)) {
 	redirect = String.valueOf(renderResponse.createRenderURL());
 }
 
-PortletURL searchURL = renderResponse.createRenderURL();
-
-searchURL.setParameter("mvcRenderCommandName", "/search");
-searchURL.setParameter("redirect", redirect);
+PortletURL searchURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/configuration_admin/search_results"
+).setRedirect(
+	redirect
+).buildPortletURL();
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(redirect);
@@ -39,15 +42,19 @@ portletDisplay.setURLBack(redirect);
 renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 %>
 
-<clay:management-toolbar
-	clearResultsURL="<%= redirect %>"
-	itemsTotal="<%= configurationEntryIterator.getTotal() %>"
-	searchActionURL="<%= searchURL.toString() %>"
-	selectable="<%= false %>"
-	showSearch="<%= true %>"
-/>
+<div class="sticky-top" style="top: 56px;">
+	<clay:management-toolbar
+		clearResultsURL="<%= redirect %>"
+		itemsTotal="<%= configurationEntryIterator.getTotal() %>"
+		searchActionURL="<%= searchURL.toString() %>"
+		selectable="<%= false %>"
+		showSearch="<%= true %>"
+	/>
+</div>
 
-<div class="container-fluid container-fluid-max-xl container-view">
+<clay:container-fluid
+	cssClass="container-view"
+>
 	<liferay-ui:search-container
 		emptyResultsMessage="no-configurations-were-found"
 		iteratorURL="<%= searchURL %>"
@@ -63,14 +70,14 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 			modelVar="configurationEntry"
 		>
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="name"
 			>
 				<aui:a href="<%= configurationEntry.getEditURL(renderRequest, renderResponse) %>"><strong><%= configurationEntry.getName() %></strong></aui:a>
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="category"
 			>
 
@@ -99,7 +106,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text
-				cssClass="table-cell-content"
+				cssClass="table-cell-expand"
 				name="scope"
 			>
 				<c:choose>
@@ -143,38 +150,32 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 							url="<%= configurationEntry.getEditURL(renderRequest, renderResponse) %>"
 						/>
 
-						<c:choose>
-							<c:when test="<%= !(configurationModel.isFactory() && !configurationModel.isCompanyFactory()) %>">
-							</c:when>
-							<c:otherwise>
-								<c:if test="<%= configurationModel.hasScopeConfiguration(configurationScopeDisplayContext.getScope()) %>">
-									<portlet:actionURL name="deleteConfiguration" var="deleteConfigActionURL">
-										<portlet:param name="redirect" value="<%= currentURL %>" />
-										<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
-										<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
-									</portlet:actionURL>
+						<c:if test="<%= configurationModel.hasScopeConfiguration(configurationScopeDisplayContext.getScope()) %>">
+							<portlet:actionURL name="/configuration_admin/delete_configuration" var="deleteConfigActionURL">
+								<portlet:param name="redirect" value="<%= currentURL %>" />
+								<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
+								<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
+							</portlet:actionURL>
 
-									<liferay-ui:icon
-										message="reset-default-values"
-										method="post"
-										url="<%= deleteConfigActionURL %>"
-									/>
+							<liferay-ui:icon
+								message="reset-default-values"
+								method="post"
+								url="<%= deleteConfigActionURL %>"
+							/>
 
-									<c:if test="<%= ExtendedObjectClassDefinition.Scope.SYSTEM.equals(configurationScopeDisplayContext.getScope()) %>">
-										<portlet:resourceURL id="export" var="exportURL">
-											<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
-											<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
-										</portlet:resourceURL>
+							<c:if test="<%= ExtendedObjectClassDefinition.Scope.SYSTEM.equals(configurationScopeDisplayContext.getScope()) %>">
+								<portlet:resourceURL id="/configuration_admin/export_configuration" var="exportURL">
+									<portlet:param name="factoryPid" value="<%= configurationModel.getFactoryPid() %>" />
+									<portlet:param name="pid" value="<%= configurationModel.getID() %>" />
+								</portlet:resourceURL>
 
-										<liferay-ui:icon
-											message="export"
-											method="get"
-											url="<%= exportURL %>"
-										/>
-									</c:if>
-								</c:if>
-							</c:otherwise>
-						</c:choose>
+								<liferay-ui:icon
+									message="export"
+									method="get"
+									url="<%= exportURL %>"
+								/>
+							</c:if>
+						</c:if>
 					</liferay-ui:icon-menu>
 				</c:if>
 			</liferay-ui:search-container-column-text>
@@ -184,4 +185,4 @@ renderResponse.setTitle(LanguageUtil.get(request, "search-results"));
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>

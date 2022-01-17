@@ -16,6 +16,8 @@ package com.liferay.portal.osgi.web.servlet.jsp.compiler.internal;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
@@ -101,8 +103,8 @@ public class JspServlet extends HttpServlet {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return _jspServlet.equals(obj);
+	public boolean equals(Object object) {
+		return _jspServlet.equals(object);
 	}
 
 	@Override
@@ -191,15 +193,11 @@ public class JspServlet extends HttpServlet {
 		_jspBundleClassloader = new JspBundleClassloader(
 			_allParticipatingBundles);
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(_WORK_DIR);
-		sb.append(_bundle.getSymbolicName());
-		sb.append(StringPool.DASH);
-		sb.append(_bundle.getVersion());
-
 		final Map<String, String> defaults = HashMapBuilder.put(
-			_INIT_PARAMETER_NAME_SCRATCH_DIR, sb.toString()
+			_INIT_PARAMETER_NAME_SCRATCH_DIR,
+			StringBundler.concat(
+				_WORK_DIR, _bundle.getSymbolicName(), StringPool.DASH,
+				_bundle.getVersion())
 		).put(
 			"compilerClassName",
 			"com.liferay.portal.osgi.web.servlet.jsp.compiler.internal." +
@@ -273,13 +271,12 @@ public class JspServlet extends HttpServlet {
 				String.valueOf(entry.getValue()));
 		}
 
-		Enumeration<String> names = servletConfig.getInitParameterNames();
-
-		Set<String> nameSet = new HashSet<>(Collections.list(names));
+		Set<String> nameSet = new HashSet<>(
+			Collections.list(servletConfig.getInitParameterNames()));
 
 		nameSet.addAll(defaults.keySet());
 
-		final Enumeration<String> initParameterNames = Collections.enumeration(
+		final Enumeration<String> enumeration = Collections.enumeration(
 			nameSet);
 
 		_jspServlet.init(
@@ -298,7 +295,7 @@ public class JspServlet extends HttpServlet {
 
 				@Override
 				public Enumeration<String> getInitParameterNames() {
-					return initParameterNames;
+					return enumeration;
 				}
 
 				@Override
@@ -326,8 +323,8 @@ public class JspServlet extends HttpServlet {
 	}
 
 	@Override
-	public void log(String message, Throwable t) {
-		_jspServlet.log(message, t);
+	public void log(String message, Throwable throwable) {
+		_jspServlet.log(message, throwable);
 	}
 
 	@Override
@@ -459,6 +456,8 @@ public class JspServlet extends HttpServlet {
 	private static final String _WORK_DIR = StringBundler.concat(
 		PropsValues.LIFERAY_HOME, File.separator, "work", File.separator);
 
+	private static final Log _log = LogFactoryUtil.getLog(JspServlet.class);
+
 	private static final Properties _initParams = PropsUtil.getProperties(
 		"jsp.servlet.init.param.", true);
 	private static final Bundle _jspBundle = FrameworkUtil.getBundle(
@@ -563,16 +562,16 @@ public class JspServlet extends HttpServlet {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof ServletContext)) {
+		public boolean equals(Object object) {
+			if (!(object instanceof ServletContext)) {
 				return false;
 			}
 
-			ServletContext servletContext = (ServletContext)obj;
+			ServletContext servletContext = (ServletContext)object;
 
-			if (obj instanceof ServletContextWrapper) {
+			if (object instanceof ServletContextWrapper) {
 				ServletContextWrapper servletContextWrapper =
-					(ServletContextWrapper)obj;
+					(ServletContextWrapper)object;
 
 				servletContext = servletContextWrapper._servletContext;
 			}
@@ -733,6 +732,9 @@ public class JspServlet extends HttpServlet {
 				return _jspBundle.getResource(path);
 			}
 			catch (MalformedURLException malformedURLException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(malformedURLException, malformedURLException);
+				}
 			}
 
 			return null;
@@ -750,6 +752,10 @@ public class JspServlet extends HttpServlet {
 				return url.openStream();
 			}
 			catch (IOException ioException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(ioException, ioException);
+				}
+
 				return null;
 			}
 		}

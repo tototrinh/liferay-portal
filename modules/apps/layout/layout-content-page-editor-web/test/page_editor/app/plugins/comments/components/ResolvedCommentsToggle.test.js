@@ -17,7 +17,7 @@ import {cleanup, fireEvent, render} from '@testing-library/react';
 import React from 'react';
 
 import {toggleShowResolvedComments} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/actions';
-import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/store/index';
+import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import ResolvedCommentsToggle from '../../../../../../src/main/resources/META-INF/resources/page_editor/plugins/comments/components/ResolvedCommentsToggle';
 
 const renderComponent = (state = {}, dispatch) => {
@@ -32,8 +32,8 @@ const renderComponent = (state = {}, dispatch) => {
 
 const RESOLVED_COMMENTS_STATE = {
 	fragmentEntryLinks: {
-		'fragment-entry-link-1': {comments: [{resolved: true}]}
-	}
+		'fragment-entry-link-1': {comments: [{resolved: true}]},
+	},
 };
 
 describe('ResolvedCommentsToggle', () => {

@@ -26,14 +26,14 @@ function Conjunction({
 	conjunctionName,
 	editing,
 	onSelect,
-	supportedConjunctions = []
+	supportedConjunctions = [],
 }) {
 	const [active, setActive] = useState(false);
 
 	const classnames = getCN(
 		{
 			'conjunction-button': editing,
-			'conjunction-label': !editing
+			'conjunction-label': !editing,
 		},
 		className
 	);
@@ -41,7 +41,7 @@ function Conjunction({
 	const [activeLabel, setActiveLabel] = useState(null);
 	useEffect(() => {
 		const selectedConjunction = supportedConjunctions.find(
-			c => c.name === conjunctionName
+			(c) => c.name === conjunctionName
 		);
 
 		setActiveLabel(selectedConjunction.label);
@@ -65,12 +65,13 @@ function Conjunction({
 					small
 				>
 					{activeLabel}
+
 					<ClayIcon className="ml-2" symbol="caret-bottom" />
 				</ClayButton>
 			}
 		>
 			<ClayDropdown.ItemList>
-				{supportedConjunctions.map(conjunction => {
+				{supportedConjunctions.map((conjunction) => {
 					return (
 						<ClayDropdown.Item
 							className="text-capitalize"
@@ -93,7 +94,7 @@ Conjunction.propTypes = {
 	conjunctionName: PropTypes.string.isRequired,
 	editing: PropTypes.bool.isRequired,
 	onSelect: PropTypes.func.isRequired,
-	supportedConjunctions: PropTypes.arrayOf(conjunctionShape)
+	supportedConjunctions: PropTypes.arrayOf(conjunctionShape),
 };
 
 export default Conjunction;

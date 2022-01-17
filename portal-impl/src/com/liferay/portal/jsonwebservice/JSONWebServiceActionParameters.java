@@ -38,8 +38,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import jodd.util.NameValue;
-
 /**
  * @author Igor Spasic
  */
@@ -56,6 +54,9 @@ public class JSONWebServiceActionParameters {
 				httpServletRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		_addDefaultParameters();
@@ -68,7 +69,7 @@ public class JSONWebServiceActionParameters {
 		_collectFromMap(parameterMap);
 	}
 
-	public List<NameValue<String, Object>> getInnerParameters(String baseName) {
+	public List<Map.Entry<String, Object>> getInnerParameters(String baseName) {
 		return _jsonWebServiceActionParameters.getInnerParameters(baseName);
 	}
 
@@ -113,10 +114,11 @@ public class JSONWebServiceActionParameters {
 	private void _collectDefaultsFromRequestAttributes(
 		HttpServletRequest httpServletRequest) {
 
-		Enumeration<String> enu = httpServletRequest.getAttributeNames();
+		Enumeration<String> enumeration =
+			httpServletRequest.getAttributeNames();
 
-		while (enu.hasMoreElements()) {
-			String attributeName = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String attributeName = enumeration.nextElement();
 
 			Object value = httpServletRequest.getAttribute(attributeName);
 

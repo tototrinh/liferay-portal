@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,18 @@ import java.util.Properties;
  */
 public class PortalTestSuiteUpstreamControllerBuildRunner
 	<S extends PortalTestSuiteUpstreamControllerBuildData>
-		extends BaseBuildRunner<S, Workspace> {
+		extends BaseBuildRunner<S> {
+
+	@Override
+	public Workspace getWorkspace() {
+		if (_workspace != null) {
+			return _workspace;
+		}
+
+		_workspace = WorkspaceFactory.newWorkspace();
+
+		return _workspace;
+	}
 
 	@Override
 	public void run() {
@@ -48,12 +60,10 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 	}
 
 	protected String getInvocationCohortName() {
-		String invocationCorhortName = System.getenv("INVOCATION_COHORT_NAME");
+		String invocationCohortName = System.getenv("INVOCATION_COHORT_NAME");
 
-		if ((invocationCorhortName != null) &&
-			!invocationCorhortName.isEmpty()) {
-
-			return invocationCorhortName;
+		if ((invocationCohortName != null) && !invocationCohortName.isEmpty()) {
+			return invocationCohortName;
 		}
 
 		BuildData buildData = getBuildData();
@@ -75,9 +85,32 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 			buildData.getPortalUpstreamBranchName(), ")");
 	}
 
-	@Override
-	protected void initWorkspace() {
-		setWorkspace(WorkspaceFactory.newSimpleWorkspace());
+	protected String getTestPortalBuildProfile(String testSuite) {
+		try {
+			Properties buildProperties =
+				JenkinsResultsParserUtil.getBuildProperties();
+
+			S buildData = getBuildData();
+
+			String buildProfile = buildProperties.getProperty(
+				JenkinsResultsParserUtil.combine(
+					"portal.testsuite.upstream.test.portal.build.profile[",
+					buildData.getPortalUpstreamBranchName(), "][", testSuite,
+					"]"));
+
+			if (buildProfile == null) {
+				buildProfile = buildProperties.getProperty(
+					"portal.testsuite.upstream.test.portal.build.profile");
+			}
+
+			return buildProfile;
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(
+				"Unable to get portal build profile for test suite " +
+					testSuite,
+				ioException);
+		}
 	}
 
 	protected void invokeTestSuiteBuilds() {
@@ -113,41 +146,68 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 			sb.append("/buildWithParameters?");
 			sb.append("token=");
 			sb.append(jenkinsAuthenticationToken);
-			sb.append("&JENKINS_GITHUB_BRANCH_NAME=");
-			sb.append(buildData.getJenkinsGitHubBranchName());
-			sb.append("&JENKINS_GITHUB_BRANCH_USERNAME=");
-			sb.append(buildData.getJenkinsGitHubUsername());
-			sb.append("&PORTAL_GIT_COMMIT=");
-			sb.append(buildData.getPortalBranchSHA());
-			sb.append("&PORTAL_GITHUB_URL=");
-			sb.append(buildData.getPortalGitHubURL());
-			sb.append("&CI_TEST_SUITE=");
-			sb.append(testSuiteName);
+
+			Map<String, String> invocationParameters = new HashMap<>();
+
+			invocationParameters.put("CI_TEST_SUITE", testSuiteName);
+			invocationParameters.put(
+				"JENKINS_GITHUB_BRANCH_NAME",
+				buildData.getJenkinsGitHubBranchName());
+			invocationParameters.put(
+				"JENKINS_GITHUB_BRANCH_USERNAME",
+				buildData.getJenkinsGitHubUsername());
+			invocationParameters.put(
+				"PORTAL_GIT_COMMIT", buildData.getPortalBranchSHA());
+			invocationParameters.put(
+				"PORTAL_GITHUB_URL", buildData.getPortalGitHubURL());
+
+			String testPortalBuildProfile = getTestPortalBuildProfile(
+				testSuiteName);
+
+			if (testPortalBuildProfile != null) {
+				invocationParameters.put(
+					"TEST_PORTAL_BUILD_PROFILE", testPortalBuildProfile);
+			}
 
 			String testrayProjectName = _getTestrayProjectName(testSuiteName);
 
 			if (testrayProjectName != null) {
-				String testrayBuildType = JenkinsResultsParserUtil.combine(
+				String testrayRoutineName = JenkinsResultsParserUtil.combine(
 					"[", buildData.getPortalUpstreamBranchName(), "] ci:test:",
 					testSuiteName);
 
 				String testraybuildName = JenkinsResultsParserUtil.combine(
-					testrayBuildType, " - ",
+					testrayRoutineName, " - ",
 					String.valueOf(buildData.getBuildNumber()), " - ",
 					JenkinsResultsParserUtil.toDateString(
 						new Date(buildData.getStartTime()),
 						"yyyy-MM-dd[HH:mm:ss]", "America/Los_Angeles"));
 
-				if (_getTestrayBuildType(testSuiteName) != null) {
-					testrayBuildType = _getTestrayBuildType(testSuiteName);
+				if (_getTestrayRoutineName(testSuiteName) != null) {
+					testrayRoutineName = _getTestrayRoutineName(testSuiteName);
 				}
 
-				sb.append("&TESTRAY_BUILD_NAME=");
-				sb.append(testraybuildName);
-				sb.append("&TESTRAY_BUILD_TYPE=");
-				sb.append(testrayBuildType);
-				sb.append("&TESTRAY_PROJECT_NAME=");
-				sb.append(testrayProjectName);
+				invocationParameters.put(
+					"TESTRAY_BUILD_NAME", testraybuildName);
+				invocationParameters.put(
+					"TESTRAY_PROJECT_NAME", testrayProjectName);
+				invocationParameters.put(
+					"TESTRAY_ROUTINE_NAME", testrayRoutineName);
+			}
+
+			invocationParameters.putAll(buildData.getBuildParameters());
+
+			for (Map.Entry<String, String> invocationParameter :
+					invocationParameters.entrySet()) {
+
+				if (invocationParameter.getValue() == null) {
+					continue;
+				}
+
+				sb.append("&");
+				sb.append(invocationParameter.getKey());
+				sb.append("=");
+				sb.append(invocationParameter.getValue());
 			}
 
 			try {
@@ -195,10 +255,6 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 	}
 
 	private Map<String, Long> _getCandidateTestSuiteStaleDurations() {
-		S buildData = getBuildData();
-
-		String upstreamBranchName = buildData.getPortalUpstreamBranchName();
-
 		Properties buildProperties;
 
 		try {
@@ -207,6 +263,10 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
 		}
+
+		S buildData = getBuildData();
+
+		String upstreamBranchName = buildData.getPortalUpstreamBranchName();
 
 		Map<String, Long> candidateTestSuiteStaleDurations =
 			new LinkedHashMap<>();
@@ -296,24 +356,6 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 		return _selectedTestSuiteNames;
 	}
 
-	private String _getTestrayBuildType(String testSuite) {
-		try {
-			Properties buildProperties =
-				JenkinsResultsParserUtil.getBuildProperties();
-
-			S buildData = getBuildData();
-
-			return buildProperties.getProperty(
-				JenkinsResultsParserUtil.combine(
-					"portal.testsuite.upstream.testray.build.type[",
-					buildData.getPortalUpstreamBranchName(), "][", testSuite,
-					"]"));
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(ioException);
-		}
-	}
-
 	private String _getTestrayProjectName(String testSuite) {
 		try {
 			Properties buildProperties =
@@ -326,6 +368,36 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 					"portal.testsuite.upstream.testray.project.name[",
 					buildData.getPortalUpstreamBranchName(), "][", testSuite,
 					"]"));
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+	}
+
+	private String _getTestrayRoutineName(String testSuite) {
+		try {
+			Properties buildProperties =
+				JenkinsResultsParserUtil.getBuildProperties();
+
+			S buildData = getBuildData();
+
+			String testrayRoutineName = JenkinsResultsParserUtil.getProperty(
+				buildProperties,
+				JenkinsResultsParserUtil.combine(
+					"portal.testsuite.upstream.testray.routine.name[",
+					buildData.getPortalUpstreamBranchName(), "][", testSuite,
+					"]"));
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(testrayRoutineName)) {
+				testrayRoutineName = JenkinsResultsParserUtil.getProperty(
+					buildProperties,
+					JenkinsResultsParserUtil.combine(
+						"portal.testsuite.upstream.testray.build.type[",
+						buildData.getPortalUpstreamBranchName(), "][",
+						testSuite, "]"));
+			}
+
+			return testrayRoutineName;
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -349,5 +421,6 @@ public class PortalTestSuiteUpstreamControllerBuildRunner
 
 	private final List<String> _invokedTestSuiteNames = new ArrayList<>();
 	private List<String> _selectedTestSuiteNames;
+	private Workspace _workspace;
 
 }

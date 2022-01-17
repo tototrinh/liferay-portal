@@ -41,9 +41,7 @@ List<DropdownItem> dropdownItems = assetEntryActionDropdownItemsProvider.getActi
 
 				<%
 				for (DropdownItem dropdownItem : dropdownItems) {
-					Map data = (HashMap)dropdownItem.get("data");
-
-					boolean useDialog = GetterUtil.getBoolean(data.get("useDialog"));
+					Map<String, Object> data = (HashMap<String, Object>)dropdownItem.get("data");
 				%>
 
 					<liferay-ui:icon
@@ -51,7 +49,7 @@ List<DropdownItem> dropdownItems = assetEntryActionDropdownItemsProvider.getActi
 						message='<%= String.valueOf(dropdownItem.get("label")) %>'
 						method="get"
 						url='<%= String.valueOf(dropdownItem.get("href")) %>'
-						useDialog="<%= useDialog %>"
+						useDialog='<%= GetterUtil.getBoolean(data.get("useDialog")) %>'
 					/>
 
 				<%
@@ -65,9 +63,7 @@ List<DropdownItem> dropdownItems = assetEntryActionDropdownItemsProvider.getActi
 			<%
 			DropdownItem dropdownItem = dropdownItems.get(0);
 
-			Map data = (HashMap)dropdownItem.get("data");
-
-			boolean useDialog = GetterUtil.getBoolean(data.get("useDialog"));
+			Map<String, Object> data = (HashMap<String, Object>)dropdownItem.get("data");
 			%>
 
 			<liferay-ui:icon
@@ -78,7 +74,7 @@ List<DropdownItem> dropdownItems = assetEntryActionDropdownItemsProvider.getActi
 				markupView="lexicon"
 				method="get"
 				url='<%= String.valueOf(dropdownItem.get("href")) %>'
-				useDialog="<%= useDialog %>"
+				useDialog='<%= GetterUtil.getBoolean(data.get("useDialog")) %>'
 			/>
 		</c:otherwise>
 	</c:choose>

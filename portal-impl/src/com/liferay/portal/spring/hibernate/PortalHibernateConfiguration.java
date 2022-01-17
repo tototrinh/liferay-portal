@@ -21,8 +21,8 @@ import com.liferay.portal.asm.ASMWrapperUtil;
 import com.liferay.portal.change.tracking.registry.CTModelRegistration;
 import com.liferay.portal.change.tracking.registry.CTModelRegistry;
 import com.liferay.portal.dao.orm.hibernate.event.MVCCSynchronizerPostUpdateEventListener;
-import com.liferay.portal.dao.orm.hibernate.event.NestableAutoFlushEventListener;
-import com.liferay.portal.dao.orm.hibernate.event.NestableFlushEventListener;
+import com.liferay.portal.dao.orm.hibernate.event.ResetOriginalValuesLoadEventListener;
+import com.liferay.portal.dao.orm.hibernate.event.ResetOriginalValuesPostLoadEventListener;
 import com.liferay.portal.internal.change.tracking.hibernate.CTSQLInterceptor;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
@@ -62,9 +62,9 @@ import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.engine.query.QueryPlanCache;
-import org.hibernate.event.AutoFlushEventListener;
 import org.hibernate.event.EventListeners;
-import org.hibernate.event.FlushEventListener;
+import org.hibernate.event.LoadEventListener;
+import org.hibernate.event.PostLoadEventListener;
 import org.hibernate.event.PostUpdateEventListener;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.persister.entity.OuterJoinLoadable;
@@ -252,18 +252,18 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 				}
 			}
 
-			if (_mvccEnabled) {
-				EventListeners eventListeners =
-					configuration.getEventListeners();
+			EventListeners eventListeners = configuration.getEventListeners();
 
-				eventListeners.setAutoFlushEventListeners(
-					new AutoFlushEventListener[] {
-						NestableAutoFlushEventListener.INSTANCE
-					});
-				eventListeners.setFlushEventListeners(
-					new FlushEventListener[] {
-						NestableFlushEventListener.INSTANCE
-					});
+			eventListeners.setLoadEventListeners(
+				new LoadEventListener[] {
+					ResetOriginalValuesLoadEventListener.INSTANCE
+				});
+			eventListeners.setPostLoadEventListeners(
+				new PostLoadEventListener[] {
+					ResetOriginalValuesPostLoadEventListener.INSTANCE
+				});
+
+			if (_mvccEnabled) {
 				eventListeners.setPostUpdateEventListeners(
 					new PostUpdateEventListener[] {
 						MVCCSynchronizerPostUpdateEventListener.INSTANCE
@@ -359,14 +359,14 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 		if (resource.startsWith("classpath*:")) {
 			String name = resource.substring("classpath*:".length());
 
-			Enumeration<URL> enu = classLoader.getResources(name);
+			Enumeration<URL> enumeration = classLoader.getResources(name);
 
-			if (_log.isDebugEnabled() && !enu.hasMoreElements()) {
+			if (_log.isDebugEnabled() && !enumeration.hasMoreElements()) {
 				_log.debug("No resources found for " + name);
 			}
 
-			while (enu.hasMoreElements()) {
-				URL url = enu.nextElement();
+			while (enumeration.hasMoreElements()) {
+				URL url = enumeration.nextElement();
 
 				InputStream inputStream = url.openStream();
 

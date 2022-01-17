@@ -27,6 +27,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upload.UploadServletRequestConfigurationHelper;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -140,6 +141,10 @@ public final class DLValidatorImpl implements DLValidator {
 	public void validateFileExtension(String fileName)
 		throws FileExtensionException {
 
+		if (CompanyThreadLocal.isInitializingPortalInstance()) {
+			return;
+		}
+
 		boolean validFileExtension = false;
 
 		for (String fileExtension : _dlConfiguration.fileExtensions()) {
@@ -201,16 +206,16 @@ public final class DLValidatorImpl implements DLValidator {
 	}
 
 	@Override
-	public void validateFileSize(String fileName, InputStream is)
+	public void validateFileSize(String fileName, InputStream inputStream)
 		throws FileSizeException {
 
 		try {
-			if (is == null) {
+			if (inputStream == null) {
 				throw new FileSizeException(
 					"Input stream is null for " + fileName);
 			}
 
-			validateFileSize(fileName, is.available());
+			validateFileSize(fileName, inputStream.available());
 		}
 		catch (IOException ioException) {
 			throw new FileSizeException(ioException);

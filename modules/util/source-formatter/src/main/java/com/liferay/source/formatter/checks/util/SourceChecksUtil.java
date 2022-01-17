@@ -18,8 +18,11 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.json.JSONObjectImpl;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.source.formatter.SourceFormatterMessage;
+import com.liferay.source.formatter.SourceProcessor;
 import com.liferay.source.formatter.checks.FileCheck;
 import com.liferay.source.formatter.checks.GradleFileCheck;
 import com.liferay.source.formatter.checks.JavaTermCheck;
@@ -39,7 +42,6 @@ import com.liferay.source.formatter.util.SourceFormatterCheckUtil;
 import com.liferay.source.formatter.util.SourceFormatterUtil;
 
 import java.io.File;
-import java.io.IOException;
 
 import java.lang.reflect.Constructor;
 
@@ -57,29 +59,30 @@ public class SourceChecksUtil {
 	public static List<SourceCheck> getSourceChecks(
 			SourceFormatterConfiguration sourceFormatterConfiguration,
 			String sourceProcessorName, Map<String, Properties> propertiesMap,
-			List<String> skipCheckNames, boolean portalSource,
-			boolean subrepository, boolean includeModuleChecks,
-			String checkName)
+			List<String> filterCheckNames,
+			List<String> filterCheckCategoryNames, List<String> skipCheckNames,
+			boolean portalSource, boolean subrepository,
+			boolean includeModuleChecks)
 		throws Exception {
 
 		List<SourceCheck> sourceChecks = _getSourceChecks(
 			sourceFormatterConfiguration, sourceProcessorName, propertiesMap,
-			skipCheckNames, portalSource, subrepository, includeModuleChecks,
-			checkName);
+			filterCheckNames, filterCheckCategoryNames, skipCheckNames,
+			portalSource, subrepository, includeModuleChecks);
 
 		sourceChecks.addAll(
 			_getSourceChecks(
 				sourceFormatterConfiguration, "all", propertiesMap,
-				skipCheckNames, includeModuleChecks, subrepository,
-				includeModuleChecks, checkName));
+				filterCheckNames, filterCheckCategoryNames, skipCheckNames,
+				includeModuleChecks, subrepository, includeModuleChecks));
 
 		return sourceChecks;
 	}
 
 	public static SourceChecksResult processSourceChecks(
 			File file, String fileName, String absolutePath, String content,
-			Set<String> modifiedMessages, boolean modulesFile,
-			List<SourceCheck> sourceChecks,
+			SourceProcessor sourceProcessor, Set<String> modifiedMessages,
+			boolean modulesFile, List<SourceCheck> sourceChecks,
 			SourceFormatterSuppressions sourceFormatterSuppressions,
 			boolean showDebugInformation)
 		throws Exception {
@@ -113,8 +116,8 @@ public class SourceChecksUtil {
 
 			if (sourceCheck instanceof FileCheck) {
 				sourceChecksResult = _processFileCheck(
-					sourceChecksResult, (FileCheck)sourceCheck, fileName,
-					absolutePath);
+					sourceProcessor, sourceChecksResult, (FileCheck)sourceCheck,
+					fileName, absolutePath);
 			}
 			else if (sourceCheck instanceof GradleFileCheck) {
 				if (gradleFile == null) {
@@ -129,11 +132,14 @@ public class SourceChecksUtil {
 			else {
 				if (javaClass == null) {
 					try {
-						anonymousClasses =
-							JavaClassParser.parseAnonymousClasses(
-								sourceChecksResult.getContent());
 						javaClass = JavaClassParser.parseJavaClass(
 							fileName, sourceChecksResult.getContent());
+
+						anonymousClasses =
+							JavaClassParser.parseAnonymousClasses(
+								sourceChecksResult.getContent(),
+								javaClass.getPackageName(),
+								javaClass.getImportNames());
 					}
 					catch (ParseException parseException) {
 						sourceChecksResult.addSourceFormatterMessage(
@@ -220,9 +226,10 @@ public class SourceChecksUtil {
 	private static List<SourceCheck> _getSourceChecks(
 			SourceFormatterConfiguration sourceFormatterConfiguration,
 			String sourceProcessorName, Map<String, Properties> propertiesMap,
-			List<String> skipCheckNames, boolean portalSource,
-			boolean subrepository, boolean includeModuleChecks,
-			String checkName)
+			List<String> filterCheckNames,
+			List<String> filterCheckCategoryNames, List<String> skipCheckNames,
+			boolean portalSource, boolean subrepository,
+			boolean includeModuleChecks)
 		throws Exception {
 
 		List<SourceCheck> sourceChecks = new ArrayList<>();
@@ -241,10 +248,18 @@ public class SourceChecksUtil {
 		for (SourceCheckConfiguration sourceCheckConfiguration :
 				sourceCheckConfigurations) {
 
+			String sourceCheckCategory = SourceFormatterUtil.getSimpleName(
+				sourceCheckConfiguration.getCategory());
 			String sourceCheckName = SourceFormatterUtil.getSimpleName(
 				sourceCheckConfiguration.getName());
 
-			if ((checkName != null) && !checkName.equals(sourceCheckName)) {
+			if ((sourceCheckCategory.startsWith("Upgrade") &&
+				 !filterCheckCategoryNames.contains(sourceCheckCategory)) ||
+				((!filterCheckCategoryNames.isEmpty() ||
+				  !filterCheckNames.isEmpty()) &&
+				 !filterCheckCategoryNames.contains(sourceCheckCategory) &&
+				 !filterCheckNames.contains(sourceCheckName))) {
+
 				continue;
 			}
 
@@ -257,6 +272,10 @@ public class SourceChecksUtil {
 				sourceCheckClass = Class.forName(sourceCheckName);
 			}
 			catch (ClassNotFoundException classNotFoundException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(classNotFoundException, classNotFoundException);
+				}
+
 				SourceFormatterUtil.printError(
 					"sourcechecks.xml",
 					"sourcechecks.xml: Class " + sourceCheckName +
@@ -307,13 +326,15 @@ public class SourceChecksUtil {
 	}
 
 	private static SourceChecksResult _processFileCheck(
+			SourceProcessor sourceProcessor,
 			SourceChecksResult sourceChecksResult, FileCheck fileCheck,
 			String fileName, String absolutePath)
 		throws Exception {
 
 		sourceChecksResult.setContent(
 			fileCheck.process(
-				fileName, absolutePath, sourceChecksResult.getContent()));
+				sourceProcessor, fileName, absolutePath,
+				sourceChecksResult.getContent()));
 
 		for (SourceFormatterMessage sourceFormatterMessage :
 				fileCheck.getSourceFormatterMessages(fileName)) {
@@ -329,7 +350,7 @@ public class SourceChecksUtil {
 			SourceChecksResult sourceChecksResult,
 			GradleFileCheck gradleFileCheck, GradleFile gradleFile,
 			String fileName, String absolutePath)
-		throws IOException {
+		throws Exception {
 
 		String content = gradleFileCheck.process(
 			fileName, absolutePath, gradleFile,
@@ -381,5 +402,8 @@ public class SourceChecksUtil {
 
 		return sourceChecksResult;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SourceChecksUtil.class);
 
 }

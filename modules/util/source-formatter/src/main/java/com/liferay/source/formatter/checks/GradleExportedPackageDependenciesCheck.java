@@ -100,10 +100,8 @@ public class GradleExportedPackageDependenciesCheck extends BaseFileCheck {
 				sb.append("\n");
 			}
 			else {
-				String dependencyVersion = _getDependencyVersion(line);
-
 				if (_isValidBundleSymbolicName(
-						dependencyName, dependencyVersion)) {
+						dependencyName, _getDependencyVersion(line))) {
 
 					sb.append(line);
 					sb.append("\n");
@@ -252,12 +250,8 @@ public class GradleExportedPackageDependenciesCheck extends BaseFileCheck {
 			emptyExportPackageBundleSymbolicMap.keySet();
 
 		if (!dependencyName.startsWith("com.liferay.") ||
-			!emptyExportPackageBundleSymbolicNames.contains(dependencyName)) {
-
-			return true;
-		}
-
-		if (!dependencyVersion.equals(
+			!emptyExportPackageBundleSymbolicNames.contains(dependencyName) ||
+			!dependencyVersion.equals(
 				emptyExportPackageBundleSymbolicMap.get(dependencyName))) {
 
 			return true;

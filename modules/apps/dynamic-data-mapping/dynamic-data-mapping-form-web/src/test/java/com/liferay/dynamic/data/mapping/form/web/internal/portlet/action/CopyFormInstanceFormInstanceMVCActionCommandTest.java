@@ -14,6 +14,7 @@
 
 package com.liferay.dynamic.data.mapping.form.web.internal.portlet.action;
 
+import com.liferay.dynamic.data.mapping.form.web.internal.portlet.action.helper.SaveFormInstanceMVCCommandHelper;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
@@ -186,9 +187,7 @@ public class CopyFormInstanceFormInstanceMVCActionCommandTest
 	protected void setUpLanguageUtil() {
 		LanguageUtil languageUtil = new LanguageUtil();
 
-		Language language = mock(Language.class);
-
-		languageUtil.setLanguage(language);
+		languageUtil.setLanguage(mock(Language.class));
 	}
 
 	protected void setUpPortalUtil() {

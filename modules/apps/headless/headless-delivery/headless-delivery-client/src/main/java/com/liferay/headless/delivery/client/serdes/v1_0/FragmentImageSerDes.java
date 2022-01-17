@@ -55,6 +55,35 @@ public class FragmentImageSerDes {
 
 		sb.append("{");
 
+		if (fragmentImage.getDescription() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"description\": ");
+
+			if (fragmentImage.getDescription() instanceof String) {
+				sb.append("\"");
+				sb.append((String)fragmentImage.getDescription());
+				sb.append("\"");
+			}
+			else {
+				sb.append(fragmentImage.getDescription());
+			}
+		}
+
+		if (fragmentImage.getFragmentImageClassPKReference() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"fragmentImageClassPKReference\": ");
+
+			sb.append(
+				String.valueOf(
+					fragmentImage.getFragmentImageClassPKReference()));
+		}
+
 		if (fragmentImage.getTitle() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -62,11 +91,14 @@ public class FragmentImageSerDes {
 
 			sb.append("\"title\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(fragmentImage.getTitle()));
-
-			sb.append("\"");
+			if (fragmentImage.getTitle() instanceof String) {
+				sb.append("\"");
+				sb.append((String)fragmentImage.getTitle());
+				sb.append("\"");
+			}
+			else {
+				sb.append(fragmentImage.getTitle());
+			}
 		}
 
 		if (fragmentImage.getUrl() != null) {
@@ -76,11 +108,14 @@ public class FragmentImageSerDes {
 
 			sb.append("\"url\": ");
 
-			sb.append("\"");
-
-			sb.append(_escape(fragmentImage.getUrl()));
-
-			sb.append("\"");
+			if (fragmentImage.getUrl() instanceof String) {
+				sb.append("\"");
+				sb.append((String)fragmentImage.getUrl());
+				sb.append("\"");
+			}
+			else {
+				sb.append(fragmentImage.getUrl());
+			}
 		}
 
 		sb.append("}");
@@ -101,6 +136,24 @@ public class FragmentImageSerDes {
 		}
 
 		Map<String, String> map = new TreeMap<>();
+
+		if (fragmentImage.getDescription() == null) {
+			map.put("description", null);
+		}
+		else {
+			map.put(
+				"description", String.valueOf(fragmentImage.getDescription()));
+		}
+
+		if (fragmentImage.getFragmentImageClassPKReference() == null) {
+			map.put("fragmentImageClassPKReference", null);
+		}
+		else {
+			map.put(
+				"fragmentImageClassPKReference",
+				String.valueOf(
+					fragmentImage.getFragmentImageClassPKReference()));
+		}
 
 		if (fragmentImage.getTitle() == null) {
 			map.put("title", null);
@@ -137,7 +190,21 @@ public class FragmentImageSerDes {
 			FragmentImage fragmentImage, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "title")) {
+			if (Objects.equals(jsonParserFieldName, "description")) {
+				if (jsonParserFieldValue != null) {
+					fragmentImage.setDescription((Object)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "fragmentImageClassPKReference")) {
+
+				if (jsonParserFieldValue != null) {
+					fragmentImage.setFragmentImageClassPKReference(
+						FragmentImageClassPKReferenceSerDes.toDTO(
+							(String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "title")) {
 				if (jsonParserFieldValue != null) {
 					fragmentImage.setTitle((Object)jsonParserFieldValue);
 				}
@@ -146,10 +213,6 @@ public class FragmentImageSerDes {
 				if (jsonParserFieldValue != null) {
 					fragmentImage.setUrl((Object)jsonParserFieldValue);
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -179,7 +242,7 @@ public class FragmentImageSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -205,14 +268,17 @@ public class FragmentImageSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

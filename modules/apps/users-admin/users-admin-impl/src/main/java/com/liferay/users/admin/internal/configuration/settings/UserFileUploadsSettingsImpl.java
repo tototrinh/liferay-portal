@@ -53,9 +53,13 @@ public class UserFileUploadsSettingsImpl implements UserFileUploadsSettings {
 		return _userFileUploadsConfiguration.imageCheckToken();
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x)
+	 */
+	@Deprecated
 	@Override
 	public boolean isImageDefaultUseInitials() {
-		return _userFileUploadsConfiguration.imageDefaultUseInitials();
+		return false;
 	}
 
 	@Activate
@@ -65,6 +69,6 @@ public class UserFileUploadsSettingsImpl implements UserFileUploadsSettings {
 			UserFileUploadsConfiguration.class, properties);
 	}
 
-	private UserFileUploadsConfiguration _userFileUploadsConfiguration;
+	private volatile UserFileUploadsConfiguration _userFileUploadsConfiguration;
 
 }

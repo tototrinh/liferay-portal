@@ -18,8 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.diff.Diff;
 import com.liferay.portal.kernel.diff.DiffResult;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.util.FileImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.Reader;
 
@@ -27,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -35,12 +34,9 @@ import org.junit.Test;
  */
 public class DiffImplTest {
 
-	@BeforeClass
-	public static void setUpClass() {
-		FileUtil fileUtil = new FileUtil();
-
-		fileUtil.setFile(new FileImpl());
-	}
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testEight() {
@@ -226,14 +222,12 @@ public class DiffImplTest {
 		List<DiffResult> expectedSource = new ArrayList<>();
 		List<DiffResult> expectedTarget = new ArrayList<>();
 
-		List<String> changedLines = new ArrayList<>();
-
 		expectedSource.add(
 			new DiffResult(0, Diff.OPEN_DEL + "ccc" + Diff.CLOSE_DEL));
 
 		expectedTarget.add(new DiffResult(0, Diff.CONTEXT_LINE));
 
-		changedLines = new ArrayList<>();
+		List<String> changedLines = new ArrayList<>();
 
 		changedLines.add(
 			StringBundler.concat("bb", Diff.OPEN_DEL, "e", Diff.CLOSE_DEL));

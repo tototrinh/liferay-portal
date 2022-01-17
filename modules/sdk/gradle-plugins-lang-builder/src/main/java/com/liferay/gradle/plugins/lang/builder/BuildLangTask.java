@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.lang.builder;
 
 import com.liferay.gradle.plugins.lang.builder.internal.util.StringUtil;
 import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.GradleUtil;
 import com.liferay.gradle.util.Validator;
 import com.liferay.lang.builder.LangBuilderArgs;
@@ -30,14 +31,17 @@ import java.util.Set;
 
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
-import org.gradle.util.GUtil;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class BuildLangTask extends JavaExec {
 
 	public BuildLangTask() {
@@ -68,6 +72,7 @@ public class BuildLangTask extends JavaExec {
 	}
 
 	@Input
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getLangDir() {
 		return GradleUtil.toFile(getProject(), _langDir);
 	}
@@ -163,7 +168,7 @@ public class BuildLangTask extends JavaExec {
 	private static final Logger _logger = Logging.getLogger(
 		BuildLangTask.class);
 
-	private Set<Object> _excludedLanguageIds = new LinkedHashSet<>();
+	private final Set<Object> _excludedLanguageIds = new LinkedHashSet<>();
 	private Object _langDir;
 	private Object _langFileName = LangBuilderArgs.LANG_FILE_NAME;
 	private boolean _titleCapitalization = LangBuilderArgs.TITLE_CAPITALIZATION;

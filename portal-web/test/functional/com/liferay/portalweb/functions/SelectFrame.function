@@ -3,17 +3,16 @@ definition {
 
 	function selectFrame {
 		if (contains("${locator1}", "/iframe")) {
+			WaitForLiferayEvent(
+				attributeName = "src",
+				attributeValue = "dialog-iframe-popup",
+				eventName = "modalIframeLoaded");
+
 			selenium.waitForVisible();
 
 			selenium.mouseOver();
 
-			selenium.waitForElementPresent(
-				"${locator1}/../div[contains(@class,'overlaymask-hidden')]"
-			);
-
 			selenium.selectFrame();
-
-			selenium.waitForElementPresent("//body");
 
 			selenium.assertJavaScriptErrors();
 
@@ -61,13 +60,7 @@ definition {
 
 			selenium.mouseOver();
 
-			selenium.waitForElementPresent(
-				"xpath=(//div[contains(@class,'overlaymask-hidden')])[2]"
-			);
-
 			selenium.selectFrame();
-
-			selenium.waitForElementPresent("//body");
 
 			selenium.assertJavaScriptErrors();
 

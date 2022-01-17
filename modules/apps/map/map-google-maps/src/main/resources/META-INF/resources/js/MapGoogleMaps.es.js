@@ -12,8 +12,7 @@
  * details.
  */
 
-import MapBase from 'map-common/js/MapBase.es';
-import {toElement} from 'metal-dom';
+import MapBase from '@liferay/map-common/js/MapBase.es';
 
 import GoogleMapsDialog from './GoogleMapsDialog.es';
 import GoogleMapsGeoJSON from './GoogleMapsGeoJSON.es';
@@ -26,6 +25,7 @@ import GoogleMapsSearch from './GoogleMapsSearch.es';
  * @review
  */
 class MapGoogleMaps extends MapBase {
+
 	/**
 	 * Creates a new map using Google Map's API
 	 * @param  {Array} args List of arguments to be passed to State
@@ -45,18 +45,18 @@ class MapGoogleMaps extends MapBase {
 		const mapConfig = {
 			center: location,
 			mapTypeId: google.maps.MapTypeId.ROADMAP,
-			zoom: this.zoom
+			zoom: this.zoom,
 		};
 
 		const map = new google.maps.Map(
-			toElement(this.boundingBox),
+			document.querySelector(this.boundingBox),
 			Object.assign(mapConfig, controlsConfig)
 		);
 
 		if (this.data && this.data.features) {
 			const bounds = new google.maps.LatLngBounds();
 
-			this.data.features.forEach(feature =>
+			this.data.features.forEach((feature) =>
 				bounds.extend(
 					new google.maps.LatLng(
 						feature.geometry.coordinates[1],
@@ -77,7 +77,11 @@ class MapGoogleMaps extends MapBase {
 	 */
 	addControl(control, position) {
 		if (this._map.controls[position]) {
-			this._map.controls[position].push(toElement(control));
+			if (typeof control === 'string') {
+				control = document.querySelector(control);
+			}
+
+			this._map.controls[position].push(control);
 		}
 	}
 
@@ -125,7 +129,7 @@ MapGoogleMaps.CONTROLS_MAP = {
 	[MapBase.CONTROLS.SCALE]: 'scaleControl',
 	[MapBase.CONTROLS.STREETVIEW]: 'streetViewControl',
 	[MapBase.CONTROLS.TYPE]: 'mapTypeControl',
-	[MapBase.CONTROLS.ZOOM]: 'zoomControl'
+	[MapBase.CONTROLS.ZOOM]: 'zoomControl',
 };
 
 window.Liferay = window.Liferay || {};

@@ -12,7 +12,7 @@
  * details.
  */
 
-import {dom as MetalTestUtil} from 'metal-dom';
+import userEvent from '@testing-library/user-event';
 
 import Tooltip from '../../../src/main/resources/META-INF/resources/components/Tooltip/Tooltip.es';
 
@@ -34,7 +34,7 @@ describe('Field Tooltip', () => {
 		component = new Tooltip({
 			icon: 'question-circle-full',
 			spritemap,
-			text: 'This is a tooltip information about this component'
+			text: 'This is a tooltip information about this component',
 		});
 
 		expect(component).toMatchSnapshot();
@@ -44,14 +44,14 @@ describe('Field Tooltip', () => {
 		component = new Tooltip({
 			icon: 'question-circle-full',
 			spritemap,
-			text: 'This is a tooltip information about this component'
+			text: 'This is a tooltip information about this component',
 		});
 
 		jest.runAllTimers();
 
 		const {tooltipTarget} = component.refs;
 
-		MetalTestUtil.triggerEvent(tooltipTarget, 'mouseover');
+		userEvent.hover(tooltipTarget);
 
 		expect(component.showContent).toBe(true);
 		expect(component).toMatchSnapshot();
@@ -61,7 +61,7 @@ describe('Field Tooltip', () => {
 		component = new Tooltip({
 			icon: 'question-circle-full',
 			spritemap,
-			text: 'This is a tooltip information about this component'
+			text: 'This is a tooltip information about this component',
 		});
 
 		component._handleTooltipHovered();
@@ -75,13 +75,13 @@ describe('Field Tooltip', () => {
 		component = new Tooltip({
 			icon: 'question-circle-full',
 			spritemap,
-			text: 'This is a tooltip information about this component'
+			text: 'This is a tooltip information about this component',
 		});
 
 		jest.runAllTimers();
 
 		component.refs.tooltipSource = {
-			element: document.createElement('div')
+			element: document.createElement('div'),
 		};
 
 		component._handleTooltipHovered();

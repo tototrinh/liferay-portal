@@ -18,39 +18,48 @@ const asFilterObject = (items, key, name, pinned) => ({
 	items,
 	key,
 	name,
-	pinned
+	pinned,
 });
 
-const buildFilterItem = data => {
+const buildFilterItem = (data) => {
 	if (typeof data === 'string') {
 		return {
 			active: true,
-			key: data
+			key: data,
 		};
 	}
 
 	return {
 		...data,
-		active: true
+		active: true,
 	};
 };
 
-const buildFilterItems = (items, selectedKeys) => {
+const buildFilterItems = ({
+	formatItem,
+	items,
+	propertyKey = 'key',
+	selectedKeys,
+}) => {
 	return items.map((item, index) => {
-		const key = item.key || String(item.id);
+		const key = String(item[propertyKey]);
+
+		if (formatItem) {
+			item = formatItem(item);
+		}
 
 		return {
 			...item,
 			active: selectedKeys && selectedKeys.includes(key),
 			dividerAfter: item.dividerAfter && !!items[index + 1],
-			key
+			key,
 		};
 	});
 };
 
 const getFilterKeys = (items = []) => items.map(({key}) => key);
 
-const getFiltersParam = queryString => {
+const getFiltersParam = (queryString) => {
 	const queryParams = parse(queryString);
 
 	return queryParams.filters || {};
@@ -79,10 +88,10 @@ const getFilterResults = (prefixedKeys, pinnedValues, titles, values) => {
 	return filterResults;
 };
 
-const getFilterValues = filterState => {
+const getFilterValues = (filterState) => {
 	const filterValues = {};
 
-	Object.keys(filterState).forEach(key => {
+	Object.keys(filterState).forEach((key) => {
 		if (filterState[key]) {
 			filterValues[key] = getFilterKeys(filterState[key]);
 		}
@@ -98,16 +107,16 @@ const getSelectedItemsQuery = (items, key, queryString) => {
 
 	queryParams.filters = {
 		...filtersParam,
-		[key]: items.filter(item => item.active).map(item => item.key)
+		[key]: items.filter((item) => item.active).map((item) => item.key),
 	};
 
 	return stringify(queryParams);
 };
 
-const getSelectedItems = filterResults => {
-	return filterResults.filter(filter => {
+const getSelectedItems = (filterResults) => {
+	return filterResults.filter((filter) => {
 		filter.items = filter.items
-			? filter.items.filter(item => item.active)
+			? filter.items.filter((item) => item.active)
 			: [];
 
 		return filter.items.length > 0;
@@ -115,26 +124,9 @@ const getSelectedItems = filterResults => {
 };
 
 const mergeItemsArray = (baseItems = [], ...items) => {
-	items = items.filter(value => value !== undefined && value !== null);
+	items = items.filter((value) => value !== undefined && value !== null);
 
 	return baseItems.concat(...items);
-};
-
-const pushToHistory = (filterQuery, routerProps) => {
-	const {
-		history,
-		location: {search},
-		match: {params, path}
-	} = routerProps;
-
-	const pathname = pathToRegexp.compile(path)({...params, page: 1});
-
-	if (filterQuery !== search) {
-		history.push({
-			pathname,
-			search: filterQuery
-		});
-	}
 };
 
 const reduceFilters = (filterItems, paramKey) => {
@@ -144,7 +136,7 @@ const reduceFilters = (filterItems, paramKey) => {
 	);
 };
 
-const removeFilters = queryString => {
+const removeFilters = (queryString) => {
 	const queryParams = parse(queryString);
 
 	queryParams.filters = null;
@@ -161,7 +153,7 @@ const removeItem = (filterKey, itemToRemove, queryString) => {
 	const filterValues = filtersParam[filterKey] || [];
 
 	filtersParam[filterKey] = filterValues.filter(
-		filterValue => filterValue != itemToRemove.key
+		(filterValue) => filterValue !== itemToRemove.key
 	);
 
 	queryParams.filters = filtersParam;
@@ -173,7 +165,7 @@ const replaceHistory = (filterQuery, routerProps) => {
 	const {
 		history,
 		location: {search},
-		match: {params, path}
+		match: {params, path},
 	} = routerProps;
 
 	const pathname = pathToRegexp.compile(path)({...params, page: 1});
@@ -181,7 +173,7 @@ const replaceHistory = (filterQuery, routerProps) => {
 	if (filterQuery !== search) {
 		history.replace({
 			pathname,
-			search: filterQuery
+			search: filterQuery,
 		});
 	}
 };
@@ -198,9 +190,8 @@ export {
 	getSelectedItems,
 	getSelectedItemsQuery,
 	mergeItemsArray,
-	pushToHistory,
 	reduceFilters,
 	removeFilters,
 	removeItem,
-	replaceHistory
+	replaceHistory,
 };

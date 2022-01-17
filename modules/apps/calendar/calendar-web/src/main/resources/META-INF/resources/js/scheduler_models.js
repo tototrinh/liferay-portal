@@ -14,12 +14,11 @@
 
 AUI.add(
 	'liferay-scheduler-models',
-	A => {
+	(A) => {
 		var AObject = A.Object;
 
 		var DateMath = A.DataType.DateMath;
 		var Lang = A.Lang;
-		var LString = Lang.String;
 
 		var CalendarWorkflow = Liferay.CalendarWorkflow;
 
@@ -28,11 +27,11 @@ AUI.add(
 		var isObject = Lang.isObject;
 		var isValue = Lang.isValue;
 
-		var toInitialCap = A.cached(str => {
+		var toInitialCap = A.cached((str) => {
 			return str.substring(0, 1).toUpperCase() + str.substring(1);
 		});
 
-		var toInt = function(value) {
+		var toInt = function (value) {
 			return Lang.toInt(value, 10, 0);
 		};
 
@@ -40,7 +39,7 @@ AUI.add(
 
 		var CalendarUtil = Liferay.CalendarUtil;
 
-		var SchedulerModelSync = function() {};
+		var SchedulerModelSync = function () {};
 
 		SchedulerModelSync.prototype = {
 			_doRead() {
@@ -61,7 +60,7 @@ AUI.add(
 				if (isFunction(actionMethod)) {
 					actionMethod.apply(instance, [options, callback]);
 				}
-			}
+			},
 		};
 
 		Liferay.SchedulerModelSync = SchedulerModelSync;
@@ -70,12 +69,12 @@ AUI.add(
 			ATTRS: {
 				calendarBookingId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				calendarId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				content: {
@@ -83,7 +82,7 @@ AUI.add(
 						var content = val;
 
 						if (val) {
-							content = LString.escapeHTML(val);
+							content = Liferay.Util.escapeHTML(val);
 						}
 
 						return content;
@@ -92,75 +91,75 @@ AUI.add(
 						var content = val;
 
 						if (val) {
-							content = LString.unescapeHTML(val + '');
+							content = Liferay.Util.unescapeHTML(val + '');
 						}
 
 						return content;
-					}
+					},
 				},
 
 				description: {
 					setter: String,
 					validator: isValue,
-					value: STR_BLANK
+					value: STR_BLANK,
 				},
 
 				editingEvent: {
 					validator: isBoolean,
-					value: false
+					value: false,
 				},
 
 				firstReminder: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				firstReminderType: {
 					setter: String,
 					validator: isValue,
-					value: CalendarUtil.NOTIFICATION_DEFAULT_TYPE
+					value: CalendarUtil.NOTIFICATION_DEFAULT_TYPE,
 				},
 
 				hasChildCalendarBookings: {
 					validator: isBoolean,
-					value: false
+					value: false,
 				},
 
 				hasWorkflowInstanceLink: {
 					validator: isBoolean,
-					value: false
+					value: false,
 				},
 
 				instanceIndex: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				loading: {
 					validator: isBoolean,
-					value: false
+					value: false,
 				},
 
 				location: {
 					setter: String,
 					validator: isValue,
-					value: STR_BLANK
+					value: STR_BLANK,
 				},
 
 				parentCalendarBookingId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				recurrence: {
 					setter: String,
 					validator: isValue,
-					value: STR_BLANK
+					value: STR_BLANK,
 				},
 
 				recurringCalendarBookingId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				reminder: {
@@ -171,28 +170,28 @@ AUI.add(
 							instance.get('firstReminder') > 0 ||
 							instance.get('secondReminder') > 0
 						);
-					}
+					},
 				},
 
 				repeated: {
-					getter: 'isRecurring'
+					getter: 'isRecurring',
 				},
 
 				secondReminder: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				secondReminderType: {
 					setter: String,
 					validator: isValue,
-					value: CalendarUtil.NOTIFICATION_DEFAULT_TYPE
+					value: CalendarUtil.NOTIFICATION_DEFAULT_TYPE,
 				},
 
 				status: {
 					setter: toInt,
-					value: 0
-				}
+					value: 0,
+				},
 			},
 
 			EXTENDS: A.SchedulerEvent,
@@ -206,7 +205,7 @@ AUI.add(
 				'parentCalendarBookingId',
 				'recurrence',
 				'recurringCalendarBookingId',
-				'status'
+				'status',
 			]),
 
 			prototype: {
@@ -356,20 +355,20 @@ AUI.add(
 					instance.on('statusChange', instance._onStatusChange);
 				},
 
-				intersects(evt) {
+				intersects(event) {
 					var instance = this;
 
 					var endDate = instance.get('endDate');
 					var startDate = instance.get('startDate');
 
-					var evtStartDate = evt.get('startDate');
+					var evtStartDate = event.get('startDate');
 
 					return (
 						DateMath.between(evtStartDate, startDate, endDate) ||
 						instance._isShortDurationEventIntersecting(
 							evtStartDate
 						) ||
-						instance.sameStartDate(evt)
+						instance.sameStartDate(event)
 					);
 				},
 
@@ -387,7 +386,7 @@ AUI.add(
 
 					return (
 						instance.get('recurrence') !== STR_BLANK ||
-						instance.get('calendarBookingId') !=
+						instance.get('calendarBookingId') !==
 							instance.get('recurringCalendarBookingId')
 					);
 				},
@@ -416,18 +415,18 @@ AUI.add(
 								backgroundColor: instance.get('color'),
 								border: 'none',
 								color: '#111',
-								padding: '0 2px'
+								padding: '0 2px',
 							});
 						}
 					}
 				},
 
 				syncNodeTitleUI() {
-					var instance = this,
-						format = instance.get('titleDateFormat'),
-						startDate = instance.get('startDate'),
-						endDate = instance.get('endDate'),
-						title = [];
+					var instance = this;
+					var format = instance.get('titleDateFormat');
+					var startDate = instance.get('startDate');
+					var endDate = instance.get('endDate');
+					var title = [];
 
 					if (format.startDate) {
 						title.push(
@@ -477,8 +476,8 @@ AUI.add(
 							schedulerEvents
 						)
 					);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.SchedulerEvent = SchedulerEvent;
@@ -487,43 +486,48 @@ AUI.add(
 			ATTRS: {
 				calendarId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				calendarResourceId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				calendarResourceName: {
 					setter: String,
 					validator: isValue,
-					value: STR_BLANK
+					value: STR_BLANK,
 				},
 
 				classNameId: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				classPK: {
 					setter: toInt,
-					value: 0
+					value: 0,
 				},
 
 				defaultCalendar: {
 					setter: A.DataType.Boolean.parse,
-					value: false
+					value: false,
 				},
 
 				groupId: {
 					setter: toInt,
-					value: 0
+					value: 0,
+				},
+
+				hasMenuItems: {
+					setter: A.DataType.Boolean.parse,
+					value: true,
 				},
 
 				manageable: {
 					setter: A.DataType.Boolean.parse,
-					value: true
+					value: true,
 				},
 
 				permissions: {
@@ -536,12 +540,12 @@ AUI.add(
 						return val;
 					},
 					validator: isObject,
-					value: {}
+					value: {},
 				},
 
 				showCalendarResourceName: {
-					value: true
-				}
+					value: true,
+				},
 			},
 
 			EXTENDS: A.SchedulerCalendar,
@@ -612,8 +616,8 @@ AUI.add(
 					}
 
 					return name;
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.SchedulerCalendar = Calendar;
@@ -653,9 +657,9 @@ AUI.add(
 							CalendarWorkflow.STATUS_DENIED,
 							CalendarWorkflow.STATUS_DRAFT,
 							CalendarWorkflow.STATUS_MAYBE,
-							CalendarWorkflow.STATUS_PENDING
+							CalendarWorkflow.STATUS_PENDING,
 						],
-						calendarBookings => {
+						(calendarBookings) => {
 							if (filterCalendarBookings) {
 								calendarBookings = calendarBookings.filter(
 									filterCalendarBookings
@@ -709,13 +713,13 @@ AUI.add(
 					}
 
 					return date;
-				}
+				},
 			},
 			{}
 		);
 	},
 	'',
 	{
-		requires: ['aui-datatype', 'dd-plugin', 'liferay-calendar-util']
+		requires: ['aui-datatype', 'dd-plugin', 'liferay-calendar-util'],
 	}
 );

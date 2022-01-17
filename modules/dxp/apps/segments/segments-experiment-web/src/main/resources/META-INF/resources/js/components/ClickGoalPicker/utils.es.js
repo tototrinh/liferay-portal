@@ -18,7 +18,7 @@ export const GeometryType = PropTypes.shape({
 	left: PropTypes.number.isRequired,
 	right: PropTypes.number.isRequired,
 	top: PropTypes.number.isRequired,
-	width: PropTypes.number.isRequired
+	width: PropTypes.number.isRequired,
 });
 
 /**
@@ -26,7 +26,9 @@ export const GeometryType = PropTypes.shape({
  */
 export function stopImmediatePropagation(event) {
 	if (event.nativeEvent) {
+
 		// This is a React synthetic event; must access nativeEvent instead.
+
 		event.nativeEvent.stopImmediatePropagation();
 	}
 	else {
@@ -37,15 +39,29 @@ export function stopImmediatePropagation(event) {
 /**
  * Returns all targetable elements within `element`
  *
- * Currently, that means all visible "a" and "button" elements which
- * have an "id".
+ * Currently, that means all visible "a", "button" and "input[type=submit]"
+ * elements which have an "id".
  */
-export function getTargetableElements(element) {
-	const elements = element.querySelectorAll('a, button');
+export function getTargetableElements(element, selectedTarget) {
 
-	// As first cut, only deal with items that have an id.
-	return Array.from(elements).filter(element => {
-		return element.id && _isVisible(element);
+	// Allowed targetable elements with id
+
+	const selector = ['a[id]', 'button[id]', 'input[type=submit][id]'];
+
+	// Other targetable element already selected
+
+	if (selectedTarget) {
+		selector.push(`#${selectedTarget}`);
+	}
+
+	// Look for links, buttons or inputs with type submit
+
+	const elements = element.querySelectorAll(selector.join());
+
+	// As first cut, only deal with visible items
+
+	return Array.from(elements).filter((element) => {
+		return _isVisible(element);
 	});
 }
 
@@ -74,7 +90,7 @@ export function getRootElementGeometry(rootElement) {
 		left,
 		right,
 		top,
-		width
+		width,
 	} = rootElement.getBoundingClientRect();
 
 	return {
@@ -82,7 +98,7 @@ export function getRootElementGeometry(rootElement) {
 		left: left + TARGET_OFFSET / 2,
 		right: right - TARGET_OFFSET / 2,
 		top: top + TARGET_OFFSET / 2,
-		width: width + TARGET_OFFSET
+		width: width + TARGET_OFFSET,
 	};
 }
 
@@ -98,7 +114,7 @@ export function getElementGeometry(element) {
 		left,
 		right,
 		top,
-		width
+		width,
 	} = element.getBoundingClientRect();
 
 	return {
@@ -107,6 +123,6 @@ export function getElementGeometry(element) {
 		left,
 		right,
 		top,
-		width: width + TARGET_OFFSET
+		width: width + TARGET_OFFSET,
 	};
 }

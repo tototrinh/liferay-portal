@@ -8,6 +8,12 @@
 	<component bodyContent="true" name="DataLayoutBuilder" writeJSP="true">
 		<attributes>
 			<attribute>
+				<name>additionalPanels</name>
+				<inputType><![CDATA[java.util.List<java.util.Map<java.lang.String, java.lang.Object>>]]></inputType>
+				<outputType><![CDATA[java.util.List<java.util.Map<java.lang.String, java.lang.Object>>]]></outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
 				<name>componentId</name>
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
@@ -17,7 +23,7 @@
 				<name>contentType</name>
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
-				<required>false</required>
+				<required>true</required>
 			</attribute>
 			<attribute>
 				<name>dataDefinitionId</name>
@@ -29,6 +35,12 @@
 				<name>dataLayoutId</name>
 				<inputType>java.lang.Long</inputType>
 				<outputType>java.lang.Long</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>fieldSetContentType</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
 				<required>false</required>
 			</attribute>
 			<attribute>
@@ -44,6 +56,18 @@
 				<required>false</required>
 			</attribute>
 			<attribute>
+				<name>module</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>moduleServletContext</name>
+				<inputType>javax.servlet.ServletContext</inputType>
+				<outputType>javax.servlet.ServletContext</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
 				<name>namespace</name>
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
@@ -55,11 +79,17 @@
 				<required>false</required>
 			</attribute>
 			<attribute>
-				<name>singlePage</name>
+				<name>searchableFieldsDisabled</name>
 				<inputType>boolean</inputType>
 				<outputType>boolean</outputType>
-				<required>false</required>
 				<defaultValue>false</defaultValue>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>submitButtonId</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+				<required>false</required>
 			</attribute>
 		</attributes>
 	</component>
@@ -90,8 +120,20 @@
 			</attribute>
 			<attribute>
 				<name>dataRecordValues</name>
-				<inputType>java.util.Map</inputType>
-				<outputType>java.util.Map</outputType>
+				<inputType><![CDATA[java.util.Map<java.lang.String, java.lang.Object>]]></inputType>
+				<outputType><![CDATA[java.util.Map<java.lang.String, java.lang.Object>]]></outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>defaultLanguageId</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>languageId</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
 				<required>false</required>
 			</attribute>
 			<attribute>
@@ -99,6 +141,30 @@
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
 				<required>true</required>
+			</attribute>
+			<attribute>
+				<name>persistDefaultValues</name>
+				<inputType>boolean</inputType>
+				<outputType>boolean</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>persisted</name>
+				<inputType>boolean</inputType>
+				<outputType>boolean</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>readOnly</name>
+				<inputType>boolean</inputType>
+				<outputType>boolean</outputType>
+				<required>false</required>
+			</attribute>
+			<attribute>
+				<name>submittable</name>
+				<inputType>boolean</inputType>
+				<outputType>boolean</outputType>
+				<defaultValue>true</defaultValue>
 			</attribute>
 		</attributes>
 	</component>

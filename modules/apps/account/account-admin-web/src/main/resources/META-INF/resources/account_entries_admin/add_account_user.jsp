@@ -22,13 +22,15 @@ AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)request.getAttrib
 String backURL = ParamUtil.getString(request, "backURL");
 
 if (Validator.isNull(backURL)) {
-	PortletURL viewAccountUserURL = renderResponse.createRenderURL();
-
-	viewAccountUserURL.setParameter("mvcRenderCommandName", "/account_admin/edit_account_entry");
-	viewAccountUserURL.setParameter("screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_USERS);
-	viewAccountUserURL.setParameter("accountEntryId", String.valueOf(accountEntryDisplay.getAccountEntryId()));
-
-	backURL = viewAccountUserURL.toString();
+	backURL = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCRenderCommandName(
+		"/account_admin/edit_account_entry"
+	).setParameter(
+		"accountEntryId", accountEntryDisplay.getAccountEntryId()
+	).setParameter(
+		"screenNavigationCategoryKey", AccountScreenNavigationEntryConstants.CATEGORY_KEY_USERS
+	).buildString();
 }
 
 portletDisplay.setShowBackIcon(true);
@@ -43,24 +45,26 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 	action="<%= addAccountUsersURL %>"
 >
 	<liferay-frontend:edit-form-body>
-		<portlet:renderURL var="redirect">
+		<portlet:renderURL var="defaultRedirect">
 			<portlet:param name="mvcPath" value="/account_users_admin/edit_account_user.jsp" />
 		</portlet:renderURL>
 
-		<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
+		<aui:input name="redirect" type="hidden" value='<%= ParamUtil.getString(request, "redirect", defaultRedirect) %>' />
 		<aui:input name="accountEntryId" type="hidden" value="<%= String.valueOf(accountEntryDisplay.getAccountEntryId()) %>" />
 
 		<h2 class="sheet-title">
 			<%= LanguageUtil.get(request, "information") %>
 		</h2>
 
-		<div class="sheet-section">
+		<clay:sheet-section>
 			<h3 class="sheet-subtitle">
 				<%= LanguageUtil.get(request, "user-display-data") %>
 			</h3>
 
-			<aui:row>
-				<aui:col width="<%= 50 %>">
+			<clay:row>
+				<clay:col
+					md="6"
+				>
 					<liferay-ui:error exception="<%= UserScreenNameException.MustNotBeDuplicate.class %>" focusField="screenName" message="the-screen-name-you-requested-is-already-taken" />
 					<liferay-ui:error exception="<%= UserScreenNameException.MustNotBeNull.class %>" focusField="screenName" message="the-screen-name-cannot-be-blank" />
 					<liferay-ui:error exception="<%= UserScreenNameException.MustNotBeNumeric.class %>" focusField="screenName" message="the-screen-name-cannot-contain-only-numeric-values" />
@@ -78,7 +82,20 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 						<liferay-ui:message key="<%= usne.screenNameValidator.getDescription(locale) %>" />
 					</liferay-ui:error>
 
-					<aui:input label="screen-name" name="screenName" required="<%= true %>" type="text" />
+					<aui:model-context model="<%= User.class %>" />
+
+					<aui:input name="screenName">
+
+						<%
+						ScreenNameValidator screenNameValidator = ScreenNameValidatorFactory.getInstance();
+						%>
+
+						<c:if test="<%= Validator.isNotNull(screenNameValidator.getAUIValidatorJS()) %>">
+							<aui:validator errorMessage="<%= screenNameValidator.getDescription(locale) %>" name="custom">
+								<%= screenNameValidator.getAUIValidatorJS() %>
+							</aui:validator>
+						</c:if>
+					</aui:input>
 
 					<liferay-ui:error exception="<%= UserEmailAddressException.MustNotBeDuplicate.class %>" focusField="emailAddress" message="the-email-address-you-requested-is-already-taken" />
 					<liferay-ui:error exception="<%= UserEmailAddressException.MustNotBeNull.class %>" focusField="emailAddress" message="please-enter-an-email-address" />
@@ -92,9 +109,11 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 					</aui:input>
 
 					<liferay-ui:user-name-fields />
-				</aui:col>
+				</clay:col>
 
-				<aui:col width="<%= 40 %>">
+				<clay:col
+					md="6"
+				>
 					<div class="text-center">
 
 						<%
@@ -109,9 +128,19 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 							tempImageFileName="0"
 						/>
 					</div>
-				</aui:col>
-			</aui:row>
-		</div>
+
+					<aui:input
+						label="job-title"
+						maxlength='<%=
+							ModelHintsUtil.getMaxLength(Contact.class.getName(), "jobTitle")
+						%>'
+						name="jobTitle"
+						type="text"
+					>
+					</aui:input>
+				</clay:col>
+			</clay:row>
+		</clay:sheet-section>
 	</liferay-frontend:edit-form-body>
 
 	<liferay-frontend:edit-form-footer>
@@ -120,3 +149,38 @@ renderResponse.setTitle(LanguageUtil.format(request, "add-new-user-to-x", accoun
 		<aui:button href="<%= backURL %>" type="cancel" />
 	</liferay-frontend:edit-form-footer>
 </liferay-frontend:edit-form>
+
+<c:if test="<%= !Objects.equals(accountEntryDisplay.getType(), AccountConstants.ACCOUNT_ENTRY_TYPE_PERSON) && (accountEntryDisplay.isValidateUserEmailAddress(themeDisplay.getCompanyId()) || Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()))) %>">
+
+	<%
+	Map<String, Object> context = HashMapBuilder.<String, Object>put(
+		"accountEntryNames", accountEntryDisplay.getName()
+	).build();
+
+	if (Validator.isNotNull(AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()))) {
+		context.put("blockedDomains", AccountUserDisplay.getBlockedDomains(themeDisplay.getCompanyId()));
+	}
+
+	if (accountEntryDisplay.isValidateUserEmailAddress(themeDisplay.getCompanyId())) {
+		context.put("validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA));
+
+		PortletURL viewValidDomainsURL = PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/account_users_admin/account_user/view_valid_domains.jsp"
+		).setParameter(
+			"validDomains", StringUtil.merge(accountEntryDisplay.getDomains(), StringPool.COMMA)
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildPortletURL();
+
+		context.put("viewValidDomainsURL", viewValidDomainsURL.toString());
+	}
+	%>
+
+	<liferay-frontend:component
+		componentId="AccountUserEmailDomainValidator"
+		context="<%= context %>"
+		module="account_users_admin/js/AccountUserEmailDomainValidator.es"
+	/>
+</c:if>

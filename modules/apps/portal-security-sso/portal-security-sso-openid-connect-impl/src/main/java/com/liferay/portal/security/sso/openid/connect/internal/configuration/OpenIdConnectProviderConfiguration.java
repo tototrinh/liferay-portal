@@ -23,7 +23,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
  */
 @ExtendedObjectClassDefinition(
 	category = "sso", factoryInstanceLabelAttribute = "providerName",
-	scope = ExtendedObjectClassDefinition.Scope.SYSTEM
+	scope = ExtendedObjectClassDefinition.Scope.COMPANY
 )
 @Meta.OCD(
 	factory = true,
@@ -37,18 +37,6 @@ public interface OpenIdConnectProviderConfiguration {
 		deflt = "", description = "provider-name-help", name = "provider-name"
 	)
 	public String providerName();
-
-	@Meta.AD(
-		deflt = "", description = "open-id-connect-client-id-help",
-		name = "open-id-connect-client-id"
-	)
-	public String openIdConnectClientId();
-
-	@Meta.AD(
-		deflt = "", description = "open-id-connect-client-secret-help",
-		name = "open-id-connect-client-secret"
-	)
-	public String openIdConnectClientSecret();
 
 	@Meta.AD(
 		deflt = "openid email profile", description = "scopes-help",
@@ -105,9 +93,33 @@ public interface OpenIdConnectProviderConfiguration {
 	public String tokenEndPoint();
 
 	@Meta.AD(
+		deflt = "1000", description = "token-connection-timeout-help",
+		name = "token-connection-timeout", required = false
+	)
+	public int tokenConnectionTimeout();
+
+	@Meta.AD(
 		deflt = "", description = "user-info-endpoint-help",
 		name = "user-info-endpoint", required = false
 	)
 	public String userInfoEndPoint();
+
+	@Meta.AD(
+		deflt = "", description = "open-id-connect-client-id-help",
+		name = "open-id-connect-client-id"
+	)
+	public String openIdConnectClientId();
+
+	@Meta.AD(
+		deflt = "", description = "open-id-connect-client-secret-help",
+		name = "open-id-connect-client-secret"
+	)
+	public String openIdConnectClientSecret();
+
+	@Meta.AD(
+		deflt = "", description = "registered-id-token-signing-alg-help",
+		name = "registered-id-token-signing-alg", required = false
+	)
+	public String registeredIdTokenSigningAlg();
 
 }

@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.sso.openid.connect.OpenIdConnectServiceException;
 
 import com.nimbusds.jose.JWEAlgorithm;
@@ -51,11 +52,14 @@ public class OpenIdConnectMetadataFactoryImpl
 	implements OpenIdConnectMetadataFactory {
 
 	public OpenIdConnectMetadataFactoryImpl(
-			String providerName, String[] idTokenSigningAlgValues,
-			String issuerURL, String[] subjectTypes, String jwksURL,
+			String providerName, String registeredIdTokenSigningAlg,
+			String[] idTokenSigningAlgValues, String issuerURL,
+			String[] subjectTypes, String jwksURL,
 			String authorizationEndPointURL, String tokenEndPointURL,
 			String userInfoEndPointURL)
 		throws OpenIdConnectServiceException.ProviderException {
+
+		// TODO LPS-139642
 
 		_providerName = providerName;
 
@@ -88,21 +92,23 @@ public class OpenIdConnectMetadataFactoryImpl
 			_oidcProviderMetadata.setUserInfoEndpointURI(
 				new URI(userInfoEndPointURL));
 
+			_initOpenIdConnectClientMetadata(registeredIdTokenSigningAlg);
+
 			refreshClientMetadata(_oidcProviderMetadata);
 		}
 		catch (ParseException parseException) {
 			throw new OpenIdConnectServiceException.ProviderException(
 				StringBundler.concat(
 					"Invalid subject types ", StringUtil.merge(subjectTypes),
-					"for OpenId Connect provider ", _providerName, ": ",
+					"for OpenId Connect provider \"", _providerName, "\": ",
 					parseException.getMessage()),
 				parseException);
 		}
 		catch (URISyntaxException uriSyntaxException) {
 			throw new OpenIdConnectServiceException.ProviderException(
 				StringBundler.concat(
-					"Invalid URLs for OpenId Connect provider ", _providerName,
-					": ", uriSyntaxException.getMessage()),
+					"Invalid URLs for OpenId Connect provider \"",
+					_providerName, "\": ", uriSyntaxException.getMessage()),
 				uriSyntaxException);
 		}
 	}
@@ -110,16 +116,18 @@ public class OpenIdConnectMetadataFactoryImpl
 	public OpenIdConnectMetadataFactoryImpl(
 		String providerName, URL discoveryEndPointURL) {
 
-		this(providerName, discoveryEndPointURL, 0);
+		this(providerName, discoveryEndPointURL, 0, null);
 	}
 
 	public OpenIdConnectMetadataFactoryImpl(
-		String providerName, URL discoveryEndPointURL,
-		long cacheInMilliseconds) {
+		String providerName, URL discoveryEndPointURL, long cacheInMilliseconds,
+		String registeredIdTokenSigningAlg) {
 
 		_providerName = providerName;
 		_discoveryEndPointURL = discoveryEndPointURL;
 		_cacheInMilliseconds = cacheInMilliseconds;
+
+		_initOpenIdConnectClientMetadata(registeredIdTokenSigningAlg);
 	}
 
 	@Override
@@ -144,7 +152,8 @@ public class OpenIdConnectMetadataFactoryImpl
 		if (_oidcProviderMetadata == null) {
 			if (_log.isInfoEnabled()) {
 				_log.info(
-					"Refreshing new OpenId Connect provider " + _providerName);
+					"Refreshing new OpenId Connect provider \"" +
+						_providerName + "\"");
 			}
 
 			return true;
@@ -157,8 +166,8 @@ public class OpenIdConnectMetadataFactoryImpl
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
-					"Refreshing stale OpenId Connect provider " +
-						_providerName);
+					"Refreshing stale OpenId Connect provider \"" +
+						_providerName + "\"");
 			}
 
 			return true;
@@ -195,8 +204,8 @@ public class OpenIdConnectMetadataFactoryImpl
 		catch (IOException | ParseException exception) {
 			throw new OpenIdConnectServiceException.ProviderException(
 				StringBundler.concat(
-					"Unable to get metadata for OpenId Connect provider ",
-					_providerName, " from ", _discoveryEndPointURL, ": ",
+					"Unable to get metadata for OpenId Connect provider \"",
+					_providerName, "\" from ", _discoveryEndPointURL, ": ",
 					exception.getMessage()),
 				exception);
 		}
@@ -213,10 +222,13 @@ public class OpenIdConnectMetadataFactoryImpl
 		}
 	}
 
+	/**
+	 * Client metadata has nothing to with provider metadata, but in order to
+	 * minimize potential breaking changes, we will leave this behavior even
+	 * though it is goes beyond the specification.
+	 */
 	protected synchronized void refreshClientMetadata(
 		OIDCProviderMetadata oidcProviderMetadata) {
-
-		_oidcClientMetadata = new OIDCClientMetadata();
 
 		List<JWEAlgorithm> jweAlgorithms =
 			oidcProviderMetadata.getIDTokenJWEAlgs();
@@ -225,14 +237,30 @@ public class OpenIdConnectMetadataFactoryImpl
 			_oidcClientMetadata.setIDTokenJWEAlg(jweAlgorithms.get(0));
 		}
 
-		List<JWSAlgorithm> jwsAlgorithms =
-			oidcProviderMetadata.getIDTokenJWSAlgs();
-
-		if (ListUtil.isNotEmpty(jwsAlgorithms)) {
-			_oidcClientMetadata.setIDTokenJWSAlg(jwsAlgorithms.get(0));
-		}
-
 		_oidcClientMetadata.setJWKSetURI(oidcProviderMetadata.getJWKSetURI());
+	}
+
+	private void _initOpenIdConnectClientMetadata(
+		String registeredIdTokenSigningAlg) {
+
+		_oidcClientMetadata = new OIDCClientMetadata();
+
+		_oidcClientMetadata.applyDefaults();
+
+		if (!Validator.isBlank(registeredIdTokenSigningAlg)) {
+			_oidcClientMetadata.setIDTokenJWSAlg(
+				JWSAlgorithm.parse(registeredIdTokenSigningAlg));
+		}
+		else {
+			if (_log.isWarnEnabled()) {
+				JWSAlgorithm jwsAlgorithm =
+					_oidcClientMetadata.getIDTokenJWSAlg();
+
+				_log.warn(
+					"Using the default ID token signing algorithm " +
+						jwsAlgorithm.getName());
+			}
+		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

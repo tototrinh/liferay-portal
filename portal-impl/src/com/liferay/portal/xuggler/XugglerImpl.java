@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xuggler.Xuggler;
 import com.liferay.portal.kernel.xuggler.XugglerInstallException;
 import com.liferay.portal.util.JarUtil;
@@ -30,9 +31,15 @@ import com.xuggle.xuggler.IContainer;
 
 import java.net.URL;
 
+import java.nio.file.Paths;
+
+import java.util.Map;
+
 /**
  * @author Alexander Chow
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public class XugglerImpl implements Xuggler {
 
 	@Override
@@ -40,7 +47,7 @@ public class XugglerImpl implements Xuggler {
 		try {
 			JarUtil.downloadAndInstallJar(
 				new URL(PropsValues.XUGGLER_JAR_URL + name),
-				PropsValues.LIFERAY_LIB_PORTAL_DIR, name);
+				Paths.get(PropsValues.LIFERAY_LIB_PORTAL_DIR, name));
 
 			_nativeLibraryCopied = true;
 		}
@@ -90,8 +97,13 @@ public class XugglerImpl implements Xuggler {
 			return _nativeLibraryInstalled;
 		}
 
-		String originalLevel = Log4JUtil.getOriginalLevel(
-			JNILibraryLoader.class.getName());
+		Map<String, String> priorities = Log4JUtil.getPriorities();
+
+		String priority = priorities.get(JNILibraryLoader.class.getName());
+
+		if (Validator.isNull(priority)) {
+			priority = "ALL";
+		}
 
 		try {
 			Log4JUtil.setLevel(JNILibraryLoader.class.getName(), "OFF", false);
@@ -108,7 +120,7 @@ public class XugglerImpl implements Xuggler {
 		}
 		finally {
 			Log4JUtil.setLevel(
-				JNILibraryLoader.class.getName(), originalLevel, false);
+				JNILibraryLoader.class.getName(), priority, false);
 		}
 
 		return _nativeLibraryInstalled;
@@ -121,17 +133,14 @@ public class XugglerImpl implements Xuggler {
 
 		_informAdministrator = false;
 
-		StringBundler sb = new StringBundler(7);
-
-		sb.append("Liferay does not have the Xuggler native libraries ");
-		sb.append("installed. In order to generate video and audio previews, ");
-		sb.append("please follow the instructions for Xuggler in the Server ");
-		sb.append("Administration section of the Control Panel at: ");
-		sb.append("http://<server>/group/control_panel/manage/-/server");
-		sb.append("/external-services. Warning: ");
-		sb.append(errorMessage);
-
-		_log.warn(sb.toString());
+		_log.warn(
+			StringBundler.concat(
+				"Liferay does not have the Xuggler native libraries ",
+				"installed. In order to generate video and audio previews, ",
+				"please follow the instructions for Xuggler in the Server ",
+				"Administration section of the Control Panel at: ",
+				"http://<server>/group/control_panel/manage/-/server",
+				"/external-services. Warning: ", errorMessage));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(XugglerImpl.class);

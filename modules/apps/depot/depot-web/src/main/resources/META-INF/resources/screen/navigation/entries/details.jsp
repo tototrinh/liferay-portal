@@ -21,16 +21,27 @@ DepotAdminDetailsDisplayContext depotAdminDetailsDisplayContext = (DepotAdminDet
 %>
 
 <liferay-ui:error exception="<%= DuplicateGroupException.class %>" message="please-enter-a-unique-name" />
-<liferay-ui:error exception="<%= GroupKeyException.class %>" message="please-enter-a-valid-name" />
+
+<liferay-ui:error exception="<%= GroupKeyException.class %>">
+	<p>
+		<liferay-ui:message arguments="<%= new String[] {DepotEntryConstants.NAME_LABEL, DepotEntryConstants.getNameGeneralRestrictions(locale), DepotEntryConstants.NAME_RESERVED_WORDS} %>" key="the-x-cannot-be-x-or-a-reserved-word-such-as-x" />
+	</p>
+
+	<p>
+		<liferay-ui:message arguments="<%= new String[] {DepotEntryConstants.NAME_LABEL, DepotEntryConstants.NAME_INVALID_CHARACTERS} %>" key="the-x-cannot-contain-the-following-invalid-characters-x" />
+	</p>
+</liferay-ui:error>
 
 <liferay-frontend:fieldset-group>
 	<liferay-frontend:fieldset
-		collapsible="false"
+		collapsible="<%= false %>"
 		label='<%= LanguageUtil.get(request, "details") %>'
 	>
 		<aui:model-context bean="<%= depotAdminDetailsDisplayContext.getGroup() %>" model="<%= Group.class %>" />
 
 		<aui:input name="assetLibraryId" type="resource" value="<%= String.valueOf(depotAdminDetailsDisplayContext.getDepotEntryId()) %>" />
+
+		<aui:input name="groupId" type="resource" value="<%= String.valueOf(depotAdminDetailsDisplayContext.getGroupId()) %>" />
 
 		<aui:input name="name" placeholder="name" required="<%= true %>" value="<%= depotAdminDetailsDisplayContext.getDepotName(locale) %>" />
 
@@ -38,7 +49,7 @@ DepotAdminDetailsDisplayContext depotAdminDetailsDisplayContext = (DepotAdminDet
 	</liferay-frontend:fieldset>
 
 	<liferay-frontend:fieldset
-		collapsible="true"
+		collapsible="<%= true %>"
 		cssClass="panel-group-flush"
 		label='<%= LanguageUtil.get(request, "applications") %>'
 	>
@@ -46,22 +57,23 @@ DepotAdminDetailsDisplayContext depotAdminDetailsDisplayContext = (DepotAdminDet
 			<liferay-ui:message key="asset-library-applications-description" />
 		</p>
 
-		<div class="row">
+		<clay:row>
 
 			<%
 			for (DepotApplication depotApplication : depotAdminDetailsDisplayContext.getDepotApplications()) {
 			%>
 
-				<div class="col-md-6">
+				<clay:col
+					md="6"
+				>
 					<aui:input label="<%= depotApplication.getLabel(locale) %>" name='<%= "DepotAppCustomization--" + depotApplication.getPortletId() + "--" %>' type="checkbox" value="<%= depotAdminDetailsDisplayContext.isEnabled(depotApplication.getPortletId()) %>" />
-				</div>
+				</clay:col>
 
 			<%
 			}
 			%>
 
-		</div>
-
+		</clay:row>
 	</liferay-frontend:fieldset>
 
 	<liferay-util:include page="/screen/navigation/entries/sharing.jsp" servletContext="<%= application %>" />

@@ -16,37 +16,29 @@ import React from 'react';
 const DropDown = ({
 	active,
 	activeItem,
+	id = '',
 	items,
 	match,
 	onSelect,
-	setActiveItem
+	setActiveItem,
 }) => {
 	return (
 		<ClayAutocomplete.DropDown active={active}>
-			<ClayDropDown.ItemList data-testid="dropDownList">
+			<ClayDropDown.ItemList id={`dropDownList${id}`}>
 				{items.length > 0 ? (
 					items.map((item, index) => (
 						<ClayAutocomplete.Item
 							className={index === activeItem ? 'active' : ''}
-							data-testid="dropDownListItem"
 							key={index}
 							match={match}
-							onMouseDown={event => {
-								event.stopPropagation();
-								onSelect(item);
-							}}
-							onMouseOver={() => {
-								setActiveItem(index);
-							}}
+							onMouseDown={() => onSelect(item)}
+							onMouseOver={() => setActiveItem(index)}
 							value={item.name}
 						/>
 					))
 				) : (
-					<ClayDropDown.Item
-						className="disabled"
-						data-testid="dropDownEmpty"
-					>
-						{Liferay.Language.get('no-results-found')}
+					<ClayDropDown.Item className="disabled">
+						{Liferay.Language.get('no-results-were-found')}
 					</ClayDropDown.Item>
 				)}
 			</ClayDropDown.ItemList>

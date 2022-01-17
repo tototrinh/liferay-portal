@@ -98,11 +98,17 @@ public class UserPermissionImpl
 			User user = null;
 
 			if (userId != ResourceConstants.PRIMKEY_DNE) {
+				if (permissionChecker.isOmniadmin()) {
+					return true;
+				}
+
 				user = UserLocalServiceUtil.getUserById(userId);
 
 				if (!actionId.equals(ActionKeys.VIEW) &&
 					!permissionChecker.isOmniadmin() &&
-					PortalUtil.isOmniadmin(user)) {
+					(PortalUtil.isOmniadmin(user) ||
+					 (!permissionChecker.isCompanyAdmin() &&
+					  PortalUtil.isCompanyAdmin(user)))) {
 
 					return false;
 				}
@@ -112,12 +118,9 @@ public class UserPermissionImpl
 				if (permissionChecker.hasOwnerPermission(
 						permissionChecker.getCompanyId(), User.class.getName(),
 						userId, contact.getUserId(), actionId) ||
-					(permissionChecker.getUserId() == userId)) {
-
-					return true;
-				}
-
-				if (permissionChecker.hasPermission(
+					((permissionChecker.getUserId() == userId) &&
+					 !actionId.equals(ActionKeys.PERMISSIONS)) ||
+					permissionChecker.hasPermission(
 						null, User.class.getName(), userId, actionId)) {
 
 					return true;

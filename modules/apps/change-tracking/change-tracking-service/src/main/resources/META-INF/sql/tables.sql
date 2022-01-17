@@ -17,11 +17,24 @@ create table CTCollection (
 	userId LONG,
 	createDate DATE null,
 	modifiedDate DATE null,
+	schemaVersionId LONG,
 	name VARCHAR(75) null,
 	description VARCHAR(200) null,
 	status INTEGER,
 	statusByUserId LONG,
 	statusDate DATE null
+);
+
+create table CTComment (
+	mvccVersion LONG default 0 not null,
+	ctCommentId LONG not null primary key,
+	companyId LONG,
+	userId LONG,
+	createDate DATE null,
+	modifiedDate DATE null,
+	ctCollectionId LONG,
+	ctEntryId LONG,
+	value TEXT null
 );
 
 create table CTEntry (
@@ -41,6 +54,7 @@ create table CTEntry (
 create table CTMessage (
 	mvccVersion LONG default 0 not null,
 	ctMessageId LONG not null primary key,
+	companyId LONG,
 	ctCollectionId LONG,
 	messageContent TEXT null
 );
@@ -51,6 +65,7 @@ create table CTPreferences (
 	companyId LONG,
 	userId LONG,
 	ctCollectionId LONG,
+	previousCtCollectionId LONG,
 	confirmationEnabled BOOLEAN
 );
 
@@ -62,4 +77,11 @@ create table CTProcess (
 	createDate DATE null,
 	ctCollectionId LONG,
 	backgroundTaskId LONG
+);
+
+create table CTSchemaVersion (
+	mvccVersion LONG default 0 not null,
+	schemaVersionId LONG not null primary key,
+	companyId LONG,
+	schemaContext TEXT null
 );

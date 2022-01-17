@@ -28,22 +28,29 @@ AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.
 ClassTypeReader classTypeReader = assetRendererFactory.getClassTypeReader();
 
 ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/asset_list/select_structure_field.jsp");
-portletURL.setParameter("className", className);
-portletURL.setParameter("classTypeId", String.valueOf(classTypeId));
-portletURL.setParameter("eventName", eventName);
 %>
 
 <div class="alert alert-danger hide" id="<portlet:namespace />message">
 	<span class="error-message"><liferay-ui:message key="the-field-value-is-invalid" /></span>
 </div>
 
-<div class="container-fluid-1280" id="<portlet:namespace />selectDDMStructureFieldForm">
+<clay:container-fluid
+	id='<%= liferayPortletResponse.getNamespace() + "selectDDMStructureFieldForm" %>'
+>
 	<liferay-ui:search-container
-		iteratorURL="<%= portletURL %>"
+		iteratorURL='<%=
+			PortletURLBuilder.createRenderURL(
+				renderResponse
+			).setMVCPath(
+				"/asset_list/select_structure_field.jsp"
+			).setParameter(
+				"className", className
+			).setParameter(
+				"classTypeId", classTypeId
+			).setParameter(
+				"eventName", eventName
+			).buildPortletURL()
+		%>'
 		total="<%= classType.getClassTypeFieldsCount() %>"
 	>
 		<liferay-ui:search-container-results
@@ -55,7 +62,7 @@ portletURL.setParameter("eventName", eventName);
 			modelVar="field"
 		>
 			<liferay-ui:search-container-column-text>
-				<input data-button-id="<%= renderResponse.getNamespace() + "applyButton" + field.getName() %>" data-form-id="<%= renderResponse.getNamespace() + field.getName() + "fieldForm" %>" name="<portlet:namespace />selectStructureFieldSubtype" type="radio" <%= Objects.equals(field.getName(), ddmStructureFieldName) ? "checked" : StringPool.BLANK %> />
+				<input data-button-id="<%= liferayPortletResponse.getNamespace() + "applyButton" + field.getName() %>" data-form-id="<%= liferayPortletResponse.getNamespace() + field.getName() + "fieldForm" %>" name="<portlet:namespace />selectStructureFieldSubtype" type="radio" <%= Objects.equals(field.getName(), ddmStructureFieldName) ? "checked" : StringPool.BLANK %> />
 			</liferay-ui:search-container-column-text>
 
 			<%
@@ -65,14 +72,14 @@ portletURL.setParameter("eventName", eventName);
 			<liferay-ui:search-container-column-text
 				name="field"
 			>
-				<portlet:resourceURL id="getFieldValue" var="structureFieldURL">
+				<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/asset_list/get_field_value" var="structureFieldURL">
 					<portlet:param name="structureId" value="<%= String.valueOf(field.getClassTypeId()) %>" />
 					<portlet:param name="name" value="<%= field.getName() %>" />
 					<portlet:param name="fieldsNamespace" value="<%= fieldsNamespace %>" />
-				</portlet:resourceURL>
+				</liferay-portlet:resourceURL>
 
 				<aui:form action="<%= structureFieldURL %>" disabled="<%= !Objects.equals(field.getName(), ddmStructureFieldName) %>" name='<%= field.getName() + "fieldForm" %>' onSubmit="event.preventDefault()">
-					<aui:input disabled="<%= true %>" name="buttonId" type="hidden" value='<%= renderResponse.getNamespace() + "applyButton" + field.getName() %>' />
+					<aui:input disabled="<%= true %>" name="buttonId" type="hidden" value='<%= liferayPortletResponse.getNamespace() + "applyButton" + field.getName() %>' />
 
 					<%
 					Field ddmField = new com.liferay.dynamic.data.mapping.storage.Field();
@@ -96,20 +103,30 @@ portletURL.setParameter("eventName", eventName);
 			</liferay-ui:search-container-column-text>
 
 			<liferay-ui:search-container-column-text>
-
-				<%
-				Map<String, Object> data = HashMapBuilder.<String, Object>put(
-					"fieldsnamespace", fieldsNamespace
-				).put(
-					"form", renderResponse.getNamespace() + field.getName() + "fieldForm"
-				).put(
-					"label", field.getLabel()
-				).put(
-					"name", field.getName()
-				).build();
-				%>
-
-				<aui:button cssClass="selector-button" data="<%= data %>" disabled="<%= Objects.equals(field.getName(), ddmStructureFieldName) ? false : true %>" id='<%= "applyButton" + field.getName() %>' value="apply" />
+				<aui:button
+					cssClass="selector-button"
+					data='<%=
+						HashMapBuilder.<String, Object>put(
+							"fieldsnamespace", fieldsNamespace
+						).put(
+							"form", liferayPortletResponse.getNamespace() + field.getName() + "fieldForm"
+						).put(
+							"label", field.getLabel()
+						).put(
+							"name", field.getName()
+						).put(
+							"value",
+							JSONUtil.put(
+								"ddmStructureFieldName", ddmStructureFieldName
+							).put(
+								"ddmStructureFieldValue", ddmStructureFieldValue
+							)
+						).build()
+					%>'
+					disabled="<%= Objects.equals(field.getName(), ddmStructureFieldName) ? false : true %>"
+					id='<%= "applyButton" + field.getName() %>'
+					value="apply"
+				/>
 			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 
@@ -117,104 +134,16 @@ portletURL.setParameter("eventName", eventName);
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>
 
-<aui:script use="aui-base">
-	var Util = Liferay.Util;
-
-	var structureFormContainer = A.one(
-		'#<portlet:namespace />selectDDMStructureFieldForm'
-	);
-
-	var fieldSubtypeForms = structureFormContainer.all('form');
-
-	var toggleDisabledFormFields = function(form, state) {
-		Util.toggleDisabled(form.all('input, select, textarea'), state);
-	};
-
-	var submitForm = function(applyButton) {
-		var result = Util.getAttributes(applyButton, 'data-');
-
-		var fieldsnamespace = result.fieldsnamespace;
-
-		var ddmForm = Liferay.component(
-			'<portlet:namespace />' + fieldsnamespace + 'ddmForm'
-		);
-
-		ddmForm.updateDDMFormInputValue();
-
-		var form = document.getElementById(result.form);
-
-		Liferay.Util.fetch(form.action, {
-			body: new FormData(form),
-			method: 'POST'
-		})
-			.then(function(response) {
-				return response.json();
-			})
-			.then(function(response) {
-				var message = A.one('#<portlet:namespace />message');
-
-				if (response.success) {
-					result.className =
-						'<%= editAssetListDisplayContext.getClassName(assetRendererFactory) %>';
-					result.displayValue = response.displayValue;
-					result.value = response.value;
-
-					message.hide();
-
-					Util.getOpener().Liferay.fire(
-						'<%= HtmlUtil.escapeJS(eventName) %>',
-						result
-					);
-
-					Util.getWindow().destroy();
-				}
-				else {
-					message.show();
-				}
-			});
-	};
-
-	structureFormContainer.delegate(
-		'click',
-		function(event) {
-			submitForm(event.currentTarget);
-		},
-		'.selector-button'
-	);
-
-	structureFormContainer.delegate(
-		'submit',
-		function(event) {
-			var buttonId = event.currentTarget
-				.one('#<portlet:namespace />buttonId')
-				.attr('value');
-
-			submitForm(structureFormContainer.one('#' + buttonId));
-		},
-		'form'
-	);
-
-	A.one('#<portlet:namespace />classTypeFieldsSearchContainer').delegate(
-		'click',
-		function(event) {
-			var target = event.currentTarget;
-
-			var buttonId = target.attr('data-button-id');
-			var formId = target.attr('data-form-id');
-
-			Util.toggleDisabled(
-				structureFormContainer.all('.selector-button'),
-				true
-			);
-
-			Util.toggleDisabled('#' + buttonId, false);
-
-			toggleDisabledFormFields(fieldSubtypeForms, true);
-
-			toggleDisabledFormFields(A.one('#' + formId), false);
-		},
-		'input[name=<portlet:namespace />selectStructureFieldSubtype]'
-	);
-</aui:script>
+<liferay-frontend:component
+	componentId='<%= liferayPortletResponse.getNamespace() + "selectStructureField" %>'
+	context='<%=
+		HashMapBuilder.<String, Object>put(
+			"assetClassName", editAssetListDisplayContext.getClassName(assetRendererFactory)
+		).put(
+			"eventName", HtmlUtil.escapeJS(eventName)
+		).build()
+	%>'
+	module="js/SelectStructureField"
+/>

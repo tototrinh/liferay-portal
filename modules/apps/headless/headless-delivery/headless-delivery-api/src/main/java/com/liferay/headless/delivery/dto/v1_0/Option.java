@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -41,10 +44,20 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Option")
+@GraphQLName(
+	description = "The list of different possible values.", value = "Option"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Option")
-public class Option {
+public class Option implements Serializable {
+
+	public static Option toDTO(String json) {
+		return ObjectMapperUtil.readValue(Option.class, json);
+	}
+
+	public static Option unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Option.class, json);
+	}
 
 	@Schema(description = "The option's label.")
 	public String getLabel() {
@@ -74,7 +87,7 @@ public class Option {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String label;
 
-	@Schema
+	@Schema(description = "The localized option's labels.")
 	@Valid
 	public Map<String, String> getLabel_i18n() {
 		return label_i18n;
@@ -100,7 +113,7 @@ public class Option {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The localized option's labels.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Map<String, String> label_i18n;
 
@@ -203,6 +216,7 @@ public class Option {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Option",
 		name = "x-class-name"
 	)
@@ -212,6 +226,16 @@ public class Option {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -228,13 +252,46 @@ public class Option {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

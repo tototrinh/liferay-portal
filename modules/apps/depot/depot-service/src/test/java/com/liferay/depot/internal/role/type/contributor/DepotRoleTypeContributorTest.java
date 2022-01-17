@@ -17,8 +17,11 @@ package com.liferay.depot.internal.role.type.contributor;
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.internal.roles.admin.role.type.contributor.DepotRoleTypeContributor;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -27,6 +30,11 @@ import org.mockito.Mockito;
  * @author Cristina González
  */
 public class DepotRoleTypeContributorTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testIsAllowAssignMembersWithAdministrator() {
@@ -90,7 +98,7 @@ public class DepotRoleTypeContributorTest {
 		);
 
 		Assert.assertTrue(
-			!depotRoleTypeContributor.isAllowDefinePermissions(role));
+			depotRoleTypeContributor.isAllowDefinePermissions(role));
 	}
 
 	@Test

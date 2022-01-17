@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Locale;
 
@@ -42,7 +43,8 @@ import org.osgi.service.component.annotations.Reference;
 public class DDMStructureModelListener extends BaseModelListener<DDMStructure> {
 
 	@Override
-	public void onAfterUpdate(DDMStructure ddmStructure)
+	public void onAfterUpdate(
+			DDMStructure originalDDMStructure, DDMStructure ddmStructure)
 		throws ModelListenerException {
 
 		try {
@@ -72,6 +74,14 @@ public class DDMStructureModelListener extends BaseModelListener<DDMStructure> {
 			});
 		actionableDynamicQuery.setPerformActionMethod(
 			(DDLRecordSet recordSet) -> {
+				if (Validator.isNull(
+						recordSet.getName(
+							LocaleUtil.getSiteDefault(), false))) {
+
+					recordSet.setName(
+						ddmStructure.getName(LocaleUtil.getSiteDefault()));
+				}
+
 				Locale siteLocale = null;
 
 				if (ExportImportThreadLocal.isImportInProcess()) {
@@ -85,8 +95,8 @@ public class DDMStructureModelListener extends BaseModelListener<DDMStructure> {
 
 				ServiceContext serviceContext = new ServiceContext();
 
-				serviceContext.setAddGuestPermissions(true);
 				serviceContext.setAddGroupPermissions(true);
+				serviceContext.setAddGuestPermissions(true);
 
 				serviceContext.setScopeGroupId(recordSet.getGroupId());
 

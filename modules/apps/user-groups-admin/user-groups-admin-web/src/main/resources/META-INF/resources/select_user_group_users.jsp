@@ -35,7 +35,6 @@ List<NavigationItem> navigationItems = new ArrayList<>();
 NavigationItem entriesNavigationItem = new NavigationItem();
 
 entriesNavigationItem.setActive(true);
-entriesNavigationItem.setHref(StringPool.BLANK);
 entriesNavigationItem.setLabel(LanguageUtil.get(request, "users"));
 
 navigationItems.add(entriesNavigationItem);
@@ -54,7 +53,7 @@ if (filterManageableOrganizations) {
 	userParams.put("usersOrgsTree", user.getOrganizations());
 }
 
-SearchContainer searchContainer = editUserGroupAssignmentsManagementToolbarDisplayContext.getSearchContainer(userParams);
+SearchContainer<User> searchContainer = editUserGroupAssignmentsManagementToolbarDisplayContext.getSearchContainer(userParams);
 %>
 
 <clay:management-toolbar
@@ -71,7 +70,7 @@ SearchContainer searchContainer = editUserGroupAssignmentsManagementToolbarDispl
 	viewTypeItems="<%= editUserGroupAssignmentsManagementToolbarDisplayContext.getViewTypeItems() %>"
 />
 
-<aui:form cssClass="container-fluid-1280" method="post" name="fm">
+<aui:form cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<liferay-ui:search-container
 		id="selectUsers"
 		searchContainer="<%= searchContainer %>"
@@ -104,7 +103,7 @@ SearchContainer searchContainer = editUserGroupAssignmentsManagementToolbarDispl
 		'<portlet:namespace />selectUsers'
 	);
 
-	searchContainer.on('rowToggled', function(event) {
+	searchContainer.on('rowToggled', (event) => {
 		var selectedItems = event.elements.allSelectedElements;
 
 		var data = [];
@@ -116,7 +115,7 @@ SearchContainer searchContainer = editUserGroupAssignmentsManagementToolbarDispl
 		Liferay.Util.getOpener().Liferay.fire(
 			'<%= HtmlUtil.escapeJS(eventName) %>',
 			{
-				data: data.join(',')
+				data: data.join(','),
 			}
 		);
 	});

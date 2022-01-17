@@ -19,9 +19,9 @@ import {FilterContextProvider} from '../../src/main/resources/META-INF/resources
 const withParamsMock = (...components) => ({
 	history,
 	location: {search: query},
-	match: {params: routeParams}
+	match: {params: routeParams},
 }) => {
-	return components.map(component => {
+	return components.map((component, key) => {
 		if (routeParams.sort) {
 			routeParams.sort = decodeURIComponent(routeParams.sort);
 		}
@@ -29,40 +29,48 @@ const withParamsMock = (...components) => ({
 		return cloneElement(component, {
 			...routeParams,
 			history,
+			key,
 			query,
-			routeParams
+			routeParams,
 		});
 	});
 };
 
 const MockRouter = ({
 	children,
-	client,
 	initialPath = '/1/20/title%3Aasc',
+	initialReindexStatuses = [],
 	isAmPm,
 	path = '/:page/:pageSize/:sort',
 	query = '?backPath=%2F',
-	withoutRouterProps
+	userId = '1',
+	userName = 'Test Test',
+	withoutRouterProps,
 }) => {
 	const [title, setTitle] = useState(null);
-	const [status, setStatus] = useState(null);
+	const [reindexStatuses, setReindexStatuses] = useState(
+		initialReindexStatuses
+	);
+	const [fetchDateModified, setFetchDateModified] = useState(false);
 
 	const contextState = useMemo(
 		() => ({
-			client,
 			defaultDelta: 20,
 			deltaValues: [5, 10, 20, 30, 50, 75],
-			getClient: () => client,
+			fetchDateModified,
 			isAmPm,
 			maxPages: 3,
-			namespace: 'workflow_',
-			setStatus,
+			portletNamespace: 'workflow',
+			reindexStatuses,
+			setFetchDateModified,
+			setReindexStatuses,
 			setTitle,
-			status,
-			title
+			title,
+			userId,
+			userName,
 		}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[]
+		[reindexStatuses, title]
 	);
 
 	const initialEntries = useMemo(

@@ -16,11 +16,8 @@ package com.liferay.portlet.documentlibrary.service.base;
 
 import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.document.library.kernel.service.DLFileVersionLocalService;
-import com.liferay.document.library.kernel.service.persistence.DLFileEntryFinder;
-import com.liferay.document.library.kernel.service.persistence.DLFileEntryPersistence;
+import com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil;
 import com.liferay.document.library.kernel.service.persistence.DLFileVersionPersistence;
-import com.liferay.document.library.kernel.service.persistence.DLFolderFinder;
-import com.liferay.document.library.kernel.service.persistence.DLFolderPersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
@@ -28,6 +25,8 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandler;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerRegistryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -54,12 +53,16 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -83,11 +86,15 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DLFileVersionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DLFileVersionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DLFileVersionLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the document library file version to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was added
@@ -115,6 +122,10 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	/**
 	 * Deletes the document library file version with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param fileVersionId the primary key of the document library file version
 	 * @return the document library file version that was removed
 	 * @throws PortalException if a document library file version with the primary key could not be found
@@ -130,6 +141,10 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	/**
 	 * Deletes the document library file version from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was removed
 	 */
@@ -137,6 +152,18 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	@Override
 	public DLFileVersion deleteDLFileVersion(DLFileVersion dlFileVersion) {
 		return dlFileVersionPersistence.remove(dlFileVersion);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return dlFileVersionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -431,6 +458,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -447,6 +475,11 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 
 		return dlFileVersionLocalService.deleteDLFileVersion(
 			(DLFileVersion)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<DLFileVersion> getBasePersistence() {
+		return dlFileVersionPersistence;
 	}
 
 	/**
@@ -537,6 +570,10 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	/**
 	 * Updates the document library file version in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was updated
 	 */
@@ -609,137 +646,19 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 		this.counterLocalService = counterLocalService;
 	}
 
-	/**
-	 * Returns the document library file entry local service.
-	 *
-	 * @return the document library file entry local service
-	 */
-	public com.liferay.document.library.kernel.service.DLFileEntryLocalService
-		getDLFileEntryLocalService() {
-
-		return dlFileEntryLocalService;
-	}
-
-	/**
-	 * Sets the document library file entry local service.
-	 *
-	 * @param dlFileEntryLocalService the document library file entry local service
-	 */
-	public void setDLFileEntryLocalService(
-		com.liferay.document.library.kernel.service.DLFileEntryLocalService
-			dlFileEntryLocalService) {
-
-		this.dlFileEntryLocalService = dlFileEntryLocalService;
-	}
-
-	/**
-	 * Returns the document library file entry persistence.
-	 *
-	 * @return the document library file entry persistence
-	 */
-	public DLFileEntryPersistence getDLFileEntryPersistence() {
-		return dlFileEntryPersistence;
-	}
-
-	/**
-	 * Sets the document library file entry persistence.
-	 *
-	 * @param dlFileEntryPersistence the document library file entry persistence
-	 */
-	public void setDLFileEntryPersistence(
-		DLFileEntryPersistence dlFileEntryPersistence) {
-
-		this.dlFileEntryPersistence = dlFileEntryPersistence;
-	}
-
-	/**
-	 * Returns the document library file entry finder.
-	 *
-	 * @return the document library file entry finder
-	 */
-	public DLFileEntryFinder getDLFileEntryFinder() {
-		return dlFileEntryFinder;
-	}
-
-	/**
-	 * Sets the document library file entry finder.
-	 *
-	 * @param dlFileEntryFinder the document library file entry finder
-	 */
-	public void setDLFileEntryFinder(DLFileEntryFinder dlFileEntryFinder) {
-		this.dlFileEntryFinder = dlFileEntryFinder;
-	}
-
-	/**
-	 * Returns the document library folder local service.
-	 *
-	 * @return the document library folder local service
-	 */
-	public com.liferay.document.library.kernel.service.DLFolderLocalService
-		getDLFolderLocalService() {
-
-		return dlFolderLocalService;
-	}
-
-	/**
-	 * Sets the document library folder local service.
-	 *
-	 * @param dlFolderLocalService the document library folder local service
-	 */
-	public void setDLFolderLocalService(
-		com.liferay.document.library.kernel.service.DLFolderLocalService
-			dlFolderLocalService) {
-
-		this.dlFolderLocalService = dlFolderLocalService;
-	}
-
-	/**
-	 * Returns the document library folder persistence.
-	 *
-	 * @return the document library folder persistence
-	 */
-	public DLFolderPersistence getDLFolderPersistence() {
-		return dlFolderPersistence;
-	}
-
-	/**
-	 * Sets the document library folder persistence.
-	 *
-	 * @param dlFolderPersistence the document library folder persistence
-	 */
-	public void setDLFolderPersistence(
-		DLFolderPersistence dlFolderPersistence) {
-
-		this.dlFolderPersistence = dlFolderPersistence;
-	}
-
-	/**
-	 * Returns the document library folder finder.
-	 *
-	 * @return the document library folder finder
-	 */
-	public DLFolderFinder getDLFolderFinder() {
-		return dlFolderFinder;
-	}
-
-	/**
-	 * Sets the document library folder finder.
-	 *
-	 * @param dlFolderFinder the document library folder finder
-	 */
-	public void setDLFolderFinder(DLFolderFinder dlFolderFinder) {
-		this.dlFolderFinder = dlFolderFinder;
-	}
-
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.document.library.kernel.model.DLFileVersion",
 			dlFileVersionLocalService);
+
+		_setLocalServiceUtilService(dlFileVersionLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.document.library.kernel.model.DLFileVersion");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -752,8 +671,23 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 		return DLFileVersionLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DLFileVersion> getCTPersistence() {
+		return dlFileVersionPersistence;
+	}
+
+	@Override
+	public Class<DLFileVersion> getModelClass() {
 		return DLFileVersion.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DLFileVersion>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(dlFileVersionPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -784,6 +718,22 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		DLFileVersionLocalService dlFileVersionLocalService) {
+
+		try {
+			Field field = DLFileVersionLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, dlFileVersionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = DLFileVersionLocalService.class)
 	protected DLFileVersionLocalService dlFileVersionLocalService;
 
@@ -795,31 +745,6 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	)
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@BeanReference(
-		type = com.liferay.document.library.kernel.service.DLFileEntryLocalService.class
-	)
-	protected
-		com.liferay.document.library.kernel.service.DLFileEntryLocalService
-			dlFileEntryLocalService;
-
-	@BeanReference(type = DLFileEntryPersistence.class)
-	protected DLFileEntryPersistence dlFileEntryPersistence;
-
-	@BeanReference(type = DLFileEntryFinder.class)
-	protected DLFileEntryFinder dlFileEntryFinder;
-
-	@BeanReference(
-		type = com.liferay.document.library.kernel.service.DLFolderLocalService.class
-	)
-	protected com.liferay.document.library.kernel.service.DLFolderLocalService
-		dlFolderLocalService;
-
-	@BeanReference(type = DLFolderPersistence.class)
-	protected DLFolderPersistence dlFolderPersistence;
-
-	@BeanReference(type = DLFolderFinder.class)
-	protected DLFolderFinder dlFolderFinder;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

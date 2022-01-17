@@ -12,22 +12,29 @@
  * details.
  */
 
+import {getEditableLinkValue} from '../utils/getEditableLinkValue';
+import isNullOrUndefined from '../utils/isNullOrUndefined';
 import getAlloyEditorProcessor from './getAlloyEditorProcessor';
 import {getLinkableEditableEditorWrapper} from './getLinkableEditableEditorWrapper';
 
 export default getAlloyEditorProcessor(
 	'text',
 	getLinkableEditableEditorWrapper,
-	(element, value, config) => {
+	(element, value, editableConfig, languageId) => {
 		const anchor =
 			element instanceof HTMLAnchorElement
 				? element
 				: element.querySelector('a');
 
+		const link = getEditableLinkValue(editableConfig, languageId);
+
 		if (anchor) {
-			anchor.href = config.href;
-			anchor.innerHTML = value;
-			anchor.target = config.target || '';
+			anchor.href = link.href || '#';
+			anchor.target = link.target;
+
+			if (!isNullOrUndefined(value)) {
+				anchor.innerHTML = value;
+			}
 		}
 	}
 );

@@ -12,7 +12,7 @@
  * details.
  */
 
-import {TOGGLE_PERMISSION} from '../actions/types';
+import {INIT, TOGGLE_PERMISSION} from '../actions/types';
 
 /**
  * @type {import('../../types/ActionKeys').ActionKeysMap}
@@ -20,8 +20,9 @@ import {TOGGLE_PERMISSION} from '../actions/types';
 export const INITIAL_STATE = {
 	EDIT_SEGMENTS_ENTRY: false,
 	LOCKED_SEGMENTS_EXPERIMENT: false,
+	SWITCH_EDIT_MODE: true,
 	UPDATE: true,
-	UPDATE_LAYOUT_CONTENT: true
+	UPDATE_LAYOUT_CONTENT: true,
 };
 
 /**
@@ -40,7 +41,12 @@ export default function permissionsReducer(state = INITIAL_STATE, action) {
 				[action.key]:
 					typeof action.forceNewValue === 'undefined'
 						? !state[action.key]
-						: action.forceNewValue
+						: action.forceNewValue,
+			};
+		case INIT:
+			return {
+				...state,
+				SWITCH_EDIT_MODE: state.UPDATE,
 			};
 
 		default:

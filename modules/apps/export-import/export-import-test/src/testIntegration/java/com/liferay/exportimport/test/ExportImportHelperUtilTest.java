@@ -40,12 +40,12 @@ import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.repository.capabilities.ThumbnailCapability;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.test.constants.TestDataConstants;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
-import com.liferay.portal.kernel.test.util.TestDataConstants;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -357,12 +357,11 @@ public class ExportImportHelperUtilTest {
 			).build();
 
 		Element portletDataElement = null;
-		ManifestSummary manifestSummary = new ManifestSummary();
 
 		Map<String, Boolean> actualPortletControlsMap =
 			ExportImportHelperUtil.getImportPortletControlsMap(
 				companyId, portletId, parameterMap, portletDataElement,
-				manifestSummary);
+				new ManifestSummary());
 
 		_assertPortletControlsMap(
 			actualPortletControlsMap, false, false, false, false, false);
@@ -547,12 +546,11 @@ public class ExportImportHelperUtilTest {
 			).build();
 
 		Element portletDataElement = null;
-		ManifestSummary manifestSummary = new ManifestSummary();
 
 		Map<String, Boolean> actualPortletControlsMap =
 			ExportImportHelperUtil.getImportPortletControlsMap(
 				companyId, portletId, parameterMap, portletDataElement,
-				manifestSummary);
+				new ManifestSummary());
 
 		_assertPortletControlsMap(
 			actualPortletControlsMap, false, false, false, false, false);
@@ -745,14 +743,13 @@ public class ExportImportHelperUtilTest {
 		Layout childLayout = LayoutTestUtil.addLayout(
 			_stagingGroup, layout.getPlid());
 
-		long[] selectedLayoutIds = {
-			layout.getLayoutId(), childLayout.getLayoutId()
-		};
-
 		String selectedLayoutsJSON =
 			ExportImportHelperUtil.getSelectedLayoutsJSON(
 				_stagingGroup.getGroupId(), false,
-				StringUtil.merge(selectedLayoutIds));
+				StringUtil.merge(
+					new long[] {
+						layout.getLayoutId(), childLayout.getLayoutId()
+					}));
 
 		JSONArray selectedLayoutsJSONArray = JSONFactoryUtil.createJSONArray(
 			selectedLayoutsJSON);
@@ -772,12 +769,10 @@ public class ExportImportHelperUtilTest {
 		Layout childLayout = LayoutTestUtil.addLayout(
 			_stagingGroup, layout.getPlid());
 
-		long[] selectedLayoutIds = {childLayout.getLayoutId()};
-
 		String selectedLayoutsJSON =
 			ExportImportHelperUtil.getSelectedLayoutsJSON(
 				_stagingGroup.getGroupId(), false,
-				StringUtil.merge(selectedLayoutIds));
+				StringUtil.merge(new long[] {childLayout.getLayoutId()}));
 
 		JSONArray selectedLayoutsJSONArray = JSONFactoryUtil.createJSONArray(
 			selectedLayoutsJSON);
@@ -817,12 +812,10 @@ public class ExportImportHelperUtilTest {
 		LayoutTestUtil.addLayout(
 			_stagingGroup.getGroupId(), "Child Layout", layout.getPlid());
 
-		long[] selectedLayoutIds = {layout.getLayoutId()};
-
 		String selectedLayoutsJSON =
 			ExportImportHelperUtil.getSelectedLayoutsJSON(
 				_stagingGroup.getGroupId(), false,
-				StringUtil.merge(selectedLayoutIds));
+				StringUtil.merge(new long[] {layout.getLayoutId()}));
 
 		JSONArray selectedLayoutsJSONArray = JSONFactoryUtil.createJSONArray(
 			selectedLayoutsJSON);
@@ -893,30 +886,26 @@ public class ExportImportHelperUtilTest {
 				_stagingGroup.getGroupId(), TestPropsValues.getUserId());
 
 		FileEntry fileEntry = DLAppLocalServiceUtil.addFileEntry(
-			TestPropsValues.getUserId(), _stagingGroup.getGroupId(),
+			null, TestPropsValues.getUserId(), _stagingGroup.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			RandomTestUtil.randomString() + ".txt", ContentTypes.TEXT_PLAIN,
-			TestDataConstants.TEST_BYTE_ARRAY, serviceContext);
+			TestDataConstants.TEST_BYTE_ARRAY, null, null, serviceContext);
 
 		ThumbnailCapability thumbnailCapability =
 			fileEntry.getRepositoryCapability(ThumbnailCapability.class);
 
-		fileEntry = thumbnailCapability.setLargeImageId(
+		return thumbnailCapability.setLargeImageId(
 			fileEntry, fileEntry.getFileEntryId());
-
-		return fileEntry;
 	}
 
 	protected String replaceParameters(String content, FileEntry fileEntry) {
-		content = StringUtil.replace(
+		return StringUtil.replace(
 			content,
 			new String[] {"[$GROUP_ID$]", "[$LIVE_GROUP_ID$]", "[$UUID$]"},
 			new String[] {
 				String.valueOf(fileEntry.getGroupId()),
 				String.valueOf(fileEntry.getGroupId()), fileEntry.getUuid()
 			});
-
-		return content;
 	}
 
 	private void _assertPortletControlsMap(
@@ -954,10 +943,6 @@ public class ExportImportHelperUtilTest {
 	private Group _stagingGroup;
 
 	private class ExportImportTestParameterMapBuilder {
-
-		public ExportImportTestParameterMapBuilder() {
-			_parameterMap = new HashMap<>();
-		}
 
 		public Map<String, String[]> build() {
 			return _parameterMap;
@@ -1023,7 +1008,7 @@ public class ExportImportHelperUtilTest {
 			return this;
 		}
 
-		private final Map<String, String[]> _parameterMap;
+		private final Map<String, String[]> _parameterMap = new HashMap<>();
 
 	}
 

@@ -46,6 +46,8 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
@@ -158,6 +160,14 @@ public class LiferayOAuthDataProvider
 		ServerAuthorizationCodeGrant serverAuthorizationCodeGrant =
 			super.createCodeGrant(authorizationCodeRegistration);
 
+		if (serverAuthorizationCodeGrant.getClientCodeChallengeMethod() ==
+				null) {
+
+			serverAuthorizationCodeGrant.setClientCodeChallengeMethod("S256");
+		}
+
+		serverAuthorizationCodeGrant.setExtraProperties(
+			authorizationCodeRegistration.getExtraProperties());
 		serverAuthorizationCodeGrant.setRequestedScopes(
 			authorizationCodeRegistration.getRequestedScope());
 
@@ -182,6 +192,11 @@ public class LiferayOAuthDataProvider
 			OAuth2ProviderConstants.EXPIRED_TOKEN);
 
 		_oAuth2AuthorizationLocalService.updateOAuth2Authorization(
+			oAuth2Authorization);
+	}
+
+	public void doRevokeAuthorization(OAuth2Authorization oAuth2Authorization) {
+		_oAuth2AuthorizationLocalService.deleteOAuth2Authorization(
 			oAuth2Authorization);
 	}
 
@@ -326,6 +341,28 @@ public class LiferayOAuthDataProvider
 
 		return _serverAuthorizationCodeGrantProvider.
 			getServerAuthorizationCodeGrants(client, subject);
+	}
+
+	public OAuth2Authorization getOAuth2Authorization(
+		Client client, String rememberDeviceContent, long userId) {
+
+		long companyId = MapUtil.getLong(
+			client.getProperties(),
+			OAuth2ProviderRESTEndpointConstants.PROPERTY_KEY_COMPANY_ID);
+
+		try {
+			OAuth2Application oAuth2Application =
+				_oAuth2ApplicationLocalService.getOAuth2Application(
+					companyId, client.getClientId());
+
+			return _oAuth2AuthorizationLocalService.
+				fetchOAuth2AuthorizationByRememberDeviceContent(
+					userId, oAuth2Application.getOAuth2ApplicationId(),
+					rememberDeviceContent);
+		}
+		catch (PortalException portalException) {
+			throw new OAuthServiceException(portalException);
+		}
 	}
 
 	@Override
@@ -584,6 +621,13 @@ public class LiferayOAuthDataProvider
 		throw new UnsupportedOperationException();
 	}
 
+	public void updateRememberDeviceContent(
+		String refreshTokenContent, String rememberDeviceContent) {
+
+		_oAuth2AuthorizationLocalService.updateRememberDeviceContent(
+			refreshTokenContent, rememberDeviceContent);
+	}
+
 	@Activate
 	@SuppressWarnings("unchecked")
 	protected void activate(Map<String, Object> properties) {
@@ -625,7 +669,14 @@ public class LiferayOAuthDataProvider
 		serverAccessToken.setIssuedAt(accessToken.getIssuedAt());
 		serverAccessToken.setIssuer(accessToken.getIssuer());
 		serverAccessToken.setNonce(accessToken.getNonce());
-		serverAccessToken.setParameters(accessToken.getParameters());
+
+		Map<String, String> accessTokenParameters = accessToken.getParameters();
+
+		accessTokenParameters.putAll(
+			accessTokenRegistration.getExtraProperties());
+
+		serverAccessToken.setParameters(accessTokenParameters);
+
 		serverAccessToken.setRefreshToken(accessToken.getRefreshToken());
 		serverAccessToken.setResponseType(accessToken.getResponseType());
 		serverAccessToken.setScopes(
@@ -895,6 +946,14 @@ public class LiferayOAuthDataProvider
 		properties.put(
 			OAuth2ProviderRESTEndpointConstants.PROPERTY_KEY_CLIENT_FEATURES,
 			oAuth2Application.getFeatures());
+		properties.put(
+			OAuth2ProviderRESTEndpointConstants.
+				PROPERTY_KEY_CLIENT_REMEMBER_DEVICE,
+			String.valueOf(oAuth2Application.isRememberDevice()));
+		properties.put(
+			OAuth2ProviderRESTEndpointConstants.
+				PROPERTY_KEY_CLIENT_TRUSTED_APPLICATION,
+			String.valueOf(oAuth2Application.isTrustedApplication()));
 
 		for (String feature : oAuth2Application.getFeaturesList()) {
 			properties.put(
@@ -907,10 +966,10 @@ public class LiferayOAuthDataProvider
 	}
 
 	protected UserSubject populateUserSubject(
-		long companyId, long userId, String username) {
+		long companyId, long userId, String userName) {
 
 		UserSubject userSubject = new UserSubject(
-			username, String.valueOf(userId));
+			userName, String.valueOf(userId));
 
 		Map<String, String> properties = userSubject.getProperties();
 
@@ -936,7 +995,7 @@ public class LiferayOAuthDataProvider
 	protected void saveRefreshToken(RefreshToken refreshToken) {
 		List<String> accessTokens = refreshToken.getAccessTokens();
 
-		if ((accessTokens == null) || accessTokens.isEmpty()) {
+		if (ListUtil.isEmpty(accessTokens)) {
 			throw new OAuthServiceException("Unable to find granted token");
 		}
 
@@ -966,19 +1025,6 @@ public class LiferayOAuthDataProvider
 
 	protected long toCXFTime(Date dateCreated) {
 		return dateCreated.getTime() / 1000;
-	}
-
-	private static void _invokeTransactionally(Runnable runnable)
-		throws Throwable {
-
-		TransactionInvokerUtil.invoke(
-			TransactionConfig.Factory.create(
-				Propagation.REQUIRED, new Class<?>[] {Exception.class}),
-			() -> {
-				runnable.run();
-
-				return null;
-			});
 	}
 
 	private Collection<LiferayOAuth2Scope> _getLiferayOAuth2Scopes(
@@ -1028,6 +1074,17 @@ public class LiferayOAuthDataProvider
 
 		return httpServletRequest.getRemoteAddr() + " - " +
 			httpServletRequest.getRemoteHost();
+	}
+
+	private void _invokeTransactionally(Runnable runnable) throws Throwable {
+		TransactionInvokerUtil.invoke(
+			TransactionConfig.Factory.create(
+				Propagation.REQUIRED, new Class<?>[] {Exception.class}),
+			() -> {
+				runnable.run();
+
+				return null;
+			});
 	}
 
 	private void _transactionalSaveServerAccessToken(
@@ -1115,7 +1172,7 @@ public class LiferayOAuthDataProvider
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayOAuthDataProvider.class);
 
 	@Reference(

@@ -16,12 +16,12 @@ package com.liferay.portal.workflow.task.web.internal.notifications;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.JSONFactoryImpl;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.UserNotificationEvent;
 import com.liferay.portal.kernel.model.UserNotificationEventWrapper;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
@@ -33,14 +33,11 @@ import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.workflow.BaseWorkflowHandler;
 import com.liferay.portal.kernel.workflow.DefaultWorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowHandler;
-import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManagerUtil;
 import com.liferay.portal.util.HtmlImpl;
 import com.liferay.portal.workflow.WorkflowTaskManagerProxyBean;
 import com.liferay.portal.workflow.task.web.internal.permission.WorkflowTaskPermissionChecker;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.RegistryUtil;
 
 import java.io.Serializable;
 
@@ -49,23 +46,33 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.osgi.framework.BundleContext;
+
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Inácio Nery
  */
-public class WorkflowTaskUserNotificationHandlerTest {
+@RunWith(PowerMockRunner.class)
+public class WorkflowTaskUserNotificationHandlerTest extends PowerMockito {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
-
 		_setUpHtmlUtil();
 		_setUpJSONFactoryUtil();
 		_setUpUserNotificationEventLocalService();
 		_setUpWorkflowTaskManagerUtil();
 		_setUpWorkflowTaskPermissionChecker();
+	}
+
+	@Before
+	public void setUp() {
 		_setUpWorkflowHandlerRegistryUtil();
 	}
 
@@ -183,45 +190,7 @@ public class WorkflowTaskUserNotificationHandlerTest {
 					UserNotificationEventLocalService.class));
 	}
 
-	private static void _setUpWorkflowHandlerRegistryUtil() throws Exception {
-		Map<String, WorkflowHandler<?>> workflowHandlerMap =
-			ReflectionTestUtil.getFieldValue(
-				WorkflowHandlerRegistryUtil.class, "_workflowHandlerMap");
-
-		workflowHandlerMap.put(
-			_VALID_ENTRY_CLASS_NAME,
-			new BaseWorkflowHandler<Object>() {
-
-				@Override
-				public String getClassName() {
-					return _VALID_ENTRY_CLASS_NAME;
-				}
-
-				@Override
-				public String getType(Locale locale) {
-					return null;
-				}
-
-				@Override
-				public String getURLEditWorkflowTask(
-					long workflowTaskId, ServiceContext serviceContext) {
-
-					if (_serviceContext == serviceContext) {
-						return _VALID_LINK;
-					}
-
-					return null;
-				}
-
-				@Override
-				public Object updateStatus(int status, Map workflowContext) {
-					return null;
-				}
-
-			});
-	}
-
-	private static void _setUpWorkflowTaskManagerUtil() throws PortalException {
+	private static void _setUpWorkflowTaskManagerUtil() throws Exception {
 		WorkflowTaskManagerUtil workflowTaskManagerUtil =
 			new WorkflowTaskManagerUtil();
 
@@ -266,6 +235,50 @@ public class WorkflowTaskUserNotificationHandlerTest {
 				}
 
 			});
+	}
+
+	private void _setUpWorkflowHandlerRegistryUtil() {
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		bundleContext.registerService(
+			WorkflowHandler.class,
+			new BaseWorkflowHandler<Object>() {
+
+				@Override
+				public String getClassName() {
+					return _VALID_ENTRY_CLASS_NAME;
+				}
+
+				@Override
+				public String getNotificationLink(
+					long workflowTaskId, ServiceContext serviceContext) {
+
+					if (_serviceContext == serviceContext) {
+						return _VALID_LINK;
+					}
+
+					return null;
+				}
+
+				@Override
+				public String getType(Locale locale) {
+					return null;
+				}
+
+				@Override
+				public String getURLEditWorkflowTask(
+					long workflowTaskId, ServiceContext serviceContext) {
+
+					return getNotificationLink(workflowTaskId, serviceContext);
+				}
+
+				@Override
+				public Object updateStatus(int status, Map workflowContext) {
+					return null;
+				}
+
+			},
+			null);
 	}
 
 	private static final Long _INVALID_WORKFLOW_TASK_ID =

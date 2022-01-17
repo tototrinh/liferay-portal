@@ -42,7 +42,7 @@ public class DLValidatorUtil {
 		return _dlValidator.isValidName(name);
 	}
 
-	public static final void validateDirectoryName(String directoryName)
+	public static void validateDirectoryName(String directoryName)
 		throws FolderNameException {
 
 		_dlValidator.validateDirectoryName(directoryName);
@@ -72,10 +72,11 @@ public class DLValidatorUtil {
 		_dlValidator.validateFileSize(fileName, file);
 	}
 
-	public static void validateFileSize(String fileName, InputStream is)
+	public static void validateFileSize(
+			String fileName, InputStream inputStream)
 		throws FileSizeException {
 
-		_dlValidator.validateFileSize(fileName, is);
+		_dlValidator.validateFileSize(fileName, inputStream);
 	}
 
 	public static void validateFileSize(String fileName, long size)

@@ -43,15 +43,17 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 		content = StringUtil.replace(
 			content,
 			new String[] {
-				"@page import", "@tag import", "\"%>", ")%>", "function (",
-				"javascript: ", "){\n", "\n\n\n"
+				"@page import", "@tag import", "\"%>", ")%>", "javascript: ",
+				"){\n", "\n\n\n"
 			},
 			new String[] {
-				"@ page import", "@ tag import", "\" %>", ") %>", "function(",
-				"javascript:", ") {\n", "\n\n"
+				"@ page import", "@ tag import", "\" %>", ") %>", "javascript:",
+				") {\n", "\n\n"
 			});
 
-		return content;
+		Matcher matcher = _closingTagPattern.matcher(content);
+
+		return matcher.replaceAll("$1 $2");
 	}
 
 	@Override
@@ -176,7 +178,7 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 					continue;
 				}
 
-				if (!trimmedLine.equals("%>") && line.contains("%>") &&
+				if (!trimmedLine.startsWith("%>") && line.contains("%>") &&
 					!line.contains("--%>") && !line.contains(" %>")) {
 
 					line = StringUtil.replace(line, "%>", " %>");
@@ -206,7 +208,9 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 					continue;
 				}
 
-				line = formatIncorrectSyntax(line, "\t ", "\t", false);
+				if (!javaSource) {
+					line = formatIncorrectSyntax(line, "\t ", "\t", false);
+				}
 
 				line = _formatWhitespace(line, javaSource);
 
@@ -248,6 +252,8 @@ public class JSPWhitespaceCheck extends WhitespaceCheck {
 		return content;
 	}
 
+	private static final Pattern _closingTagPattern = Pattern.compile(
+		"(<[\\w:]+)(/>)");
 	private static final Pattern _directiveLinePattern = Pattern.compile(
 		"<%@\n?.*%>");
 	private static final Pattern _javaSourceInsideJSPLinePattern =

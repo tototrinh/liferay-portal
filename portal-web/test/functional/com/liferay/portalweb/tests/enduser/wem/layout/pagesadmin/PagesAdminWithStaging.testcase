@@ -1,0 +1,232 @@
+@component-name = "portal-wcm"
+definition {
+
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Site Pages Administration";
+
+	setUp {
+		task ("Set up instance and sign in") {
+			TestCase.setUpPortalInstance();
+
+			User.firstLoginPG();
+		}
+
+		task ("Add a site") {
+			JSONGroup.addGroup(groupName = "Test Site Name");
+		}
+
+		task ("Activate local live staging") {
+			JSONStaging.enableLocalStaging(
+				branchingPrivate = "false",
+				branchingPublic = "false",
+				groupName = "Test Site Name");
+		}
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+
+		else {
+			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
+		}
+	}
+
+	@description = "This is a test for LPS-114527. Can move multiple pages via dragging in Pages admin of Staging site but cannot in Live site."
+	@priority = "3"
+	test CanMoveMultiplePagesInStagingSiteButCannotInLiveSite {
+		task ("Add 2 widget pages and 1 content page in the same level") {
+			for (var n : list "1,2") {
+				JSONLayout.addPublicLayout(
+					groupName = "Test Site Name (Staging)",
+					layoutName = "Test Page Name ${n}",
+					site = "false");
+			}
+
+			JSONLayout.addPublicLayout(
+				groupName = "Test Site Name (Staging)",
+				layoutName = "Test Page Name 3",
+				site = "false",
+				type = "content");
+
+			ContentPagesNavigator.openEditContentPage(
+				pageName = "Test Page Name 3",
+				siteName = "Test Site Name Staging");
+
+			PageEditor.clickPublish();
+		}
+
+		task ("Publish to Live site") {
+			Staging.openStagingAdmin(siteURLKey = "test-site-name-staging");
+
+			Staging.publishCustomPublication();
+		}
+
+		task ("View pages order in Staging site") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+			Page.viewPagesOrder(
+				depth = "2",
+				pageNameList = "Test Page Name 1,Test Page Name 2,Test Page Name 3");
+		}
+
+		task ("Move Test Page Name 2 and 3 to top of Test Page Name 1 in Staging site") {
+			for (var n : list "2,3") {
+				SitePages.checkPage(pageName = "Test Page Name ${n}");
+			}
+
+			SitePages.movePageToPageUp(
+				pageName = "Test Page Name 2",
+				pageNameTo = "Test Page Name 1");
+		}
+
+		task ("View Test Page Name 2 and 3 are moved to top of Test Page Name 1 in Staging site") {
+			Page.viewPagesOrder(
+				depth = "2",
+				pageNameList = "Test Page Name 2,Test Page Name 3,Test Page Name 1");
+		}
+
+		task ("View pages order in Live site") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+
+			Page.viewPagesOrder(
+				depth = "2",
+				pageNameList = "Test Page Name 1,Test Page Name 2,Test Page Name 3");
+		}
+
+		task ("View cannot move Test Page Name 2 and 3 to top of Test Page Name 1 in Live site") {
+			for (var n : list "2,3") {
+				SitePages.checkPage(pageName = "Test Page Name ${n}");
+			}
+
+			SitePages.movePageToPageUp(
+				pageName = "Test Page Name 2",
+				pageNameTo = "Test Page Name 1");
+
+			Alert.viewErrorMessage(errorMessage = "You do not have the required permissions.");
+
+			Alert.closeMessage(messageType = "ERROR");
+
+			Page.viewPagesOrder(
+				depth = "2",
+				pageNameList = "Test Page Name 1,Test Page Name 2,Test Page Name 3");
+		}
+	}
+
+	@description = "This is a test for LPS-110183. Can view information about collection items of collection page when enable Live."
+	@priority = "3"
+	test ViewCollectionItemInformationInStaging {
+		task ("Add a web content") {
+			JSONWebcontent.addWebContent(
+				content = "Web Content Content",
+				groupName = "Test Site Name (Staging)",
+				site = "false",
+				title = "Web Content Title");
+		}
+
+		task ("Add a blogs entry") {
+			HeadlessBlog.addBlogEntry(
+				content = "Blogs Entry Content",
+				groupName = "Test Site Name (Staging)",
+				site = "false",
+				title = "Blogs Entry Title");
+		}
+
+		task ("Add a document") {
+			JSONDocument.addFileWithUploadedFile(
+				dmDocumentTitle = "Document Title",
+				groupName = "Test Site Name-staging",
+				mimeType = "image/jpeg",
+				site = "false",
+				sourceFileName = "Document_1.jpg");
+		}
+
+		task ("Add a dynamic collection with All Types") {
+			JSONAssetlist.addDynamicAssetListEntryWithItemType(
+				groupName = "Test Site Name (Staging)",
+				itemType = "All Types",
+				site = "false",
+				title = "Dynamic Collection");
+		}
+
+		task ("Add a collection page based on dynamic collection") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+			ContentPages.addPublicCollectionPage(
+				collectionName = "Dynamic Collection",
+				pageName = "Dynamic Collection Page Name",
+				tabName = "Collections");
+
+			PageEditor.clickPublish();
+		}
+
+		task ("View header table are shown in collection items via page tree in staging site") {
+			ProductMenu.gotoHomePage();
+
+			PagesFinder.goToPagesFinder();
+
+			PagesFinder.viewPageNameInPagesFinder(pageName = "Dynamic Collection Page Name");
+
+			WaitForLiferayEvent.initializeLiferayEventLog();
+
+			PagesFinder.gotoPageEllipsisItem(
+				item = "View Collection Items",
+				pageName = "Dynamic Collection Page Name");
+
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+			for (var tableHeader : list "Title,Type,Author,Modified Date,Create Date") {
+				AssertElementPresent(
+					key_tableHeader = "${tableHeader}",
+					locator1 = "LexiconTable#TABLE_HEADER");
+			}
+		}
+
+		task ("View assets are shown in collection items via page tree in staging site") {
+			var n = "1";
+
+			for (var title : list "Document Title,Blogs Entry Title,Web Content Title") {
+				Page.viewCollectionItem(
+					itemName = "${title}",
+					key_rowNumber = "${n}");
+
+				var n = ${n} + 1;
+			}
+		}
+
+		task ("View header table are shown in collection items via Pages admin in staging site") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name-staging");
+
+			WaitForLiferayEvent.initializeLiferayEventLog();
+
+			SitePages.gotoPageMenuItem(
+				menuItem = "View Collection Items",
+				pageName = "Dynamic Collection Page Name");
+
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+			for (var tableHeader : list "Title,Type,Author,Modified Date,Create Date") {
+				AssertElementPresent(
+					key_tableHeader = "${tableHeader}",
+					locator1 = "LexiconTable#TABLE_HEADER");
+			}
+		}
+
+		task ("View assets are shown in collection items via Pages admin in staging site") {
+			var n = "1";
+
+			for (var title : list "Document Title,Blogs Entry Title,Web Content Title") {
+				Page.viewCollectionItem(
+					itemName = "${title}",
+					key_rowNumber = "${n}");
+
+				var n = ${n} + 1;
+			}
+		}
+	}
+
+}

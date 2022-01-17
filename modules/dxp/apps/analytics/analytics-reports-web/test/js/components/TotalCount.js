@@ -9,8 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {cleanup, render, wait, within} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {cleanup, fireEvent, render, wait} from '@testing-library/react';
 import React from 'react';
 
 import TotalCount from '../../../src/main/resources/META-INF/resources/js/components/TotalCount';
@@ -24,15 +23,16 @@ describe('TotalCount', () => {
 		const mockDataProvider = jest.fn(() => {
 			return Promise.resolve(9999);
 		});
+
 		const testProps = {
 			dataProvider: mockDataProvider,
 			label: 'Total Views',
 			popoverHeader: 'Total Views',
 			popoverMessage:
-				'This number refers to the total number of views since the content was published.'
+				'This number refers to the total number of views since the content was published.',
 		};
 
-		const {getByText} = render(
+		const {getByRole, getByText} = render(
 			<TotalCount
 				dataProvider={testProps.dataProvider}
 				label={testProps.label}
@@ -41,30 +41,37 @@ describe('TotalCount', () => {
 			/>
 		);
 
-		await wait(() => expect(getByText('9999')));
+		await wait(() => expect(mockDataProvider).toHaveBeenCalled());
+
+		expect(getByText('9,999')).toBeInTheDocument();
 
 		const label = getByText(testProps.label);
 		expect(label).toBeInTheDocument();
 
-		const helpTextIcon = within(label).getByRole('presentation');
+		const helpTextIcon = getByRole('presentation');
 
-		userEvent.click(helpTextIcon);
+		fireEvent.mouseEnter(helpTextIcon);
 
-		getByText(
-			'This number refers to the total number of views since the content was published.'
-		);
+		expect(
+			getByText(
+				'This number refers to the total number of views since the content was published.'
+			)
+		).toBeInTheDocument();
+
+		expect(mockDataProvider).toHaveBeenCalledTimes(1);
 	});
 
 	it('renders a dash instead of total count number when there is an error', async () => {
 		const mockDataProvider = jest.fn(() => {
 			return Promise.reject('-');
 		});
+
 		const testProps = {
 			dataProvider: mockDataProvider,
 			label: 'Total Views',
 			popoverHeader: 'Total Views',
 			popoverMessage:
-				'This number refers to the total number of views since the content was published.'
+				'This number refers to the total number of views since the content was published.',
 		};
 
 		const {getByText} = render(
@@ -76,6 +83,10 @@ describe('TotalCount', () => {
 			/>
 		);
 
-		await wait(() => expect(getByText('-')));
+		await wait(() => expect(mockDataProvider).toHaveBeenCalled());
+
+		expect(getByText('-')).toBeInTheDocument();
+
+		expect(mockDataProvider).toHaveBeenCalledTimes(1);
 	});
 });

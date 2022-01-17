@@ -65,11 +65,9 @@ public class WorkflowedModelPermissionLogic<T extends GroupedModel>
 				return null;
 			}
 
-			if (model.getGroupId() == GroupConstants.DEFAULT_LIVE_GROUP_ID) {
-				return false;
-			}
+			if ((model.getGroupId() == GroupConstants.DEFAULT_LIVE_GROUP_ID) ||
+				!(model instanceof StagedModel)) {
 
-			if (!(model instanceof StagedModel)) {
 				return false;
 			}
 
@@ -92,6 +90,7 @@ public class WorkflowedModelPermissionLogic<T extends GroupedModel>
 					liveStagedModel.getUuid(), stagingGroup.getGroupId());
 
 			if (!actionId.equals(ActionKeys.VIEW) ||
+				(stagingStagedModel == null) ||
 				_modelResourcePermission.contains(
 					permissionChecker, (T)stagingStagedModel,
 					ActionKeys.UPDATE)) {

@@ -104,25 +104,15 @@ public class CustomSQL {
 		int pos = sql.indexOf(_GROUP_BY_CLAUSE);
 
 		if (pos != -1) {
-			return sql.substring(
-				0, pos + 1
-			).concat(
-				criteria
-			).concat(
-				sql.substring(pos + 1)
-			);
+			return StringBundler.concat(
+				sql.substring(0, pos + 1), criteria, sql.substring(pos + 1));
 		}
 
 		pos = sql.indexOf(_ORDER_BY_CLAUSE);
 
 		if (pos != -1) {
-			return sql.substring(
-				0, pos + 1
-			).concat(
-				criteria
-			).concat(
-				sql.substring(pos + 1)
-			);
+			return StringBundler.concat(
+				sql.substring(0, pos + 1), criteria, sql.substring(pos + 1));
 		}
 
 		return sql.concat(criteria);
@@ -166,22 +156,19 @@ public class CustomSQL {
 
 		if (queryDefinition.getOwnerUserId() > 0) {
 			if (queryDefinition.isIncludeOwner()) {
-				StringBundler sb = new StringBundler(7);
-
-				sb.append(StringPool.OPEN_PARENTHESIS);
-				sb.append(tableName);
-				sb.append(_OWNER_USER_ID_CONDITION_DEFAULT);
-				sb.append(" AND ");
-				sb.append(tableName);
-				sb.append(_STATUS_CONDITION_INVERSE);
-				sb.append(StringPool.CLOSE_PARENTHESIS);
-
 				sql = StringUtil.replace(
 					sql,
 					new String[] {
 						_OWNER_USER_ID_KEYWORD, _OWNER_USER_ID_AND_OR_CONNECTOR
 					},
-					new String[] {sb.toString(), " OR "});
+					new String[] {
+						StringBundler.concat(
+							StringPool.OPEN_PARENTHESIS, tableName,
+							_OWNER_USER_ID_CONDITION_DEFAULT, " AND ",
+							tableName, _STATUS_CONDITION_INVERSE,
+							StringPool.CLOSE_PARENTHESIS),
+						" OR "
+					});
 			}
 			else {
 				sql = StringUtil.replace(
@@ -376,12 +363,10 @@ public class CustomSQL {
 	public void reloadCustomSQL() throws SQLException {
 		PortalUtil.initCustomSQL();
 
-		Connection con = DataAccess.getConnection();
-
 		String functionIsNull = PortalUtil.getCustomSQLFunctionIsNull();
 		String functionIsNotNull = PortalUtil.getCustomSQLFunctionIsNotNull();
 
-		try {
+		try (Connection connection = DataAccess.getConnection()) {
 			if (Validator.isNotNull(functionIsNull) &&
 				Validator.isNotNull(functionIsNotNull)) {
 
@@ -396,8 +381,8 @@ public class CustomSQL {
 							functionIsNotNull);
 				}
 			}
-			else if (con != null) {
-				DatabaseMetaData metaData = con.getMetaData();
+			else if (connection != null) {
+				DatabaseMetaData metaData = connection.getMetaData();
 
 				String dbName = GetterUtil.getString(
 					metaData.getDatabaseProductName());
@@ -479,9 +464,6 @@ public class CustomSQL {
 		catch (Exception exception) {
 			_log.error(exception, exception);
 		}
-		finally {
-			DataAccess.cleanUp(con);
-		}
 
 		try {
 			Class<?> clazz = getClass();
@@ -559,9 +541,7 @@ public class CustomSQL {
 				});
 		}
 
-		sql = replaceIsNull(sql);
-
-		return sql;
+		return replaceIsNull(sql);
 	}
 
 	public String replaceGroupBy(String sql, String groupBy) {
@@ -580,34 +560,21 @@ public class CustomSQL {
 				sql = sql.concat(groupBy);
 			}
 			else {
-				sql = sql.substring(
-					0, x + _GROUP_BY_CLAUSE.length()
-				).concat(
-					groupBy
-				).concat(
-					sql.substring(y)
-				);
+				sql = StringBundler.concat(
+					sql.substring(0, x + _GROUP_BY_CLAUSE.length()), groupBy,
+					sql.substring(y));
 			}
 		}
 		else {
 			int y = sql.indexOf(_ORDER_BY_CLAUSE);
 
 			if (y == -1) {
-				sql = sql.concat(
-					_GROUP_BY_CLAUSE
-				).concat(
-					groupBy
-				);
+				sql = StringBundler.concat(sql, _GROUP_BY_CLAUSE, groupBy);
 			}
 			else {
-				StringBundler sb = new StringBundler(4);
-
-				sb.append(sql.substring(0, y));
-				sb.append(_GROUP_BY_CLAUSE);
-				sb.append(groupBy);
-				sb.append(sql.substring(y));
-
-				sql = sb.toString();
+				sql = StringBundler.concat(
+					sql.substring(0, y), _GROUP_BY_CLAUSE, groupBy,
+					sql.substring(y));
 			}
 		}
 
@@ -645,7 +612,7 @@ public class CustomSQL {
 			return StringUtil.removeSubstring(sql, oldSqlSB.toString());
 		}
 
-		StringBundler newSqlSB = new StringBundler(values.length * 4 + 3);
+		StringBundler newSqlSB = new StringBundler((values.length * 4) + 3);
 
 		newSqlSB.append(StringPool.OPEN_PARENTHESIS);
 
@@ -690,7 +657,7 @@ public class CustomSQL {
 			return StringUtil.removeSubstring(sql, oldSqlSB.toString());
 		}
 
-		StringBundler newSqlSB = new StringBundler(values.length * 4 + 3);
+		StringBundler newSqlSB = new StringBundler((values.length * 4) + 3);
 
 		newSqlSB.append(StringPool.OPEN_PARENTHESIS);
 
@@ -734,7 +701,7 @@ public class CustomSQL {
 			oldSqlSB.append(" [$AND_OR_CONNECTOR$]");
 		}
 
-		StringBundler newSqlSB = new StringBundler(values.length * 6 + 2);
+		StringBundler newSqlSB = new StringBundler((values.length * 6) + 2);
 
 		newSqlSB.append(StringPool.OPEN_PARENTHESIS);
 
@@ -760,12 +727,14 @@ public class CustomSQL {
 			sql, oldSqlSB.toString(), newSqlSB.toString());
 	}
 
-	public String replaceOrderBy(String sql, OrderByComparator<?> obc) {
-		if (obc == null) {
+	public String replaceOrderBy(
+		String sql, OrderByComparator<?> orderByComparator) {
+
+		if (orderByComparator == null) {
 			return sql;
 		}
 
-		String orderBy = obc.getOrderBy();
+		String orderBy = orderByComparator.getOrderBy();
 
 		int pos = sql.indexOf(_ORDER_BY_CLAUSE);
 
@@ -775,11 +744,7 @@ public class CustomSQL {
 			sql = sql.concat(orderBy);
 		}
 		else {
-			sql = sql.concat(
-				_ORDER_BY_CLAUSE
-			).concat(
-				orderBy
-			);
+			sql = StringBundler.concat(sql, _ORDER_BY_CLAUSE, orderBy);
 		}
 
 		return sql;
@@ -853,6 +818,10 @@ public class CustomSQL {
 			}
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException, ioException);
+			}
+
 			return sql;
 		}
 
@@ -889,8 +858,10 @@ public class CustomSQL {
 			ClassLoader classLoader, String source, Map<String, String> sqlPool)
 		throws Exception {
 
-		try (InputStream is = classLoader.getResourceAsStream(source)) {
-			if (is == null) {
+		try (InputStream inputStream = classLoader.getResourceAsStream(
+				source)) {
+
+			if (inputStream == null) {
 				return;
 			}
 
@@ -898,7 +869,7 @@ public class CustomSQL {
 				_log.debug("Loading " + source);
 			}
 
-			Document document = UnsecureSAXReaderUtil.read(is);
+			Document document = UnsecureSAXReaderUtil.read(inputStream);
 
 			Element rootElement = document.getRootElement();
 

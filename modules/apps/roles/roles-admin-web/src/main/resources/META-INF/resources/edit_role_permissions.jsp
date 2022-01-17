@@ -32,15 +32,27 @@ Role role = RoleServiceUtil.fetchRole(roleId);
 
 String portletResource = ParamUtil.getString(request, "portletResource");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/edit_role_permissions.jsp");
-portletURL.setParameter(Constants.CMD, Constants.VIEW);
-portletURL.setParameter("tabs1", "define-permissions");
-portletURL.setParameter("tabs2", tabs2);
-portletURL.setParameter("tabs3", tabs3);
-portletURL.setParameter("backURL", backURL);
-portletURL.setParameter("roleId", String.valueOf(role.getRoleId()));
+if (Validator.isNull(redirect)) {
+	redirect = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCPath(
+		"/edit_role_permissions.jsp"
+	).setCMD(
+		Constants.VIEW
+	).setBackURL(
+		backURL
+	).setTabs1(
+		roleDisplayContext.getEditRolePermissionsTabs1()
+	).setTabs2(
+		tabs2
+	).setParameter(
+		"accountRoleGroupScope", roleDisplayContext.isAccountRoleGroupScope()
+	).setParameter(
+		"roleId", role.getRoleId()
+	).setParameter(
+		"tabs3", tabs3
+	).buildString();
+}
 
 request.setAttribute("edit_role_permissions.jsp-role", role);
 
@@ -57,17 +69,28 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 <liferay-ui:success key="permissionDeleted" message="the-permission-was-deleted" />
 <liferay-ui:success key="permissionsUpdated" message="the-role-permissions-were-updated" />
 
-<liferay-util:include page="/edit_role_tabs.jsp" servletContext="<%= application %>" />
+<c:if test="<%= GetterUtil.getBoolean(request.getAttribute(RolesAdminWebKeys.SHOW_NAV_TABS), true) %>">
+	<liferay-util:include page="/edit_role_tabs.jsp" servletContext="<%= application %>" />
+</c:if>
 
-<aui:container cssClass="container-fluid container-fluid-max-xl container-form-lg" id="permissionContainer">
-	<aui:row>
+<clay:container-fluid
+	cssClass="container-form-lg"
+	id='<%= liferayPortletResponse.getNamespace() + "permissionContainer" %>'
+>
+	<clay:row>
 		<c:if test="<%= !portletName.equals(PortletKeys.SERVER_ADMIN) %>">
-			<aui:col width="<%= 25 %>">
+			<clay:col
+				md="3"
+			>
 				<%@ include file="/edit_role_permissions_navigation.jspf" %>
-			</aui:col>
+			</clay:col>
 		</c:if>
 
-		<aui:col cssClass="lfr-permission-content-container" id="permissionContentContainer" width="<%= portletName.equals(PortletKeys.SERVER_ADMIN) ? 100 : 75 %>">
+		<clay:col
+			cssClass="lfr-permission-content-container"
+			id='<%= liferayPortletResponse.getNamespace() + "permissionContentContainer" %>'
+			md="<%= portletName.equals(PortletKeys.SERVER_ADMIN) ? String.valueOf(12) : String.valueOf(9) %>"
+		>
 			<c:choose>
 				<c:when test="<%= cmd.equals(Constants.VIEW) %>">
 					<liferay-util:include page="/edit_role_permissions_summary.jsp" servletContext="<%= application %>" />
@@ -82,9 +105,9 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 					<liferay-util:include page="/edit_role_permissions_form.jsp" servletContext="<%= application %>" />
 				</c:otherwise>
 			</c:choose>
-		</aui:col>
-	</aui:row>
-</aui:container>
+		</clay:col>
+	</clay:row>
+</clay:container-fluid>
 
 <aui:script>
 	function <portlet:namespace />selectOrganization(
@@ -98,7 +121,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 	}
 </aui:script>
 
-<aui:script use="aui-loading-mask-deprecated,aui-parse-content,aui-toggler,autocomplete-base,autocomplete-filters,liferay-notification">
+<aui:script use="aui-loading-mask-deprecated,aui-parse-content,aui-toggler,autocomplete-base,autocomplete-filters">
 	var AParseContent = A.Plugin.ParseContent;
 
 	var permissionNavigationDataContainer = A.one(
@@ -118,29 +141,29 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 			NAME: 'searchpermissioNnavigation',
 
 			prototype: {
-				initializer: function() {
+				initializer: function () {
 					var instance = this;
 
 					instance._bindUIACBase();
 					instance._syncUIACBase();
-				}
-			}
+				},
+			},
 		});
 
-		var getItems = function() {
+		var getItems = function () {
 			var results = [];
 
-			permissionNavigationItems.each(function(item, index, collection) {
+			permissionNavigationItems.each((item, index, collection) => {
 				results.push({
 					data: item.text().trim(),
-					node: item
+					node: item,
 				});
 			});
 
 			return results;
 		};
 
-		var getNoResultsNode = function() {
+		var getNoResultsNode = function () {
 			if (!noResultsNode) {
 				noResultsNode = A.Node.create(
 					'<div class="alert"><liferay-ui:message key="there-are-no-results" /></div>'
@@ -166,10 +189,10 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 			nodes: '.permission-navigation-item-container',
 			resultFilters: 'subWordMatch',
 			resultTextLocator: 'data',
-			source: getItems()
+			source: getItems(),
 		});
 
-		permissionNavigationSearch.on('query', function(event) {
+		permissionNavigationSearch.on('query', (event) => {
 			if (event.query) {
 				togglerDelegate.expandAll();
 			}
@@ -178,22 +201,18 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 			}
 		});
 
-		permissionNavigationSearch.on('results', function(event) {
-			permissionNavigationItems.each(function(item, index, collection) {
+		permissionNavigationSearch.on('results', (event) => {
+			permissionNavigationItems.each((item, index, collection) => {
 				item.addClass('hide');
 			});
 
-			event.results.forEach(function(item, index) {
+			event.results.forEach((item, index) => {
 				item.raw.node.removeClass('hide');
 			});
 
 			var foundVisibleSection;
 
-			permissionNavigationSectionsNode.each(function(
-				item,
-				index,
-				collection
-			) {
+			permissionNavigationSectionsNode.each((item, index, collection) => {
 				var action = 'addClass';
 
 				var visibleItem = item.one(
@@ -233,7 +252,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 
 		permissionContainerNode.delegate(
 			'click',
-			function(event) {
+			(event) => {
 				event.preventDefault();
 
 				var href = event.currentTarget.attr('data-resource-href');
@@ -247,7 +266,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 				permissionContentContainerNode.unplug(AParseContent);
 
 				Liferay.Util.fetch(href)
-					.then(function(response) {
+					.then((response) => {
 						if (response.status === 401) {
 							window.location.reload();
 						}
@@ -260,7 +279,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 							);
 						}
 					})
-					.then(function(response) {
+					.then((response) => {
 						permissionContentContainerNode.loadingmask.hide();
 
 						permissionContentContainerNode.unplug(A.LoadingMask);
@@ -281,22 +300,14 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 
 						event.currentTarget.addClass('active');
 					})
-					.catch(function(error) {
+					.catch((error) => {
 						permissionContentContainerNode.loadingmask.hide();
 
 						permissionContentContainerNode.unplug(A.LoadingMask);
 
-						new Liferay.Notification({
-							closeable: true,
-							delay: {
-								hide: 0,
-								show: 0
-							},
-							duration: 500,
+						Liferay.Util.openToast({
 							message: error.message,
-							render: true,
-							title: '<liferay-ui:message key="warning" />',
-							type: 'warning'
+							type: 'warning',
 						});
 					});
 			},
@@ -311,7 +322,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 
 		permissionContainerNode.delegate(
 			'change',
-			function(event) {
+			(event) => {
 				var unselectedTargetsNode = permissionContainerNode.one(
 					'#<portlet:namespace />unselectedTargets'
 				);
@@ -320,7 +331,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 
 				var form = A.one(document.<portlet:namespace />fm);
 
-				form.all('input[type=checkbox]').each(function(item, index) {
+				form.all('input[type=checkbox]').each((item, index) => {
 					var checkbox = A.one(item);
 
 					var value = checkbox.val();
@@ -345,11 +356,11 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 		);
 	}
 
-	A.on('domready', function(event) {
+	A.on('domready', (event) => {
 		togglerDelegate = new A.TogglerDelegate({
 			container: <portlet:namespace />permissionNavigationDataContainer,
 			content: '.permission-navigation-item-content',
-			header: '.permission-navigation-item-header'
+			header: '.permission-navigation-item-header',
 		});
 
 		createLiveSearch();
@@ -364,7 +375,7 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 
 		Liferay.Util.postForm(form, {
 			data: {
-				redirect: '<%= HtmlUtil.escapeJS(portletURL.toString()) %>',
+				redirect: '<%= HtmlUtil.escapeJS(redirect) %>',
 				selectedTargets: Liferay.Util.listCheckedExcept(
 					form,
 					'<portlet:namespace />allRowIds'
@@ -372,8 +383,8 @@ if (!portletName.equals(PortletKeys.SERVER_ADMIN)) {
 				unselectedTargets: Liferay.Util.listUncheckedExcept(
 					form,
 					'<portlet:namespace />allRowIds'
-				)
-			}
+				),
+			},
 		});
 	}
 </aui:script>

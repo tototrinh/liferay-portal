@@ -14,14 +14,14 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 
-import com.liferay.info.display.contributor.InfoDisplayContributor;
-import com.liferay.info.display.contributor.InfoDisplayContributorTracker;
-import com.liferay.info.display.contributor.InfoDisplayField;
+import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
+import com.liferay.layout.content.page.editor.web.internal.util.MappingContentUtil;
 import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
@@ -29,8 +29,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
-
-import java.util.Set;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
@@ -40,12 +38,13 @@ import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Jürgen Kappler
+ * @author Jorge Ferrer
  */
 @Component(
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/get_mapping_fields"
+		"mvc.command.name=/layout_content_page_editor/get_mapping_fields"
 	},
 	service = MVCResourceCommand.class
 )
@@ -56,48 +55,41 @@ public class GetMappingFieldsMVCResourceCommand extends BaseMVCResourceCommand {
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
-		long classNameId = ParamUtil.getLong(resourceRequest, "classNameId");
-
-		InfoDisplayContributor infoDisplayContributor =
-			_infoDisplayContributorTracker.getInfoDisplayContributor(
-				_portal.getClassName(classNameId));
-
-		if (infoDisplayContributor == null) {
-			JSONPortletResponseUtil.writeJSON(
-				resourceRequest, resourceResponse,
-				JSONFactoryUtil.createJSONArray());
-
-			return;
-		}
-
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
-
-		long classTypeId = ParamUtil.getLong(resourceRequest, "classTypeId");
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		Set<InfoDisplayField> infoDisplayFields =
-			infoDisplayContributor.getInfoDisplayFields(
-				classTypeId, themeDisplay.getLocale());
+		String classTypeId = ParamUtil.getString(
+			resourceRequest, "classTypeId");
+		long classNameId = ParamUtil.getLong(resourceRequest, "classNameId");
 
-		for (InfoDisplayField infoDisplayField : infoDisplayFields) {
-			JSONObject jsonObject = JSONUtil.put(
-				"key", infoDisplayField.getKey()
-			).put(
-				"label", infoDisplayField.getLabel()
-			).put(
-				"type", infoDisplayField.getType()
-			);
+		try {
+			JSONArray mappingFieldsJSONArray =
+				MappingContentUtil.getMappingFieldsJSONArray(
+					classTypeId, themeDisplay.getScopeGroupId(),
+					_infoItemServiceTracker, _portal.getClassName(classNameId),
+					themeDisplay.getLocale());
 
-			jsonArray.put(jsonObject);
+			JSONPortletResponseUtil.writeJSON(
+				resourceRequest, resourceResponse, mappingFieldsJSONArray);
 		}
+		catch (Exception exception) {
+			_log.error("Unable to get mapping fields", exception);
 
-		JSONPortletResponseUtil.writeJSON(
-			resourceRequest, resourceResponse, jsonArray);
+			JSONPortletResponseUtil.writeJSON(
+				resourceRequest, resourceResponse,
+				JSONUtil.put(
+					"error",
+					LanguageUtil.get(
+						themeDisplay.getRequest(),
+						"an-unexpected-error-occurred")));
+		}
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		GetMappingFieldsMVCResourceCommand.class);
+
 	@Reference
-	private InfoDisplayContributorTracker _infoDisplayContributorTracker;
+	private InfoItemServiceTracker _infoItemServiceTracker;
 
 	@Reference
 	private Portal _portal;

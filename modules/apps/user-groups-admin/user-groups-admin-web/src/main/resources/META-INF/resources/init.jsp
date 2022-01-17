@@ -29,6 +29,7 @@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 
 <%@ page import="com.liferay.admin.kernel.util.PortalMyAccountApplicationType" %><%@
 page import="com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.dao.search.SearchContainer" %><%@
 page import="com.liferay.portal.kernel.exception.DuplicateUserGroupException" %><%@
@@ -62,6 +63,7 @@ page import="com.liferay.portal.kernel.service.UserLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.permission.GroupPermissionUtil" %><%@
 page import="com.liferay.portal.kernel.service.permission.PortalPermissionUtil" %><%@
 page import="com.liferay.portal.kernel.service.permission.UserGroupPermissionUtil" %><%@
+page import="com.liferay.portal.kernel.util.HashMapBuilder" %><%@
 page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
 page import="com.liferay.portal.kernel.util.ParamUtil" %><%@
 page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
@@ -77,10 +79,8 @@ page import="com.liferay.user.groups.admin.web.internal.display.context.ViewUser
 page import="com.liferay.users.admin.constants.UsersAdminPortletKeys" %>
 
 <%@ page import="java.util.ArrayList" %><%@
-page import="java.util.HashMap" %><%@
 page import="java.util.LinkedHashMap" %><%@
-page import="java.util.List" %><%@
-page import="java.util.Map" %>
+page import="java.util.List" %>
 
 <%@ page import="javax.portlet.PortletURL" %><%@
 page import="javax.portlet.WindowState" %>

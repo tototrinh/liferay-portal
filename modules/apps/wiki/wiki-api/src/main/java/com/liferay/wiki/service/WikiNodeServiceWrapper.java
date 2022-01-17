@@ -30,6 +30,11 @@ public class WikiNodeServiceWrapper
 		_wikiNodeService = wikiNodeService;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addNode(String, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public com.liferay.wiki.model.WikiNode addNode(
 			String name, String description,
@@ -37,6 +42,16 @@ public class WikiNodeServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _wikiNodeService.addNode(name, description, serviceContext);
+	}
+
+	@Override
+	public com.liferay.wiki.model.WikiNode addNode(
+			String externalReferenceCode, String name, String description,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _wikiNodeService.addNode(
+			externalReferenceCode, name, description, serviceContext);
 	}
 
 	@Override
@@ -94,9 +109,10 @@ public class WikiNodeServiceWrapper
 	public java.util.List<com.liferay.wiki.model.WikiNode> getNodes(
 		long groupId, int status, int start, int end,
 		com.liferay.portal.kernel.util.OrderByComparator
-			<com.liferay.wiki.model.WikiNode> obc) {
+			<com.liferay.wiki.model.WikiNode> orderByComparator) {
 
-		return _wikiNodeService.getNodes(groupId, status, start, end, obc);
+		return _wikiNodeService.getNodes(
+			groupId, status, start, end, orderByComparator);
 	}
 
 	@Override

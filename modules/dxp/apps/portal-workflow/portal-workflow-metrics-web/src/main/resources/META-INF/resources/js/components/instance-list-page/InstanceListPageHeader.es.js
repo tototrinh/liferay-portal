@@ -9,65 +9,99 @@
  * distribution rights of the Software.
  */
 
+import ClayLayout from '@clayui/layout';
 import ClayManagementToolbar from '@clayui/management-toolbar';
-import {usePrevious} from 'frontend-js-react-web';
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import React, {useCallback, useContext, useEffect, useMemo} from 'react';
 
 import filterConstants from '../../shared/components/filter/util/filterConstants.es';
+import MetricsCalculatedInfo from '../../shared/components/last-updated-info/MetricsCalculatedInfo.es';
+import PromisesResolver from '../../shared/components/promises-resolver/PromisesResolver.es';
 import QuickActionKebab from '../../shared/components/quick-action-kebab/QuickActionKebab.es';
 import ResultsBar from '../../shared/components/results-bar/ResultsBar.es';
 import ToolbarWithSelection from '../../shared/components/toolbar-with-selection/ToolbarWithSelection.es';
+import {useDateModified} from '../../shared/hooks/useDateModified.es';
+import {capitalize} from '../../shared/util/util.es';
+import {AppContext} from '../AppContext.es';
 import AssigneeFilter from '../filter/AssigneeFilter.es';
 import ProcessStatusFilter, {
-	processStatusConstants
+	processStatusConstants,
 } from '../filter/ProcessStatusFilter.es';
 import ProcessStepFilter from '../filter/ProcessStepFilter.es';
 import SLAStatusFilter from '../filter/SLAStatusFilter.es';
 import TimeRangeFilter from '../filter/TimeRangeFilter.es';
-import {ModalContext} from './modal/ModalContext.es';
-import {InstanceListContext} from './store/InstanceListPageStore.es';
+import {InstanceListContext} from './InstanceListPageProvider.es';
+import {ModalContext} from './modal/ModalProvider.es';
 
-const Header = ({
+export default function Header({
 	filterKeys,
 	items = [],
+	processId,
 	routeParams,
 	selectedFilters,
-	totalCount
-}) => {
+	totalCount,
+}) {
+	const {dateModified, fetchData} = useDateModified({
+		processId,
+	});
+
+	const {userId} = useContext(AppContext);
 	const {
 		selectAll,
 		selectedItems,
 		setSelectAll,
-		setSelectedItems
+		setSelectedItems,
 	} = useContext(InstanceListContext);
+	const {openModal} = useContext(ModalContext);
 	const previousCount = usePrevious(totalCount);
-	const {bulkModal, setBulkModal, setSingleModal} = useContext(ModalContext);
+
+	const previousFetchData = usePrevious(fetchData);
+
+	const promises = useMemo(() => {
+		if (previousFetchData !== fetchData && items?.length) {
+			return [fetchData()];
+		}
+
+		return [];
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [items?.length, routeParams]);
+
+	const handleClick = useCallback(
+		(bulkModal, singleModal) => {
+			const bulkOperation =
+				selectedItems.length > 1 ||
+				selectedItems[0].taskNames.length > 1;
+
+			openModal(bulkOperation ? bulkModal : singleModal);
+		},
+		[openModal, selectedItems]
+	);
+
+	const compareId = (itemId) => ({id}) => id === itemId;
 
 	const kebabItems = [
 		{
+			icon: 'arrow-start',
+			label: capitalize(Liferay.Language.get('transition')),
+			onClick: () => {
+				openModal('bulkTransition');
+			},
+		},
+		{
+			icon: 'date',
+			label: Liferay.Language.get('update-tasks-due-dates'),
+			onClick: () => handleClick('bulkUpdateDueDate', 'updateDueDate'),
+		},
+		{
 			icon: 'change',
 			label: Liferay.Language.get('reassign-task'),
-			onClick: () => {
-				if (
-					selectedItems.length > 1 ||
-					selectedItems[0].taskNames.length > 1
-				) {
-					setBulkModal({...bulkModal, visible: true});
-				}
-				else {
-					setSingleModal({
-						selectedItem: selectedItems[0],
-						visible: true
-					});
-				}
-			}
-		}
+			onClick: () => handleClick('bulkReassign', 'singleReassign'),
+		},
 	];
 
-	const selectedOnPage = useMemo(
-		() =>
-			selectedItems.filter(item => items.find(({id}) => id === item.id)),
-		[items, selectedItems]
+	const selectedOnPage = selectedItems.filter(({id}) =>
+		items.find(compareId(id))
 	);
 
 	const allPageSelected =
@@ -76,20 +110,22 @@ const Header = ({
 	const checkbox = {
 		checked: allPageSelected || selectAll,
 		indeterminate:
-			selectedOnPage.length > 0 && !allPageSelected && !selectAll
+			selectedOnPage.length > 0 && !allPageSelected && !selectAll,
 	};
 
-	const remainingItems = useMemo(() => {
-		return items.filter(
-			item =>
-				!selectedItems.find(({id}) => item.id === id) &&
-				item.status !== processStatusConstants.completed
+	const isRemainingItem = (clear) => ({assignees = [], id, status}) => {
+		const assignedToUser = !!assignees.find(
+			({id}) => id === Number(userId)
 		);
-	}, [items, selectedItems]);
+		const completed = status === processStatusConstants.completed;
+		const selected = clear && selectedItems.find(compareId(id));
+		const {reviewer} = assignees.find(({id}) => id === -1) || {};
 
-	const toolbarActive = useMemo(() => selectedItems.length > 0, [
-		selectedItems
-	]);
+		return (reviewer || assignedToUser) && !completed && !selected;
+	};
+
+	const remainingItems = items.filter(isRemainingItem(true));
+	const toolbarActive = selectedItems.length > 0;
 
 	useEffect(() => {
 		if (
@@ -97,17 +133,19 @@ const Header = ({
 			remainingItems.length > 0 &&
 			previousCount === totalCount
 		) {
-			setSelectedItems(
-				items.filter(
-					item => item.status !== processStatusConstants.completed
-				)
-			);
+			setSelectedItems([
+				...selectedItems,
+				...items.filter(isRemainingItem()),
+			]);
+			setSelectAll(items.length === remainingItems.length);
 		}
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [items]);
 
 	useEffect(() => {
 		setSelectAll(totalCount > 0 && totalCount === selectedItems.length);
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [totalCount]);
 
@@ -117,46 +155,33 @@ const Header = ({
 	};
 
 	const handleCheck = useCallback(
-		checked => () => {
+		(checked) => () => {
 			const updatedItems = checked
 				? [...selectedItems, ...remainingItems]
-				: selectedItems.filter(
-						item => !items.find(({id}) => item.id === id)
-				  );
+				: selectedItems.filter(({id}) => !items.find(compareId(id)));
 
 			setSelectAll(totalCount > 0 && totalCount === updatedItems.length);
 			setSelectedItems(updatedItems);
 		},
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[items, remainingItems, selectedItems]
 	);
 
-	const statusesFilterItem = useMemo(
-		() => selectedFilters.find(filter => filter.key === 'statuses'),
-		[selectedFilters]
-	);
-	const {name} = statusesFilterItem ? statusesFilterItem.items[0] : {};
-	const completedStatusSelected = useMemo(
-		() =>
-			selectedFilters.length > 0 && statusesFilterItem
-				? name === processStatusConstants.completed
-				: false,
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[name]
+	const selectedFilter = selectedFilters.find(
+		({key}) => key === filterConstants.processStatus.key
 	);
 
-	const selectedFilterItems = useMemo(
-		() =>
-			selectedFilters.filter(
-				filter =>
-					completedStatusSelected ||
-					filter.key !== filterConstants.timeRange.key
-			),
-		[completedStatusSelected, selectedFilters]
+	const completedSelected = selectedFilter?.items.some(
+		({key}) => key === processStatusConstants.completed
+	);
+
+	const selectedFilterItems = selectedFilters.filter(
+		({key}) => completedSelected || key !== filterConstants.timeRange.key
 	);
 
 	return (
-		<>
+		<PromisesResolver promises={promises}>
 			<ToolbarWithSelection
 				{...checkbox}
 				active={toolbarActive}
@@ -174,12 +199,9 @@ const Header = ({
 			>
 				{toolbarActive ? (
 					<ClayManagementToolbar.Item className="navbar-nav-last">
-						<div
-							className="autofit-col"
-							data-testid="headerQuickAction"
-						>
+						<ClayLayout.ContentCol>
 							<QuickActionKebab items={kebabItems} />
-						</div>
+						</ClayLayout.ContentCol>
 					</ClayManagementToolbar.Item>
 				) : (
 					<>
@@ -189,17 +211,20 @@ const Header = ({
 							</strong>
 						</ClayManagementToolbar.Item>
 
-						<SLAStatusFilter />
+						<SLAStatusFilter
+							options={{
+								withSelectionTitle: false,
+							}}
+						/>
 
 						<ProcessStatusFilter />
 
-						{completedStatusSelected && (
-							<TimeRangeFilter
-								options={{
-									withSelectionTitle: false
-								}}
-							/>
-						)}
+						<TimeRangeFilter
+							options={{
+								show: completedSelected,
+								withSelectionTitle: false,
+							}}
+						/>
 
 						<ProcessStepFilter processId={routeParams.processId} />
 
@@ -227,8 +252,8 @@ const Header = ({
 					/>
 				</ResultsBar>
 			)}
-		</>
-	);
-};
 
-export {Header};
+			<MetricsCalculatedInfo dateModified={dateModified} />
+		</PromisesResolver>
+	);
+}

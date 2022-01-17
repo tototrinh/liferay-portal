@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -45,10 +48,21 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("WorkflowInstance")
+@GraphQLName(
+	description = "Represents an instance to be executed in a workflow.",
+	value = "WorkflowInstance"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "WorkflowInstance")
-public class WorkflowInstance {
+public class WorkflowInstance implements Serializable {
+
+	public static WorkflowInstance toDTO(String json) {
+		return ObjectMapperUtil.readValue(WorkflowInstance.class, json);
+	}
+
+	public static WorkflowInstance unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(WorkflowInstance.class, json);
+	}
 
 	@Schema(
 		description = "A flag that indicates whether the instance is complete."
@@ -81,6 +95,34 @@ public class WorkflowInstance {
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean completed;
+
+	@Schema(description = "The instance's current node names.")
+	public String[] getCurrentNodeNames() {
+		return currentNodeNames;
+	}
+
+	public void setCurrentNodeNames(String[] currentNodeNames) {
+		this.currentNodeNames = currentNodeNames;
+	}
+
+	@JsonIgnore
+	public void setCurrentNodeNames(
+		UnsafeSupplier<String[], Exception> currentNodeNamesUnsafeSupplier) {
+
+		try {
+			currentNodeNames = currentNodeNamesUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The instance's current node names.")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected String[] currentNodeNames;
 
 	@Schema(description = "The instance's completion date.")
 	public Date getDateCompletion() {
@@ -299,6 +341,30 @@ public class WorkflowInstance {
 			sb.append(completed);
 		}
 
+		if (currentNodeNames != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"currentNodeNames\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < currentNodeNames.length; i++) {
+				sb.append("\"");
+
+				sb.append(_escape(currentNodeNames[i]));
+
+				sb.append("\"");
+
+				if ((i + 1) < currentNodeNames.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (dateCompletion != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -381,6 +447,7 @@ public class WorkflowInstance {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.admin.workflow.dto.v1_0.WorkflowInstance",
 		name = "x-class-name"
 	)
@@ -390,6 +457,16 @@ public class WorkflowInstance {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -406,13 +483,46 @@ public class WorkflowInstance {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

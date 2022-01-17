@@ -123,6 +123,20 @@ public class WikiNodeSerDes {
 			sb.append("\"");
 		}
 
+		if (wikiNode.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(wikiNode.getExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
 		if (wikiNode.getId() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -226,19 +240,38 @@ public class WikiNodeSerDes {
 			map.put("creator", String.valueOf(wikiNode.getCreator()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(wikiNode.getDateCreated()));
+		if (wikiNode.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(wikiNode.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(wikiNode.getDateModified()));
+		if (wikiNode.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(wikiNode.getDateModified()));
+		}
 
 		if (wikiNode.getDescription() == null) {
 			map.put("description", null);
 		}
 		else {
 			map.put("description", String.valueOf(wikiNode.getDescription()));
+		}
+
+		if (wikiNode.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(wikiNode.getExternalReferenceCode()));
 		}
 
 		if (wikiNode.getId() == null) {
@@ -335,6 +368,14 @@ public class WikiNodeSerDes {
 					wikiNode.setDescription((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					wikiNode.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "id")) {
 				if (jsonParserFieldValue != null) {
 					wikiNode.setId(Long.valueOf((String)jsonParserFieldValue));
@@ -369,10 +410,6 @@ public class WikiNodeSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -401,7 +438,7 @@ public class WikiNodeSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -427,14 +464,17 @@ public class WikiNodeSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

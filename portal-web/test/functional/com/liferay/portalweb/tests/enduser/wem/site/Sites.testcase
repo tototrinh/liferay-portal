@@ -27,10 +27,7 @@ definition {
 	test ActivateSite {
 		property test.name.skip.portal.instance = "Sites#ActivateSite";
 
-		ProductMenu.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "System Settings");
+		SystemSettings.openSystemSettingsAdmin();
 
 		SystemSettings.gotoConfiguration(
 			configurationCategory = "Infrastructure",
@@ -51,13 +48,11 @@ definition {
 
 		Site.inactivateCP(siteName = "Site Name");
 
-		Navigator.openSiteURL(siteName = "Site Name");
+		var baseURL = PropsUtil.get("portal.url");
+
+		Navigator.openSpecificURL(url = "${baseURL}/web/site-name");
 
 		Page.viewInactiveRequestMessage(resource = "site");
-
-		User.firstLoginPG(
-			password = "test",
-			userEmailAddress = "test@liferay.com");
 
 		Site.openSitesAdmin();
 
@@ -72,11 +67,11 @@ definition {
 	test AddChildChildSite {
 		JSONGroup.addGroup(groupName = "Site Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child SiteName",
 			parentGroupName = "Site Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			grandParentGroupName = "Site Name",
 			groupName = "Child Child SiteName",
 			parentGroupName = "Child SiteName");
@@ -163,7 +158,7 @@ definition {
 
 		Site.editFriendlyURLCP(siteFriendlyURLEdit = "");
 
-		var siteID = JSONGroupAPI._getGroupIdByName(groupName = "Site Name");
+		var siteID = JSONGroupAPI._getGroupIdByName(groupName = "Site Name", site = "true");
 
 		AssertTextEquals(
 			locator1 = "TextInput#FRIENDLY_URL_SITE_SETTINGS",
@@ -188,6 +183,8 @@ definition {
 
 	@priority = "5"
 	test EditSite {
+		property portal.acceptance = "true";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
 		Site.openSiteSettingsAdmin(siteURLKey = "site-name");
@@ -238,7 +235,9 @@ definition {
 
 	@priority = "3"
 	test EditSiteFriendlyURLInvalid {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "Sites#EditSiteFriendlyURLInvalid";
+
 		var portalURL = PropsUtil.get("portal.url");
 
 		JSONGroup.addGroup(groupName = "Site Name");
@@ -267,6 +266,8 @@ definition {
 
 	@priority = "5"
 	test SearchSite {
+		property portal.acceptance = "true";
+
 		JSONGroup.addGroup(groupName = "Site Name");
 
 		Site.openSitesAdmin();
@@ -314,19 +315,9 @@ definition {
 	test ViewDefaultGlobalScopeLandingPage {
 		property testray.component.names = "Site Administration";
 
-		ProductMenu.gotoPortlet(
-			category = "Sites",
-			panel = "Control Panel",
-			portlet = "Sites");
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "global");
 
-		Site.addBlankCP(siteName = "Site Name");
-
-		ProductMenu.gotoSite(site = "Global");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			panel = "Site Administration",
-			portlet = "Web Content");
+		ProductMenuHelper.openProductMenu();
 
 		Site.viewGlobalLandingDefault(
 			portletName = "Web Content",
@@ -343,7 +334,7 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Site Page");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child SiteName",
 			parentGroupName = "Site Name");
 
@@ -352,7 +343,7 @@ definition {
 			layoutName = "Site Page",
 			parentGroupName = "Site Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			grandParentGroupName = "Site Name",
 			groupName = "Child ChildSiteName",
 			parentGroupName = "Child SiteName");
@@ -373,11 +364,15 @@ definition {
 			childSiteName = "Child ChildSiteName",
 			siteName = "Child SiteName");
 
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Child SiteName",
+			layoutName = "Site Page",
+			parentGroupName = "Site Name",
+			widgetName = "Sites Directory");
+
 		Navigator.gotoSitePage(
 			pageName = "Site Page",
 			siteName = "Child SiteName");
-
-		Portlet.addPG(portletName = "Sites Directory");
 
 		SitesDirectory.configureSetupPG(directorySites = "Parent Level");
 
@@ -398,7 +393,7 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Site Page");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child Site1Name",
 			parentGroupName = "Site Name");
 
@@ -407,7 +402,7 @@ definition {
 			layoutName = "Site Page",
 			parentGroupName = "Site Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			grandParentGroupName = "Site Name",
 			groupName = "Child ChildSite1Name",
 			parentGroupName = "Child Site1Name");
@@ -418,7 +413,7 @@ definition {
 			layoutName = "Site Page",
 			parentGroupName = "Child Site1Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			grandParentGroupName = "Site Name",
 			groupName = "Child ChildSite2Name",
 			parentGroupName = "Child Site1Name");
@@ -429,7 +424,7 @@ definition {
 			layoutName = "Site Page",
 			parentGroupName = "Child Site1Name");
 
-		JSONGroup.addChildSite(
+		JSONGroup.addChildGroup(
 			groupName = "Child Site2Name",
 			parentGroupName = "Site Name");
 
@@ -437,12 +432,16 @@ definition {
 			groupName = "Child Site2Name",
 			layoutName = "Site Page",
 			parentGroupName = "Site Name");
+
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Child Site1Name",
+			layoutName = "Site Page",
+			parentGroupName = "Site Name",
+			widgetName = "Sites Directory");
 
 		Navigator.gotoSitePage(
 			pageName = "Site Page",
 			siteName = "Child Site1Name");
-
-		Portlet.addPG(portletName = "Sites Directory");
 
 		SitesDirectory.configureSetupPG(directorySites = "Top Level");
 
@@ -480,11 +479,16 @@ definition {
 
 		SitesDirectory.viewDescriptivePG(siteName = "Child ChildSite2Name");
 
+		JSONLayout.addWidgetToPublicLayout(
+			grandParentGroupName = "Site Name",
+			groupName = "Child ChildSite1Name",
+			layoutName = "Site Page",
+			parentGroupName = "Child Site1Name",
+			widgetName = "Sites Directory");
+
 		Navigator.gotoSitePage(
 			pageName = "Site Page",
 			siteName = "Child ChildSite1Name");
-
-		Portlet.addPG(portletName = "Sites Directory");
 
 		SitesDirectory.configureSetupPG(directorySites = "Top Level");
 

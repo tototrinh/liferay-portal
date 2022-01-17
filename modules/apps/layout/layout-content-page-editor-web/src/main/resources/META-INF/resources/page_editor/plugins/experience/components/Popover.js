@@ -13,10 +13,10 @@
  */
 
 import ClayPopover from '@clayui/popover';
-import {Align} from 'metal-position';
+import {ReactPortal} from '@liferay/frontend-js-react-web';
+import {ALIGN_POSITIONS, align} from 'frontend-js-web';
 import Proptypes from 'prop-types';
 import React, {useRef} from 'react';
-import ReactDOM from 'react-dom';
 
 /**
  * Tailored implementation of a ClayPopover for Experiences
@@ -24,10 +24,11 @@ import ReactDOM from 'react-dom';
  * It is triggered on hover, thus it does not need to re-calculate on window resize,
  * scroll or any other event
  */
-const Popover = props => {
-	return ReactDOM.createPortal(
-		<PopoverComponent {...props} />,
-		document.body
+const Popover = (props) => {
+	return (
+		<ReactPortal>
+			<PopoverComponent {...props} />
+		</ReactPortal>
 	);
 };
 
@@ -35,7 +36,7 @@ const PopoverComponent = ({anchor, children, ...rest}) => {
 	const popRef = useRef(null);
 
 	React.useLayoutEffect(() => {
-		Align.align(popRef.current, anchor, Align.Right, false);
+		align(popRef.current, anchor, ALIGN_POSITIONS.Right, false);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -47,7 +48,7 @@ const PopoverComponent = ({anchor, children, ...rest}) => {
 };
 
 Popover.proptypes = {
-	anchor: Proptypes.instanceOf(Element)
+	anchor: Proptypes.object,
 };
 
 export default Popover;

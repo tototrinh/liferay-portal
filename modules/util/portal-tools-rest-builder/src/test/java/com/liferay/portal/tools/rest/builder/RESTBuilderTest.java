@@ -14,10 +14,15 @@
 
 package com.liferay.portal.tools.rest.builder;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
+
 import java.io.File;
 
 import java.net.URL;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -37,7 +42,7 @@ public class RESTBuilderTest {
 
 		RESTBuilder restBuilder = new RESTBuilder(
 			new File(dependenciesPath, "copyright.txt"),
-			new File(dependenciesPath));
+			new File(dependenciesPath), null, null);
 
 		restBuilder.build();
 
@@ -49,47 +54,82 @@ public class RESTBuilderTest {
 
 		Assert.assertTrue(applicationFile.exists());
 
+		_assertResourceFilesExist(filesPath, "Document");
+		_assertResourceFilesExist(filesPath, "Folder");
+
+		_assertForcePredictableOperationId(filesPath);
+
+		File sampleApiDir = new File(filesPath + "/sample-api");
+
+		FileUtils.deleteDirectory(sampleApiDir);
+
+		Assert.assertFalse(sampleApiDir.exists());
+
+		File sampleImplDir = new File(filesPath + "/sample-impl");
+
+		FileUtils.deleteDirectory(sampleImplDir);
+
+		Assert.assertFalse(sampleImplDir.exists());
+	}
+
+	private void _assertForcePredictableOperationId(String filesPath)
+		throws Exception {
+
+		File queryJavaFile = new File(
+			filesPath.concat(
+				"/sample-impl/src/main/java/com/example/sample/internal" +
+					"/graphql/query/v1_0_0/Query.java"));
+
+		String text = new String(
+			Files.readAllBytes(queryJavaFile.toPath()), StandardCharsets.UTF_8);
+
+		Assert.assertFalse(text.contains("ForcePredictableOperationIdTest"));
+	}
+
+	private void _assertResourceFilesExist(
+		String filesPath, String resourceName) {
+
 		File baseResourceImplFile = new File(
-			filesPath + "/sample-impl/src/main/java/com/example/sample" +
-				"/internal/resource/v1_0_0/BaseFolderResourceImpl.java");
+			_getResourcePath(
+				filesPath,
+				"/sample-impl/src/main/java/com/example/sample/internal" +
+					"/resource/v1_0_0/Base",
+				resourceName, "ResourceImpl.java"));
 
 		Assert.assertTrue(baseResourceImplFile.exists());
 
 		File folderResourceImplFile = new File(
-			filesPath + "/sample-impl/src/main/java/com/example/sample" +
-				"/internal/resource/v1_0_0/FolderResourceImpl.java");
+			_getResourcePath(
+				filesPath,
+				"/sample-impl/src/main/java/com/example/sample/internal" +
+					"/resource/v1_0_0/",
+				resourceName, "ResourceImpl.java"));
 
 		Assert.assertTrue(folderResourceImplFile.exists());
 
 		File propertiesFile = new File(
-			filesPath + "/sample-impl/src/main/resources/OSGI-INF/liferay" +
-				"/rest/v1_0_0/folder.properties");
+			_getResourcePath(
+				filesPath,
+				"/sample-impl/src/main/resources/OSGI-INF/liferay/rest/v1_0_0/",
+				StringUtil.toLowerCase(resourceName), ".properties"));
 
 		Assert.assertTrue(propertiesFile.exists());
 
 		File dtoFolderFile = new File(
-			filesPath + "/sample-api/src/main/java/com/example/sample/dto" +
-				"/v1_0_0/Folder.java");
+			_getResourcePath(
+				filesPath,
+				"/sample-api/src/main/java/com/example/sample/dto/v1_0_0/",
+				resourceName, ".java"));
 
 		Assert.assertTrue(dtoFolderFile.exists());
 
 		File resourceFolderFile = new File(
-			filesPath + "/sample-api/src/main/java/com/example/sample" +
-				"/resource/v1_0_0/FolderResource.java");
+			_getResourcePath(
+				filesPath,
+				"/sample-api/src/main/java/com/example/sample/resource/v1_0_0/",
+				resourceName, "Resource.java"));
 
 		Assert.assertTrue(resourceFolderFile.exists());
-
-		File sampleApi = new File(filesPath + "/sample-api");
-
-		FileUtils.deleteDirectory(sampleApi);
-
-		Assert.assertFalse(sampleApi.exists());
-
-		File sampleImpl = new File(filesPath + "/sample-impl");
-
-		FileUtils.deleteDirectory(sampleImpl);
-
-		Assert.assertFalse(sampleImpl.exists());
 	}
 
 	private String _getDependenciesPath() {
@@ -108,6 +148,14 @@ public class RESTBuilderTest {
 		Path parentPath = absolutePath.getParent();
 
 		return parentPath.toString();
+	}
+
+	private String _getResourcePath(
+		String filesPath, String resourcePathPrefix, String resourceName,
+		String resourcePathSuffix) {
+
+		return StringBundler.concat(
+			filesPath, resourcePathPrefix, resourceName, resourcePathSuffix);
 	}
 
 }

@@ -9,30 +9,50 @@
  * distribution rights of the Software.
  */
 
-import {useCallback, useContext, useState} from 'react';
+import {fetch} from 'frontend-js-web';
+import {useCallback, useState} from 'react';
 
-import {AppContext} from '../../components/AppContext.es';
+import {adminBaseURL, headers, metricsBaseURL} from '../rest/fetch.es';
 
-const useFetch = ({admin = false, params = {}, url}) => {
-	const {getClient} = useContext(AppContext);
-	const [data, setData] = useState({});
+const useFetch = ({
+	admin = false,
+	callback = (data) => data,
+	params = {},
+	plainText = false,
+	url,
+}) => {
+	const [data, setData] = useState();
 
-	const client = getClient(admin);
-	const queryParamsStr = JSON.stringify(params);
-	const fetchData = useCallback(
-		() =>
-			client.get(url, {params}).then(({data}) => {
-				setData(data);
+	let fetchURL = admin ? `${adminBaseURL}${url}` : `${metricsBaseURL}${url}`;
 
-				return data;
-			}),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[queryParamsStr, url, admin]
-	);
+	fetchURL = new URL(fetchURL, Liferay.ThemeDisplay.getPortalURL());
+
+	Object.entries(params).map(([key, value]) => {
+		if (value) {
+			fetchURL.searchParams.append(key, value);
+		}
+	});
+
+	const fetchData = useCallback(async () => {
+		const response = await fetch(fetchURL, {
+			headers,
+			method: 'GET',
+		});
+
+		const data = plainText ? await response.text() : await response.json();
+
+		if (response.ok) {
+			setData(data);
+
+			return callback(data);
+		}
+
+		throw data;
+	}, [callback, fetchURL, plainText]);
 
 	return {
 		data,
-		fetchData
+		fetchData,
 	};
 };
 

@@ -12,8 +12,8 @@
  * details.
  */
 
+import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock';
-import dom from 'metal-dom';
 
 import AnalyticsClient from '../../src/analytics';
 
@@ -39,10 +39,12 @@ describe('WebContent Plugin', () => {
 	let Analytics;
 
 	beforeEach(() => {
+
 		// Force attaching DOM Content Loaded event
+
 		Object.defineProperty(document, 'readyState', {
 			value: 'loading',
-			writable: false
+			writable: false,
 		});
 
 		fetchMock.mock('*', () => 200);
@@ -65,7 +67,7 @@ describe('WebContent Plugin', () => {
 
 			document.dispatchEvent(domContentLoaded);
 
-			const events = Analytics.events.filter(
+			const events = Analytics.getEvents().filter(
 				({eventId}) => eventId === 'webContentViewed'
 			);
 
@@ -76,8 +78,8 @@ describe('WebContent Plugin', () => {
 					applicationId,
 					eventId: 'webContentViewed',
 					properties: expect.objectContaining({
-						articleId: 'assetId'
-					})
+						articleId: 'assetId',
+					}),
 				})
 			);
 
@@ -95,18 +97,18 @@ describe('WebContent Plugin', () => {
 
 			webContentElement.appendChild(imageInsideWebContent);
 
-			dom.triggerEvent(imageInsideWebContent, 'click');
+			userEvent.click(imageInsideWebContent);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'webContentClicked',
 					properties: expect.objectContaining({
 						articleId: 'assetId',
 						src: googleUrl,
-						tagName: 'img'
-					})
-				})
+						tagName: 'img',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(webContentElement);
@@ -125,9 +127,9 @@ describe('WebContent Plugin', () => {
 
 			webContentElement.appendChild(linkInsideWebContent);
 
-			dom.triggerEvent(linkInsideWebContent, 'click');
+			userEvent.click(linkInsideWebContent);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'webContentClicked',
@@ -135,9 +137,9 @@ describe('WebContent Plugin', () => {
 						articleId: 'assetId',
 						href: googleUrl,
 						tagName: 'a',
-						text
-					})
-				})
+						text,
+					}),
+				}),
 			]);
 
 			document.body.removeChild(webContentElement);
@@ -157,17 +159,17 @@ describe('WebContent Plugin', () => {
 
 			webContentElement.appendChild(paragraphInsideWebContent);
 
-			dom.triggerEvent(paragraphInsideWebContent, 'click');
+			userEvent.click(paragraphInsideWebContent);
 
-			expect(Analytics.events).toEqual([
+			expect(Analytics.getEvents()).toEqual([
 				expect.objectContaining({
 					applicationId,
 					eventId: 'webContentClicked',
 					properties: expect.objectContaining({
 						articleId: 'assetId',
-						tagName: 'p'
-					})
-				})
+						tagName: 'p',
+					}),
+				}),
 			]);
 
 			document.body.removeChild(webContentElement);

@@ -80,13 +80,13 @@ public class BundleManagerImpl implements BundleManager {
 	public List<Bundle> getInstalledBundles() {
 		List<Bundle> bundles = getBundles();
 
-		Iterator<Bundle> itr = bundles.iterator();
+		Iterator<Bundle> iterator = bundles.iterator();
 
-		while (itr.hasNext()) {
-			Bundle bundle = itr.next();
+		while (iterator.hasNext()) {
+			Bundle bundle = iterator.next();
 
 			if (!isInstalled(bundle)) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -106,6 +106,9 @@ public class BundleManagerImpl implements BundleManager {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return null;
@@ -209,7 +212,8 @@ public class BundleManagerImpl implements BundleManager {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Unable to read liferay-marketplace.properties from " +
-						file.getName());
+						file.getName(),
+					exception);
 			}
 		}
 

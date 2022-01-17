@@ -21,7 +21,7 @@ import com.liferay.bulk.selection.BulkSelection;
 import com.liferay.bulk.selection.BulkSelectionInputParameters;
 import com.liferay.bulk.selection.BulkSelectionRunner;
 import com.liferay.document.library.bulk.selection.EditCategoriesBulkSelectionAction;
-import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 
 import java.io.Serializable;
@@ -37,6 +37,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 	properties = "OSGI-INF/liferay/rest/v1_0/taxonomy-category.properties",
 	scope = ServiceScope.PROTOTYPE, service = TaxonomyCategoryResource.class
 )
+@CTAware
 public class TaxonomyCategoryResourceImpl
 	extends BaseTaxonomyCategoryResourceImpl {
 
@@ -59,7 +60,7 @@ public class TaxonomyCategoryResourceImpl
 	private void _update(
 			boolean append,
 			TaxonomyCategoryBulkSelection taxonomyCategoryBulkSelection)
-		throws PortalException {
+		throws Exception {
 
 		BulkSelection<?> bulkSelection = _documentBulkSelectionFactory.create(
 			taxonomyCategoryBulkSelection.getDocumentBulkSelection());

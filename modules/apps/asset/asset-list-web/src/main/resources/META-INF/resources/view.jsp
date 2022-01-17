@@ -20,15 +20,25 @@
 AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContext = new AssetListManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetListDisplayContext);
 %>
 
-<clay:management-toolbar
-	displayContext="<%= assetListManagementToolbarDisplayContext %>"
+<clay:navigation-bar
+	inverted="<%= true %>"
+	navigationItems='<%= assetListDisplayContext.getNavigationItems("collections") %>'
 />
 
-<portlet:actionURL name="/asset_list/delete_asset_list_entry" var="deleteAssetListEntryURL">
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= assetListManagementToolbarDisplayContext %>"
+	propsTransformer="js/ManagementToolbarPropsTransformer"
+/>
+
+<portlet:actionURL name="/asset_list/delete_asset_list_entries" var="deleteAssetListEntryURL">
 	<portlet:param name="redirect" value="<%= currentURL %>" />
 </portlet:actionURL>
 
-<aui:form action="<%= deleteAssetListEntryURL %>" cssClass="container-fluid-1280" name="fm">
+<aui:form action="<%= deleteAssetListEntryURL %>" cssClass="container-fluid container-fluid-max-xl" name="fm">
+	<liferay-ui:breadcrumb
+		showLayout="<%= false %>"
+	/>
+
 	<c:choose>
 		<c:when test="<%= assetListDisplayContext.getAssetListEntriesCount() > 0 %>">
 			<liferay-ui:search-container
@@ -44,21 +54,22 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 					<%
 					String editURL = StringPool.BLANK;
 
-					if (AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.UPDATE)) {
-						PortletURL editAssetListEntryURL = liferayPortletResponse.createRenderURL();
-
-						editAssetListEntryURL.setParameter("mvcPath", "/edit_asset_list_entry.jsp");
-						editAssetListEntryURL.setParameter("redirect", currentURL);
-						editAssetListEntryURL.setParameter("assetListEntryId", String.valueOf(assetListEntry.getAssetListEntryId()));
-
-						editURL = editAssetListEntryURL.toString();
+					if (AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.UPDATE) || AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.VIEW)) {
+						editURL = PortletURLBuilder.createRenderURL(
+							liferayPortletResponse
+						).setMVCPath(
+							"/edit_asset_list_entry.jsp"
+						).setRedirect(
+							currentURL
+						).setParameter(
+							"assetListEntryId", assetListEntry.getAssetListEntryId()
+						).buildString();
 					}
 
-					Map<String, Object> rowData = HashMapBuilder.<String, Object>put(
-						"actions", assetListManagementToolbarDisplayContext.getAvailableActions(assetListEntry)
-					).build();
-
-					row.setData(rowData);
+					row.setData(
+						HashMapBuilder.<String, Object>put(
+							"actions", assetListManagementToolbarDisplayContext.getAvailableActions(assetListEntry)
+						).build());
 					%>
 
 					<liferay-ui:search-container-column-icon
@@ -78,6 +89,31 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 							<strong><liferay-ui:message key="<%= HtmlUtil.escape(assetListEntry.getTypeLabel()) %>" /></strong>
 						</h6>
 
+						<c:if test="<%= Validator.isNotNull(assetListEntry.getAssetEntryType()) %>">
+
+							<%
+							String assetEntryTypeLabel = ResourceActionsUtil.getModelResource(locale, assetListEntry.getAssetEntryType());
+
+							long classTypeId = GetterUtil.getLong(assetListEntry.getAssetEntrySubtype(), -1);
+
+							if (classTypeId >= 0) {
+								AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetListEntry.getAssetEntryType());
+
+								if ((assetRendererFactory != null) && assetRendererFactory.isSupportsClassTypes()) {
+									ClassType classType = assetListDisplayContext.getClassType(assetRendererFactory.getClassTypeReader(), classTypeId);
+
+									if (classType != null) {
+										assetEntryTypeLabel = assetEntryTypeLabel + " - " + classType.getName();
+									}
+								}
+							}
+							%>
+
+							<h6 class="text-default">
+								<strong><%= HtmlUtil.escape(assetEntryTypeLabel) %></strong>
+							</h6>
+						</c:if>
+
 						<%
 						Date statusDate = assetListEntry.getCreateDate();
 						%>
@@ -91,8 +127,8 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 
 					<liferay-ui:search-container-column-text>
 						<clay:dropdown-actions
-							defaultEventHandler="assetEntryListDropdownDefaultEventHandler"
 							dropdownItems="<%= assetEntryListActionDropdownItems.getActionDropdownItems() %>"
+							propsTransformer="js/AssetEntryListDropdownDefaultPropsTransformer"
 						/>
 					</liferay-ui:search-container-column-text>
 				</liferay-ui:search-container-row>
@@ -106,28 +142,11 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 		<c:otherwise>
 			<liferay-frontend:empty-result-message
 				actionDropdownItems="<%= assetListDisplayContext.isShowAddAssetListEntryAction() ? assetListDisplayContext.getAddAssetListEntryDropdownItems() : null %>"
-				componentId="emptyResultMessageComponent"
-				defaultEventHandler="emptyResultMessageComponentDefaultEventHandler"
 				description="<%= assetListDisplayContext.getEmptyResultMessageDescription() %>"
-				elementType='<%= LanguageUtil.get(request, "content-sets") %>'
+				elementType='<%= LanguageUtil.get(request, "collections") %>'
+				propsTransformer="js/EmptyResultMessagePropsTransformer"
+				propsTransformerServletContext="<%= application %>"
 			/>
 		</c:otherwise>
 	</c:choose>
 </aui:form>
-
-<c:if test="<%= assetListDisplayContext.getAssetListEntriesCount() == 0 %>">
-	<liferay-frontend:component
-		componentId="emptyResultMessageComponentDefaultEventHandler"
-		module="js/EmptyResultMessageDefaultEventHandler.es"
-	/>
-</c:if>
-
-<liferay-frontend:component
-	componentId="assetEntryListDropdownDefaultEventHandler"
-	module="js/AssetEntryListDropdownDefaultEventHandler.es"
-/>
-
-<liferay-frontend:component
-	componentId="<%= assetListManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/ManagementToolbarDefaultEventHandler.es"
-/>

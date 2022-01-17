@@ -23,7 +23,7 @@ WikiNode node = wikiPageItemSelectorViewDisplayContext.getNode();
 
 String keywords = ParamUtil.getString(request, "keywords");
 
-SearchContainer wikiPagesSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, wikiPageItemSelectorViewDisplayContext.getPortletURL(request, liferayPortletResponse), null, wikiPageItemSelectorViewDisplayContext.isSearch() ? LanguageUtil.format(locale, "no-pages-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false) : "there-are-no-pages");
+SearchContainer<WikiPage> wikiPagesSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, wikiPageItemSelectorViewDisplayContext.getPortletURL(request, liferayPortletResponse), null, wikiPageItemSelectorViewDisplayContext.isSearch() ? LanguageUtil.format(locale, "no-pages-were-found-that-matched-the-keywords-x", "<strong>" + HtmlUtil.escape(keywords) + "</strong>", false) : "there-are-no-pages");
 
 if (wikiPageItemSelectorViewDisplayContext.isSearch()) {
 	Indexer<WikiPage> indexer = IndexerRegistryUtil.getIndexer(WikiPage.class);
@@ -40,11 +40,9 @@ if (wikiPageItemSelectorViewDisplayContext.isSearch()) {
 
 	wikiPagesSearchContainer.setTotal(hits.getLength());
 
-	List<SearchResult> searchResults = SearchResultUtil.getSearchResults(hits, themeDisplay.getLocale());
-
 	List<WikiPage> results = new ArrayList<>();
 
-	for (SearchResult searchResult : searchResults) {
+	for (SearchResult searchResult : SearchResultUtil.getSearchResults(hits, themeDisplay.getLocale())) {
 		WikiPage wikiPage = WikiPageLocalServiceUtil.getPage(searchResult.getClassPK());
 
 		results.add(wikiPage);
@@ -65,11 +63,13 @@ else {
 </style>
 
 <%
-PortletURL searchBaseURL = PortletURLUtil.clone(currentURLObj, liferayPortletResponse);
-
-searchBaseURL.setParameter("resetCur", Boolean.TRUE.toString());
-
-String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPortletResponse.getNamespace() + "keywords");
+String searchURL = HttpUtil.removeParameter(
+	PortletURLBuilder.create(
+		PortletURLUtil.clone(currentURLObj, liferayPortletResponse)
+	).setParameter(
+		"resetCur", true
+	).buildString(),
+	liferayPortletResponse.getNamespace() + "keywords");
 %>
 
 <clay:management-toolbar
@@ -80,7 +80,10 @@ String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPor
 	showCreationMenu="<%= false %>"
 />
 
-<div class="container-fluid-1280 lfr-item-viewer" id="<portlet:namespace />wikiPagesSelectorContainer">
+<clay:container-fluid
+	cssClass="lfr-item-viewer"
+	id='<%= liferayPortletResponse.getNamespace() + "wikiPagesSelectorContainer" %>'
+>
 	<liferay-ui:search-container
 		id="wikiPagesSearchContainer"
 		searchContainer="<%= wikiPagesSearchContainer %>"
@@ -116,7 +119,7 @@ String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPor
 							<liferay-ui:message arguments="<%= new String[] {HtmlUtil.escape(curPage.getUserName()), modifiedDateDescription} %>" key="x-modified-x-ago" />
 						</c:when>
 						<c:otherwise>
-							<liferay-ui:message arguments="<%= new String[] {modifiedDateDescription} %>" key="modified-x-ago" />
+							<liferay-ui:message arguments="<%= modifiedDateDescription %>" key="modified-x-ago" />
 						</c:otherwise>
 					</c:choose>
 				</h5>
@@ -143,7 +146,7 @@ String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPor
 			searchContainer="<%= wikiPagesSearchContainer %>"
 		/>
 	</liferay-ui:search-container>
-</div>
+</clay:container-fluid>
 
 <aui:script use="liferay-search-container">
 	var Util = Liferay.Util;
@@ -156,7 +159,7 @@ String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPor
 
 	searchContainerContentBox.delegate(
 		'click',
-		function(event) {
+		(event) => {
 			var selectedItem = event.currentTarget;
 
 			var linkItem = selectedItem.one('.wiki-page');
@@ -166,8 +169,8 @@ String searchURL = HttpUtil.removeParameter(searchBaseURL.toString(), liferayPor
 				{
 					data: {
 						title: linkItem.attr('data-title'),
-						value: linkItem.attr('data-value')
-					}
+						value: linkItem.attr('data-value'),
+					},
 				}
 			);
 

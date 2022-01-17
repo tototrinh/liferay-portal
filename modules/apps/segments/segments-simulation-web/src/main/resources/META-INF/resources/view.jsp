@@ -20,7 +20,10 @@
 SegmentsSimulationDisplayContext segmentsSimulationDisplayContext = new SegmentsSimulationDisplayContext(request, renderResponse);
 %>
 
-<div class="container-fluid segments-simulation" id="<portlet:namespace />segmentsSimulationContainer">
+<clay:container-fluid
+	cssClass="p-0 segments-simulation"
+	id='<%= liferayPortletResponse.getNamespace() + "segmentsSimulationContainer" %>'
+>
 	<c:choose>
 		<c:when test="<%= segmentsSimulationDisplayContext.isShowEmptyMessage() %>">
 			<p class="mb-4 mt-1 small">
@@ -35,10 +38,10 @@ SegmentsSimulationDisplayContext segmentsSimulationDisplayContext = new Segments
 					for (SegmentsEntry segmentsEntry : segmentsSimulationDisplayContext.getSegmentsEntries()) {
 					%>
 
-						<li class="bg-transparent list-group-item list-group-item-flex">
+						<li class="bg-transparent list-group-item list-group-item-flex pb-3 pt-0 px-0">
 							<span>
 								<div class="custom-checkbox">
-									<label class="position-relative text-light">
+									<label class="position-relative">
 										<input class="custom-control-input simulated-segment" name="<%= segmentsSimulationDisplayContext.getPortletNamespace() + "segmentsEntryId" %>" type="checkbox" value="<%= String.valueOf(segmentsEntry.getSegmentsEntryId()) %>" />
 
 										<span class="custom-control-label">
@@ -64,9 +67,9 @@ SegmentsSimulationDisplayContext segmentsSimulationDisplayContext = new Segments
 						'<%= segmentsSimulationDisplayContext.getDeactivateSimulationURL() %>',
 					form: document.<portlet:namespace />segmentsSimulationFm,
 					simulateSegmentsEntriesUrl:
-						'<%= segmentsSimulationDisplayContext.getSimulateSegmentsEntriesURL() %>'
+						'<%= segmentsSimulationDisplayContext.getSimulateSegmentsEntriesURL() %>',
 				});
 			</aui:script>
 		</c:otherwise>
 	</c:choose>
-</div>
+</clay:container-fluid>

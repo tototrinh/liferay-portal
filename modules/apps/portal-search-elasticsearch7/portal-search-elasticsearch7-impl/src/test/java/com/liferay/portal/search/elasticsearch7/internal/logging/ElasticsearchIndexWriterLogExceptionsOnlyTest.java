@@ -14,26 +14,32 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.logging;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.IndexWriter;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.search.elasticsearch7.internal.ElasticsearchIndexWriter;
 import com.liferay.portal.search.elasticsearch7.internal.LiferayElasticsearchIndexingFixtureFactory;
+import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchConnectionFixture;
 import com.liferay.portal.search.elasticsearch7.internal.connection.ElasticsearchFixture;
 import com.liferay.portal.search.elasticsearch7.internal.search.engine.adapter.document.BulkDocumentRequestExecutorImpl;
 import com.liferay.portal.search.test.util.indexing.BaseIndexingTestCase;
 import com.liferay.portal.search.test.util.indexing.DocumentCreationHelpers;
 import com.liferay.portal.search.test.util.indexing.IndexingFixture;
-import com.liferay.portal.search.test.util.logging.ExpectedLogTestRule;
+import com.liferay.portal.search.test.util.logging.ExpectedLog;
+import com.liferay.portal.search.test.util.logging.ExpectedLogMethodTestRule;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
 
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -43,20 +49,31 @@ import org.junit.Test;
 public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 	extends BaseIndexingTestCase {
 
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			ExpectedLogMethodTestRule.INSTANCE, LiferayUnitTestRule.INSTANCE);
+
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "failed to parse field [expirationDate] of type [date]"
+	)
 	@Test
 	public void testAddDocument() throws Exception {
-		expectedLogTestRule.expectMessage(
-			"failed to parse field [expirationDate] of type [date]");
-
 		addDocument(
 			DocumentCreationHelpers.singleKeyword(
 				Field.EXPIRATION_DATE, "text"));
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "Bulk add failed"
+	)
 	@Test
 	public void testAddDocuments() {
-		expectedLogTestRule.expectMessage("Bulk add failed");
-
 		List<Document> documents = new ArrayList<>();
 
 		Document document = new DocumentImpl();
@@ -71,16 +88,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.addDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = BulkDocumentRequestExecutorImpl.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "failed to parse field [expirationDate] of type [date]"
+	)
 	@Test
 	public void testAddDocumentsBulkExecutor() {
-		expectedLogTestRule.configure(
-			BulkDocumentRequestExecutorImpl.class, Level.WARNING);
-		expectedLogTestRule.expectMessage(
-			"failed to parse field [expirationDate] of type [date]");
-
 		List<Document> documents = new ArrayList<>();
 
 		Document document = new DocumentImpl();
@@ -95,13 +115,18 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.addDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING, expectedLog = "no such index"
+	)
 	@Test
 	public void testCommit() {
-		expectedLogTestRule.expectMessage("no such index");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -112,13 +137,14 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.commit(searchContext);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
 	@Test
 	public void testDeleteDocument() {
-		expectedLogTestRule.expectMessage("no such index");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -129,13 +155,41 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.deleteDocument(searchContext, "1");
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.INFO, expectedLog = "no such index"
+	)
+	@Test
+	public void testDeleteDocumentInfoLevel() {
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(1);
+
+		IndexWriter indexWriter = getIndexWriter();
+
+		try {
+			indexWriter.deleteDocument(searchContext, "1");
+		}
+		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
+		}
+	}
+
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "Bulk delete failed"
+	)
 	@Test
 	public void testDeleteDocuments() {
-		expectedLogTestRule.expectMessage("Bulk delete failed");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -150,15 +204,18 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.deleteDocuments(searchContext, uids);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = BulkDocumentRequestExecutorImpl.class,
+		expectedLevel = ExpectedLog.Level.WARNING, expectedLog = "no such index"
+	)
 	@Test
 	public void testDeleteDocumentsBulkExecutor() {
-		expectedLogTestRule.configure(
-			BulkDocumentRequestExecutorImpl.class, Level.WARNING);
-		expectedLogTestRule.expectMessage("no such index");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -173,13 +230,18 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.deleteDocuments(searchContext, uids);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING, expectedLog = "no such index"
+	)
 	@Test
 	public void testDeleteEntityDocuments() {
-		expectedLogTestRule.expectMessage("no such index");
-
 		SearchContext searchContext = new SearchContext();
 
 		searchContext.setCompanyId(1);
@@ -190,13 +252,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.deleteEntityDocuments(searchContext, "test");
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "document missing"
+	)
 	@Test
 	public void testPartiallyUpdateDocument() {
-		expectedLogTestRule.expectMessage("document missing");
-
 		Document document = new DocumentImpl();
 
 		document.addKeyword(Field.UID, "1");
@@ -208,13 +276,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 				createSearchContext(), document);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "Bulk partial update failed"
+	)
 	@Test
 	public void testPartiallyUpdateDocuments() {
-		expectedLogTestRule.expectMessage("Bulk partial update failed");
-
 		Document document = new DocumentImpl();
 
 		List<Document> documents = new ArrayList<>();
@@ -230,15 +304,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 				createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = BulkDocumentRequestExecutorImpl.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "document missing"
+	)
 	@Test
 	public void testPartiallyUpdateDocumentsBulkExecutor() {
-		expectedLogTestRule.configure(
-			BulkDocumentRequestExecutorImpl.class, Level.WARNING);
-		expectedLogTestRule.expectMessage("document missing");
-
 		Document document = new DocumentImpl();
 
 		List<Document> documents = new ArrayList<>();
@@ -254,13 +332,18 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 				createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING, expectedLog = "Update failed"
+	)
 	@Test
 	public void testUpdateDocument() {
-		expectedLogTestRule.expectMessage("Update failed");
-
 		Document document = new DocumentImpl();
 
 		document.addKeyword(Field.UID, "1");
@@ -272,16 +355,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.updateDocument(createSearchContext(), document);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = BulkDocumentRequestExecutorImpl.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "failed to parse field [expirationDate] of type [date]"
+	)
 	@Test
 	public void testUpdateDocumentBulkExecutor() {
-		expectedLogTestRule.configure(
-			BulkDocumentRequestExecutorImpl.class, Level.WARNING);
-		expectedLogTestRule.expectMessage(
-			"failed to parse field [expirationDate] of type [date]");
-
 		Document document = new DocumentImpl();
 
 		document.addKeyword(Field.UID, "1");
@@ -293,13 +379,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.updateDocument(createSearchContext(), document);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = ElasticsearchIndexWriter.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "Bulk update failed"
+	)
 	@Test
 	public void testUpdateDocuments() {
-		expectedLogTestRule.expectMessage("Bulk update failed");
-
 		List<Document> documents = new ArrayList<>();
 
 		Document document = new DocumentImpl();
@@ -315,16 +407,19 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.updateDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
+	@ExpectedLog(
+		expectedClass = BulkDocumentRequestExecutorImpl.class,
+		expectedLevel = ExpectedLog.Level.WARNING,
+		expectedLog = "failed to parse field [expirationDate] of type [date]"
+	)
 	@Test
 	public void testUpdateDocumentsBulkExecutor() {
-		expectedLogTestRule.configure(
-			BulkDocumentRequestExecutorImpl.class, Level.WARNING);
-		expectedLogTestRule.expectMessage(
-			"failed to parse field [expirationDate] of type [date]");
-
 		List<Document> documents = new ArrayList<>();
 
 		Document document = new DocumentImpl();
@@ -340,29 +435,32 @@ public class ElasticsearchIndexWriterLogExceptionsOnlyTest
 			indexWriter.updateDocuments(createSearchContext(), documents);
 		}
 		catch (SearchException searchException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(searchException, searchException);
+			}
 		}
 	}
 
-	@Rule
-	public ExpectedLogTestRule expectedLogTestRule = ExpectedLogTestRule.none();
+	protected ElasticsearchConnectionFixture
+		createElasticsearchConnectionFixture() {
 
-	protected ElasticsearchFixture createElasticsearchFixture() {
-		Map<String, Object> elasticsearchConfigurationProperties =
-			HashMapBuilder.<String, Object>put(
-				"logExceptionsOnly", true
-			).build();
-
-		return new ElasticsearchFixture(
-			ElasticsearchIndexWriterLogExceptionsOnlyTest.class.getSimpleName(),
-			elasticsearchConfigurationProperties);
+		return ElasticsearchConnectionFixture.builder(
+		).clusterName(
+			ElasticsearchIndexWriterLogExceptionsOnlyTest.class.getSimpleName()
+		).elasticsearchConfigurationProperties(
+			Collections.singletonMap("logExceptionsOnly", true)
+		).build();
 	}
 
 	@Override
 	protected IndexingFixture createIndexingFixture() {
 		return LiferayElasticsearchIndexingFixtureFactory.builder(
 		).elasticsearchFixture(
-			createElasticsearchFixture()
+			new ElasticsearchFixture(createElasticsearchConnectionFixture())
 		).build();
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ElasticsearchIndexWriterLogExceptionsOnlyTest.class);
 
 }

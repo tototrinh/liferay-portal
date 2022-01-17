@@ -18,6 +18,8 @@ import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluator;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServicesTracker;
 import com.liferay.dynamic.data.mapping.form.renderer.DDMFormRenderingContext;
 import com.liferay.dynamic.data.mapping.form.renderer.internal.DDMFormPagesTemplateContextFactory;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLayoutLocalService;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -27,6 +29,7 @@ import com.liferay.portal.kernel.json.JSONSerializer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
@@ -107,9 +110,10 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 			DDMFormTemplateContextProcessor ddmFormTemplateContextProcessor =
 				createDDMFormTemplateContextProcessor(httpServletRequest);
 
+			ddmFormRenderingContext.setDDMFormInstanceId(
+				ddmFormTemplateContextProcessor.getDDMFormInstanceId());
 			ddmFormRenderingContext.setDDMFormValues(
 				ddmFormTemplateContextProcessor.getDDMFormValues());
-
 			ddmFormRenderingContext.setGroupId(
 				ddmFormTemplateContextProcessor.getGroupId());
 
@@ -120,7 +124,10 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 					new DDMFormPagesTemplateContextFactory(
 						ddmFormTemplateContextProcessor.getDDMForm(),
 						ddmFormTemplateContextProcessor.getDDMFormLayout(),
-						ddmFormRenderingContext);
+						ddmFormRenderingContext,
+						_ddmStructureLayoutLocalService,
+						_ddmStructureLocalService, _groupLocalService,
+						_jsonFactory);
 
 			ddmFormPagesTemplateContextFactory.setDDMFormEvaluator(
 				_ddmFormEvaluator);
@@ -217,6 +224,15 @@ public class DDMFormContextProviderServlet extends HttpServlet {
 
 	@Reference
 	private DDMFormFieldTypeServicesTracker _ddmFormFieldTypeServicesTracker;
+
+	@Reference
+	private DDMStructureLayoutLocalService _ddmStructureLayoutLocalService;
+
+	@Reference
+	private DDMStructureLocalService _ddmStructureLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	@Reference
 	private JSONFactory _jsonFactory;

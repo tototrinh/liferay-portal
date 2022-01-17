@@ -63,10 +63,6 @@ public abstract class BaseStylingCheck extends BaseFileCheck {
 		return content;
 	}
 
-	protected boolean isJavaSource(String content, int pos) {
-		return true;
-	}
-
 	private String _fixBooleanStatement(String content) {
 		Matcher matcher = _booleanPattern.matcher(content);
 
@@ -77,15 +73,10 @@ public abstract class BaseStylingCheck extends BaseFileCheck {
 
 			boolean booleanValue = true;
 
-			if (matcher.group(1) != null) {
-				booleanValue = !booleanValue;
-			}
+			if ((matcher.group(1) != null) ||
+				Objects.equals(matcher.group(3), "!=") ||
+				Objects.equals(matcher.group(4), "false")) {
 
-			if (Objects.equals(matcher.group(3), "!=")) {
-				booleanValue = !booleanValue;
-			}
-
-			if (Objects.equals(matcher.group(4), "false")) {
 				booleanValue = !booleanValue;
 			}
 
@@ -104,7 +95,7 @@ public abstract class BaseStylingCheck extends BaseFileCheck {
 	private String _fixLambdaStatement(String content) {
 		Matcher matcher = _lambdaPattern.matcher(content);
 
-		return matcher.replaceAll("$1::$2");
+		return matcher.replaceAll("$1::$2$3$4");
 	}
 
 	private String _fixRedundantArrayInitialization(String content) {
@@ -306,7 +297,7 @@ public abstract class BaseStylingCheck extends BaseFileCheck {
 	private static final Pattern _booleanPattern = Pattern.compile(
 		"\\((\\!)?(\\w+)\\s+(==|!=)\\s+(false|true)\\)");
 	private static final Pattern _lambdaPattern = Pattern.compile(
-		"\\(\\)\\s+->\\s+(\\w+)\\.(\\w+)\\(\\)");
+		"\\(\\)\\s+->\\s+(\\w+)\\.(\\w+)\\(\\)(\\s*)(,|\\))");
 	private static final Pattern _objectsEqualsPattern = Pattern.compile(
 		"\\WObjects\\.equals\\(");
 	private static final Pattern _redundantArrayInitializationPattern =

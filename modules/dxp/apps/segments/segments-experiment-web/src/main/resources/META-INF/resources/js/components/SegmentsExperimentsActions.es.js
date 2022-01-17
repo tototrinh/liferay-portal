@@ -21,7 +21,7 @@ import {
 	closeReviewAndRunExperiment,
 	reviewAndRunExperiment,
 	runExperiment,
-	updateSegmentsExperimentStatus
+	updateSegmentsExperimentStatus,
 } from '../state/actions.es';
 import {
 	STATUS_COMPLETED,
@@ -30,7 +30,7 @@ import {
 	STATUS_FINISHED_WINNER,
 	STATUS_PAUSED,
 	STATUS_RUNNING,
-	STATUS_TERMINATED
+	STATUS_TERMINATED,
 } from '../util/statuses.es';
 import {DispatchContext, StateContext} from './../state/context.es';
 import {ReviewExperimentModal} from './ReviewExperimentModal.es';
@@ -40,12 +40,12 @@ function SegmentsExperimentsActions({onEditSegmentsExperimentStatus}) {
 		experiment,
 		reviewExperimentModal,
 		variants,
-		viewExperimentURL
+		viewExperimentDetailsURL,
 	} = useContext(StateContext);
 	const dispatch = useContext(DispatchContext);
 
 	const {observer, onClose} = useModal({
-		onClose: () => dispatch(closeReviewAndRunExperiment())
+		onClose: () => dispatch(closeReviewAndRunExperiment()),
 	});
 	const {APIService} = useContext(SegmentsExperimentsContext);
 
@@ -129,14 +129,15 @@ function SegmentsExperimentsActions({onEditSegmentsExperimentStatus}) {
 					variants={variants}
 				/>
 			)}
-			{viewExperimentURL && (
+			{viewExperimentDetailsURL && (
 				<ClayLink
 					className="btn btn-secondary btn-sm mt-3 w-100"
 					displayType="secondary"
-					href={viewExperimentURL}
+					href={viewExperimentDetailsURL}
 					target="_blank"
 				>
 					{Liferay.Language.get('view-data-in-analytics-cloud')}
+
 					<ClayIcon className="ml-2" symbol="shortcut" />
 				</ClayLink>
 			)}
@@ -148,16 +149,16 @@ function SegmentsExperimentsActions({onEditSegmentsExperimentStatus}) {
 			confidenceLevel,
 			segmentsExperimentId: experiment.segmentsExperimentId,
 			segmentsExperimentRels: JSON.stringify(splitVariantsMap),
-			status: STATUS_RUNNING
+			status: STATUS_RUNNING,
 		};
 
-		return APIService.runExperiment(body).then(response => {
+		return APIService.runExperiment(body).then((response) => {
 			const {segmentsExperiment} = response;
 
 			dispatch(
 				runExperiment({
 					experiment: segmentsExperiment,
-					splitVariantsMap
+					splitVariantsMap,
 				})
 			);
 		});
@@ -167,7 +168,7 @@ function SegmentsExperimentsActions({onEditSegmentsExperimentStatus}) {
 		const body = {
 			segmentsExperimentId: experiment.segmentsExperimentId,
 			status: STATUS_COMPLETED,
-			winnerSegmentsExperienceId: experiment.segmentsExperienceId
+			winnerSegmentsExperienceId: experiment.segmentsExperienceId,
 		};
 
 		APIService.publishExperience(body).then(({segmentsExperiment}) => {
@@ -177,7 +178,7 @@ function SegmentsExperimentsActions({onEditSegmentsExperimentStatus}) {
 }
 
 SegmentsExperimentsActions.propTypes = {
-	onEditSegmentsExperimentStatus: PropTypes.func.isRequired
+	onEditSegmentsExperimentStatus: PropTypes.func.isRequired,
 };
 
 export default SegmentsExperimentsActions;

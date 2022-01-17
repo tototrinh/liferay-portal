@@ -26,8 +26,6 @@ import java.net.SocketAddress;
 
 import java.util.Map;
 
-import javax.net.ssl.SSLContext;
-
 import org.apache.directory.api.ldap.codec.protocol.mina.LdapProtocolCodecFactory;
 import org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
@@ -117,9 +115,7 @@ public class VLDAPServer {
 	}
 
 	protected void initIoHandler(NioSocketAcceptor nioSocketAcceptor) {
-		DispatchIoHandler dispatchIoHandler = new DispatchIoHandler();
-
-		nioSocketAcceptor.setHandler(dispatchIoHandler);
+		nioSocketAcceptor.setHandler(new DispatchIoHandler());
 	}
 
 	protected void initLogging(NioSocketAcceptor nioSocketAcceptor) {
@@ -135,9 +131,8 @@ public class VLDAPServer {
 		DefaultIoFilterChainBuilder defaultIoFilterChainBuilder =
 			nioSocketAcceptor.getFilterChain();
 
-		SSLContext sslContext = LdapSslContextFactory.getSSLContext(true);
-
-		SslFilter sslFilter = new SslFilter(sslContext);
+		SslFilter sslFilter = new SslFilter(
+			LdapSslContextFactory.getSSLContext(true));
 
 		defaultIoFilterChainBuilder.addFirst("sslFilter", sslFilter);
 	}

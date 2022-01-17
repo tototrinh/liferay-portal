@@ -12,73 +12,52 @@
  * details.
  */
 
-import uuidv1 from 'uuid/v1';
+import uuidv4 from 'uuid/v4';
 
-// Gateway
-
-import Client from './client';
 import middlewares from './middlewares/defaults';
 import defaultPlugins from './plugins/defaults';
-import {convertUTCDateToLocalDate} from './utils/date';
+import QueueFlushService from './queueFlushService';
+import EventMessageQueue from './queues/eventMessageQueue';
+import EventQueue from './queues/eventsQueue';
+import IdentityMessageQueue from './queues/identityMessageQueue';
+import {
+	ANALYTICS_CLIENT_VERSION,
+	FLUSH_INTERVAL,
+	QUEUE_PRIORITY_DEFAULT,
+	QUEUE_PRIORITY_IDENTITY,
+	STORAGE_KEY_EVENTS,
+	STORAGE_KEY_IDENTITY,
+	STORAGE_KEY_MESSAGES,
+	STORAGE_KEY_MESSAGE_IDENTITY,
+	STORAGE_KEY_USER_ID,
+	TRACK_DEFAULT_OPTIONS,
+	VALIDATION_CONTEXT_VALUE_MAXIMUM_LENGTH,
+} from './utils/constants';
+import {getContexts, setContexts} from './utils/contexts';
+import {normalizeEvent} from './utils/events';
 import hash from './utils/hash';
+import {getItem, setItem} from './utils/storage';
+import {upgradeStorage} from './utils/storage_version';
+import {isValidEvent} from './utils/validators';
 
 // Constants
 
-const ENV = window || global;
-
-const EVENTS_STORAGE_LIMIT = 512;
-
-const FLUSH_INTERVAL = 2000;
-
-const LIMIT_FAILED_ATTEMPTS = 7;
-
-const REQUEST_TIMEOUT = 120000;
-
-// Local Storage keys
-
-const STORAGE_KEY_CONTEXTS = 'ac_client_context';
-
-const STORAGE_KEY_EVENTS = 'ac_client_batch';
-
-const STORAGE_KEY_IDENTITY_HASH = 'ac_client_identity';
-
-const STORAGE_KEY_USER_ID = 'ac_client_user_id';
+export const ENV = window || global;
 
 let instance;
 
-const getItem = key => {
-	let data;
-	const item = localStorage.getItem(key);
-	try {
-		data = JSON.parse(item);
-	}
-	catch (e) {
-		return;
-	}
-
-	return data;
-};
-
-const setItem = (key, value) => {
-	try {
-		localStorage.setItem(key, JSON.stringify(value));
-	}
-	catch (e) {
-		return;
-	}
-};
-
 /**
- * Analytics class that is desined to collect events that are captured
+ * Analytics class that is designed to collect events that are captured
  * for later processing. It persists the events in localStorage
  * and flushes it to the defined endpoint at regular intervals.
  */
 class Analytics {
+
 	/**
 	 * Returns an Analytics instance and triggers the automatic flush loop
-	 * @param {object} config object to instantiate the Analytics tool
+	 * @param {Object} config object to instantiate the Analytics tool
 	 */
-	constructor(config) {
+	constructor(config, middlewares) {
 		if (!instance) {
 			instance = this;
 		}
@@ -87,33 +66,39 @@ class Analytics {
 			return instance;
 		}
 
-		const {endpointUrl} = config;
+		instance._disposed = false;
 
-		const client = new Client(endpointUrl);
+		const endpointUrl = (config.endpointUrl || '').replace(/\/$/, '');
 
-		instance.client = client;
+		instance.config = Object.assign(config, {
+			endpointUrl,
+			flushInterval: config.flushInterval || FLUSH_INTERVAL,
+			identityEndpoint: `${endpointUrl}/identity`,
+		});
 
-		instance._sendData = userId => {
-			return client.send(instance, userId);
-		};
+		instance.version = ANALYTICS_CLIENT_VERSION;
 
-		instance.config = config;
+		// Register initial middlewares
 
-		instance.identityEndpoint = `${endpointUrl}/identity`;
+		middlewares.forEach((middleware) =>
+			instance.registerMiddleware(middleware)
+		);
 
-		instance.failedAttempts = 0;
-		instance.delay = instance._defaultDelayValue();
-		instance.events = getItem(STORAGE_KEY_EVENTS) || [];
-		instance.contexts = getItem(STORAGE_KEY_CONTEXTS) || [];
-		instance.isFlushInProgress = false;
+		instance._queueFlushService = new QueueFlushService(instance.config);
+
+		this._initializeEventQueue();
+		this._initializeEventMessageQueue();
+		this._initializeIdentityMessageQueue();
+
+		// Upgrade storage
+
+		upgradeStorage();
 
 		// Initializes default plugins
 
-		instance._pluginDisposers = defaultPlugins.map(plugin =>
+		instance._pluginDisposers = defaultPlugins.map((plugin) =>
 			plugin(instance)
 		);
-
-		instance._startsFlushLoop();
 
 		this._ensureIntegrity();
 
@@ -122,19 +107,21 @@ class Analytics {
 
 	/**
 	 * Creates a singleton instance of Analytics
-	 * @param {object} config Configuration object
+	 * @param {Object} config Configuration object
 	 * @example
 	 * Analytics.create(
 	 *   {
-	 *	   endpointUrl: 'https://osbasahcerebropublisher-projectname.lfr.io'
-	 *	   flushInterval: 2000,
-	 *	   userId: 'id-s7uatimmxgo',
+	 *     channelId: '123456789',
 	 *     dataSourceId: 'MyDataSourceId',
+	 *     endpointUrl: 'https://osbasahpublisher-projectid.lfr.cloud'
+	 *     flushInterval: 2000,
+	 *     projectId: '123456'
+	 *     userId: 'id-s7uatimmxgo',
 	 *   }
 	 * );
 	 */
-	static create(config = {}) {
-		const self = new Analytics(config);
+	static create(config = {}, middlewares = []) {
+		const self = new Analytics(config, middlewares);
 
 		ENV.Analytics = self;
 		ENV.Analytics.create = Analytics.create;
@@ -151,72 +138,17 @@ class Analytics {
 	static dispose() {
 		const self = ENV.Analytics;
 
-		if (self) {
-			self.disposeInternal();
+		if (self && !self._isTrackingDisabled()) {
+			self._disposeInternal();
 		}
 	}
 
-	/**
-	 * Flushes the event queue and sends it to the registered endpoint. If no data
-	 * is pending or a flush is already in progress, the request will be ignored.
-	 * @return {object} A Promise that resolves successfully when the data has been
-	 * sent or no pending data was left to be sent
-	 */
-	flush() {
-		if (this._isTrackingDisabled()) {
-			this.disposeInternal();
-
-			return;
-		}
-
-		let result;
-
-		if (!this.isFlushInProgress && this.events.length) {
-			this.isFlushInProgress = true;
-
-			const eventKeys = this.events.map(event =>
-				this._getEventKey(event)
-			);
-
-			result = Promise.race([
-				this._getUserId().then(userId => instance._sendData(userId)),
-				this._timeout(REQUEST_TIMEOUT)
-			])
-				.then(() => {
-					const events = this.events.filter(
-						event =>
-							eventKeys.indexOf(this._getEventKey(event)) > -1
-					);
-
-					this.reset(events);
-
-					this.failedAttempts = 0;
-					this.delay = this._defaultDelayValue();
-					this._startsFlushLoop();
-				})
-				.catch(() => {
-					this.isFlushInProgress = false;
-
-					this._increaseDelay();
-					this._startsFlushLoop();
-
-					return this.isFlushInProgress;
-				})
-				.then(() => {
-					this.isFlushInProgress = false;
-
-					return this.isFlushInProgress;
-				});
-		}
-		else {
-			result = Promise.resolve();
-		}
-
-		return result;
+	getEvents() {
+		return this[STORAGE_KEY_EVENTS].getItems();
 	}
 
 	/**
-	 * Registers the given plugin and executes its initialistion logic
+	 * Registers the given plugin and executes its initialization logic
 	 * @param {Function} plugin An Analytics Plugin
 	 */
 	registerPlugin(plugin) {
@@ -242,60 +174,77 @@ class Analytics {
 		}
 
 		if (typeof middleware === 'function') {
-			this.client.use(middleware);
+			middlewares.push(middleware);
 		}
 	}
 
 	/**
-	 * Resets the event queue
-	 * @param {Array} A list of events to be cleared from the queue. If not passed,
-	 * clears everything.
+	 * Clear event queue and set stored context to the current context.
 	 */
-	reset(events) {
-		if (events) {
-			this.events = this.events.filter(event => {
-				const eventKey = this._getEventKey(event);
-
-				return !events.find(evt => {
-					return this._getEventKey(evt) === eventKey;
-				});
-			});
-		}
-		else {
-			this.events.length = 0;
-		}
-
-		if (!this.events.length) {
-			const context = this._getContext();
-
-			this.contexts = this.contexts.filter(
-				storedContext => hash(context) == hash(storedContext)
-			);
-		}
-
-		this._persist(STORAGE_KEY_EVENTS, this.events);
-		this._persist(STORAGE_KEY_CONTEXTS, this.contexts);
-	}
-
-	/**
-	 * Registers an event that is to be sent to the LCS endpoint
-	 * @param {string} eventId Id of the event
-	 * @param {string} applicationId ID of the application that triggered the event
-	 * @param {object} eventProps Complementary information about the event
-	 */
-	send(eventId, applicationId, eventProps) {
+	reset() {
 		if (this._isTrackingDisabled()) {
 			return;
 		}
 
+		this[STORAGE_KEY_EVENTS].reset();
+
+		this.resetContext();
+	}
+
+	/**
+	 * Set stored context to the current context.
+	 */
+	resetContext() {
+		const context = this._getContext();
+
+		const contextsMap = new Map();
+		contextsMap.set(hash(context), context);
+
+		setContexts(contextsMap);
+	}
+
+	/**
+	 * Registers an event that is to be sent to Analytics Cloud
+	 * @param {string} eventId Id of the event
+	 * @param {Object} eventProps Complementary information about the event
+	 * @param {Object} options Complementary information about the request
+	 */
+	track(eventId, eventProps, options = {}) {
+		if (
+			this._isTrackingDisabled() ||
+			instance._disposed ||
+			!isValidEvent({eventId, eventProps})
+		) {
+			return;
+		}
+
+		// eslint-disable-next-line
+		const mergedOptions = Object.assign({}, TRACK_DEFAULT_OPTIONS, options);
+
 		const currentContextHash = this._getCurrentContextHash();
 
-		this._addEvent(applicationId, currentContextHash, eventId, eventProps);
+		instance[STORAGE_KEY_EVENTS].addItem(
+			normalizeEvent(
+				eventId,
+				mergedOptions.applicationId,
+				eventProps,
+				currentContextHash
+			)
+		);
+	}
 
-		this._verifyEventsStorageLimit();
+	/**
+	 * Registers an event that is to be sent to Analytics Cloud
+	 * @param {string} eventId Id of the event
+	 * @param {string} applicationId ID of the application that triggered the event
+	 * @param {Object} eventProps Complementary information about the event
+	 */
+	send(eventId, applicationId, eventProps) {
+		if (!applicationId) {
+			return;
+		}
 
-		this._persist(STORAGE_KEY_EVENTS, this.events);
-		this._persist(STORAGE_KEY_CONTEXTS, this.contexts);
+		this.track(eventId, eventProps, {applicationId});
 	}
 
 	/**
@@ -303,37 +252,45 @@ class Analytics {
 	 * by consumers every time an identity change is detected. If the identity is
 	 * different than the previously stored one, we will save this new identity and
 	 * send a request updating the Identity Service.
-	 * @param {object} identity A key-value pair object that identifies the user
-	 * @return {Promise} A promise resolved with the generated identity hash
+	 * @param {Object} identity A key-value pair object that identifies the user
+	 * @returns {Promise} A promise resolved with the generated identity hash
 	 */
 	setIdentity(identity) {
 		if (this._isTrackingDisabled()) {
 			return;
 		}
 
-		this.config.identity = identity;
+		if (!identity.email) {
+			return console.error(
+				'Unable to send identity message due invalid email'
+			);
+		}
 
-		return this._getUserId().then(userId =>
-			this._sendIdentity(identity, userId)
-		);
+		const hashedIdentity = {
+			emailAddressHashed: hash(identity.email.toLowerCase()),
+		};
+
+		this.config.identity = hashedIdentity;
+
+		const userId = this._getUserId();
+		this._sendIdentity(hashedIdentity, userId);
+
+		return Promise.resolve(userId);
 	}
 
-	_addEvent(applicationId, currentContextHash, eventId, eventProps) {
-		this.events = [
-			...this.events,
-			this._serialize(
-				eventId,
-				applicationId,
-				eventProps,
-				currentContextHash
-			)
-		];
-	}
+	/**
+	 * Clears interval and calls plugins disposers if available
+	 */
+	_disposeInternal() {
+		instance._disposed = true;
+		instance._queueFlushService.dispose();
 
-	_defaultDelayValue() {
-		return this.config.flushInterval || FLUSH_INTERVAL;
+		if (instance._pluginDisposers) {
+			instance._pluginDisposers
+				.filter((disposer) => typeof disposer === 'function')
+				.forEach((disposer) => disposer());
+		}
 	}
-
 	_ensureIntegrity() {
 		const userId = getItem(STORAGE_KEY_USER_ID);
 
@@ -341,69 +298,18 @@ class Analytics {
 			this._setCookie(STORAGE_KEY_USER_ID, userId);
 		}
 	}
-
-	/**
-	 * Clears interval and calls plugins disposers if available
-	 */
-	disposeInternal() {
-		if (this.flushInterval) {
-			clearInterval(this.flushInterval);
-		}
-
-		if (instance._pluginDisposers) {
-			instance._pluginDisposers
-				.filter(disposer => typeof disposer === 'function')
-				.forEach(disposer => disposer());
-		}
-	}
-
-	_fibonacci(num) {
-		if (num <= 1) {
-			return 1;
-		}
-
-		return this._fibonacci(num - 1) + this._fibonacci(num - 2);
-	}
-
-	/**
-	 * Returns an unique identifier for an user, additionaly it stores
-	 * the generated token to the local storage cache and clears
-	 * previously stored identiy hash.
-	 * @return {string} The generated id
-	 */
-	_generateUserId() {
-		const userId = uuidv1();
-
-		this._persist(STORAGE_KEY_USER_ID, userId);
-		this._setCookie(STORAGE_KEY_USER_ID, userId);
-
-		localStorage.removeItem(STORAGE_KEY_IDENTITY_HASH);
-
-		return userId;
-	}
-
 	_getCurrentContextHash() {
 		const currentContext = this._getContext();
 		const currentContextHash = hash(currentContext);
+		const contextsMap = getContexts();
 
-		const hasStoredContext = this.contexts.find(
-			storedContext => hash(storedContext) === currentContextHash
-		);
+		if (!contextsMap.has(currentContextHash)) {
+			contextsMap.set(currentContextHash, currentContext);
 
-		if (!hasStoredContext) {
-			this.contexts = [...this.contexts, currentContext];
+			setContexts(contextsMap);
 		}
 
 		return currentContextHash;
-	}
-
-	/**
-	 * Returns a unique identifier for an event
-	 * @param {object} The event
-	 * @return {string} The generated id
-	 */
-	_getEventKey({applicationId, eventDate, eventId}) {
-		return `${applicationId}${eventDate}${eventId}`;
 	}
 
 	_getContext() {
@@ -412,6 +318,13 @@ class Analytics {
 			{context: {}}
 		);
 
+		for (const key in context) {
+			context[key] = String(context[key]).slice(
+				0,
+				VALIDATION_CONTEXT_VALUE_MAXIMUM_LENGTH
+			);
+		}
+
 		return context;
 	}
 
@@ -419,7 +332,7 @@ class Analytics {
 		const bodyData = {
 			dataSourceId,
 			identity,
-			userId
+			userId,
 		};
 
 		return hash(bodyData);
@@ -427,39 +340,45 @@ class Analytics {
 
 	/**
 	 * Gets the userId for the existing analytics user. Previously generated ids
-	 * are stored and retrieved before generating a new one. If a anonymous
-	 * navigation is started after a identified navigation, the user ID token
+	 * are stored and retrieved before generating a new one. If an anonymous
+	 * navigation is started after an identified navigation, the user ID token
 	 * is regenerated.
-	 * @return {Promise} A promise resolved with the stored or generated userId
+	 * @returns {Promise} A promise resolved with the stored or generated userId
 	 */
 	_getUserId() {
 		const newUserIdRequired = this._isNewUserIdRequired();
 
-		let userId = Promise.resolve(getItem(STORAGE_KEY_USER_ID));
+		let userId = getItem(STORAGE_KEY_USER_ID);
 
 		if (newUserIdRequired) {
-			userId = Promise.resolve(this._generateUserId());
+			userId = this._generateUserId();
 		}
 
 		return userId;
 	}
 
 	/**
-	 * Increases delay based on fibonacci sequence
+	 * Returns a unique identifier for a user, additionally it stores
+	 * the generated token to the local storage cache and clears
+	 * previously stored identity hash.
+	 * @returns {string} The generated id
 	 */
-	_increaseDelay() {
-		if (this.failedAttempts <= LIMIT_FAILED_ATTEMPTS) {
-			this.delay += this._fibonacci(this.failedAttempts) * 1000;
+	_generateUserId() {
+		const userId = uuidv4();
 
-			this.failedAttempts += 1;
-		}
+		setItem(STORAGE_KEY_USER_ID, userId);
+		this._setCookie(STORAGE_KEY_USER_ID, userId);
+
+		localStorage.removeItem(STORAGE_KEY_IDENTITY);
+
+		return userId;
 	}
 
 	_isNewUserIdRequired() {
 		const {dataSourceId} = this.config;
 		const {identity} = this.config;
 
-		const storedIdentityHash = getItem(STORAGE_KEY_IDENTITY_HASH);
+		const storedIdentityHash = getItem(STORAGE_KEY_IDENTITY);
 		const storedUserId = getItem(STORAGE_KEY_USER_ID);
 
 		let newUserIdRequired = false;
@@ -491,32 +410,18 @@ class Analytics {
 	}
 
 	_isTrackingDisabled() {
-		if (
+		return (
 			ENV.ac_client_disable_tracking ||
-			navigator.doNotTrack == '1' ||
-			navigator.doNotTrack == 'yes'
-		) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Persists the event queue to the LocalStorage
-	 * @protected
-	 */
-	_persist(key, data) {
-		setItem(key, data);
-
-		return data;
+			navigator.doNotTrack === '1' ||
+			navigator.doNotTrack === 'yes'
+		);
 	}
 
 	/**
 	 * Sends the identity information and user id to the Identity Service.
 	 * @param {Object} identity The identity information about an user.
 	 * @param {String} userId The unique user id.
-	 * @return {Promise} A promise returned by the fetch request.
+	 * @returns {Promise} A promise returned by the fetch request.
 	 */
 	_sendIdentity(identity, userId) {
 		const {dataSourceId} = this.config;
@@ -526,61 +431,28 @@ class Analytics {
 			identity,
 			userId
 		);
-		const storedIdentityHash = getItem(STORAGE_KEY_IDENTITY_HASH);
+		const storedIdentityHash = getItem(STORAGE_KEY_IDENTITY);
 
-		let identyHash = Promise.resolve(storedIdentityHash);
+		let identityHash = Promise.resolve(storedIdentityHash);
 
 		if (newIdentityHash !== storedIdentityHash) {
-			instance._persist(STORAGE_KEY_IDENTITY_HASH, newIdentityHash);
+			const {channelId} = this._getContext();
+			const {emailAddressHashed} = identity;
 
-			const body = JSON.stringify({
+			setItem(STORAGE_KEY_IDENTITY, newIdentityHash);
+
+			instance[STORAGE_KEY_MESSAGE_IDENTITY].addItem({
+				channelId,
 				dataSourceId,
-				identity,
-				userId
+				emailAddressHashed,
+				id: newIdentityHash,
+				userId,
 			});
-			const headers = new Headers();
 
-			headers.append('Content-Type', 'application/json');
-
-			const request = {
-				body,
-				cache: 'default',
-				credentials: 'same-origin',
-				headers,
-				method: 'POST',
-				mode: 'cors'
-			};
-
-			identyHash = fetch(this.identityEndpoint, request).then(
-				() => newIdentityHash
-			);
+			identityHash = newIdentityHash;
 		}
 
-		return identyHash;
-	}
-
-	/**
-	 * Serializes data and returns the result appending a timestamp to the returned
-	 * data as well
-	 * @param {string} eventId The event Id
-	 * @param {string} applicationId The application Id
-	 * @param {object} properties Additional properties to serialize
-	 * @protected
-	 * @return {object}
-	 */
-	_serialize(eventId, applicationId, properties, contextHash) {
-		const date = new Date();
-		const eventDate = date.toISOString();
-		const eventLocalDate = convertUTCDateToLocalDate(date).toISOString();
-
-		return {
-			applicationId,
-			contextHash,
-			eventDate,
-			eventId,
-			eventLocalDate,
-			properties
-		};
+		return identityHash;
 	}
 
 	/**
@@ -592,45 +464,56 @@ class Analytics {
 
 		expirationDate.setDate(expirationDate.getDate() + 365);
 
-		document.cookie = `${key}=${data}; expires= ${expirationDate.toUTCString()}; path=/`;
-	}
-
-	_startsFlushLoop() {
-		if (this.flushInterval) {
-			clearInterval(instance.flushInterval);
-		}
-		this.flushInterval = setInterval(() => this.flush(), this.delay);
+		document.cookie = `${key}=${data}; expires=${expirationDate.toUTCString()}; path=/; Secure`;
 	}
 
 	/**
-	 * Returns a promise that times out after the given time limit is exceeded
-	 * @param {number} timeout
-	 * @return {object} Promise
+	 * Create member instance of EventQueue to store events.
 	 */
-	_timeout(timeout) {
-		return new Promise((resolve, reject) => setTimeout(reject, timeout));
+	_initializeEventQueue() {
+		const eventQueue = new EventQueue({
+			analyticsInstance: instance,
+		});
+
+		instance[STORAGE_KEY_EVENTS] = eventQueue;
+		instance._queueFlushService.addQueue(eventQueue, {
+			priority: QUEUE_PRIORITY_DEFAULT,
+		});
 	}
 
 	/**
-	 * Verify events storage and drop old events when limit is reached
+	 * Create member instance of EventMessageQueue to store event messages.
 	 */
-	_verifyEventsStorageLimit() {
-		if (this.failedAttempts != 0) {
-			const totalSize = Number(
-				(JSON.stringify(this.events).length * 16) / (8 * 1024)
-			);
+	_initializeEventMessageQueue() {
+		const eventMessageQueue = new EventMessageQueue({
+			analyticsInstance: instance,
+		});
 
-			if (totalSize > EVENTS_STORAGE_LIMIT) {
-				this.events.shift();
-			}
-		}
+		instance[STORAGE_KEY_MESSAGES] = eventMessageQueue;
+		instance._queueFlushService.addQueue(eventMessageQueue, {
+			priority: QUEUE_PRIORITY_DEFAULT,
+		});
+	}
+
+	/**
+	 * Create member instance of IdentityMessageQueue to store identity messages.
+	 */
+	_initializeIdentityMessageQueue() {
+		const identityMessageQueue = new IdentityMessageQueue({
+			analyticsInstance: instance,
+		});
+
+		instance[STORAGE_KEY_MESSAGE_IDENTITY] = identityMessageQueue;
+		instance._queueFlushService.addQueue(identityMessageQueue, {
+			priority: QUEUE_PRIORITY_IDENTITY,
+		});
 	}
 }
 
 // Exposes Analytics.create to the global scope
 
 ENV.Analytics = {
-	create: Analytics.create
+	create: Analytics.create,
 };
 
 export {Analytics};

@@ -13,13 +13,13 @@
  */
 
 /**
- * @deprecated As of Athanasius(7.3.x), replaced by ItemSelectorPreview.es.js
+ * @deprecated As of Athanasius (7.3.x), replaced by ItemSelectorPreview.es.js
  * @module liferay-item-viewer
  */
 
 AUI.add(
 	'liferay-item-viewer',
-	A => {
+	(A) => {
 		var Do = A.Do;
 
 		var Lang = A.Lang;
@@ -126,63 +126,63 @@ AUI.add(
 			'</span></a>';
 
 		var TPL_INFO_TAB_BODY =
-			'<div class="{className} fade in tab-pane" id="{tabId}">{content}</div>';
+			'<div class="{className} fade show tab-pane" id="{tabId}">{content}</div>';
 
 		var TPL_INFO_TAB_BODY_CONTENT =
 			'<dt class="{dtClassName}">{dt}</dt><dd class="{ddClassName}">{dd}</dd>';
 
 		var TPL_INFO_TAB_TITLE =
-			'<li><a aria-expanded="false" class="{className}" data-toggle="liferay-tab" href="#{tabId}">{tabTitle}</a></li>';
+			'<li class="nav-item"><a aria-expanded="false" class="nav-link {className}" data-toggle="liferay-tab" href="#{tabId}">{tabTitle}</a></li>';
 
 		var LiferayItemViewer = A.Component.create({
 			ATTRS: {
 				btnCloseCaption: {
 					validator: Lang.isString,
-					value: ''
+					value: '',
 				},
 
 				circular: {
-					value: true
+					value: true,
 				},
 
 				editItemURL: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				infoTemplate: {
-					value: '{current} of {total}'
+					value: '{current} of {total}',
 				},
 
 				playing: {
-					value: false
+					value: false,
 				},
 
 				previewTimeout: {
 					validator: Lang.isNumber,
-					value: 5000
+					value: 5000,
 				},
 
 				renderControls: {
 					validator: Lang.isBoolean,
-					value: true
+					value: true,
 				},
 
 				renderSidebar: {
 					validator: Lang.isBoolean,
-					value: true
+					value: true,
 				},
 
 				showPlayer: {
-					value: false
+					value: false,
 				},
 
 				uploadItemURL: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				zIndex: {
-					value: 5
-				}
+					value: 5,
+				},
 			},
 
 			EXTENDS: A.ImageViewer,
@@ -308,16 +308,16 @@ AUI.add(
 								data: [
 									{
 										key: Liferay.Language.get('format'),
-										value: file.type
+										value: file.type,
 									},
 									{
 										key: Liferay.Language.get('name'),
-										value: file.title
-									}
+										value: file.title,
+									},
 								],
-								title: Liferay.Language.get('file-info')
-							}
-						]
+								title: Liferay.Language.get('file-info'),
+							},
+						],
 					};
 				},
 
@@ -330,13 +330,13 @@ AUI.add(
 						.get('links')
 						.item(instance.get('currentIndex'));
 
-					var itemTitle = item.getAttribute('data-title');
-					var itemURL = item.getAttribute('data-url');
+					var itemTitle = item.dataset.title;
+					var itemURL = item.dataset.url;
 
 					var editDialogTitle = Lang.sub(TPL_EDIT_DIALOG_TITLE, {
 						copy: Liferay.Language.get('copy'),
 						edit: Liferay.Language.get('edit'),
-						title: itemTitle
+						title: itemTitle,
 					});
 
 					var editEntityBaseZIndex = Liferay.zIndex.WINDOW;
@@ -355,7 +355,7 @@ AUI.add(
 						{
 							dialog: {
 								destroyOnHide: true,
-								zIndex: editEntityBaseZIndex + 100
+								zIndex: editEntityBaseZIndex + 100,
 							},
 							id: instance.get('id'),
 							stack: false,
@@ -365,8 +365,8 @@ AUI.add(
 								entityURL: itemURL,
 								saveFileName: itemTitle,
 								saveParamName: 'imageSelectorFileName',
-								saveURL: instance.get('uploadItemURL')
-							}
+								saveURL: instance.get('uploadItemURL'),
+							},
 						},
 						A.bind('_onSaveEditSuccess', instance)
 					);
@@ -430,7 +430,7 @@ AUI.add(
 							Lang.sub(TPL_INFO_TAB_TITLE, {
 								className: index === 0 ? CSS_ACTIVE : STR_BLANK,
 								tabId: groupId,
-								tabTitle: group.title
+								tabTitle: group.title,
 							})
 						);
 
@@ -444,7 +444,7 @@ AUI.add(
 										dd: currentValue.value,
 										ddClassName: '',
 										dt: currentValue.key,
-										dtClassName: 'h5'
+										dtClassName: 'h5',
 									})
 								);
 							},
@@ -455,7 +455,7 @@ AUI.add(
 							Lang.sub(TPL_INFO_TAB_BODY, {
 								className: index === 0 ? CSS_ACTIVE : STR_BLANK,
 								content: dataStr,
-								tabId: groupId
+								tabId: groupId,
 							})
 						);
 
@@ -525,7 +525,7 @@ AUI.add(
 						if (instance.get('editItemURL')) {
 							var editIconEl = A.Node.create(
 								Lang.sub(TPL_EDIT_ICON, {
-									editItemURL: instance.get('editItemURL')
+									editItemURL: instance.get('editItemURL'),
 								})
 							);
 
@@ -568,7 +568,7 @@ AUI.add(
 
 					var sources = [];
 
-					links.each(item => {
+					links.each((item) => {
 						sources.push(
 							item.attr('href') || item.attr('data-href')
 						);
@@ -654,7 +654,7 @@ AUI.add(
 
 				TPL_SIDENAV:
 					'<div class="closed image-viewer-sidenav sidenav-fixed sidenav-menu-slider sidenav-right">' +
-					'<div class="image-viewer-sidenav-menu sidebar sidebar-default sidenav-menu">' +
+					'<div class="image-viewer-sidenav-menu sidebar sidebar-light sidenav-menu">' +
 					'<div class="sidebar-header">' +
 					'<a class="' +
 					CSS_ICON_MONOSPACED +
@@ -662,7 +662,7 @@ AUI.add(
 					Liferay.Util.getLexiconIconTpl('times') +
 					'</a>' +
 					'<h4 class="image-viewer-sidenav-header">' +
-					'<ul class="nav nav-tabs nav-tabs-default"></ul>' +
+					'<ul class="nav nav-tabs"></ul>' +
 					'</h4>' +
 					'</div>' +
 					'<div class="image-viewer-sidenav-body sidebar-body">' +
@@ -687,7 +687,7 @@ AUI.add(
 					newLink.setAttribute('data-value', imageData.file.url);
 					newLink.setAttribute('data-url', imageData.file.url);
 
-					newLink.all('[style]').each(node => {
+					newLink.all('[style]').each((node) => {
 						var styleAttr = node.getAttribute('style');
 
 						if (styleAttr) {
@@ -722,7 +722,7 @@ AUI.add(
 					var instance = this;
 
 					instance.TPL_CLOSE = Lang.sub(TPL_CLOSE, [
-						instance.get('btnCloseCaption')
+						instance.get('btnCloseCaption'),
 					]);
 
 					instance._displacedMethodHandles = [
@@ -762,7 +762,7 @@ AUI.add(
 							instance,
 							'_syncInfoUI',
 							instance
-						)
+						),
 					];
 				},
 
@@ -818,21 +818,21 @@ AUI.add(
 							title: itemFile.title,
 							type: itemFile.type,
 							url: itemFileURL,
-							uuid: itemFile.uuid
+							uuid: itemFile.uuid,
 						};
 
 						link.setData('value', JSON.stringify(imageValue));
 					}
 
 					return link;
-				}
-			}
+				},
+			},
 		});
 
 		A.LiferayItemViewer = LiferayItemViewer;
 	},
 	'',
 	{
-		requires: ['aui-component', 'aui-image-viewer', 'liferay-portlet-url']
+		requires: ['aui-component', 'aui-image-viewer', 'liferay-portlet-url'],
 	}
 );

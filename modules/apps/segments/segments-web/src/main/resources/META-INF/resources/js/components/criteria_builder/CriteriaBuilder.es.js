@@ -19,13 +19,13 @@ import {
 	conjunctionShape,
 	criteriaShape,
 	propertyShape,
-	propertyTypesShape
+	propertyTypesShape,
 } from '../../utils/types.es';
 import {
 	insertAtIndex,
 	removeAtIndex,
 	replaceAtIndex,
-	sub
+	sub,
 } from '../../utils/utils.es';
 import CriteriaGroup from './CriteriaGroup.es';
 
@@ -52,10 +52,11 @@ class CriteriaBuilder extends Component {
 		modelLabel: PropTypes.string,
 		onChange: PropTypes.func,
 		propertyKey: PropTypes.string.isRequired,
+		renderEmptyValuesErrors: PropTypes.bool,
 		supportedConjunctions: PropTypes.arrayOf(conjunctionShape),
 		supportedOperators: PropTypes.array,
 		supportedProperties: PropTypes.arrayOf(propertyShape).isRequired,
-		supportedPropertyTypes: propertyTypesShape
+		supportedPropertyTypes: propertyTypesShape,
 	};
 
 	/**
@@ -73,7 +74,7 @@ class CriteriaBuilder extends Component {
 			.filter(({items}) => {
 				return items ? items.length : true;
 			})
-			.map(item => {
+			.map((item) => {
 				let cleanedItem = item;
 
 				if (item.items) {
@@ -86,7 +87,7 @@ class CriteriaBuilder extends Component {
 								groupId: soloItem.groupId,
 								items: this._cleanCriteriaMapItems(
 									soloItem.items
-								)
+								),
 							};
 						}
 						else {
@@ -96,7 +97,7 @@ class CriteriaBuilder extends Component {
 					else {
 						cleanedItem = {
 							...item,
-							items: this._cleanCriteriaMapItems(item.items)
+							items: this._cleanCriteriaMapItems(item.items),
 						};
 					}
 				}
@@ -111,7 +112,7 @@ class CriteriaBuilder extends Component {
 	 * Cleans and updates the criteria with the newer criteria.
 	 * @param {Object} newCriteria The criteria with the most recent changes.
 	 */
-	_handleCriteriaChange = newCriteria => {
+	_handleCriteriaChange = (newCriteria) => {
 		const items = this._cleanCriteriaMapItems([newCriteria], true);
 
 		this.props.onChange(items[items.length - 1], this.props.propertyKey);
@@ -195,7 +196,7 @@ class CriteriaBuilder extends Component {
 
 		return {
 			...criteria,
-			items: updatedCriteriaItems.map(item => {
+			items: updatedCriteriaItems.map((item) => {
 				return this._isGroupItem(item)
 					? this._searchAndUpdateCriteria(
 							item,
@@ -207,7 +208,7 @@ class CriteriaBuilder extends Component {
 							replace
 					  )
 					: item;
-			})
+			}),
 		};
 	};
 
@@ -219,10 +220,11 @@ class CriteriaBuilder extends Component {
 			entityName,
 			modelLabel,
 			propertyKey,
+			renderEmptyValuesErrors,
 			supportedConjunctions,
 			supportedOperators,
 			supportedProperties,
-			supportedPropertyTypes
+			supportedPropertyTypes,
 		} = this.props;
 
 		return (
@@ -246,6 +248,7 @@ class CriteriaBuilder extends Component {
 						onChange={this._handleCriteriaChange}
 						onMove={this._handleCriterionMove}
 						propertyKey={propertyKey}
+						renderEmptyValuesErrors={renderEmptyValuesErrors}
 						root
 						supportedConjunctions={supportedConjunctions}
 						supportedOperators={supportedOperators}

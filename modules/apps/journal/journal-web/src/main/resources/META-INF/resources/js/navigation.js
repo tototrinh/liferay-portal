@@ -14,26 +14,26 @@
 
 AUI.add(
 	'liferay-journal-navigation',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var JournalNavigation = A.Component.create({
 			ATTRS: {
 				editEntryUrl: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				form: {
-					validator: Lang.isObject
+					validator: Lang.isObject,
 				},
 
 				moveEntryUrl: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				searchContainerId: {
-					validator: Lang.isString
-				}
+					validator: Lang.isString,
+				},
 			},
 
 			AUGMENTS: [Liferay.PortletBase],
@@ -51,7 +51,7 @@ AUI.add(
 							instance.ns('editEntry'),
 							instance._editEntry,
 							instance
-						)
+						),
 					];
 				},
 
@@ -69,14 +69,14 @@ AUI.add(
 					instance._processAction(action, url);
 				},
 
-				_moveToFolder(obj) {
+				_moveToFolder(object) {
 					var instance = this;
 
 					var namespace = instance.NS;
 
-					var dropTarget = obj.targetItem;
+					var dropTarget = object.targetItem;
 
-					var selectedItems = obj.selectedItems;
+					var selectedItems = object.selectedItems;
 
 					var folderId = dropTarget.attr('data-folder-id');
 
@@ -103,7 +103,7 @@ AUI.add(
 					var instance = this;
 
 					instance._processAction(
-						'/journal/move_entries_to_trash',
+						'/journal/move_articles_and_folders_to_trash',
 						instance.get('editEntryUrl')
 					);
 				},
@@ -160,8 +160,8 @@ AUI.add(
 					instance._searchContainer = searchContainer;
 
 					instance._bindUI();
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Portlet.JournalNavigation = JournalNavigation;
@@ -171,7 +171,7 @@ AUI.add(
 		requires: [
 			'aui-component',
 			'liferay-portlet-base',
-			'liferay-search-container'
-		]
+			'liferay-search-container',
+		],
 	}
 );

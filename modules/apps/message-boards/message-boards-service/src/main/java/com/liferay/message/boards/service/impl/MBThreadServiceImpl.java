@@ -22,6 +22,7 @@ import com.liferay.message.boards.model.MBThread;
 import com.liferay.message.boards.service.MBCategoryService;
 import com.liferay.message.boards.service.MBMessageLocalService;
 import com.liferay.message.boards.service.base.MBThreadServiceBaseImpl;
+import com.liferay.message.boards.service.persistence.MBMessageFinder;
 import com.liferay.message.boards.service.persistence.impl.constants.MBPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
@@ -35,7 +36,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelper;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -67,14 +68,10 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	@Override
 	public void deleteThread(long threadId) throws PortalException {
 		if (_lockManager.isLocked(MBThread.class.getName(), threadId)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(threadId);
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ", threadId));
 		}
 
 		List<MBMessage> messages = _mbMessageLocalService.getThreadMessages(
@@ -118,11 +115,11 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		List<Long> threadIds = null;
 
 		if (includeAnonymous) {
-			threadIds = mbMessageFinder.filterFindByG_U_MD_C_S(
+			threadIds = _mbMessageFinder.filterFindByG_U_MD_C_S(
 				groupId, userId, modifiedDate, categoryIds, status, start, end);
 		}
 		else {
-			threadIds = mbMessageFinder.filterFindByG_U_MD_C_A_S(
+			threadIds = _mbMessageFinder.filterFindByG_U_MD_C_A_S(
 				groupId, userId, modifiedDate, categoryIds, false, status,
 				start, end);
 		}
@@ -170,7 +167,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		List<Long> threadIds = null;
 
 		if (userId <= 0) {
-			threadIds = mbMessageFinder.filterFindByG_U_C_S(
+			threadIds = _mbMessageFinder.filterFindByG_U_C_S(
 				groupId, 0, categoryIds, status, start, end);
 		}
 		else {
@@ -183,11 +180,11 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			}
 
 			if (includeAnonymous) {
-				threadIds = mbMessageFinder.filterFindByG_U_C_S(
+				threadIds = _mbMessageFinder.filterFindByG_U_C_S(
 					groupId, userId, categoryIds, status, start, end);
 			}
 			else {
-				threadIds = mbMessageFinder.filterFindByG_U_C_A_S(
+				threadIds = _mbMessageFinder.filterFindByG_U_C_A_S(
 					groupId, userId, categoryIds, false, status, start, end);
 			}
 		}
@@ -247,11 +244,11 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		}
 
 		if (includeAnonymous) {
-			return mbMessageFinder.filterCountByG_U_MD_C_S(
+			return _mbMessageFinder.filterCountByG_U_MD_C_S(
 				groupId, userId, modifiedDate, categoryIds, status);
 		}
 
-		return mbMessageFinder.filterCountByG_U_MD_C_A_S(
+		return _mbMessageFinder.filterCountByG_U_MD_C_A_S(
 			groupId, userId, modifiedDate, categoryIds, false, status);
 	}
 
@@ -293,7 +290,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		}
 
 		if (userId <= 0) {
-			return mbMessageFinder.filterCountByG_U_C_S(
+			return _mbMessageFinder.filterCountByG_U_C_S(
 				groupId, 0, categoryIds, status);
 		}
 
@@ -306,11 +303,11 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		}
 
 		if (includeAnonymous) {
-			return mbMessageFinder.filterCountByG_U_C_S(
+			return _mbMessageFinder.filterCountByG_U_C_S(
 				groupId, userId, categoryIds, status);
 		}
 
-		return mbMessageFinder.filterCountByG_U_C_A_S(
+		return _mbMessageFinder.filterCountByG_U_C_A_S(
 			groupId, userId, categoryIds, false, status);
 	}
 
@@ -374,7 +371,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	public Lock lockThread(long threadId) throws PortalException {
 		MBThread thread = mbThreadPersistence.findByPrimaryKey(threadId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			thread.getGroupId(), thread.getCategoryId(),
 			ActionKeys.LOCK_THREAD);
@@ -389,24 +386,20 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		throws PortalException {
 
 		if (_lockManager.isLocked(MBThread.class.getName(), threadId)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(threadId);
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ", threadId));
 		}
 
 		MBThread thread = mbThreadLocalService.getThread(threadId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			thread.getGroupId(), thread.getCategoryId(),
 			ActionKeys.MOVE_THREAD);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			thread.getGroupId(), categoryId, ActionKeys.MOVE_THREAD);
 
@@ -420,7 +413,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 		MBThread thread = mbThreadLocalService.getThread(threadId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			thread.getGroupId(), thread.getCategoryId(), ActionKeys.UPDATE);
 
@@ -431,14 +424,10 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	@Override
 	public MBThread moveThreadToTrash(long threadId) throws PortalException {
 		if (_lockManager.isLocked(MBThread.class.getName(), threadId)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Thread is locked for class name ");
-			sb.append(MBThread.class.getName());
-			sb.append(" and class PK ");
-			sb.append(threadId);
-
-			throw new LockedThreadException(sb.toString());
+			throw new LockedThreadException(
+				StringBundler.concat(
+					"Thread is locked for class name ",
+					MBThread.class.getName(), " and class PK ", threadId));
 		}
 
 		List<MBMessage> messages = _mbMessageLocalService.getThreadMessages(
@@ -496,7 +485,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 		MBMessage message = _mbMessageLocalService.getMessage(messageId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			message.getGroupId(), message.getCategoryId(),
 			ActionKeys.MOVE_THREAD);
@@ -512,7 +501,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	public void unlockThread(long threadId) throws PortalException {
 		MBThread thread = mbThreadLocalService.getThread(threadId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_categoryModelResourcePermission, getPermissionChecker(),
 			thread.getGroupId(), thread.getCategoryId(),
 			ActionKeys.LOCK_THREAD);
@@ -598,6 +587,9 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 	@Reference
 	private MBCategoryService _mbCategoryService;
+
+	@Reference
+	private MBMessageFinder _mbMessageFinder;
 
 	@Reference
 	private MBMessageLocalService _mbMessageLocalService;

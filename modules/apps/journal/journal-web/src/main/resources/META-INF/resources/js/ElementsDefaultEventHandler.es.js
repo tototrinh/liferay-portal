@@ -12,40 +12,37 @@
  * details.
  */
 
-import {DefaultEventHandler, ItemSelectorDialog} from 'frontend-js-web';
+import {
+	DefaultEventHandler,
+	addParams,
+	openModal,
+	openSelectionModal,
+} from 'frontend-js-web';
 import {Config} from 'metal-state';
 
 class ElementsDefaultEventHandler extends DefaultEventHandler {
 	compareVersions(itemData) {
 		const namespace = this.namespace;
 
-		Liferay.Util.selectEntity(
-			{
-				dialog: {
-					constrain: true,
-					destroyOnHide: true,
-					modal: true
-				},
-				eventName: this.ns('selectVersionFm'),
-				id: this.ns('compareVersions'),
-				title: Liferay.Language.get('compare-versions'),
-				uri: itemData.compareVersionsURL
+		openSelectionModal({
+			onSelect: (selectedItem) => {
+				let url = itemData.redirectURL;
+
+				url = addParams(
+					`${namespace}sourceVersion=${selectedItem.sourceversion}`,
+					url
+				);
+				url = addParams(
+					`${namespace}targetVersion=${selectedItem.targetversion}`,
+					url
+				);
+
+				location.href = url;
 			},
-			event => {
-				let uri = itemData.redirectURL;
-
-				uri = Liferay.Util.addParams(
-					namespace + 'sourceVersion=' + event.sourceversion,
-					uri
-				);
-				uri = Liferay.Util.addParams(
-					namespace + 'targetVersion=' + event.targetversion,
-					uri
-				);
-
-				location.href = uri;
-			}
-		);
+			selectEventName: this.ns('selectVersionFm'),
+			title: Liferay.Language.get('compare-versions'),
+			url: itemData.compareVersionsURL,
+		});
 	}
 
 	copyArticle(itemData) {
@@ -69,29 +66,33 @@ class ElementsDefaultEventHandler extends DefaultEventHandler {
 	}
 
 	deleteArticleTranslations(itemData) {
-		this._openArticleTranslationsItemSelector(
-			Liferay.Language.get('delete'),
-			Liferay.Language.get('delete-translations'),
-			itemData.selectArticleTranslationsURL,
-			selectedItems => {
-				if (
-					confirm(
-						Liferay.Language.get(
-							'are-you-sure-you-want-to-delete-the-selected-entries'
+		openSelectionModal({
+			buttonAddLabel: Liferay.Language.get('delete'),
+			multiple: true,
+			onSelect: (selectedItems) => {
+				if (selectedItems) {
+					if (
+						confirm(
+							Liferay.Language.get(
+								'are-you-sure-you-want-to-delete-the-selected-entries'
+							)
 						)
-					)
-				) {
-					selectedItems.forEach(item => {
-						document.hrefFm.appendChild(item);
-					});
-				}
+					) {
+						selectedItems.forEach((item) => {
+							document.hrefFm.appendChild(item);
+						});
 
-				submitForm(
-					document.hrefFm,
-					itemData.deleteArticleTranslationsURL
-				);
-			}
-		);
+						submitForm(
+							document.hrefFm,
+							itemData.deleteArticleTranslationsURL
+						);
+					}
+				}
+			},
+			selectEventName: this.ns('selectTranslations'),
+			title: Liferay.Language.get('delete-translations'),
+			url: itemData.selectArticleTranslationsURL,
+		});
 	}
 
 	expireArticles(itemData) {
@@ -99,34 +100,21 @@ class ElementsDefaultEventHandler extends DefaultEventHandler {
 	}
 
 	permissions(itemData) {
-		Liferay.Util.openWindow({
-			dialog: {
-				destroyOnHide: true,
-				modal: true
-			},
-			dialogIframe: {
-				bodyCssClass: 'dialog-with-footer'
-			},
+		openModal({
 			title: Liferay.Language.get('permissions'),
-			uri: itemData.permissionsURL
+			url: itemData.permissionsURL,
 		});
 	}
 
 	preview(itemData) {
-		Liferay.Util.openWindow({
-			dialog: {
-				destroyOnHide: true,
-				modal: true
-			},
-			dialogIframe: {
-				bodyCssClass: 'dialog-with-footer'
-			},
+		openModal({
+			iframeBodyCssClass: '',
 			title: itemData.title,
-			uri: itemData.previewURL
+			url: itemData.previewURL,
 		});
 	}
 
-	publishToLive(itemData) {
+	publishArticleToLive(itemData) {
 		if (
 			confirm(
 				Liferay.Language.get(
@@ -138,6 +126,18 @@ class ElementsDefaultEventHandler extends DefaultEventHandler {
 		}
 	}
 
+	publishFolderToLive(itemData) {
+		if (
+			confirm(
+				Liferay.Language.get(
+					'are-you-sure-you-want-to-publish-the-selected-folder'
+				)
+			)
+		) {
+			this._send(itemData.publishFolderURL);
+		}
+	}
+
 	subscribeArticle(itemData) {
 		this._send(itemData.subscribeArticleURL);
 	}
@@ -146,45 +146,13 @@ class ElementsDefaultEventHandler extends DefaultEventHandler {
 		this._send(itemData.unsubscribeArticleURL);
 	}
 
-	/**
-	 * Opens an item selector to select some article translations.
-	 * @param {string} dialogButtonLabel
-	 * @param {string} dialogTitle
-	 * @param {string} selectArticleTranslationsURL
-	 * @param {function} callback Callback executed when some items have been
-	 *  selected. They will be sent as parameters to this callback
-	 * @private
-	 * @review
-	 */
-	_openArticleTranslationsItemSelector(
-		dialogButtonLabel,
-		dialogTitle,
-		selectArticleTranslationsURL,
-		callback
-	) {
-		const itemSelectorDialog = new ItemSelectorDialog({
-			buttonAddLabel: dialogButtonLabel,
-			eventName: this.ns('selectTranslations'),
-			title: dialogTitle,
-			url: selectArticleTranslationsURL
-		});
-
-		itemSelectorDialog.on('selectedItemChange', event => {
-			if (event.selectedItem) {
-				callback(event.selectedItem);
-			}
-		});
-
-		itemSelectorDialog.open();
-	}
-
 	_send(url) {
 		submitForm(document.hrefFm, url);
 	}
 }
 
 ElementsDefaultEventHandler.STATE = {
-	trashEnabled: Config.bool()
+	trashEnabled: Config.bool(),
 };
 
 export default ElementsDefaultEventHandler;

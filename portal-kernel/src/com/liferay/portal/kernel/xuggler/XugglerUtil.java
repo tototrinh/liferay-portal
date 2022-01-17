@@ -16,7 +16,9 @@ package com.liferay.portal.kernel.xuggler;
 
 /**
  * @author Alexander Chow
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public class XugglerUtil {
 
 	public static Xuggler getXuggler() {
@@ -24,23 +26,23 @@ public class XugglerUtil {
 	}
 
 	public static void installNativeLibraries(String name) throws Exception {
-		getXuggler().installNativeLibraries(name);
+		_xuggler.installNativeLibraries(name);
 	}
 
 	public static boolean isEnabled() {
-		return getXuggler().isEnabled();
+		return _xuggler.isEnabled();
 	}
 
 	public static boolean isEnabled(boolean checkNativeLibraries) {
-		return getXuggler().isEnabled(checkNativeLibraries);
+		return _xuggler.isEnabled(checkNativeLibraries);
 	}
 
 	public static boolean isNativeLibraryCopied() {
-		return getXuggler().isNativeLibraryCopied();
+		return _xuggler.isNativeLibraryCopied();
 	}
 
 	public static boolean isNativeLibraryInstalled() {
-		return getXuggler().isNativeLibraryInstalled();
+		return _xuggler.isNativeLibraryInstalled();
 	}
 
 	public void setXuggler(Xuggler xuggler) {

@@ -33,7 +33,7 @@ function Variant({
 	showSplit,
 	split,
 	variantId,
-	winner
+	winner,
 }) {
 	const [openDropdown, setOpenDropdown] = useState(false);
 	const {editVariantLayoutURL} = useContext(SegmentsExperimentsContext);
@@ -113,6 +113,7 @@ function Variant({
 					</ClayList.ItemField>
 				</>
 			)}
+
 			{showSplit && (
 				<ClayList.ItemField>
 					<span
@@ -174,7 +175,7 @@ Variant.propTypes = {
 	showSplit: PropTypes.bool.isRequired,
 	split: PropTypes.number,
 	variantId: PropTypes.string.isRequired,
-	winner: PropTypes.bool
+	winner: PropTypes.bool,
 };
 
 export default Variant;

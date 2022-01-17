@@ -18,12 +18,14 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
@@ -37,6 +39,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.segments.constants.SegmentsActionKeys;
 import com.liferay.segments.constants.SegmentsEntryConstants;
+import com.liferay.segments.constants.SegmentsPortletKeys;
 import com.liferay.segments.model.SegmentsEntry;
 import com.liferay.segments.service.SegmentsEntryService;
 import com.liferay.segments.web.internal.security.permission.resource.SegmentsEntryPermission;
@@ -60,12 +63,13 @@ public class SegmentsDisplayContext {
 
 	public SegmentsDisplayContext(
 		HttpServletRequest httpServletRequest, RenderRequest renderRequest,
-		RenderResponse renderResponse,
+		RenderResponse renderResponse, boolean roleSegmentationEnabled,
 		SegmentsEntryService segmentsEntryService) {
 
 		_httpServletRequest = httpServletRequest;
 		_renderRequest = renderRequest;
 		_renderResponse = renderResponse;
+		_roleSegmentationEnabled = roleSegmentationEnabled;
 		_segmentsEntryService = segmentsEntryService;
 
 		_themeDisplay = (ThemeDisplay)_httpServletRequest.getAttribute(
@@ -98,11 +102,11 @@ public class SegmentsDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = _getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public CreationMenu getCreationMenu() {
@@ -110,7 +114,8 @@ public class SegmentsDisplayContext {
 			dropdownItem -> {
 				dropdownItem.setHref(
 					_renderResponse.createRenderURL(), "mvcRenderCommandName",
-					"editSegmentsEntry", "type", User.class.getName());
+					"/segments/edit_segments_entry", "type",
+					User.class.getName());
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "user-segment"));
 			}
@@ -122,8 +127,9 @@ public class SegmentsDisplayContext {
 			return _displayStyle;
 		}
 
-		_displayStyle = ParamUtil.getString(
-			_renderRequest, "displayStyle", "list");
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			PortalUtil.getHttpServletRequest(_renderRequest),
+			SegmentsPortletKeys.SEGMENTS, "list");
 
 		return _displayStyle;
 	}
@@ -158,17 +164,17 @@ public class SegmentsDisplayContext {
 	}
 
 	public String getSearchActionURL() {
-		PortletURL portletURL = _getPortletURL();
-
-		return portletURL.toString();
+		return String.valueOf(_getPortletURL());
 	}
 
-	public SearchContainer getSearchContainer() throws PortalException {
+	public SearchContainer<SegmentsEntry> getSearchContainer()
+		throws PortalException {
+
 		if (_searchContainer != null) {
 			return _searchContainer;
 		}
 
-		SearchContainer searchContainer = new SearchContainer(
+		SearchContainer<SegmentsEntry> searchContainer = new SearchContainer(
 			_renderRequest, _getPortletURL(), null, "there-are-no-segments");
 
 		searchContainer.setId("segmentsEntries");
@@ -232,17 +238,17 @@ public class SegmentsDisplayContext {
 				segmentsEntry.getSegmentsEntryKey();
 		}
 
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "editSegmentsEntry");
-		portletURL.setParameter(
-			"redirect", PortalUtil.getCurrentURL(_renderRequest));
-		portletURL.setParameter(
-			"segmentsEntryId",
-			String.valueOf(segmentsEntry.getSegmentsEntryId()));
-		portletURL.setParameter("showInEditMode", Boolean.FALSE.toString());
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/segments/edit_segments_entry"
+		).setRedirect(
+			PortalUtil.getCurrentURL(_renderRequest)
+		).setParameter(
+			"segmentsEntryId", segmentsEntry.getSegmentsEntryId()
+		).setParameter(
+			"showInEditMode", false
+		).buildString();
 	}
 
 	public String getSegmentsEntryURLTarget(SegmentsEntry segmentsEntry) {
@@ -257,13 +263,12 @@ public class SegmentsDisplayContext {
 	}
 
 	public String getSortingURL() {
-		PortletURL sortingURL = _getPortletURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL.toString();
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public int getTotalItems() throws PortalException {
@@ -284,15 +289,15 @@ public class SegmentsDisplayContext {
 	}
 
 	public boolean isDisabledManagementBar() throws PortalException {
-		if (_hasResults()) {
-			return false;
-		}
-
-		if (_isSearch()) {
+		if (_hasResults() || _isSearch()) {
 			return false;
 		}
 
 		return true;
+	}
+
+	public boolean isRoleSegmentationEnabled() {
+		return _roleSegmentationEnabled;
 	}
 
 	public boolean isShowCreationMenu() {
@@ -385,21 +390,27 @@ public class SegmentsDisplayContext {
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view.jsp"
+		).setKeywords(
+			() -> {
+				String keywords = _getKeywords();
 
-		portletURL.setParameter("mvcPath", "/view.jsp");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = _getKeywords();
-
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
-
-		portletURL.setParameter("displayStyle", getDisplayStyle());
-		portletURL.setParameter("orderByCol", _getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
-
-		return portletURL;
+				return null;
+			}
+		).setParameter(
+			"displayStyle", getDisplayStyle()
+		).setParameter(
+			"orderByCol", _getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildPortletURL();
 	}
 
 	private Sort _getSort() {
@@ -451,7 +462,8 @@ public class SegmentsDisplayContext {
 	private String _orderByType;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
-	private SearchContainer _searchContainer;
+	private final boolean _roleSegmentationEnabled;
+	private SearchContainer<SegmentsEntry> _searchContainer;
 	private final SegmentsEntryService _segmentsEntryService;
 	private final ThemeDisplay _themeDisplay;
 

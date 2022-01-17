@@ -17,8 +17,6 @@ package com.liferay.portal.workflow.web.internal.portlet.action;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.portlet.LiferayPortletURL;
-import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -41,7 +39,6 @@ import java.util.ResourceBundle;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
-import javax.portlet.PortletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -53,7 +50,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + WorkflowPortletKeys.CONTROL_PANEL_WORKFLOW,
-		"mvc.command.name=deployWorkflowDefinition"
+		"mvc.command.name=/portal_workflow/deploy_workflow_definition"
 	},
 	service = MVCActionCommand.class
 )
@@ -65,19 +62,10 @@ public class DeployWorkflowDefinitionMVCActionCommand
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
 		Map<Locale, String> titleMap = LocalizationUtil.getLocalizationMap(
 			actionRequest, "title");
 
-		String title = titleMap.get(LocaleUtil.getDefault());
-
-		if (titleMap.isEmpty() || Validator.isNull(title)) {
-			throw new WorkflowDefinitionTitleException();
-		}
-
-		String name = ParamUtil.getString(actionRequest, "name");
+		validateTitle(actionRequest, titleMap);
 
 		String content = ParamUtil.getString(actionRequest, "content");
 
@@ -86,7 +74,12 @@ public class DeployWorkflowDefinitionMVCActionCommand
 				"please-enter-a-valid-definition-before-publishing");
 		}
 
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
 		validateWorkflowDefinition(actionRequest, content.getBytes());
+
+		String name = ParamUtil.getString(actionRequest, "name");
 
 		WorkflowDefinition latestWorkflowDefinition =
 			getLatestWorkflowDefinition(themeDisplay.getCompanyId(), name);
@@ -142,29 +135,15 @@ public class DeployWorkflowDefinitionMVCActionCommand
 			resourceBundle, "workflow-updated-successfully");
 	}
 
-	protected void setRedirectAttribute(
-			ActionRequest actionRequest, WorkflowDefinition workflowDefinition)
-		throws Exception {
+	protected void validateTitle(
+			ActionRequest actionRequest, Map<Locale, String> titleMap)
+		throws WorkflowDefinitionTitleException {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		String title = titleMap.get(LocaleUtil.getDefault());
 
-		LiferayPortletURL portletURL = PortletURLFactoryUtil.create(
-			actionRequest, themeDisplay.getPpid(), PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcPath", "/definition/edit_workflow_definition.jsp");
-
-		String redirect = ParamUtil.getString(actionRequest, "redirect");
-
-		portletURL.setParameter("redirect", redirect, false);
-
-		portletURL.setParameter("name", workflowDefinition.getName(), false);
-		portletURL.setParameter(
-			"version", String.valueOf(workflowDefinition.getVersion()), false);
-		portletURL.setWindowState(actionRequest.getWindowState());
-
-		actionRequest.setAttribute(WebKeys.REDIRECT, portletURL.toString());
+		if (titleMap.isEmpty() || Validator.isNull(title)) {
+			throw new WorkflowDefinitionTitleException();
+		}
 	}
 
 	protected void validateWorkflowDefinition(

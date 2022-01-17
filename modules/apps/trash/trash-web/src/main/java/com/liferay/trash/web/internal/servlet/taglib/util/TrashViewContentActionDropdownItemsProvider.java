@@ -15,7 +15,9 @@
 package com.liferay.trash.web.internal.servlet.taglib.util;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemBuilder;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -27,9 +29,6 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.PortletURL;
 
 /**
  * @author Eudaldo Alonso
@@ -52,70 +51,59 @@ public class TrashViewContentActionDropdownItemsProvider {
 	}
 
 	public List<DropdownItem> getActionDropdownItems() throws Exception {
-		return new DropdownItemList() {
-			{
-				if (_trashHandler.isMovable(_classPK)) {
-					add(_getMoveActionDropdownItem());
-				}
-
-				if (_trashHandler.isDeletable(_classPK)) {
-					add(_getDeleteActionDropdownItem());
-				}
-			}
-		};
+		return DropdownItemListBuilder.add(
+			() -> _trashHandler.isMovable(_classPK),
+			_getMoveActionDropdownItem()
+		).add(
+			() -> _trashHandler.isDeletable(_classPK),
+			_getDeleteActionDropdownItem()
+		).build();
 	}
 
 	private DropdownItem _getDeleteActionDropdownItem() {
-		return new DropdownItem() {
-			{
-				putData("action", "deleteEntry");
-
-				PortletURL deleteEntryURL =
-					_liferayPortletResponse.createActionURL();
-
-				deleteEntryURL.setParameter(
-					ActionRequest.ACTION_NAME, "deleteEntries");
-				deleteEntryURL.setParameter(
-					"redirect", _themeDisplay.getURLCurrent());
-				deleteEntryURL.setParameter("className", _className);
-				deleteEntryURL.setParameter(
-					"classPK", String.valueOf(_classPK));
-
-				putData("deleteEntryURL", deleteEntryURL.toString());
-
-				setLabel(LanguageUtil.get(_themeDisplay.getLocale(), "delete"));
-			}
-		};
+		return DropdownItemBuilder.putData(
+			"action", "deleteEntry"
+		).putData(
+			"deleteEntryURL",
+			PortletURLBuilder.createActionURL(
+				_liferayPortletResponse
+			).setActionName(
+				"deleteEntries"
+			).setRedirect(
+				_themeDisplay.getURLCurrent()
+			).setParameter(
+				"className", _className
+			).setParameter(
+				"classPK", _classPK
+			).buildString()
+		).setLabel(
+			LanguageUtil.get(_themeDisplay.getLocale(), "delete")
+		).build();
 	}
 
 	private DropdownItem _getMoveActionDropdownItem() throws Exception {
-		return new DropdownItem() {
-			{
-				putData("action", "moveEntry");
-
-				PortletURL moveEntryURL =
-					_liferayPortletResponse.createRenderURL();
-
-				moveEntryURL.setParameter(
-					"mvcPath", "/view_container_model.jsp");
-				moveEntryURL.setParameter(
-					"classNameId",
-					String.valueOf(PortalUtil.getClassNameId(_className)));
-				moveEntryURL.setParameter("classPK", String.valueOf(_classPK));
-				moveEntryURL.setParameter(
-					"containerModelClassNameId",
-					String.valueOf(
-						PortalUtil.getClassNameId(
-							_trashHandler.getContainerModelClassName(
-								_classPK))));
-				moveEntryURL.setWindowState(LiferayWindowState.POP_UP);
-
-				putData("moveEntryURL", moveEntryURL.toString());
-
-				setLabel(
-					LanguageUtil.get(_themeDisplay.getLocale(), "restore"));
-			}
-		};
+		return DropdownItemBuilder.putData(
+			"action", "moveEntry"
+		).putData(
+			"moveEntryURL",
+			PortletURLBuilder.createRenderURL(
+				_liferayPortletResponse
+			).setMVCPath(
+				"/view_container_model.jsp"
+			).setParameter(
+				"classNameId", PortalUtil.getClassNameId(_className)
+			).setParameter(
+				"classPK", _classPK
+			).setParameter(
+				"containerModelClassNameId",
+				PortalUtil.getClassNameId(
+					_trashHandler.getContainerModelClassName(_classPK))
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).buildString()
+		).setLabel(
+			LanguageUtil.get(_themeDisplay.getLocale(), "restore")
+		).build();
 	}
 
 	private final String _className;

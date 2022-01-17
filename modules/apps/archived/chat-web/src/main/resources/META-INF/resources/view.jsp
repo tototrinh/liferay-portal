@@ -27,6 +27,16 @@
 	</liferay-util:html-top>
 
 	<liferay-util:html-bottom>
+		<aui:script use="liferay-poller">
+			<c:if test="<%= themeDisplay.isSignedIn() %>">
+				Liferay.Poller.init({
+					encryptedUserId:
+						'<%= Encryptor.encrypt(company.getKeyObj(), String.valueOf(themeDisplay.getUserId())) %>',
+				});
+			</c:if>
+		</aui:script>
+
+		<script data-senna-track="temporary" defer="defer" src="https://cdn.jsdelivr.net/npm/swfobject@2.2.1/index.min.js" type="text/javascript"></script>
 		<script data-senna-track="temporary" defer="defer" src="<%= PortalUtil.getStaticResourceURL(request, themeDisplay.getCDNHost() + PortalUtil.getPathContext(request) + "/js/main.js", portlet.getTimestamp()) %>" type="text/javascript"></script>
 	</liferay-util:html-bottom>
 
@@ -167,11 +177,9 @@
 			Set<String> servletContextNames = extensions.keySet();
 
 			for (String servletContextName : servletContextNames) {
-				String extensionPath = extensions.get(servletContextName);
-				ServletContext extensionServletContext = ServletContextPool.get(servletContextName);
 			%>
 
-				<liferay-util:include page="<%= extensionPath %>" servletContext="<%= extensionServletContext %>" />
+				<liferay-util:include page="<%= extensions.get(servletContextName) %>" servletContext="<%= ServletContextPool.get(servletContextName) %>" />
 
 			<%
 			}

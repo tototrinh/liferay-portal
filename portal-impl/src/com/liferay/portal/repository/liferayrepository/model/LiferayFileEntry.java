@@ -78,16 +78,16 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof LiferayFileEntry)) {
+		if (!(object instanceof LiferayFileEntry)) {
 			return false;
 		}
 
-		LiferayFileEntry liferayFileEntry = (LiferayFileEntry)obj;
+		LiferayFileEntry liferayFileEntry = (LiferayFileEntry)object;
 
 		if (Objects.equals(_dlFileEntry, liferayFileEntry._dlFileEntry)) {
 			return true;
@@ -173,8 +173,18 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 	}
 
 	@Override
+	public Date getExpirationDate() {
+		return _dlFileEntry.getExpirationDate();
+	}
+
+	@Override
 	public String getExtension() {
 		return _dlFileEntry.getExtension();
+	}
+
+	@Override
+	public String getExternalReferenceCode() {
+		return _dlFileEntry.getExternalReferenceCode();
 	}
 
 	@Override
@@ -347,6 +357,11 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 	@Override
 	public long getRepositoryId() {
 		return _dlFileEntry.getRepositoryId();
+	}
+
+	@Override
+	public Date getReviewDate() {
+		return _dlFileEntry.getReviewDate();
 	}
 
 	@Override

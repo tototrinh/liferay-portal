@@ -20,14 +20,20 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.JSONObjectImpl;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.BNDSettings;
+import com.liferay.source.formatter.JSPSourceProcessor;
+import com.liferay.source.formatter.JavaSourceProcessor;
 import com.liferay.source.formatter.SourceFormatterExcludes;
 import com.liferay.source.formatter.SourceFormatterMessage;
+import com.liferay.source.formatter.SourceProcessor;
+import com.liferay.source.formatter.checks.util.JSPSourceUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.util.CheckType;
 import com.liferay.source.formatter.util.FileUtil;
@@ -38,8 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import java.net.URL;
 
 import java.util.Collections;
 import java.util.List;
@@ -73,8 +77,44 @@ public abstract class BaseSourceCheck implements SourceCheck {
 
 	@Override
 	public boolean isEnabled(String absolutePath) {
-		return isAttributeValue(
-			SourceFormatterCheckUtil.ENABLED_KEY, absolutePath, true);
+		Class<?> clazz = getClass();
+
+		if (_filterCheckNames.contains(clazz.getSimpleName()) ||
+			isAttributeValue(
+				SourceFormatterCheckUtil.ENABLED_KEY, absolutePath, true)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isJavaSource(String content, int pos) {
+		if (_sourceProcessor instanceof JavaSourceProcessor) {
+			return true;
+		}
+
+		if (_sourceProcessor instanceof JSPSourceProcessor) {
+			return JSPSourceUtil.isJavaSource(content, pos);
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isJavaSource(
+		String content, int pos, boolean checkInsideTags) {
+
+		if (_sourceProcessor instanceof JavaSourceProcessor) {
+			return true;
+		}
+
+		if (_sourceProcessor instanceof JSPSourceProcessor) {
+			return JSPSourceUtil.isJavaSource(content, pos, checkInsideTags);
+		}
+
+		return false;
 	}
 
 	@Override
@@ -112,6 +152,16 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	}
 
 	@Override
+	public void setFilterCheckNames(List<String> filterCheckNames) {
+		_filterCheckNames = filterCheckNames;
+	}
+
+	@Override
+	public void setMaxDirLevel(int maxDirLevel) {
+		_maxDirLevel = maxDirLevel;
+	}
+
+	@Override
 	public void setMaxLineLength(int maxLineLength) {
 		_maxLineLength = maxLineLength;
 	}
@@ -142,6 +192,11 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	}
 
 	@Override
+	public void setSourceProcessor(SourceProcessor sourceProcessor) {
+		_sourceProcessor = sourceProcessor;
+	}
+
+	@Override
 	public void setSubrepository(boolean subrepository) {
 		_subrepository = subrepository;
 	}
@@ -163,7 +218,8 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		sourceFormatterMessages.add(
 			new SourceFormatterMessage(
 				fileName, message, CheckType.SOURCE_CHECK,
-				clazz.getSimpleName(), _getDocumentationURLString(clazz),
+				clazz.getSimpleName(),
+				SourceFormatterUtil.getDocumentationURLString(clazz),
 				lineNumber));
 
 		_sourceFormatterMessagesMap.put(fileName, sourceFormatterMessages);
@@ -377,6 +433,10 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		return SourceUtil.getLineStartPos(content, lineNumber);
 	}
 
+	protected int getMaxDirLevel() {
+		return _maxDirLevel;
+	}
+
 	protected int getMaxLineLength() {
 		return _maxLineLength;
 	}
@@ -389,8 +449,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 				_MODULES_PROPERTIES_FILE_NAME, absolutePath);
 		}
 
-		return getContent(
-			_MODULES_PROPERTIES_FILE_NAME, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		return getContent(_MODULES_PROPERTIES_FILE_NAME, _maxDirLevel);
 	}
 
 	protected List<String> getPluginsInsideModulesDirectoryNames() {
@@ -414,7 +473,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			return getGitContent(fileName, portalBranchName);
 		}
 
-		String content = getContent(fileName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		String content = getContent(fileName, _maxDirLevel);
 
 		if (Validator.isNotNull(content)) {
 			return content;
@@ -480,7 +539,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 
 	protected File getPortalDir() {
 		File portalImplDir = SourceFormatterUtil.getFile(
-			getBaseDirName(), "portal-impl", ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+			getBaseDirName(), "portal-impl", _maxDirLevel);
 
 		if (portalImplDir == null) {
 			return null;
@@ -493,20 +552,10 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			String fileName, String absolutePath)
 		throws IOException {
 
-		File file = getFile(fileName, ToolsUtil.PORTAL_MAX_DIR_LEVEL);
+		File file = getFile(fileName, _maxDirLevel);
 
 		if (file != null) {
 			return new FileInputStream(file);
-		}
-
-		String portalBranchName = getAttributeValue(
-			SourceFormatterUtil.GIT_LIFERAY_PORTAL_BRANCH, absolutePath);
-
-		URL url = SourceFormatterUtil.getPortalGitURL(
-			fileName, portalBranchName);
-
-		if (url != null) {
-			return url.openStream();
 		}
 
 		return null;
@@ -538,6 +587,10 @@ public abstract class BaseSourceCheck implements SourceCheck {
 
 	protected SourceFormatterExcludes getSourceFormatterExcludes() {
 		return _sourceFormatterExcludes;
+	}
+
+	protected SourceProcessor getSourceProcessor() {
+		return _sourceProcessor;
 	}
 
 	protected String getVariableTypeName(
@@ -647,6 +700,9 @@ public abstract class BaseSourceCheck implements SourceCheck {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return absolutePath.contains("/modules/");
@@ -710,20 +766,6 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	protected static final String RUN_OUTSIDE_PORTAL_EXCLUDES =
 		"run.outside.portal.excludes";
 
-	private String _getDocumentationURLString(Class<?> checkClass) {
-		String markdownURLString = SourceFormatterUtil.getMarkdownURLString(
-			checkClass.getSimpleName());
-
-		if (markdownURLString != null) {
-			return markdownURLString;
-		}
-
-		Class<?> superclass = checkClass.getSuperclass();
-
-		return SourceFormatterUtil.getMarkdownURLString(
-			superclass.getSimpleName());
-	}
-
 	private String _getVariableTypeName(
 		String content, String variableName,
 		boolean includeArrayOrCollectionTypes) {
@@ -773,6 +815,9 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	private static final String _MODULES_PROPERTIES_FILE_NAME =
 		"modules/modules.properties";
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseSourceCheck.class);
+
 	private JSONObject _attributesJSONObject = new JSONObjectImpl();
 	private final Map<String, String> _attributeValueMap =
 		new ConcurrentHashMap<>();
@@ -785,6 +830,8 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	private final Map<String, List<String>> _excludesValuesMap =
 		new ConcurrentHashMap<>();
 	private List<String> _fileExtensions;
+	private List<String> _filterCheckNames;
+	private int _maxDirLevel;
 	private int _maxLineLength;
 	private List<String> _pluginsInsideModulesDirectoryNames;
 	private Document _portalCustomSQLDocument;
@@ -794,6 +841,7 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	private SourceFormatterExcludes _sourceFormatterExcludes;
 	private final Map<String, Set<SourceFormatterMessage>>
 		_sourceFormatterMessagesMap = new ConcurrentHashMap<>();
+	private SourceProcessor _sourceProcessor;
 	private boolean _subrepository;
 
 }

@@ -13,479 +13,950 @@
  */
 
 import {fetch} from 'frontend-js-web';
+import {GraphQLClient} from 'graphql-hooks';
+import memCache from 'graphql-hooks-memcache';
 
-const HEADERS = {
-	Accept: 'application/json',
+const headers = {
+	'Accept': 'application/json',
 	'Accept-Language': Liferay.ThemeDisplay.getBCP47LanguageId(),
-	'Content-Type': 'text/plain; charset=utf-8'
+	'Content-Type': 'text/plain; charset=utf-8',
 };
 
-function escape(x) {
-	return (
-		x !== undefined &&
-		JSON.stringify(x)
-			.replace(/[\\]/g, '\\\\')
-			.replace(/[/]/g, '\\/')
-			.replace(/[\b]/g, '\\b')
-			.replace(/[\f]/g, '\\f')
-			.replace(/[\n]/g, '\\n')
-			.replace(/[\r]/g, '\\r')
-			.replace(/[\t]/g, '\\t')
-	);
-}
+export const client = new GraphQLClient({
+	cache: memCache(),
+	fetch,
+	headers,
+	url: '/o/graphql',
+});
 
-function gql(strings, ...values) {
-	return strings
-		.map((string, i) => string + (escape(values[i]) || ''))
-		.join('')
-		.replace(/\s+/g, ' ')
-		.replace(/"/g, '\\"');
-}
+export const clientNestedFields = new GraphQLClient({
+	cache: memCache(),
+	fetch,
+	headers,
+	url: '/o/graphql?nestedFields=lastPostDate',
+});
 
-export const request = query =>
-	fetch(getURL(), {
-		body: `{"query": "${query}"}`,
-		headers: HEADERS,
-		method: 'POST'
-	})
-		.then(response => response.json())
-		.then(json => {
-			const data = json.data;
-
-			if (!data) {
-				return Promise.reject(json.errors);
+export const createAnswerQuery = `
+	mutation createMessageBoardThreadMessageBoardMessage(
+		$articleBody: String!
+		$messageBoardThreadId: Long!
+	) {
+		createMessageBoardThreadMessageBoardMessage(
+			messageBoardMessage: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+				viewableBy: ANYONE
 			}
-
-			return data[Object.keys(data)[0]];
-		});
-
-export const getURL = params => {
-	params = {
-		['p_auth']: Liferay.authToken,
-		t: Date.now(),
-		...params
-	};
-
-	const uri = new URL(`${window.location.origin}/o/graphql`);
-	const keys = Object.keys(params);
-
-	keys.forEach(key => uri.searchParams.set(key, params[key]));
-
-	return uri.toString();
-};
-
-export const createAnswer = (articleBody, messageBoardThreadId) =>
-	request(gql`
-        mutation {
-            createMessageBoardThreadMessageBoardMessage(messageBoardMessage: {articleBody: ${articleBody}, encodingFormat: "html", viewableBy: ANYONE}, messageBoardThreadId: ${messageBoardThreadId}){
-                viewableBy
-            }
-        }`);
-
-export const createComment = (articleBody, messageBoardMessageId) =>
-	request(gql`
-        mutation {
-            createMessageBoardMessageMessageBoardMessage(messageBoardMessage: {articleBody: ${articleBody}, encodingFormat: "html", viewableBy: ANYONE}, parentMessageBoardMessageId: ${messageBoardMessageId}){
-            	actions
-                articleBody
-                creator {
-                	name
-                }
-                id
-            }
-        }`);
-
-export const createQuestion = (articleBody, headline, tags, siteKey) => {
-	tags = tags.length ? tags.split(',').filter(x => x) : null;
-
-	return request(gql`
-        mutation {
-            createSiteMessageBoardThread(messageBoardThread: {articleBody: ${articleBody}, encodingFormat: "html", headline: ${headline}, keywords: ${tags}, showAsQuestion: true, viewableBy: ANYONE}, siteKey: ${siteKey}){
-                articleBody
-                headline
-                keywords
-                showAsQuestion
-            }
-        }`);
-};
-
-export const createVoteMessage = (id, rating) =>
-	request(gql`
-        mutation {
-            createMessageBoardMessageMyRating(messageBoardMessageId: ${id}, rating: {ratingValue: ${rating}}){
-                id
-                ratingValue
-          }
-        }`);
-
-export const createVoteThread = (id, rating) =>
-	request(gql`
-        mutation {
-            createMessageBoardThreadMyRating(messageBoardThreadId: ${id}, rating: {ratingValue: ${rating}}){
-                id
-                ratingValue
-          }
-        }`);
-
-export const deleteMessage = messageBoardMessage =>
-	request(gql`
-        mutation {
-            deleteMessageBoardMessage(messageBoardMessageId: ${messageBoardMessage.id})
-        }`).then(data => {
-		if (messageBoardMessage.messageBoardMessages) {
-			return Promise.all(
-				messageBoardMessage.messageBoardMessages.items.map(x =>
-					deleteMessage(x)
-				)
-			);
+			messageBoardThreadId: $messageBoardThreadId
+		) {
+			viewableBy
 		}
-
-		return data;
-	});
-
-export const getTags = (page = 1, siteKey) =>
-	request(gql`
-        query {
-            keywordsRanked(page: ${page}, pageSize: 20, siteKey: ${siteKey}){
-                items {
-                    name
-                    dateCreated
-                    id
-                    keywordUsageCount
-                }
-                lastPage
-                page
-                pageSize
-                totalCount
-            }
-        }`);
-
-export const getMessage = messageBoardMessageId =>
-	request(gql`
-        query {
-            messageBoardMessage(messageBoardMessageId: ${messageBoardMessageId}){
-                articleBody 
-                headline
-                id 
-                keywords 
-            }
-        }`);
-
-export const getThread = (
-	messageBoardThreadId,
-	page = 1,
-	sort = 'showAsAnswer:desc,dateModified:desc'
-) =>
-	request(gql`
-        query {
-            messageBoardThread(messageBoardThreadId: ${messageBoardThreadId}){
-            	actions
-                aggregateRating {
-                    ratingAverage
-                    ratingCount
-                    ratingValue
-                }
-                articleBody 
-                creator {
-                    id
-                    name
-                } 
-                dateCreated
-                dateModified
-                encodingFormat
-                headline
-                id 
-                keywords 
-                messageBoardMessages(page: ${page}, pageSize: 20, sort: ${sort}) {
-                    items {
-                    	actions
-                        aggregateRating {
-                            ratingAverage
-                            ratingCount
-                            ratingValue
-                        }
-                        articleBody
-                        creator {
-                            id
-                            name
-                        }
-                        encodingFormat
-                        id
-                        messageBoardMessages {
-                            items {
-                            	actions
-                                articleBody
-                                creator {
-                                    id
-                                    name
-                                }
-                                encodingFormat
-                                id
-                                showAsAnswer
-                            }
-                        }
-                        myRating {
-                            ratingValue
-                        }
-                        showAsAnswer
-                    }
-                    pageSize
-                    totalCount
-                }
-                myRating {
-                    ratingValue
-                }
-                subscribed
-                viewCount
-            }
-        }`);
-
-export const getMessages = (
-	parentMessageBoardMessageId,
-	sort = '',
-	page = 1,
-	pageSize = 20
-) =>
-	request(gql`
-        query {
-              messageBoardThreadMessageBoardMessages(messageBoardThreadId: ${parentMessageBoardMessageId}, page: ${page}, pageSize: ${pageSize}, sort: ${'showAsAnswer:desc,' +
-		sort}){
-                items {
-                    aggregateRating {
-                        ratingAverage
-                        ratingCount
-                        ratingValue
-                    }
-                    articleBody
-                    creator {
-                        id
-                        name
-                    }
-                    id
-                    messageBoardMessages {
-                        items {
-                            articleBody
-                            creator {
-                                id
-                                name
-                            }
-                            id
-                            showAsAnswer
-                        }
-                    }
-                    myRating {
-                        ratingValue
-                    }
-                    showAsAnswer
-                }
-                pageSize
-                totalCount
-            }
-        }`).then(x => x.items);
-
-export const getThreadContent = messageBoardThreadId =>
-	request(gql`
-        query {
-            messageBoardThread(messageBoardThreadId: ${messageBoardThreadId}){
-                articleBody 
-                headline
-                id 
-                keywords 
-            }
-        }`);
-
-export const hasListPermissions = (permission, siteKey) =>
-	request(gql`
-			query {
-				messageBoardThreads(siteKey: ${siteKey}) {
-					actions
-				}
-			}`).then(data => Boolean(data.actions[permission]));
-
-export const getThreads = ({
-	creatorId = '',
-	page = 1,
-	pageSize = 30,
-	search = '',
-	siteKey,
-	sort = 'dateModified:desc',
-	tag = ''
-}) => {
-	let filter = '';
-	if (tag) {
-		filter = `keywords/any(x:x eq '${tag}')`;
 	}
-	else if (creatorId) {
-		filter = `creator/id eq ${creatorId}`;
-	}
+`;
 
-	return request(gql`
-        query {
-            messageBoardThreads(filter: ${filter}, page: ${page}, pageSize: ${pageSize}, search: ${search}, siteKey: ${siteKey}, sort: ${sort}){
-                items {
-                    aggregateRating {
-                        ratingAverage
-                        ratingCount
-                        ratingValue
-                    } 
-                    articleBody
-                    creator {
-                        id
-                        image
-                        name
-                    } 
-                    dateModified
-                    headline
-                    id 
-                    keywords 
-                    messageBoardMessages {
-                        items {
-                            showAsAnswer
-                        }
-                    }
-                    viewCount
-                } 
-                page 
-                pageSize 
-                totalCount
-            }
-        }`);
-};
-
-export const getRankedThreads = (
-	dateModified,
-	page = 1,
-	pageSize = 30,
-	sort = ''
-) =>
-	request(gql`
-        query {
-          messageBoardThreadsRanked(dateModified: ${dateModified.toISOString()}, page: ${page}, pageSize: ${pageSize}, sort: ${sort}){
-            items {
-                aggregateRating {
-                    ratingAverage
-                    ratingCount
-                    ratingValue
-                } 
-                articleBody
-                creator {
-                    id
-                    name
-                } 
-                dateModified
-                headline
-                id 
-                keywords 
-                messageBoardMessages {
-                    items {
-                        showAsAnswer
-                    }
-                }
-                viewCount
-            }   
-            page
-            pageSize
-            totalCount
-          }
-        }`);
-
-export const getRelatedThreads = (search = '', siteKey) =>
-	request(gql`
-        query {
-            messageBoardThreads(page: 1, pageSize: 4, flatten: true, search: ${search}, siteKey: ${siteKey}){
-                items {
-                    aggregateRating {
-                        ratingAverage
-                        ratingCount
-                        ratingValue
-                    }
-                    creator {
-                    	id
-                    	name
-                	} 
-                    dateModified
-                    headline
-                    id 
-					messageBoardSection {
-						title
-				  	}
-                } 
-                page 
-                pageSize 
-                totalCount
-            }
-        }`);
-
-export const getUserAccount = userAccountId =>
-	request(gql`
-        query {
-            userAccount(userAccountId: ${userAccountId}) {
-                emailAddress
-                id
-                name
-            }
-        }`);
-
-export const markAsAnswerMessageBoardMessage = (
-	messageBoardMessageId,
-	showAsAnswer
-) =>
-	request(gql`
-        mutation {
-            patchMessageBoardMessage(messageBoardMessage: {showAsAnswer: ${showAsAnswer}}, messageBoardMessageId: ${messageBoardMessageId}){
-                id
-            }
-        }`);
-
-export const updateMessage = (articleBody, messageBoardMessageId) =>
-	request(gql`
-        mutation {
-            patchMessageBoardMessage(messageBoardMessage: {articleBody: ${articleBody}}, messageBoardMessageId: ${messageBoardMessageId}){
-                articleBody
-            }
-        }`);
-
-export const updateThread = (
-	articleBody,
-	headline,
-	tags,
-	messageBoardThreadId
-) => {
-	tags = tags.length ? tags.split(',').filter(x => x) : null;
-
-	return request(gql`
-        mutation {
-            patchMessageBoardThread(messageBoardThread: {articleBody: ${articleBody}, headline: ${headline}, keywords: ${tags}}, messageBoardThreadId: ${messageBoardThreadId}){
-                articleBody
-                headline
-                keywords
-            }
-        }`);
-};
-
-export const getMyUserAccount = () =>
-	request(gql`
-		query {
-			myUserAccount {
-				id
+export const createCommentQuery = `
+	mutation createMessageBoardMessageMessageBoardMessage(
+		$articleBody: String!
+		$parentMessageBoardMessageId: Long!
+	) {
+		createMessageBoardMessageMessageBoardMessage(
+			messageBoardMessage: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+				viewableBy: ANYONE
+			}
+			parentMessageBoardMessageId: $parentMessageBoardMessageId
+		) {
+			actions
+			articleBody
+			creator {
 				name
-				roleBriefs {
+			}
+			dateModified
+			id
+		}
+	}
+`;
+
+export const createQuestionInRootQuery = `
+	mutation createSiteMessageBoardThread(
+		$articleBody: String!
+		$headline: String!
+		$keywords: [String]
+		$siteKey: String!
+	) {
+		createSiteMessageBoardThread(
+			siteKey: $siteKey
+			messageBoardThread: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+				headline: $headline
+				keywords: $keywords
+				showAsQuestion: true
+				subscribed: true
+				viewableBy: ANYONE
+			}
+		) {
+			articleBody
+			headline
+			keywords
+			showAsQuestion
+		}
+	}
+`;
+
+export const createQuestionInASectionQuery = `
+	mutation createMessageBoardSectionMessageBoardThread(
+		$messageBoardSectionId: Long!
+		$articleBody: String!
+		$headline: String!
+		$keywords: [String]
+	) {
+		createMessageBoardSectionMessageBoardThread(
+			messageBoardSectionId: $messageBoardSectionId
+			messageBoardThread: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+				headline: $headline
+				keywords: $keywords
+				showAsQuestion: true
+				subscribed: true
+				viewableBy: ANYONE
+			}
+		) {
+			articleBody
+			headline
+			keywords
+			showAsQuestion
+		}
+	}
+`;
+
+export const createSubTopicQuery = `
+	mutation createMessageBoardSectionMessageBoardSection(
+		$description: String
+		$parentMessageBoardSectionId: Long!
+		$title: String!
+	) {
+		createMessageBoardSectionMessageBoardSection(
+			parentMessageBoardSectionId: $parentMessageBoardSectionId
+			messageBoardSection: {
+				description: $description
+				title: $title
+				viewableBy: ANYONE
+			}
+		) {
+			id
+			title
+		}
+	}
+`;
+
+export const createTopicQuery = `
+	mutation createSiteMessageBoardSection(
+		$description: String
+		$siteKey: String!
+		$title: String!
+	) {
+		createSiteMessageBoardSection(
+			siteKey: $siteKey
+			messageBoardSection: {
+				description: $description
+				title: $title
+				viewableBy: ANYONE
+			}
+		) {
+			id
+			title
+		}
+	}
+`;
+
+export const createVoteMessageQuery = `
+	mutation createMessageBoardMessageMyRating(
+		$messageBoardMessageId: Long!
+		$ratingValue: Float!
+	) {
+		createMessageBoardMessageMyRating(
+			messageBoardMessageId: $messageBoardMessageId
+			rating: {ratingValue: $ratingValue}
+		) {
+			id
+			ratingValue
+		}
+	}
+`;
+
+export const createVoteThreadQuery = `
+	mutation createMessageBoardThreadMyRating(
+		$messageBoardThreadId: Long!
+		$ratingValue: Float!
+	) {
+		createMessageBoardThreadMyRating(
+			messageBoardThreadId: $messageBoardThreadId
+			rating: {ratingValue: $ratingValue}
+		) {
+			id
+			ratingValue
+		}
+	}
+`;
+
+export const deleteMessageQuery = `
+	mutation deleteMessageBoardMessage($messageBoardMessageId: Long!) {
+		deleteMessageBoardMessage(messageBoardMessageId: $messageBoardMessageId)
+	}
+`;
+
+export const deleteMessageBoardThreadQuery = `
+	mutation deleteMessageBoardThread($messageBoardThreadId: Long!) {
+		deleteMessageBoardThread(messageBoardThreadId: $messageBoardThreadId)
+	}
+`;
+
+export const getTagsOrderByDateCreatedQuery = `
+	query keywords(
+		$page: Int!
+		$pageSize: Int!
+		$search: String
+		$siteKey: String!
+	) {
+		keywords(
+			page: $page
+			pageSize: $pageSize
+			search: $search
+			siteKey: $siteKey
+			sort: "dateCreated:desc"
+		) {
+			items {
+				actions
+				id
+				dateCreated
+				name
+				subscribed
+			}
+			lastPage
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getTagsOrderByNumberOfUsagesQuery = `
+	query keywordsRanked(
+		$page: Int!
+		$pageSize: Int!
+		$search: String
+		$siteKey: String!
+	) {
+		keywordsRanked(
+			page: $page
+			pageSize: $pageSize
+			search: $search
+			siteKey: $siteKey
+		) {
+			items {
+				actions
+				id
+				keywordUsageCount
+				name
+				subscribed
+			}
+			lastPage
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getMessageQuery = `
+	query messageBoardMessageByFriendlyUrlPath(
+		$friendlyUrlPath: String!
+		$siteKey: String!
+	) {
+		messageBoardMessageByFriendlyUrlPath(
+			friendlyUrlPath: $friendlyUrlPath
+			siteKey: $siteKey
+		) {
+			articleBody
+			headline
+			id
+		}
+	}
+`;
+
+export const getThreadQuery = `
+	query messageBoardThreadByFriendlyUrlPath(
+		$friendlyUrlPath: String!
+		$siteKey: String!
+	) {
+		messageBoardThreadByFriendlyUrlPath(
+			friendlyUrlPath: $friendlyUrlPath
+			siteKey: $siteKey
+		) {
+			actions
+			aggregateRating {
+				ratingAverage
+				ratingCount
+				ratingValue
+			}
+			articleBody
+			creator {
+				id
+				image
+				name
+			}
+			creatorStatistics {
+				joinDate
+				lastPostDate
+				postsNumber
+				rank
+			}
+			dateCreated
+			dateModified
+			encodingFormat
+			friendlyUrlPath
+			headline
+			id
+			keywords
+			locked
+			messageBoardSection {
+				id
+				numberOfMessageBoardSections
+				parentMessageBoardSectionId
+				title
+			}
+			myRating {
+				ratingValue
+			}
+			seen
+			status
+			subscribed
+			viewCount
+		}
+	}
+`;
+
+export const getSectionByMessageQuery = `
+	query messageBoardMessage($messageBoardMessageId: Long!) {
+		messageBoardMessage(messageBoardMessageId: $messageBoardMessageId) {
+			friendlyUrlPath
+			messageBoardThread {
+				messageBoardSection {
+					id
+					title
+				}
+			}
+		}
+	}
+`;
+
+export const getThreadContentQuery = `
+	query messageBoardThreadByFriendlyUrlPath(
+		$friendlyUrlPath: String!
+		$siteKey: String!
+	) {
+		messageBoardThreadByFriendlyUrlPath(
+			friendlyUrlPath: $friendlyUrlPath
+			siteKey: $siteKey
+		) {
+			articleBody
+			headline
+			id
+			keywords
+		}
+	}
+`;
+
+export const getMessagesQuery = `
+	query messageBoardThreadMessageBoardMessages(
+		$messageBoardThreadId: Long!
+		$page: Int!
+		$pageSize: Int!
+		$sort: String!
+	) {
+		messageBoardThreadMessageBoardMessages(
+			messageBoardThreadId: $messageBoardThreadId
+			page: $page
+			pageSize: $pageSize
+			sort: $sort
+		) {
+			items {
+				actions
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				articleBody
+				creator {
+					id
+					image
 					name
 				}
+				creatorStatistics {
+					joinDate
+					lastPostDate
+					postsNumber
+					rank
+				}
+				dateModified
+				encodingFormat
+				friendlyUrlPath
+				id
+				messageBoardMessages(flatten: true) {
+					items {
+						actions
+						articleBody
+						creator {
+							id
+							image
+							name
+						}
+						dateModified
+						encodingFormat
+						id
+						showAsAnswer
+						status
+					}
+				}
+				myRating {
+					ratingValue
+				}
+				showAsAnswer
+				status
+			}
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const hasListPermissionsQuery = `
+	query messageBoardThreads($siteKey: String!) {
+		messageBoardThreads(siteKey: $siteKey) {
+			actions
+		}
+	}
+`;
+
+export const getSectionThreadsQuery = `
+	query messageBoardSectionMessageBoardThreads(
+		$messageBoardSectionId: Long!
+		$page: Int!
+		$pageSize: Int!
+	) {
+		messageBoardSectionMessageBoardThreads(
+			messageBoardSectionId: $messageBoardSectionId
+			page: $page
+			pageSize: $pageSize
+		) {
+			items {
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				articleBody
+				creator {
+					id
+					image
+					name
+				}
+				dateModified
+				friendlyUrlPath
+				hasValidAnswer
+				headline
+				id
+				keywords
+				locked
+				messageBoardSection {
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					title
+				}
+				numberOfMessageBoardMessages
+				seen
+				status
+				viewCount
+			}
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getThreadsQuery = `
+	query messageBoardThreads(
+		$filter: String!
+		$page: Int!
+		$pageSize: Int!
+		$search: String!
+		$siteKey: String!
+		$sort: String!
+	) {
+		messageBoardThreads(
+			filter: $filter
+			flatten: true
+			page: $page
+			pageSize: $pageSize
+			search: $search
+			siteKey: $siteKey
+			sort: $sort
+		) {
+			items {
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				articleBody
+				creator {
+					id
+					image
+					name
+				}
+				dateModified
+				friendlyUrlPath
+				hasValidAnswer
+				headline
+				id
+				keywords
+				locked
+				messageBoardSection {
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					title
+				}
+				numberOfMessageBoardMessages
+				seen
+				status
+				viewCount
+			}
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getRankedThreadsQuery = `
+	query messageBoardThreadsRanked(
+		$dateModified: Date
+		$messageBoardSectionId: Long
+		$page: Int!
+		$pageSize: Int!
+		$sort: String!
+	) {
+		messageBoardThreadsRanked(
+			dateModified: $dateModified
+			messageBoardSectionId: $messageBoardSectionId
+			page: $page
+			pageSize: $pageSize
+			sort: $sort
+		) {
+			items {
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				articleBody
+				creator {
+					id
+					image
+					name
+				}
+				dateModified
+				friendlyUrlPath
+				hasValidAnswer
+				headline
+				id
+				keywords
+				locked
+				messageBoardSection {
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					title
+				}
+				numberOfMessageBoardMessages
+				seen
+				status
+				viewCount
+			}
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getSectionsQuery = `
+	query messageBoardSections($siteKey: String!) {
+		messageBoardSections(siteKey: $siteKey, sort: "title:asc") {
+			actions
+			items {
+				description
+				id
+				numberOfMessageBoardThreads
+				parentMessageBoardSectionId
+				subscribed
+				title
 			}
 		}
-	`);
+	}
+`;
 
-export const subscribe = messageBoardThreadId =>
-	request(gql`
-        mutation {
-            updateMessageBoardThreadSubscribe(messageBoardThreadId: ${messageBoardThreadId})
-        }
-    `);
+export const getSectionBySectionTitleQuery = `
+	query messageBoardSections($filter: String!, $siteKey: String!) {
+		messageBoardSections(
+			filter: $filter
+			flatten: true
+			pageSize: 1
+			siteKey: $siteKey
+			sort: "title:asc"
+		) {
+			actions
+			items {
+				actions
+				id
+				messageBoardSections(sort: "title:asc") {
+					actions
+					items {
+						id
+						description
+						numberOfMessageBoardSections
+						numberOfMessageBoardThreads
+						parentMessageBoardSectionId
+						subscribed
+						title
+					}
+				}
+				numberOfMessageBoardSections
+				parentMessageBoardSection {
+					id
+					messageBoardSections {
+						items {
+							id
+							numberOfMessageBoardSections
+							parentMessageBoardSectionId
+							subscribed
+							title
+						}
+					}
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					subscribed
+					title
+				}
+				parentMessageBoardSectionId
+				subscribed
+				title
+			}
+		}
+	}
+`;
 
-export const unsubscribe = messageBoardThreadId =>
-	request(gql`
-        mutation {
-            updateMessageBoardThreadUnsubscribe(messageBoardThreadId: ${messageBoardThreadId})
-        }
-    `);
+export const getRelatedThreadsQuery = `
+	query messageBoardThreads($search: String!, $siteKey: String!) {
+		messageBoardThreads(
+			page: 1
+			pageSize: 4
+			flatten: true
+			search: $search
+			siteKey: $siteKey
+		) {
+			items {
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				creator {
+					id
+					image
+					name
+				}
+				dateModified
+				friendlyUrlPath
+				headline
+				id
+				locked
+				messageBoardSection {
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					title
+				}
+				seen
+				status
+			}
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const getSectionQuery = `
+	query messageBoardSection($messageBoardSectionId: Long!) {
+		messageBoardSection(messageBoardSectionId: $messageBoardSectionId) {
+			actions
+			id
+			messageBoardSections(sort: "title:asc") {
+				items {
+					id
+					numberOfMessageBoardSections
+					parentMessageBoardSectionId
+					subscribed
+					title
+				}
+			}
+			numberOfMessageBoardThreads
+			parentMessageBoardSectionId
+			subscribed
+			title
+		}
+	}
+`;
+
+export function getThread(friendlyUrlPath, siteKey) {
+	return clientNestedFields.request({
+		query: getThreadQuery,
+		variables: {
+			friendlyUrlPath,
+			siteKey,
+		},
+	});
+}
+
+export function getMessages(messageBoardThreadId, page, pageSize) {
+	return clientNestedFields.request({
+		query: getMessagesQuery,
+		variables: {
+			messageBoardThreadId,
+			page,
+			pageSize,
+			sort: 'dateCreated:asc',
+		},
+	});
+}
+
+export const getUserActivityQuery = `
+	query messageBoardMessages(
+		$filter: String
+		$page: Int!
+		$pageSize: Int!
+		$siteKey: String!
+	) {
+		messageBoardMessages(
+			filter: $filter
+			flatten: true
+			page: $page
+			pageSize: $pageSize
+			siteKey: $siteKey
+			sort: "dateCreated:desc"
+		) {
+			items {
+				aggregateRating {
+					ratingAverage
+					ratingCount
+					ratingValue
+				}
+				articleBody
+				creator {
+					id
+					image
+					name
+				}
+				creatorStatistics {
+					postsNumber
+					rank
+				}
+				dateModified
+				friendlyUrlPath
+				headline
+				id
+				keywords
+				messageBoardThread {
+					messageBoardSection {
+						id
+						title
+					}
+				}
+				numberOfMessageBoardMessages
+			}
+			page
+			pageSize
+			totalCount
+		}
+	}
+`;
+
+export const markAsAnswerMessageBoardMessageQuery = `
+	mutation patchMessageBoardMessage(
+		$messageBoardMessageId: Long!
+		$showAsAnswer: Boolean!
+	) {
+		patchMessageBoardMessage(
+			messageBoardMessage: {showAsAnswer: $showAsAnswer}
+			messageBoardMessageId: $messageBoardMessageId
+		) {
+			id
+			showAsAnswer
+		}
+	}
+`;
+
+export const updateMessageQuery = `
+	mutation patchMessageBoardMessage(
+		$articleBody: String!
+		$messageBoardMessageId: Long!
+	) {
+		patchMessageBoardMessage(
+			messageBoardMessage: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+			}
+			messageBoardMessageId: $messageBoardMessageId
+		) {
+			articleBody
+		}
+	}
+`;
+
+export const updateThreadQuery = `
+	mutation patchMessageBoardThread(
+		$articleBody: String!
+		$headline: String!
+		$keywords: [String]
+		$messageBoardThreadId: Long!
+	) {
+		patchMessageBoardThread(
+			messageBoardThread: {
+				articleBody: $articleBody
+				encodingFormat: "html"
+				headline: $headline
+				keywords: $keywords
+			}
+			messageBoardThreadId: $messageBoardThreadId
+		) {
+			articleBody
+			headline
+			keywords
+		}
+	}
+`;
+
+export const subscribeQuery = `
+	mutation updateMessageBoardThreadSubscribe($messageBoardThreadId: Long!) {
+		updateMessageBoardThreadSubscribe(
+			messageBoardThreadId: $messageBoardThreadId
+		)
+	}
+`;
+
+export const unsubscribeQuery = `
+	mutation updateMessageBoardThreadUnsubscribe($messageBoardThreadId: Long!) {
+		updateMessageBoardThreadUnsubscribe(
+			messageBoardThreadId: $messageBoardThreadId
+		)
+	}
+`;
+
+export const subscribeSectionQuery = `
+	mutation updateMessageBoardSectionSubscribe($messageBoardSectionId: Long!) {
+		updateMessageBoardSectionSubscribe(
+			messageBoardSectionId: $messageBoardSectionId
+		)
+	}
+`;
+
+export const unsubscribeSectionQuery = `
+	mutation updateMessageBoardSectionUnsubscribe(
+		$messageBoardSectionId: Long!
+	) {
+		updateMessageBoardSectionUnsubscribe(
+			messageBoardSectionId: $messageBoardSectionId
+		)
+	}
+`;
+
+export const subscribeTagQuery = `
+	mutation updateKeywordSubscribe($keywordId: Long!) {
+		updateKeywordSubscribe(
+			keywordId: $keywordId
+		)
+	}
+`;
+
+export const unsubscribeTagQuery = `
+	mutation updateKeywordUnsubscribe($keywordId: Long!) {
+		updateKeywordUnsubscribe(
+			keywordId: $keywordId
+		)
+	}
+`;
+
+export const getSubscriptionsQuery = `
+	query myUserAccountSubscriptions($contentType: String!) {
+		myUserAccountSubscriptions(contentType: $contentType) {
+			items {
+				id
+				contentType
+				graphQLNode {
+					... on MessageBoardSection {
+						id
+						title
+					}
+					... on MessageBoardThread {
+						actions
+						aggregateRating {
+							ratingAverage
+							ratingCount
+							ratingValue
+						}
+						articleBody
+						creator {
+							id
+							image
+							name
+						}
+						creatorStatistics {
+							joinDate
+							lastPostDate
+							postsNumber
+							rank
+						}
+						dateCreated
+						dateModified
+						encodingFormat
+						friendlyUrlPath
+						headline
+						id
+						keywords
+						messageBoardSection {
+							id
+							numberOfMessageBoardSections
+							parentMessageBoardSectionId
+							title
+						}
+						myRating {
+							ratingValue
+						}
+						subscribed
+						viewCount
+					}
+				}
+			}
+		}
+	}
+`;
+
+export const unsubscribeMyUserAccountQuery = `
+	mutation deleteMyUserAccountSubscription($subscriptionId: Long!) {
+		deleteMyUserAccountSubscription(subscriptionId: $subscriptionId)
+	}
+`;

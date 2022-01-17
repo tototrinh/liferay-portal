@@ -12,67 +12,184 @@
  * details.
  */
 
+import ClayLayout from '@clayui/layout';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useMemo} from 'react';
 
-import {
-	LayoutDataPropTypes,
-	getLayoutDataItemPropTypes
-} from '../../../prop-types/index';
-import {LAYOUT_DATA_ITEM_DEFAULT_CONFIGURATIONS} from '../../config/constants/layoutDataItemDefaultConfigurations';
+import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../config/constants/layoutDataItemTypes';
-import {useSelector} from '../../store/index';
+import {useGetFieldValue} from '../../contexts/CollectionItemContext';
+import {useSelector} from '../../contexts/StoreContext';
+import {getCommonStyleByName} from '../../utils/getCommonStyleByName';
+import {getFrontendTokenValue} from '../../utils/getFrontendTokenValue';
+import {getResponsiveConfig} from '../../utils/getResponsiveConfig';
+import {isValidSpacingOption} from '../../utils/isValidSpacingOption';
+import useBackgroundImageValue from '../../utils/useBackgroundImageValue';
+import {useId} from '../../utils/useId';
 
-const Row = React.forwardRef(({children, className, item, layoutData}, ref) => {
-	const rowContent = (
-		<div
-			className={classNames(className, 'row', {
-				empty: !item.children.some(
-					childId => layoutData.items[childId].children.length
-				),
-				'no-gutters': !(typeof item.config.gutters === 'boolean'
-					? item.config.gutters
-					: LAYOUT_DATA_ITEM_DEFAULT_CONFIGURATIONS[item.type])
-			})}
-			ref={ref}
-		>
-			{children}
-		</div>
-	);
+const Row = React.forwardRef(
+	({children, className, item, withinTopper = false}, ref) => {
+		const selectedViewportSize = useSelector(
+			(state) => state.selectedViewportSize
+		);
 
-	const masterLayoutData = useSelector(state => state.masterLayoutData);
+		const itemConfig = getResponsiveConfig(
+			item.config,
+			selectedViewportSize
+		);
+		const {modulesPerRow, reverseOrder} = itemConfig;
 
-	const masterParent = useMemo(() => {
-		const dropZone =
-			masterLayoutData &&
-			masterLayoutData.items[masterLayoutData.rootItems.dropZone];
+		const {
+			backgroundColor,
+			backgroundImage,
+			borderColor,
+			borderRadius,
+			borderWidth,
+			display,
+			fontFamily,
+			fontSize,
+			fontWeight,
+			height,
+			maxHeight,
+			maxWidth,
+			minHeight,
+			minWidth,
+			opacity,
+			overflow,
+			paddingBottom,
+			paddingLeft,
+			paddingRight,
+			paddingTop,
+			shadow,
+			textAlign,
+			textColor,
+			width,
+		} = itemConfig.styles;
 
-		return dropZone ? getItemParent(dropZone, masterLayoutData) : undefined;
-	}, [masterLayoutData]);
+		const elementId = useId();
+		const getFieldValue = useGetFieldValue();
+		const backgroundImageValue = useBackgroundImageValue(
+			elementId,
+			backgroundImage,
+			getFieldValue
+		);
 
-	const shouldAddContainer = useSelector(
-		state => !getItemParent(item, state.layoutData) && !masterParent
-	);
+		const style = {};
 
-	return shouldAddContainer ? (
-		<div className="container-fluid p-0">{rowContent}</div>
-	) : (
-		rowContent
-	);
-});
+		style.backgroundColor = getFrontendTokenValue(backgroundColor);
+		style.borderColor = getFrontendTokenValue(borderColor);
+		style.borderRadius = getFrontendTokenValue(borderRadius);
+		style.boxShadow = getFrontendTokenValue(shadow);
+		style.color = getFrontendTokenValue(textColor);
+		style.fontFamily = getFrontendTokenValue(fontFamily);
+		style.fontSize = getFrontendTokenValue(fontSize);
+		style.fontWeight = getFrontendTokenValue(fontWeight);
+		style.height = height;
+		style.maxHeight = maxHeight;
+		style.minHeight = minHeight;
+		style.opacity = opacity ? opacity / 100 : null;
+		style.overflow = overflow;
+
+		if (borderWidth) {
+			style.borderWidth = `${borderWidth}px`;
+			style.borderStyle = 'solid';
+		}
+
+		if (!withinTopper) {
+			style.display = display;
+			style.maxWidth = maxWidth;
+			style.minWidth = minWidth;
+			style.width = width;
+		}
+
+		if (backgroundImageValue.url) {
+			style.backgroundImage = `url(${backgroundImageValue.url})`;
+			style.backgroundPosition = '50% 50%';
+			style.backgroundRepeat = 'no-repeat';
+			style.backgroundSize = 'cover';
+
+			if (backgroundImage?.fileEntryId) {
+				style['--background-image-file-entry-id'] =
+					backgroundImage.fileEntryId;
+			}
+		}
+
+		const textAlignDefaultValue = getCommonStyleByName('textAlign')
+			.defaultValue;
+
+		const rowContent = (
+			<ClayLayout.Row
+				className={classNames(className, {
+					'flex-column-reverse':
+						item.config.numberOfColumns === 2 &&
+						modulesPerRow === 1 &&
+						reverseOrder,
+					[`pb-${paddingBottom}`]: isValidSpacingOption(
+						paddingBottom
+					),
+					[`pl-${paddingLeft}`]: isValidSpacingOption(paddingLeft),
+					[`pr-${paddingRight}`]: isValidSpacingOption(paddingRight),
+					[`pt-${paddingTop}`]: isValidSpacingOption(paddingTop),
+					'no-gutters': !item.config.gutters,
+					[textAlign
+						? textAlign.startsWith('text-')
+							? textAlign
+							: `text-${textAlign}`
+						: `text-${textAlignDefaultValue}`]: textAlignDefaultValue,
+				})}
+				id={elementId}
+				ref={ref}
+				style={style}
+			>
+				{backgroundImageValue.mediaQueries ? (
+					<style>{backgroundImageValue.mediaQueries}</style>
+				) : null}
+
+				{children}
+			</ClayLayout.Row>
+		);
+
+		const masterLayoutData = useSelector(
+			(state) => state.masterLayout?.masterLayoutData
+		);
+
+		const masterParent = useMemo(() => {
+			const dropZone =
+				masterLayoutData &&
+				masterLayoutData.items[masterLayoutData.rootItems.dropZone];
+
+			return dropZone
+				? getItemParent(dropZone, masterLayoutData)
+				: undefined;
+		}, [masterLayoutData]);
+
+		const shouldAddContainer = useSelector(
+			(state) => !getItemParent(item, state.layoutData) && !masterParent
+		);
+
+		return shouldAddContainer ? (
+			<ClayLayout.ContainerFluid className="p-0" size={false}>
+				{rowContent}
+			</ClayLayout.ContainerFluid>
+		) : (
+			rowContent
+		);
+	}
+);
 
 Row.propTypes = {
 	item: getLayoutDataItemPropTypes({
-		config: PropTypes.shape({gutters: PropTypes.bool})
+		config: PropTypes.shape({gutters: PropTypes.bool}),
 	}).isRequired,
-	layoutData: LayoutDataPropTypes.isRequired
 };
 
 function getItemParent(item, itemLayoutData) {
 	const parent = itemLayoutData.items[item.parentId];
 
-	return parent && parent.type === LAYOUT_DATA_ITEM_TYPES.root
+	return parent &&
+		(parent.type === LAYOUT_DATA_ITEM_TYPES.root ||
+			parent.type === LAYOUT_DATA_ITEM_TYPES.fragmentDropZone)
 		? getItemParent(parent, itemLayoutData)
 		: parent;
 }

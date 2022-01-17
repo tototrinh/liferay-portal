@@ -18,7 +18,9 @@ import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.servlet.URLEncoder;
+import com.liferay.portlet.test.MockActionURL;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -36,6 +38,8 @@ import javax.portlet.ResourceURL;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
@@ -72,22 +76,22 @@ public class MockLiferayResourceResponse
 
 	@Override
 	public <T extends PortletURL & ActionURL> T createActionURL() {
-		return null;
+		return (T)new MockActionURL();
 	}
 
 	@Override
 	public ActionURL createActionURL(Copy copy) {
-		return null;
+		return new MockActionURL();
 	}
 
 	@Override
 	public LiferayPortletURL createActionURL(String portletName) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createActionURL(String portletName, Copy copy) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
@@ -99,7 +103,7 @@ public class MockLiferayResourceResponse
 	public LiferayPortletURL createLiferayPortletURL(
 		long plid, String portletName, String lifecycle) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
@@ -107,14 +111,14 @@ public class MockLiferayResourceResponse
 		long plid, String portletName, String lifecycle,
 		boolean includeLinkToLayoutUuid) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createLiferayPortletURL(
 		long plid, String portletName, String lifecycle, Copy copy) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
@@ -122,31 +126,33 @@ public class MockLiferayResourceResponse
 		long plid, String portletName, String lifecycle, Copy copy,
 		boolean includeLinkToLayoutUuid) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createLiferayPortletURL(String lifecycle) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createLiferayPortletURL(
 		String portletName, String lifecycle) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createLiferayPortletURL(
 		String portletName, String lifecycle, Copy copy) {
 
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public <T extends PortletURL & RenderURL> T createRenderURL() {
-		return null;
+		MockLiferayPortletURL liferayPortletURL = new MockLiferayPortletURL();
+
+		return (T)liferayPortletURL;
 	}
 
 	@Override
@@ -156,22 +162,22 @@ public class MockLiferayResourceResponse
 
 	@Override
 	public LiferayPortletURL createRenderURL(String portletName) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createRenderURL(String portletName, Copy copy) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public ResourceURL createResourceURL() {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
 	public LiferayPortletURL createResourceURL(String portletName) {
-		return null;
+		return new MockLiferayPortletURL();
 	}
 
 	@Override
@@ -205,7 +211,7 @@ public class MockLiferayResourceResponse
 
 	@Override
 	public HttpServletResponse getHttpServletResponse() {
-		return null;
+		return _mockHttpServletResponse;
 	}
 
 	@Override
@@ -230,7 +236,7 @@ public class MockLiferayResourceResponse
 
 	@Override
 	public OutputStream getPortletOutputStream() throws IOException {
-		return null;
+		return _byteArrayOutputStream;
 	}
 
 	@Override
@@ -331,5 +337,10 @@ public class MockLiferayResourceResponse
 	@Override
 	public void transferMarkupHeadElements() {
 	}
+
+	private final ByteArrayOutputStream _byteArrayOutputStream =
+		new ByteArrayOutputStream();
+	private final MockHttpServletResponse _mockHttpServletResponse =
+		new MockHttpServletResponse();
 
 }

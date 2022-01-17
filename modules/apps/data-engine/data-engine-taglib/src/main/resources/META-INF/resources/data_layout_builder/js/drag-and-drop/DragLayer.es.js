@@ -23,13 +23,13 @@ const layerStyles = {
 	position: 'fixed',
 	top: 0,
 	width: '100%',
-	zIndex: 150
+	zIndex: 150,
 };
 
 function getItemStyles(initialOffset, currentOffset) {
 	if (!initialOffset || !currentOffset) {
 		return {
-			display: 'none'
+			display: 'none',
 		};
 	}
 
@@ -38,18 +38,18 @@ function getItemStyles(initialOffset, currentOffset) {
 
 	return {
 		WebkitTransform: transform,
-		transform
+		transform,
 	};
 }
 
-export default () => {
+const DragLayer = () => {
 	const {currentOffset, initialOffset, isDragging, item} = useDragLayer(
-		monitor => ({
+		(monitor) => ({
 			currentOffset: monitor.getSourceClientOffset(),
 			initialOffset: monitor.getInitialSourceClientOffset(),
 			isDragging: monitor.isDragging(),
 			item: monitor.getItem(),
-			itemType: monitor.getItemType()
+			itemType: monitor.getItemType(),
 		})
 	);
 
@@ -69,3 +69,5 @@ export default () => {
 		</div>
 	);
 };
+
+export default DragLayer;

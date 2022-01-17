@@ -14,8 +14,15 @@
 
 package com.liferay.portal.kernel.dao.db;
 
+import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.framework.ThrowableCollector;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -24,7 +31,17 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.NamingException;
 
@@ -33,9 +50,6 @@ import javax.naming.NamingException;
  * @author Brian Wing Shun Chan
  */
 public abstract class BaseDBProcess implements DBProcess {
-
-	public BaseDBProcess() {
-	}
 
 	@Override
 	public void runSQL(Connection connection, String template)
@@ -98,14 +112,22 @@ public abstract class BaseDBProcess implements DBProcess {
 		try (LoggingTimer loggingTimer = new LoggingTimer(path)) {
 			ClassLoader classLoader = PortalClassLoaderUtil.getClassLoader();
 
-			InputStream is = classLoader.getResourceAsStream(
+			InputStream inputStream = classLoader.getResourceAsStream(
 				"com/liferay/portal/tools/sql/dependencies/" + path);
 
-			if (is == null) {
-				is = classLoader.getResourceAsStream(path);
+			if (inputStream == null) {
+				inputStream = classLoader.getResourceAsStream(path);
 			}
 
-			if (is == null) {
+			if (inputStream == null) {
+				Thread currentThread = Thread.currentThread();
+
+				classLoader = currentThread.getContextClassLoader();
+
+				inputStream = classLoader.getResourceAsStream(path);
+			}
+
+			if (inputStream == null) {
 				_log.error("Invalid path " + path);
 
 				if (failOnError) {
@@ -115,7 +137,7 @@ public abstract class BaseDBProcess implements DBProcess {
 				return;
 			}
 
-			String template = StringUtil.read(is);
+			String template = StringUtil.read(inputStream);
 
 			runSQLTemplateString(template, failOnError);
 		}
@@ -187,6 +209,14 @@ public abstract class BaseDBProcess implements DBProcess {
 		return dbInspector.hasColumnType(tableName, columnName, columnType);
 	}
 
+	protected boolean hasIndex(String tableName, String indexName)
+		throws Exception {
+
+		DBInspector dbInspector = new DBInspector(connection);
+
+		return dbInspector.hasIndex(tableName, indexName);
+	}
+
 	protected boolean hasRows(Connection connection, String tableName) {
 		DBInspector dbInspector = new DBInspector(connection);
 
@@ -203,7 +233,116 @@ public abstract class BaseDBProcess implements DBProcess {
 		return dbInspector.hasTable(tableName);
 	}
 
+	protected void process(UnsafeConsumer<Long, Exception> unsafeConsumer)
+		throws Exception {
+
+		DB db = DBManagerUtil.getDB();
+
+		db.process(unsafeConsumer);
+	}
+
+	protected void processConcurrently(
+			String sqlQuery,
+			UnsafeFunction<ResultSet, Object[], Exception> unsafeFunction,
+			UnsafeConsumer<Object[], Exception> unsafeConsumer,
+			String exceptionMessage)
+		throws Exception {
+
+		try (Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(sqlQuery)) {
+
+			_processConcurrently(
+				() -> {
+					if (resultSet.next()) {
+						return unsafeFunction.apply(resultSet);
+					}
+
+					return null;
+				},
+				unsafeConsumer, exceptionMessage);
+		}
+	}
+
+	protected <T> void processConcurrently(
+			T[] array, UnsafeConsumer<T, Exception> unsafeConsumer,
+			String exceptionMessage)
+		throws Exception {
+
+		AtomicInteger atomicInteger = new AtomicInteger();
+
+		_processConcurrently(
+			() -> {
+				int index = atomicInteger.getAndIncrement();
+
+				if (index < array.length) {
+					return array[index];
+				}
+
+				return null;
+			},
+			unsafeConsumer, exceptionMessage);
+	}
+
 	protected Connection connection;
+
+	private <T> void _processConcurrently(
+			UnsafeSupplier<T, Exception> unsafeSupplier,
+			UnsafeConsumer<T, Exception> unsafeConsumer,
+			String exceptionMessage)
+		throws Exception {
+
+		Objects.requireNonNull(unsafeSupplier);
+		Objects.requireNonNull(unsafeConsumer);
+
+		ExecutorService executorService = Executors.newWorkStealingPool();
+
+		ThrowableCollector throwableCollector = new ThrowableCollector();
+
+		List<Future<Void>> futures = new ArrayList<>();
+
+		try {
+			long companyId = CompanyThreadLocal.getCompanyId();
+
+			T next = null;
+
+			while ((next = unsafeSupplier.get()) != null) {
+				T current = next;
+
+				Future<Void> future = executorService.submit(
+					() -> {
+						try (SafeCloseable safeCloseable =
+								CompanyThreadLocal.lock(companyId)) {
+
+							unsafeConsumer.accept(current);
+						}
+						catch (Exception exception) {
+							throwableCollector.collect(exception);
+						}
+
+						return null;
+					});
+
+				futures.add(future);
+			}
+		}
+		finally {
+			executorService.shutdown();
+
+			for (Future<Void> future : futures) {
+				future.get();
+			}
+		}
+
+		Throwable throwable = throwableCollector.getThrowable();
+
+		if (throwable != null) {
+			if (exceptionMessage != null) {
+				throw new Exception(exceptionMessage, throwable);
+			}
+
+			ReflectionUtil.throwException(throwable);
+		}
+	}
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 

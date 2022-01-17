@@ -136,10 +136,15 @@ public class WorkflowTaskAssignToRoleSerDes {
 				String.valueOf(workflowTaskAssignToRole.getComment()));
 		}
 
-		map.put(
-			"dueDate",
-			liferayToJSONDateFormat.format(
-				workflowTaskAssignToRole.getDueDate()));
+		if (workflowTaskAssignToRole.getDueDate() == null) {
+			map.put("dueDate", null);
+		}
+		else {
+			map.put(
+				"dueDate",
+				liferayToJSONDateFormat.format(
+					workflowTaskAssignToRole.getDueDate()));
+		}
 
 		if (workflowTaskAssignToRole.getRoleId() == null) {
 			map.put("roleId", null);
@@ -188,10 +193,6 @@ public class WorkflowTaskAssignToRoleSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -220,7 +221,7 @@ public class WorkflowTaskAssignToRoleSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -246,14 +247,17 @@ public class WorkflowTaskAssignToRoleSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

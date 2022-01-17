@@ -17,7 +17,7 @@ package com.liferay.journal.content.web.internal.upgrade.v1_0_0;
 import com.liferay.journal.constants.JournalContentPortletKeys;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletPreferences;
+import com.liferay.portal.kernel.upgrade.BasePortletPreferencesUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -31,7 +31,8 @@ import javax.portlet.PortletPreferences;
 /**
  * @author Julio Camarero
  */
-public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
+public class UpgradePortletPreferences
+	extends BasePortletPreferencesUpgradeProcess {
 
 	@Override
 	protected String[] getPortletIds() {
@@ -133,19 +134,17 @@ public class UpgradePortletPreferences extends BaseUpgradePortletPreferences {
 		userToolAssetAddonEntryKeys = upgradeBooleanAssetAddonEntry(
 			userToolAssetAddonEntryKeys, portletPreferences, "enablePrint");
 
-		Map<String, String> extensions = HashMapBuilder.put(
-			"doc", "enableDOC"
-		).put(
-			"odt", "enableODT"
-		).put(
-			"pdf", "enablePDF"
-		).put(
-			"txt", "enableTXT"
-		).build();
-
 		userToolAssetAddonEntryKeys = upgradeMultiValueAssetAddonEntryKeys(
 			userToolAssetAddonEntryKeys, portletPreferences, "extensions",
-			extensions);
+			HashMapBuilder.put(
+				"doc", "enableDOC"
+			).put(
+				"odt", "enableODT"
+			).put(
+				"pdf", "enablePDF"
+			).put(
+				"txt", "enableTXT"
+			).build());
 
 		userToolAssetAddonEntryKeys = upgradeBooleanAssetAddonEntry(
 			userToolAssetAddonEntryKeys, portletPreferences,

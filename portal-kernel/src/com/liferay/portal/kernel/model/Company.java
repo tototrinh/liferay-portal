@@ -57,9 +57,6 @@ public interface Company extends CompanyModel, PersistedModel {
 
 	public int compareTo(Company company);
 
-	public Account getAccount()
-		throws com.liferay.portal.kernel.exception.PortalException;
-
 	public String getAdminName();
 
 	public String getAuthType();
@@ -86,11 +83,10 @@ public interface Company extends CompanyModel, PersistedModel {
 	public java.util.Locale getLocale()
 		throws com.liferay.portal.kernel.exception.PortalException;
 
-	@com.liferay.portal.kernel.bean.AutoEscape
-	public String getName()
+	public String getPortalURL(long groupId)
 		throws com.liferay.portal.kernel.exception.PortalException;
 
-	public String getPortalURL(long groupId)
+	public String getPortalURL(long groupId, boolean privateLayout)
 		throws com.liferay.portal.kernel.exception.PortalException;
 
 	public String getShortName()
@@ -120,6 +116,8 @@ public interface Company extends CompanyModel, PersistedModel {
 	public boolean isStrangersVerify();
 
 	public boolean isStrangersWithMx();
+
+	public boolean isUpdatePasswordRequired();
 
 	public void setKey(String key);
 

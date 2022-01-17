@@ -16,9 +16,11 @@ package com.liferay.knowledge.base.service.persistence.impl;
 
 import com.liferay.knowledge.base.exception.NoSuchTemplateException;
 import com.liferay.knowledge.base.model.KBTemplate;
+import com.liferay.knowledge.base.model.KBTemplateTable;
 import com.liferay.knowledge.base.model.impl.KBTemplateImpl;
 import com.liferay.knowledge.base.model.impl.KBTemplateModelImpl;
 import com.liferay.knowledge.base.service.persistence.KBTemplatePersistence;
+import com.liferay.knowledge.base.service.persistence.KBTemplateUtil;
 import com.liferay.knowledge.base.service.persistence.impl.constants.KBPersistenceConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Configuration;
@@ -42,10 +44,13 @@ import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -53,6 +58,7 @@ import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
 import java.util.Date;
@@ -79,7 +85,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@Component(service = KBTemplatePersistence.class)
+@Component(service = {KBTemplatePersistence.class, BasePersistence.class})
 public class KBTemplatePersistenceImpl
 	extends BasePersistenceImpl<KBTemplate> implements KBTemplatePersistence {
 
@@ -195,7 +201,7 @@ public class KBTemplatePersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<KBTemplate>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (KBTemplate kbTemplate : list) {
@@ -265,10 +271,6 @@ public class KBTemplatePersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -579,7 +581,7 @@ public class KBTemplatePersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -617,8 +619,6 @@ public class KBTemplatePersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -711,7 +711,7 @@ public class KBTemplatePersistenceImpl
 
 		if (useFinderCache) {
 			result = finderCache.getResult(
-				_finderPathFetchByUUID_G, finderArgs, this);
+				_finderPathFetchByUUID_G, finderArgs);
 		}
 
 		if (result instanceof KBTemplate) {
@@ -776,11 +776,6 @@ public class KBTemplatePersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(
-						_finderPathFetchByUUID_G, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -827,7 +822,7 @@ public class KBTemplatePersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid, groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -869,8 +864,6 @@ public class KBTemplatePersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -995,7 +988,7 @@ public class KBTemplatePersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<KBTemplate>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (KBTemplate kbTemplate : list) {
@@ -1071,10 +1064,6 @@ public class KBTemplatePersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -1411,7 +1400,7 @@ public class KBTemplatePersistenceImpl
 
 		Object[] finderArgs = new Object[] {uuid, companyId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(3);
@@ -1453,8 +1442,6 @@ public class KBTemplatePersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -1568,7 +1555,7 @@ public class KBTemplatePersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<KBTemplate>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (KBTemplate kbTemplate : list) {
@@ -1627,10 +1614,6 @@ public class KBTemplatePersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -2252,7 +2235,7 @@ public class KBTemplatePersistenceImpl
 
 		Object[] finderArgs = new Object[] {groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs);
 
 		if (count == null) {
 			StringBundler sb = new StringBundler(2);
@@ -2279,8 +2262,6 @@ public class KBTemplatePersistenceImpl
 				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(finderPath, finderArgs);
-
 				throw processException(exception);
 			}
 			finally {
@@ -2343,16 +2324,18 @@ public class KBTemplatePersistenceImpl
 		"kbTemplate.groupId = ?";
 
 	public KBTemplatePersistenceImpl() {
-		setModelClass(KBTemplate.class);
-
-		setModelImplClass(KBTemplateImpl.class);
-		setModelPKClass(long.class);
-
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
 		dbColumnNames.put("uuid", "uuid_");
 
 		setDBColumnNames(dbColumnNames);
+
+		setModelClass(KBTemplate.class);
+
+		setModelImplClass(KBTemplateImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(KBTemplateTable.INSTANCE);
 	}
 
 	/**
@@ -2363,16 +2346,15 @@ public class KBTemplatePersistenceImpl
 	@Override
 	public void cacheResult(KBTemplate kbTemplate) {
 		entityCache.putResult(
-			entityCacheEnabled, KBTemplateImpl.class,
-			kbTemplate.getPrimaryKey(), kbTemplate);
+			KBTemplateImpl.class, kbTemplate.getPrimaryKey(), kbTemplate);
 
 		finderCache.putResult(
 			_finderPathFetchByUUID_G,
 			new Object[] {kbTemplate.getUuid(), kbTemplate.getGroupId()},
 			kbTemplate);
-
-		kbTemplate.resetOriginalValues();
 	}
+
+	private int _valueObjectFinderCacheListThreshold;
 
 	/**
 	 * Caches the kb templates in the entity cache if it is enabled.
@@ -2381,15 +2363,18 @@ public class KBTemplatePersistenceImpl
 	 */
 	@Override
 	public void cacheResult(List<KBTemplate> kbTemplates) {
+		if ((_valueObjectFinderCacheListThreshold == 0) ||
+			((_valueObjectFinderCacheListThreshold > 0) &&
+			 (kbTemplates.size() > _valueObjectFinderCacheListThreshold))) {
+
+			return;
+		}
+
 		for (KBTemplate kbTemplate : kbTemplates) {
 			if (entityCache.getResult(
-					entityCacheEnabled, KBTemplateImpl.class,
-					kbTemplate.getPrimaryKey()) == null) {
+					KBTemplateImpl.class, kbTemplate.getPrimaryKey()) == null) {
 
 				cacheResult(kbTemplate);
-			}
-			else {
-				kbTemplate.resetOriginalValues();
 			}
 		}
 	}
@@ -2405,9 +2390,7 @@ public class KBTemplatePersistenceImpl
 	public void clearCache() {
 		entityCache.clearCache(KBTemplateImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(KBTemplateImpl.class);
 	}
 
 	/**
@@ -2419,39 +2402,22 @@ public class KBTemplatePersistenceImpl
 	 */
 	@Override
 	public void clearCache(KBTemplate kbTemplate) {
-		entityCache.removeResult(
-			entityCacheEnabled, KBTemplateImpl.class,
-			kbTemplate.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((KBTemplateModelImpl)kbTemplate, true);
+		entityCache.removeResult(KBTemplateImpl.class, kbTemplate);
 	}
 
 	@Override
 	public void clearCache(List<KBTemplate> kbTemplates) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (KBTemplate kbTemplate : kbTemplates) {
-			entityCache.removeResult(
-				entityCacheEnabled, KBTemplateImpl.class,
-				kbTemplate.getPrimaryKey());
-
-			clearUniqueFindersCache((KBTemplateModelImpl)kbTemplate, true);
+			entityCache.removeResult(KBTemplateImpl.class, kbTemplate);
 		}
 	}
 
 	@Override
 	public void clearCache(Set<Serializable> primaryKeys) {
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(KBTemplateImpl.class);
 
 		for (Serializable primaryKey : primaryKeys) {
-			entityCache.removeResult(
-				entityCacheEnabled, KBTemplateImpl.class, primaryKey);
+			entityCache.removeResult(KBTemplateImpl.class, primaryKey);
 		}
 	}
 
@@ -2462,35 +2428,9 @@ public class KBTemplatePersistenceImpl
 			kbTemplateModelImpl.getUuid(), kbTemplateModelImpl.getGroupId()
 		};
 
+		finderCache.putResult(_finderPathCountByUUID_G, args, Long.valueOf(1));
 		finderCache.putResult(
-			_finderPathCountByUUID_G, args, Long.valueOf(1), false);
-		finderCache.putResult(
-			_finderPathFetchByUUID_G, args, kbTemplateModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		KBTemplateModelImpl kbTemplateModelImpl, boolean clearCurrent) {
-
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-				kbTemplateModelImpl.getUuid(), kbTemplateModelImpl.getGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUUID_G, args);
-			finderCache.removeResult(_finderPathFetchByUUID_G, args);
-		}
-
-		if ((kbTemplateModelImpl.getColumnBitmask() &
-			 _finderPathFetchByUUID_G.getColumnBitmask()) != 0) {
-
-			Object[] args = new Object[] {
-				kbTemplateModelImpl.getOriginalUuid(),
-				kbTemplateModelImpl.getOriginalGroupId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUUID_G, args);
-			finderCache.removeResult(_finderPathFetchByUUID_G, args);
-		}
+			_finderPathFetchByUUID_G, args, kbTemplateModelImpl);
 	}
 
 	/**
@@ -2630,23 +2570,24 @@ public class KBTemplatePersistenceImpl
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if (isNew && (kbTemplate.getCreateDate() == null)) {
 			if (serviceContext == null) {
-				kbTemplate.setCreateDate(now);
+				kbTemplate.setCreateDate(date);
 			}
 			else {
-				kbTemplate.setCreateDate(serviceContext.getCreateDate(now));
+				kbTemplate.setCreateDate(serviceContext.getCreateDate(date));
 			}
 		}
 
 		if (!kbTemplateModelImpl.hasSetModifiedDate()) {
 			if (serviceContext == null) {
-				kbTemplate.setModifiedDate(now);
+				kbTemplate.setModifiedDate(date);
 			}
 			else {
-				kbTemplate.setModifiedDate(serviceContext.getModifiedDate(now));
+				kbTemplate.setModifiedDate(
+					serviceContext.getModifiedDate(date));
 			}
 		}
 
@@ -2680,10 +2621,8 @@ public class KBTemplatePersistenceImpl
 		try {
 			session = openSession();
 
-			if (kbTemplate.isNew()) {
+			if (isNew) {
 				session.save(kbTemplate);
-
-				kbTemplate.setNew(false);
 			}
 			else {
 				kbTemplate = (KBTemplate)session.merge(kbTemplate);
@@ -2696,106 +2635,14 @@ public class KBTemplatePersistenceImpl
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-
-		if (!_columnBitmaskEnabled) {
-			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else if (isNew) {
-			Object[] args = new Object[] {kbTemplateModelImpl.getUuid()};
-
-			finderCache.removeResult(_finderPathCountByUuid, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByUuid, args);
-
-			args = new Object[] {
-				kbTemplateModelImpl.getUuid(),
-				kbTemplateModelImpl.getCompanyId()
-			};
-
-			finderCache.removeResult(_finderPathCountByUuid_C, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByUuid_C, args);
-
-			args = new Object[] {kbTemplateModelImpl.getGroupId()};
-
-			finderCache.removeResult(_finderPathCountByGroupId, args);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindByGroupId, args);
-
-			finderCache.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(
-				_finderPathWithoutPaginationFindAll, FINDER_ARGS_EMPTY);
-		}
-		else {
-			if ((kbTemplateModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					kbTemplateModelImpl.getOriginalUuid()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
-
-				args = new Object[] {kbTemplateModelImpl.getUuid()};
-
-				finderCache.removeResult(_finderPathCountByUuid, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid, args);
-			}
-
-			if ((kbTemplateModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByUuid_C.getColumnBitmask()) !=
-					 0) {
-
-				Object[] args = new Object[] {
-					kbTemplateModelImpl.getOriginalUuid(),
-					kbTemplateModelImpl.getOriginalCompanyId()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid_C, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-
-				args = new Object[] {
-					kbTemplateModelImpl.getUuid(),
-					kbTemplateModelImpl.getCompanyId()
-				};
-
-				finderCache.removeResult(_finderPathCountByUuid_C, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByUuid_C, args);
-			}
-
-			if ((kbTemplateModelImpl.getColumnBitmask() &
-				 _finderPathWithoutPaginationFindByGroupId.
-					 getColumnBitmask()) != 0) {
-
-				Object[] args = new Object[] {
-					kbTemplateModelImpl.getOriginalGroupId()
-				};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-
-				args = new Object[] {kbTemplateModelImpl.getGroupId()};
-
-				finderCache.removeResult(_finderPathCountByGroupId, args);
-				finderCache.removeResult(
-					_finderPathWithoutPaginationFindByGroupId, args);
-			}
-		}
-
 		entityCache.putResult(
-			entityCacheEnabled, KBTemplateImpl.class,
-			kbTemplate.getPrimaryKey(), kbTemplate, false);
+			KBTemplateImpl.class, kbTemplateModelImpl, false, true);
 
-		clearUniqueFindersCache(kbTemplateModelImpl, false);
 		cacheUniqueFindersCache(kbTemplateModelImpl);
+
+		if (isNew) {
+			kbTemplate.setNew(false);
+		}
 
 		kbTemplate.resetOriginalValues();
 
@@ -2935,7 +2782,7 @@ public class KBTemplatePersistenceImpl
 
 		if (useFinderCache) {
 			list = (List<KBTemplate>)finderCache.getResult(
-				finderPath, finderArgs, this);
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
@@ -2976,10 +2823,6 @@ public class KBTemplatePersistenceImpl
 				}
 			}
 			catch (Exception exception) {
-				if (useFinderCache) {
-					finderCache.removeResult(finderPath, finderArgs);
-				}
-
 				throw processException(exception);
 			}
 			finally {
@@ -3009,7 +2852,7 @@ public class KBTemplatePersistenceImpl
 	@Override
 	public int countAll() {
 		Long count = (Long)finderCache.getResult(
-			_finderPathCountAll, FINDER_ARGS_EMPTY, this);
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -3025,9 +2868,6 @@ public class KBTemplatePersistenceImpl
 					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception exception) {
-				finderCache.removeResult(
-					_finderPathCountAll, FINDER_ARGS_EMPTY);
-
 				throw processException(exception);
 			}
 			finally {
@@ -3068,104 +2908,109 @@ public class KBTemplatePersistenceImpl
 	 */
 	@Activate
 	public void activate() {
-		KBTemplateModelImpl.setEntityCacheEnabled(entityCacheEnabled);
-		KBTemplateModelImpl.setFinderCacheEnabled(finderCacheEnabled);
+		_valueObjectFinderCacheListThreshold = GetterUtil.getInteger(
+			PropsUtil.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_LIST_THRESHOLD));
 
 		_finderPathWithPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathWithoutPaginationFindAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
-			new String[0]);
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
 
 		_finderPathCountAll = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
-			new String[0]);
+			new String[0], new String[0], false);
 
 		_finderPathWithPaginationFindByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid",
 			new String[] {
 				String.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_"}, true);
 
 		_finderPathWithoutPaginationFindByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid",
-			new String[] {String.class.getName()},
-			KBTemplateModelImpl.UUID_COLUMN_BITMASK |
-			KBTemplateModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			true);
 
 		_finderPathCountByUuid = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid",
-			new String[] {String.class.getName()});
+			new String[] {String.class.getName()}, new String[] {"uuid_"},
+			false);
 
 		_finderPathFetchByUUID_G = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_ENTITY, "fetchByUUID_G",
 			new String[] {String.class.getName(), Long.class.getName()},
-			KBTemplateModelImpl.UUID_COLUMN_BITMASK |
-			KBTemplateModelImpl.GROUPID_COLUMN_BITMASK);
+			new String[] {"uuid_", "groupId"}, true);
 
 		_finderPathCountByUUID_G = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUUID_G",
-			new String[] {String.class.getName(), Long.class.getName()});
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "groupId"}, false);
 
 		_finderPathWithPaginationFindByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid_C",
 			new String[] {
 				String.class.getName(), Long.class.getName(),
 				Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathWithoutPaginationFindByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid_C",
 			new String[] {String.class.getName(), Long.class.getName()},
-			KBTemplateModelImpl.UUID_COLUMN_BITMASK |
-			KBTemplateModelImpl.COMPANYID_COLUMN_BITMASK |
-			KBTemplateModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+			new String[] {"uuid_", "companyId"}, true);
 
 		_finderPathCountByUuid_C = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid_C",
-			new String[] {String.class.getName(), Long.class.getName()});
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"uuid_", "companyId"}, false);
 
 		_finderPathWithPaginationFindByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
 			new String[] {
 				Long.class.getName(), Integer.class.getName(),
 				Integer.class.getName(), OrderByComparator.class.getName()
-			});
+			},
+			new String[] {"groupId"}, true);
 
 		_finderPathWithoutPaginationFindByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, KBTemplateImpl.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
-			new String[] {Long.class.getName()},
-			KBTemplateModelImpl.GROUPID_COLUMN_BITMASK |
-			KBTemplateModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			true);
 
 		_finderPathCountByGroupId = new FinderPath(
-			entityCacheEnabled, finderCacheEnabled, Long.class,
 			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
-			new String[] {Long.class.getName()});
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
+
+		_setKBTemplateUtilPersistence(this);
 	}
 
 	@Deactivate
 	public void deactivate() {
+		_setKBTemplateUtilPersistence(null);
+
 		entityCache.removeCache(KBTemplateImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+	}
+
+	private void _setKBTemplateUtilPersistence(
+		KBTemplatePersistence kbTemplatePersistence) {
+
+		try {
+			Field field = KBTemplateUtil.class.getDeclaredField("_persistence");
+
+			field.setAccessible(true);
+
+			field.set(null, kbTemplatePersistence);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
 	}
 
 	@Override
@@ -3174,12 +3019,6 @@ public class KBTemplatePersistenceImpl
 		unbind = "-"
 	)
 	public void setConfiguration(Configuration configuration) {
-		super.setConfiguration(configuration);
-
-		_columnBitmaskEnabled = GetterUtil.getBoolean(
-			configuration.get(
-				"value.object.column.bitmask.enabled.com.liferay.knowledge.base.model.KBTemplate"),
-			true);
 	}
 
 	@Override
@@ -3199,8 +3038,6 @@ public class KBTemplatePersistenceImpl
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		super.setSessionFactory(sessionFactory);
 	}
-
-	private boolean _columnBitmaskEnabled;
 
 	@Reference
 	protected EntityCache entityCache;
@@ -3257,13 +3094,12 @@ public class KBTemplatePersistenceImpl
 	private static final Set<String> _badColumnNames = SetUtil.fromArray(
 		new String[] {"uuid"});
 
-	static {
-		try {
-			Class.forName(KBPersistenceConstants.class.getName());
-		}
-		catch (ClassNotFoundException classNotFoundException) {
-			throw new ExceptionInInitializerError(classNotFoundException);
-		}
+	@Override
+	protected FinderCache getFinderCache() {
+		return finderCache;
 	}
+
+	@Reference
+	private KBTemplateModelArgumentsResolver _kbTemplateModelArgumentsResolver;
 
 }

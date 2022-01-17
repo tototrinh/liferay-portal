@@ -12,8 +12,8 @@
  * details.
  */
 
-import {useIsMounted} from 'frontend-js-react-web';
-import {isObject} from 'metal';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {isObject} from 'frontend-js-web';
 import {PropTypes} from 'prop-types';
 import React, {useCallback, useEffect, useState} from 'react';
 
@@ -28,16 +28,17 @@ const PreviewSeo = ({
 	imgUrl = '',
 	title = '',
 	titleSuffix = '',
-	url = ''
+	url = '',
 }) => {
 	const titleUrl = [
 		<div className="preview-seo-title text-truncate" key="title">
 			{title}
+
 			{titleSuffix && ` - ${titleSuffix}`}
 		</div>,
 		<div className="preview-seo-url text-truncate" key="url">
 			{url}
-		</div>
+		</div>,
 	];
 
 	return (
@@ -54,7 +55,9 @@ const PreviewSeo = ({
 					/>
 				</div>
 			)}
+
 			{displayType === 'og' ? titleUrl.reverse() : titleUrl}
+
 			<div className="preview-seo-description">
 				{description.length < MAX_LENGTH_DESCIPTION
 					? description
@@ -70,14 +73,14 @@ PreviewSeo.propTypes = {
 	imgUrl: PropTypes.string,
 	title: PropTypes.string,
 	titleSuffix: PropTypes.string,
-	url: PropTypes.string
+	url: PropTypes.string,
 };
 
 const PreviewSeoContainer = ({
 	displayType,
 	portletNamespace,
 	targets,
-	titleSuffix
+	titleSuffix,
 }) => {
 	const defaultLanguage = Liferay.ThemeDisplay.getLanguageId();
 	const [language, setLanguage] = useState(defaultLanguage);
@@ -86,7 +89,7 @@ const PreviewSeoContainer = ({
 	const [inputTargets, setInputTargets] = useState({});
 
 	const getDefaultValue = useCallback(
-		type => {
+		(type) => {
 			let defaultValue = targets[type] && targets[type].defaultValue;
 
 			if (isObject(defaultValue)) {
@@ -102,7 +105,7 @@ const PreviewSeoContainer = ({
 	useEffect(() => {
 		const inputLocalizedLocaleChangedHandle = Liferay.on(
 			'inputLocalized:localeChanged',
-			event => {
+			(event) => {
 				const newLanguage =
 					event.item && event.item.getAttribute('data-value');
 
@@ -123,9 +126,9 @@ const PreviewSeoContainer = ({
 				return;
 			}
 
-			setFields(state => ({
+			setFields((state) => ({
 				...state,
-				[type]: {...props}
+				[type]: {...props},
 			}));
 		};
 
@@ -141,7 +144,7 @@ const PreviewSeoContainer = ({
 					acc[type] = {
 						defaultLanguageInput,
 						input,
-						type
+						type,
 					};
 				}
 				else if (value) {
@@ -168,10 +171,10 @@ const PreviewSeoContainer = ({
 
 		const inputs = Object.values(inputTargets).reduce(
 			(acc, {input, type}) => {
-				const listener = event => {
+				const listener = (event) => {
 					handleInputChange({
 						event,
-						type
+						type,
 					});
 				};
 
@@ -213,10 +216,13 @@ const PreviewSeoContainer = ({
 			{}
 		);
 
-		setFields(prevFieldsState => ({...prevFieldsState, ...newFieldsState}));
+		setFields((prevFieldsState) => ({
+			...prevFieldsState,
+			...newFieldsState,
+		}));
 	}, [inputTargets, isMounted, language]);
 
-	const getValue = type => {
+	const getValue = (type) => {
 		const disabled = fields[type] && fields[type].disabled;
 		let value = fields[type] && fields[type].value;
 
@@ -256,7 +262,7 @@ const PreviewSeoContainer = ({
 const targetShape = PropTypes.shape({
 	defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
 	id: PropTypes.string,
-	value: PropTypes.string
+	value: PropTypes.string,
 });
 
 PreviewSeoContainer.propTypes = {
@@ -264,15 +270,10 @@ PreviewSeoContainer.propTypes = {
 		description: targetShape,
 		imgUrl: targetShape,
 		title: targetShape,
-		url: targetShape
-	}).isRequired
+		url: targetShape,
+	}).isRequired,
 };
 
-export default function(props) {
-	return (
-		<PreviewSeoContainer
-			{...props}
-			portletNamespace={`_${props.portletNamespace}_`}
-		/>
-	);
+export default function (props) {
+	return <PreviewSeoContainer {...props} />;
 }

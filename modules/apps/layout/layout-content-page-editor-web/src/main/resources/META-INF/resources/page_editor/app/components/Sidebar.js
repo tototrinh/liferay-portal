@@ -15,21 +15,24 @@
 import {ClayButtonWithIcon, default as ClayButton} from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
-import {ClayTooltipProvider} from '@clayui/tooltip';
+import {
+	ReactPortal,
+	useIsMounted,
+	useStateSafe,
+} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
 import React from 'react';
 
 import useLazy from '../../core/hooks/useLazy';
 import useLoad from '../../core/hooks/useLoad';
 import usePlugins from '../../core/hooks/usePlugins';
-import useStateSafe from '../../core/hooks/useStateSafe';
 import * as Actions from '../actions/index';
 import {config} from '../config/index';
+import {useSelectItem} from '../contexts/ControlsContext';
+import {useDispatch, useSelector} from '../contexts/StoreContext';
 import selectAvailablePanels from '../selectors/selectAvailablePanels';
-import selectAvailableSidebarPanels from '../selectors/selectAvailableSidebarPanels';
-import {useDispatch, useSelector} from '../store/index';
-import {useSelectItem} from './Controls';
+import {useDropClear} from '../utils/drag-and-drop/useDragAndDrop';
+import {useId} from '../utils/useId';
 
 const {Suspense, useCallback, useEffect} = React;
 
@@ -37,25 +40,50 @@ const {Suspense, useCallback, useEffect} = React;
  * Failure to preload is a non-critical failure, so we'll use this to swallow
  * rejected promises silently.
  */
-const swallow = [value => value, _error => undefined];
+const swallow = [(value) => value, (_error) => undefined];
+
+/**
+ * Load the first available panel if the selected sidebar panel ID is not found.
+ * This may happen because the list of panels is modified depending on the user permissions.
+ *
+ * @param {string} panelId
+ * @param {Array} panels
+ * @param {object} sidebarPanels
+ */
+const getActivePanelData = ({panelId, panels, sidebarPanels}) => {
+	let sidebarPanelId = panelId;
+
+	let panel = panels.some((panel) => panel.includes(sidebarPanelId))
+		? sidebarPanels[sidebarPanelId]
+		: null;
+
+	if (!panel) {
+		sidebarPanelId = panels[0][0];
+		panel = sidebarPanels[sidebarPanelId];
+	}
+
+	return {panel, sidebarPanelId};
+};
 
 export default function Sidebar() {
-	const dispatch = useDispatch();
-	const store = useSelector(state => state);
+	const dropClearRef = useDropClear();
 	const [hasError, setHasError] = useStateSafe(false);
-	const isMounted = useIsMounted();
-	const selectItem = useSelectItem();
-	const load = useLoad();
 	const {getInstance, register} = usePlugins();
+	const dispatch = useDispatch();
+	const isMounted = useIsMounted();
+	const load = useLoad();
+	const selectItem = useSelectItem();
+	const sidebarId = useId();
+	const store = useSelector((state) => state);
 
 	const panels = useSelector(selectAvailablePanels(config.panels));
-	const sidebarPanels = useSelector(
-		selectAvailableSidebarPanels(config.sidebarPanels)
-	);
 	const sidebarOpen = store.sidebar.open;
-	const sidebarPanelId = store.sidebar.panelId;
+	const {panel, sidebarPanelId} = getActivePanelData({
+		panelId: store.sidebar.panelId,
+		panels,
+		sidebarPanels: config.sidebarPanels,
+	});
 
-	const panel = sidebarPanels[sidebarPanelId];
 	const promise = panel
 		? load(sidebarPanelId, panel.pluginEntryPoint)
 		: Promise.resolve();
@@ -64,97 +92,14 @@ export default function Sidebar() {
 		Actions,
 		config,
 		dispatch,
-		store
+		store,
 	};
 
 	let registerPanel;
 
-	if (sidebarPanelId) {
+	if (sidebarPanelId && panel) {
 		registerPanel = register(sidebarPanelId, promise, {app, panel});
 	}
-
-	useEffect(
-		() => {
-			if (panel) {
-				togglePlugin(panel);
-			}
-			else if (sidebarPanelId) {
-				dispatch(
-					Actions.switchSidebarPanel({
-						sidebarOpen: false,
-						sidebarPanelId: null
-					})
-				);
-			}
-		},
-		/* eslint-disable react-hooks/exhaustive-deps */
-		[panel, sidebarOpen, sidebarPanelId]
-	);
-
-	useEffect(() => {
-		const productMenuOpen = document.querySelector('.product-menu-open');
-		const sideNavigation = Liferay.SideNavigation.instance(
-			document.querySelector('.product-menu-toggle')
-		);
-
-		const onCloseSidebar = () => {
-			dispatch(
-				Actions.switchSidebarPanel({
-					sidebarOpen: false,
-					sidebarPanelId: null
-				})
-			);
-		};
-
-		if (productMenuOpen && sidebarOpen) {
-			onCloseSidebar();
-		}
-
-		const sideNavigationListener = sideNavigation.on(
-			'openStart.lexicon.sidenav',
-			onCloseSidebar
-		);
-
-		return () => {
-			sideNavigationListener.removeListener();
-		};
-	}, []);
-
-	const SidebarPanel = useLazy(
-		useCallback(({instance}) => {
-			if (typeof instance.renderSidebar === 'function') {
-				return instance.renderSidebar();
-			}
-			else {
-				return null;
-			}
-		}, [])
-	);
-
-	const deselectItem = event => {
-		if (event.target === event.currentTarget) {
-			selectItem(null, {multiSelect: event.shiftKey});
-		}
-	};
-
-	const handleClick = panel => {
-		const open =
-			panel.sidebarPanelId === sidebarPanelId ? !sidebarOpen : true;
-		const productMenuToggle = document.querySelector(
-			'.product-menu-toggle'
-		);
-
-		if (productMenuToggle && !sidebarOpen) {
-			Liferay.SideNavigation.hide(productMenuToggle);
-		}
-
-		dispatch(
-			Actions.switchSidebarPanel({
-				sidebarOpen: open,
-				sidebarPanelId: panel.sidebarPanelId
-			})
-		);
-	};
 
 	const togglePlugin = () => {
 		if (hasError) {
@@ -162,7 +107,7 @@ export default function Sidebar() {
 		}
 
 		if (registerPanel) {
-			registerPanel.then(plugin => {
+			registerPanel.then((plugin) => {
 				if (
 					plugin &&
 					typeof plugin.activate === 'function' &&
@@ -177,16 +122,120 @@ export default function Sidebar() {
 		}
 	};
 
+	useEffect(
+		() => {
+			if (panel) {
+				togglePlugin(panel);
+			}
+			else if (sidebarPanelId) {
+				dispatch(
+					Actions.switchSidebarPanel({
+						sidebarOpen: false,
+						sidebarPanelId: null,
+					})
+				);
+			}
+		},
+		/* eslint-disable react-hooks/exhaustive-deps */
+		[panel, sidebarOpen, sidebarPanelId]
+	);
+
+	useEffect(() => {
+		const sideNavigation = Liferay.SideNavigation.instance(
+			document.querySelector('.product-menu-toggle')
+		);
+
+		if (sideNavigation) {
+			const onHandleSidebar = (open) => {
+				dispatch(
+					Actions.switchSidebarPanel({
+						sidebarOpen: open,
+					})
+				);
+			};
+
+			if (!sideNavigation.visible()) {
+				onHandleSidebar(true);
+			}
+
+			const sideNavigationListener = sideNavigation.on(
+				'openStart.lexicon.sidenav',
+				() => onHandleSidebar(false)
+			);
+
+			return () => {
+				sideNavigationListener.removeListener();
+			};
+		}
+	}, []);
+
+	useEffect(() => {
+		const wrapper = document.getElementById('wrapper');
+
+		if (!wrapper) {
+			return;
+		}
+
+		wrapper.classList.add('page-editor__wrapper');
+		wrapper.classList.toggle('page-editor__wrapper--padded', sidebarOpen);
+
+		return () => {
+			wrapper.classList.remove('page-editor__wrapper');
+			wrapper.classList.remove('page-editor__wrapper--padded');
+		};
+	}, [sidebarOpen]);
+
+	const SidebarPanel = useLazy(
+		useCallback(({instance}) => {
+			if (typeof instance.renderSidebar === 'function') {
+				return instance.renderSidebar();
+			}
+			else {
+				return null;
+			}
+		}, [])
+	);
+
+	const deselectItem = (event) => {
+		if (event.target === event.currentTarget) {
+			selectItem(null);
+		}
+	};
+
+	const handleClick = (panel) => {
+		const open =
+			panel.sidebarPanelId === sidebarPanelId ? !sidebarOpen : true;
+		const productMenuToggle = document.querySelector(
+			'.product-menu-toggle'
+		);
+
+		if (productMenuToggle && !sidebarOpen) {
+			Liferay.SideNavigation.hide(productMenuToggle);
+		}
+
+		dispatch(
+			Actions.switchSidebarPanel({
+				sidebarOpen: open,
+				sidebarPanelId: panel.sidebarPanelId,
+			})
+		);
+	};
+
 	return (
-		<ClayTooltipProvider>
-			<div className="page-editor__sidebar">
+		<ReactPortal>
+			<div
+				className="cadmin page-editor__sidebar page-editor__theme-adapter-forms"
+				ref={dropClearRef}
+			>
 				<div
-					className="page-editor__sidebar__buttons"
+					className={classNames('page-editor__sidebar__buttons', {
+						light: true,
+					})}
 					onClick={deselectItem}
 				>
 					{panels.reduce((elements, group, groupIndex) => {
-						const buttons = group.map(panelId => {
-							const panel = sidebarPanels[panelId];
+						const buttons = group.map((panelId) => {
+							const panel = config.sidebarPanels[panelId];
 
 							const active =
 								sidebarOpen && sidebarPanelId === panelId;
@@ -195,7 +244,7 @@ export default function Sidebar() {
 								isLink,
 								label,
 								pluginEntryPoint,
-								url
+								url,
 							} = panel;
 
 							if (isLink) {
@@ -224,11 +273,12 @@ export default function Sidebar() {
 									className={classNames({active})}
 									data-tooltip-align="left"
 									displayType="unstyled"
-									id={panel.sidebarPanelId}
+									id={`${sidebarId}${panel.sidebarPanelId}`}
 									key={panel.sidebarPanelId}
 									onClick={() => handleClick(panel)}
 									onFocus={prefetch}
 									onMouseEnter={prefetch}
+									small={true}
 									symbol={icon}
 									title={label}
 								/>
@@ -236,21 +286,27 @@ export default function Sidebar() {
 						});
 
 						// Add separator between groups.
+
 						if (groupIndex === panels.length - 1) {
 							return elements.concat(buttons);
 						}
 						else {
 							return elements.concat([
 								...buttons,
-								<hr key={`separator-${groupIndex}`} />
+								<hr key={`separator-${groupIndex}`} />,
 							]);
 						}
 					}, [])}
 				</div>
+
 				<div
 					className={classNames({
 						'page-editor__sidebar__content': true,
-						'page-editor__sidebar__content--open': sidebarOpen
+						'page-editor__sidebar__content--open': sidebarOpen,
+						'rtl':
+							Liferay.Language.direction[
+								themeDisplay?.getLanguageId()
+							] === 'rtl',
 					})}
 					onClick={deselectItem}
 				>
@@ -264,7 +320,7 @@ export default function Sidebar() {
 										Actions.switchSidebarPanel({
 											sidebarOpen: false,
 											sidebarPanelId:
-												panels[0] && panels[0][0]
+												panels[0] && panels[0][0],
 										})
 									);
 									setHasError(false);
@@ -280,7 +336,14 @@ export default function Sidebar() {
 								setHasError(true);
 							}}
 						>
-							<Suspense fallback={<ClayLoadingIndicator />}>
+							<Suspense
+								fallback={
+									<ClayLoadingIndicator
+										className="my-4"
+										small
+									/>
+								}
+							>
 								<SidebarPanel
 									getInstance={getInstance}
 									pluginId={sidebarPanelId}
@@ -290,7 +353,7 @@ export default function Sidebar() {
 					)}
 				</div>
 			</div>
-		</ClayTooltipProvider>
+		</ReactPortal>
 	);
 }
 

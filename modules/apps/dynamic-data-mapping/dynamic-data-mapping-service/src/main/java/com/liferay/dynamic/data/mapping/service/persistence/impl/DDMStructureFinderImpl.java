@@ -14,8 +14,8 @@
 
 package com.liferay.dynamic.data.mapping.service.persistence.impl;
 
+import com.liferay.dynamic.data.mapping.constants.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
-import com.liferay.dynamic.data.mapping.model.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.model.impl.DDMStructureImpl;
 import com.liferay.dynamic.data.mapping.security.permission.DDMPermissionSupport;
 import com.liferay.dynamic.data.mapping.service.persistence.DDMStructureFinder;
@@ -419,10 +419,10 @@ public class DDMStructureFinderImpl
 			queryPos.add(names, 2);
 			queryPos.add(descriptions, 2);
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -498,10 +498,10 @@ public class DDMStructureFinderImpl
 				queryPos.add(status);
 			}
 
-			Iterator<Long> itr = sqlQuery.iterate();
+			Iterator<Long> iterator = sqlQuery.iterate();
 
-			if (itr.hasNext()) {
-				Long count = itr.next();
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -672,15 +672,11 @@ public class DDMStructureFinderImpl
 			return StringPool.BLANK;
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("AND EXISTS (SELECT 1 FROM DDMStructureVersion WHERE ");
-		sb.append("(DDMStructureVersion.structureId = ");
-		sb.append("DDMStructure.structureId) AND ");
-		sb.append("(DDMStructureVersion.version = DDMStructure.version) AND ");
-		sb.append("(DDMStructureVersion.status = ?))");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"AND EXISTS (SELECT 1 FROM DDMStructureVersion WHERE ",
+			"(DDMStructureVersion.structureId = DDMStructure.structureId) AND ",
+			"(DDMStructureVersion.version = DDMStructure.version) AND ",
+			"(DDMStructureVersion.status = ?))");
 	}
 
 	@Reference

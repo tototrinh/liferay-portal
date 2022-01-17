@@ -318,12 +318,9 @@ public class AutoCloseUtil {
 		for (Build downstreamBuild : downstreamBuilds) {
 			String batchName = downstreamBuild.getJobVariant();
 
-			if (batchName == null) {
-				continue;
-			}
-
-			if (!batchName.contains("integration") &&
-				!batchName.contains("unit")) {
+			if ((batchName == null) ||
+				(!batchName.contains("integration") &&
+				 !batchName.contains("unit"))) {
 
 				continue;
 			}
@@ -363,9 +360,7 @@ public class AutoCloseUtil {
 					downstreamBuild.getTestResults("REGRESSION"));
 
 				for (TestResult testResult : testResults) {
-					if (UpstreamFailureUtil.isTestFailingInUpstreamJob(
-							testResult)) {
-
+					if (!testResult.isUniqueFailure()) {
 						continue;
 					}
 
@@ -470,7 +465,7 @@ public class AutoCloseUtil {
 
 		String gitRepositoryBranchAutoClosePropertyName =
 			propertyNameTemplate.replace(
-				"?", "-" + pullRequest.getUpstreamBranchName());
+				"?", "-" + pullRequest.getUpstreamRemoteGitBranchName());
 
 		Properties localLiferayJenkinsEEBuildProperties =
 			JenkinsResultsParserUtil.getLocalLiferayJenkinsEEBuildProperties();
@@ -500,11 +495,9 @@ public class AutoCloseUtil {
 				testBatchNamesAutoClose, ",");
 
 			for (String autoCloseRuleData : autoCloseRuleDataArray) {
-				if (autoCloseRuleData.startsWith("#")) {
-					continue;
-				}
+				if (autoCloseRuleData.startsWith("#") ||
+					autoCloseRuleData.startsWith("static_")) {
 
-				if (autoCloseRuleData.startsWith("static_")) {
 					continue;
 				}
 
@@ -540,7 +533,7 @@ public class AutoCloseUtil {
 				"test.branch.names.auto.close[", gitHubRemoteGitRepositoryName,
 				"]"));
 
-		String branchName = pullRequest.getUpstreamBranchName();
+		String branchName = pullRequest.getUpstreamRemoteGitBranchName();
 
 		if (testBranchNamesAutoClose == null) {
 			if (debug) {
@@ -581,7 +574,7 @@ public class AutoCloseUtil {
 
 		for (String criticalTestBranch : criticalTestBranches) {
 			if (criticalTestBranch.equals(
-					pullRequest.getUpstreamBranchName())) {
+					pullRequest.getUpstreamRemoteGitBranchName())) {
 
 				return true;
 			}
@@ -658,31 +651,10 @@ public class AutoCloseUtil {
 						continue;
 					}
 
-					List<TestResult> testResults = new ArrayList<>();
+					List<TestResult> uniqueFailureTestResults =
+						downstreamBuild.getUniqueFailureTestResults();
 
-					testResults.addAll(
-						downstreamBuild.getTestResults("FAILED"));
-					testResults.addAll(
-						downstreamBuild.getTestResults("REGRESSION"));
-
-					boolean containsUniqueTestFailure = false;
-
-					if (testResults.isEmpty()) {
-						containsUniqueTestFailure = true;
-					}
-					else {
-						for (TestResult testResult : testResults) {
-							if (!UpstreamFailureUtil.isTestFailingInUpstreamJob(
-									testResult)) {
-
-								containsUniqueTestFailure = true;
-
-								break;
-							}
-						}
-					}
-
-					if (!containsUniqueTestFailure) {
+					if (uniqueFailureTestResults.isEmpty()) {
 						failingInUpstreamJobDownstreamBuilds.add(
 							downstreamBuild);
 					}

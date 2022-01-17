@@ -71,7 +71,7 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 /**
  * @author Alexander Chow
  */
-public class CMISFileEntry extends CMISModel implements FileEntry {
+public class CMISFileEntry extends BaseCMISModel implements FileEntry {
 
 	public CMISFileEntry(
 		CMISRepository cmisRepository, String uuid, long fileEntryId,
@@ -97,6 +97,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			cmisFileEntry.setParentFolder(getParentFolder());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		cmisFileEntry.setPrimaryKey(getPrimaryKey());
@@ -112,14 +115,14 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof CMISFileEntry)) {
+	public boolean equals(Object object) {
+		if (!(object instanceof CMISFileEntry)) {
 			return false;
 		}
 
 		String versionSeriesId = _document.getVersionSeriesId();
 
-		CMISFileEntry fileEntry2 = (CMISFileEntry)obj;
+		CMISFileEntry fileEntry2 = (CMISFileEntry)object;
 
 		return versionSeriesId.equals(
 			fileEntry2._document.getVersionSeriesId());
@@ -198,6 +201,11 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 		GregorianCalendar creationDate = _document.getCreationDate();
 
 		return creationDate.getTime();
+	}
+
+	@Override
+	public Date getExpirationDate() {
+		return null;
 	}
 
 	@Override
@@ -288,6 +296,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		try {
@@ -487,6 +498,11 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 	}
 
 	@Override
+	public Date getReviewDate() {
+		return null;
+	}
+
+	@Override
 	public long getSize() {
 		return _document.getContentStreamLength();
 	}
@@ -531,6 +547,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			return user.getUserUuid();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 		}
 
 		return StringPool.BLANK;

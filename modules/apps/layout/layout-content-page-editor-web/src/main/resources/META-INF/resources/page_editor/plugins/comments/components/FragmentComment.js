@@ -15,14 +15,15 @@
 import ClayButton from '@clayui/button';
 import ClayDropDown from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
 import {openToast} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 
+import {HIGHLIGHTED_COMMENT_ID_KEY} from '../../../app/config/constants/highlightedCommentIdKey';
+import {useDispatch, useSelector} from '../../../app/contexts/StoreContext';
 import FragmentService from '../../../app/services/FragmentService';
-import {useDispatch, useSelector} from '../../../app/store/index';
 import deleteFragmentComment from '../../../app/thunks/deleteFragmentComment';
 import InlineConfirm from '../../../common/components/InlineConfirm';
 import UserIcon from '../../../common/components/UserIcon';
@@ -34,7 +35,7 @@ export default function FragmentComment({
 	comment,
 	fragmentEntryLinkId,
 	onEdit,
-	parentCommentId
+	parentCommentId,
 }) {
 	const {
 		author,
@@ -43,7 +44,7 @@ export default function FragmentComment({
 		dateDescription,
 		edited,
 		modifiedDateDescription,
-		resolved
+		resolved,
 	} = comment;
 
 	const [changingResolved, setChangingResolved] = useState(false);
@@ -55,7 +56,7 @@ export default function FragmentComment({
 	const [showResolveMask, setShowResolveMask] = useState(false);
 
 	const showResolvedComments = useSelector(
-		state => state.showResolvedComments
+		(state) => state.showResolvedComments
 	);
 	const dispatch = useDispatch();
 
@@ -68,8 +69,22 @@ export default function FragmentComment({
 		'page-editor__fragment-comment--reply': !!parentCommentId,
 		'page-editor__fragment-comment--resolved': resolved,
 		'page-editor__fragment-comment--with-delete-mask': showDeleteMask,
-		'page-editor__fragment-comment--with-resolve-mask': showResolveMask
+		'page-editor__fragment-comment--with-resolve-mask': showResolveMask,
 	});
+
+	const isMounted = useIsMounted();
+
+	const hideComment = (onHide) => {
+		setHidden(true);
+
+		setTimeout(() => {
+			if (isMounted()) {
+				setShowDeleteMask(false);
+				setShowResolveMask(false);
+				onHide();
+			}
+		}, 1000);
+	};
 
 	const handleResolveButtonClick = () => {
 		setChangingResolved(true);
@@ -78,9 +93,9 @@ export default function FragmentComment({
 			body,
 			commentId,
 			onNetworkStatus: dispatch,
-			resolved: !resolved
+			resolved: !resolved,
 		})
-			.then(comment => {
+			.then((comment) => {
 				setChangingResolved(false);
 
 				if (showResolvedComments) {
@@ -100,35 +115,20 @@ export default function FragmentComment({
 						: Liferay.Language.get(
 								'the-comment-could-not-be-resolved'
 						  ),
-					title: Liferay.Language.get('error'),
-					type: 'danger'
+					type: 'danger',
 				});
 
 				setChangingResolved(false);
 			});
 	};
 
-	const isMounted = useIsMounted();
-
-	const hideComment = onHide => {
-		setHidden(true);
-
-		setTimeout(() => {
-			if (isMounted()) {
-				setShowDeleteMask(false);
-				setShowResolveMask(false);
-				onHide();
-			}
-		}, 1000);
-	};
-
 	useEffect(() => {
 		const highlightMessageId = window.sessionStorage.getItem(
-			'HIGHLIGHTED_COMMENT_ID_KEY'
+			HIGHLIGHTED_COMMENT_ID_KEY
 		);
 
 		if (highlightMessageId === commentId) {
-			window.sessionStorage.removeItem('HIGHLIGHTED_COMMENT_ID_KEY');
+			window.sessionStorage.removeItem(HIGHLIGHTED_COMMENT_ID_KEY);
 
 			setHighlighted(true);
 		}
@@ -151,7 +151,7 @@ export default function FragmentComment({
 
 					<p
 						className={classNames('m-0 text-secondary', {
-							'lfr-portal-tooltip': showModifiedDateTooltip
+							'lfr-portal-tooltip': showModifiedDateTooltip,
 						})}
 						data-title={
 							showModifiedDateTooltip &&
@@ -177,6 +177,11 @@ export default function FragmentComment({
 				{Liferay.ThemeDisplay.getUserId() === author.userId && (
 					<ClayDropDown
 						active={dropDownActive}
+						menuElementAttrs={{
+							containerProps: {
+								className: 'cadmin',
+							},
+						}}
 						onActiveChange={setDropDownActive}
 						trigger={
 							<ClayButton
@@ -233,12 +238,12 @@ export default function FragmentComment({
 				Boolean(comment.children.length) && (
 					<footer className="mb-2 page-editor__fragment-comment-replies">
 						{comment.children &&
-							comment.children.map(childComment => (
+							comment.children.map((childComment) => (
 								<FragmentComment
 									comment={{
 										...childComment,
 										parentCommentId: comment.commentId,
-										resolved
+										resolved,
 									}}
 									fragmentEntryLinkId={fragmentEntryLinkId}
 									key={childComment.commentId}
@@ -269,15 +274,14 @@ export default function FragmentComment({
 							deleteFragmentComment({
 								commentId,
 								fragmentEntryLinkId,
-								parentCommentId
+								parentCommentId,
 							})
 						).catch(() => {
 							openToast({
 								message: Liferay.Language.get(
 									'the-comment-could-not-be-deleted'
 								),
-								title: Liferay.Language.get('error'),
-								type: 'danger'
+								type: 'danger',
 							});
 						})
 					}
@@ -297,15 +301,15 @@ FragmentComment.propTypes = {
 	comment: PropTypes.shape({
 		author: PropTypes.shape({
 			fullName: PropTypes.string,
-			portraitURL: PropTypes.string
+			portraitURL: PropTypes.string,
 		}),
 		body: PropTypes.string,
 		commentId: PropTypes.string.isRequired,
 		dateDescription: PropTypes.string,
-		parentCommentId: PropTypes.string
+		parentCommentId: PropTypes.string,
 	}),
 
 	fragmentEntryLinkId: PropTypes.string.isRequired,
 	onEdit: PropTypes.func,
-	parentCommentId: PropTypes.string
+	parentCommentId: PropTypes.string,
 };

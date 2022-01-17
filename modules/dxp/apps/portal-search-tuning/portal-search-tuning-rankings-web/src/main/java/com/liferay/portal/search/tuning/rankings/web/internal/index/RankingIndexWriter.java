@@ -14,15 +14,18 @@
 
 package com.liferay.portal.search.tuning.rankings.web.internal.index;
 
+import com.liferay.portal.search.tuning.rankings.web.internal.index.name.RankingIndexName;
+
 /**
  * @author André de Oliveira
  */
 public interface RankingIndexWriter {
 
-	public String create(Ranking ranking);
+	public String create(RankingIndexName rankingIndexName, Ranking ranking);
 
-	public void remove(String uid);
+	public void remove(
+		RankingIndexName rankingIndexName, String rankingDocumentId);
 
-	public void update(Ranking ranking);
+	public void update(RankingIndexName rankingIndexName, Ranking ranking);
 
 }

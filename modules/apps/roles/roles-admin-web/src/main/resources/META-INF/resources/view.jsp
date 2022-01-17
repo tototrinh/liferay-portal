@@ -30,23 +30,31 @@ else {
 
 ViewRolesManagementToolbarDisplayContext viewRolesManagementToolbarDisplayContext = new ViewRolesManagementToolbarDisplayContext(request, renderRequest, renderResponse, displayStyle);
 
-SearchContainer searchContainer = viewRolesManagementToolbarDisplayContext.getSearchContainer();
+SearchContainer<Role> searchContainer = viewRolesManagementToolbarDisplayContext.getSearchContainer();
 
 PortletURL portletURL = viewRolesManagementToolbarDisplayContext.getPortletURL();
 %>
 
 <clay:navigation-bar
-	inverted="<%= true %>"
 	navigationItems="<%= roleDisplayContext.getViewRoleNavigationItems(liferayPortletResponse, portletURL) %>"
 />
 
+<portlet:actionURL name="deleteRoles" var="deleteRolesURL">
+	<portlet:param name="redirect" value="<%= portletURL.toString() %>" />
+</portlet:actionURL>
+
 <clay:management-toolbar
 	actionDropdownItems="<%= viewRolesManagementToolbarDisplayContext.getActionDropdownItems() %>"
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"deleteRolesURL", deleteRolesURL.toString()
+		).build()
+	%>'
 	clearResultsURL="<%= viewRolesManagementToolbarDisplayContext.getClearResultsURL() %>"
-	componentId="viewRolesManagementToolbar"
 	creationMenu="<%= viewRolesManagementToolbarDisplayContext.getCreationMenu() %>"
 	filterDropdownItems="<%= viewRolesManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 	itemsTotal="<%= searchContainer.getTotal() %>"
+	propsTransformer="js/ViewRolesManagementToolbarPropsTransformer"
 	searchActionURL="<%= viewRolesManagementToolbarDisplayContext.getSearchActionURL() %>"
 	searchContainerId="roleSearch"
 	searchFormName="searchFm"
@@ -58,7 +66,7 @@ PortletURL portletURL = viewRolesManagementToolbarDisplayContext.getPortletURL()
 	viewTypeItems="<%= viewRolesManagementToolbarDisplayContext.getViewTypeItems() %>"
 />
 
-<aui:form action="<%= portletURL.toString() %>" cssClass="container-fluid container-fluid-max-xl container-form-view" method="get" name="fm">
+<aui:form action="<%= portletURL %>" cssClass="container-fluid container-fluid-max-xl container-form-view" method="get" name="fm">
 	<liferay-ui:error exception="<%= RequiredRoleException.class %>" message="you-cannot-delete-a-system-role" />
 
 	<aui:input name="deleteRoleIds" type="hidden" />
@@ -80,12 +88,19 @@ PortletURL portletURL = viewRolesManagementToolbarDisplayContext.getPortletURL()
 			PortletURL rowURL = null;
 
 			if (RolePermissionUtil.contains(permissionChecker, role.getRoleId(), ActionKeys.UPDATE)) {
-				rowURL = renderResponse.createRenderURL();
+				PortletURL searchContainerPortletURL = roleSearchContainer.getIteratorURL();
 
-				rowURL.setParameter("mvcPath", "/edit_role.jsp");
-				rowURL.setParameter("tabs1", "details");
-				rowURL.setParameter("redirect", roleSearchContainer.getIteratorURL().toString());
-				rowURL.setParameter("roleId", String.valueOf(role.getRoleId()));
+				rowURL = PortletURLBuilder.createRenderURL(
+					renderResponse
+				).setMVCPath(
+					"/edit_role.jsp"
+				).setBackURL(
+					searchContainerPortletURL.toString()
+				).setTabs1(
+					"details"
+				).setParameter(
+					"roleId", role.getRoleId()
+				).buildPortletURL();
 			}
 			%>
 
@@ -98,54 +113,3 @@ PortletURL portletURL = viewRolesManagementToolbarDisplayContext.getPortletURL()
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script sandbox="<%= true %>">
-	var deleteRoles = function(deleteRoleIds) {
-		var form = document.<portlet:namespace />fm;
-
-		var p_p_lifecycle = form.p_p_lifecycle;
-
-		if (p_p_lifecycle) {
-			p_p_lifecycle.value = '1';
-		}
-
-		if (
-			confirm(
-				'<%= UnicodeLanguageUtil.get(request, "are-you-sure-you-want-to-delete-this-role") %>'
-			)
-		) {
-			Liferay.Util.postForm(form, {
-				data: {
-					deleteRoleIds: deleteRoleIds
-				},
-
-				<portlet:actionURL name="deleteRoles" var="deleteRolesURL">
-					<portlet:param name="redirect" value="<%= portletURL.toString() %>" />
-				</portlet:actionURL>
-
-				url: '<%= deleteRolesURL %>'
-			});
-		}
-	};
-
-	var ACTIONS = {
-		deleteRoles: deleteRoles
-	};
-
-	Liferay.componentReady('viewRolesManagementToolbar').then(function(
-		managementToolbar
-	) {
-		managementToolbar.on('actionItemClicked', function(event) {
-			var itemData = event.data.item.data;
-
-			if (itemData && itemData.action && ACTIONS[itemData.action]) {
-				ACTIONS[itemData.action](
-					Liferay.Util.listCheckedExcept(
-						document.<portlet:namespace />fm,
-						'<portlet:namespace />allRowIds'
-					)
-				);
-			}
-		});
-	});
-</aui:script>

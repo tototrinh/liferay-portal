@@ -30,18 +30,14 @@ definition {
 
 	@priority = "5"
 	test AddLocalizedWebContentViaSourceEditor {
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "LocalizationWithWebContentUI#AddLocalizedWebContentViaSourceEditor";
 		property testray.component.names = "Training,Web Content Administration";
 
-		JSONLayout.addPublicLayout(
+		JSONLayout.addWidgetToPublicLayout(
 			groupName = "Test Site Name",
-			layoutName = "Test Page Name");
-
-		Navigator.gotoSitePage(
-			pageName = "Test Page Name",
-			siteName = "Test Site Name");
-
-		Portlet.addPG(portletName = "Web Content Display");
+			layoutName = "Test Page Name",
+			widgetName = "Web Content Display");
 
 		Navigator.gotoSitePage(
 			pageName = "Test Page Name",
@@ -51,13 +47,17 @@ definition {
 
 		WebContent.addCP(webContentTitle = "Basic S.P.A.C.E. Banner");
 
-		AlloyEditor.addSourceContent(content = '''
+		CKEditor.addSourceContent(content = '''
 <h2 class="text-center">Space Program Academy of Continuing Education</h2>
 
 <p class="text-center">Dare to Dream out of this world</p>
 ''');
 
 		Button.clickPublish();
+
+		WaitForElementNotPresent(
+			key_text = "Publish",
+			locator1 = "Button#ANY");
 
 		Navigator.gotoSitePage(
 			pageName = "Test Page Name",
@@ -73,9 +73,11 @@ definition {
 
 		WebContent.addCP(webContentTitle = "Basic S.P.A.C.E. Banner (Japanese Translation)");
 
-		AlloyEditor.addDescription(description = "A Japanese translation of the basic front page banner");
+		CKEditor.addContentInWebContent(
+			content = "A Japanese translation of the basic front page banner",
+			fieldLabel = "Description");
 
-		AlloyEditor.addSourceContent(content = '''
+		CKEditor.addSourceContent(content = '''
 <h2 class="text-center">Space Program 大学生涯教育</h2>
 
 <p class="text-center">地球から、宇宙の果てへ</p>
@@ -83,11 +85,10 @@ definition {
 
 		Button.clickPublish();
 
-		Navigator.gotoSitePage(
-			pageName = "Test Page Name",
-			siteName = "Test Site Name");
-
-		Portlet.addPG(portletName = "Language Selector");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Test Site Name",
+			layoutName = "Test Page Name",
+			widgetName = "Language Selector");
 
 		Navigator.gotoSitePage(
 			pageName = "Test Page Name",
@@ -144,13 +145,17 @@ definition {
 
 		PortletEntry.publish();
 
+		JSONLayout.addWidgetToPublicLayout(
+			column = "1",
+			groupName = "Test Site Name",
+			layoutName = "Test Page Name",
+			widgetName = "Language Selector");
+
 		Navigator.gotoSitePage(
 			pageName = "Test Page Name",
 			siteName = "Test Site Name");
 
 		Content.addPG(assetTitle = "WC Title");
-
-		Portlet.addPG(portletName = "Language Selector");
 
 		LanguagePortlet.selectLanguagePG(
 			locale = "es_ES",
@@ -178,17 +183,15 @@ definition {
 			groupName = "Test Site Name",
 			layoutName = "Web Content Display Page");
 
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Test Site Name",
+			layoutName = "Web Content Display Page",
+			widgetName = "Web Content Display");
 
-		Portlet.addPG(portletName = "Web Content Display");
-
-		Navigator.gotoSitePage(
-			pageName = "Web Content Display Page",
-			siteName = "Test Site Name");
-
-		Portlet.addPG(portletName = "Language Selector");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Test Site Name",
+			layoutName = "Web Content Display Page",
+			widgetName = "Language Selector");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
 
@@ -200,16 +203,17 @@ definition {
 
 		WebContentStructures.addName(structureName = "WC Structure Name");
 
+		Navigator.gotoSidebarTab(tabName = "Properties");
+
 		PortletEntry.inputDescriptionTextInput(description = "WC Structure Description");
 
 		WebContentStructures.addLocalization(
-			locale = "fr_FR",
-			locale2 = "zh_CN",
+			locale = "fr-FR",
+			locale2 = "zh-CN",
 			localization1Name = "nom de la structure de wc",
 			localization2Name = "wc 结构名称");
 
-		DynamicDataMapping.addField(
-			field = "Text",
+		DataEngine.addField(
 			fieldFieldLabel = "Text",
 			fieldName = "Text");
 
@@ -226,8 +230,8 @@ definition {
 			templateName = "WC Template Name");
 
 		WebContentTemplates.localizeTemplateName(
-			locale = "fr_FR",
-			locale2 = "zh_CN",
+			locale = "fr-FR",
+			locale2 = "zh-CN",
 			localization1Name = "nom de la template de wc",
 			localization2Name = "wc 模板名称",
 			templateName = "WC Template Name");
@@ -252,11 +256,9 @@ definition {
 
 		PortletEntry.changeLocale(locale = "fr-FR");
 
-		WebContent.addCP(webContentTitle = "WC WebContent Titre");
-
-		FormFields.editText(
-			fieldName = "Text",
-			fieldValue = "WC contenu WebContent");
+		WebContent.addWithStructureCP(
+			webContentText = "WC contenu WebContent",
+			webContentTitle = "WC WebContent Titre");
 
 		PortletEntry.publish();
 
@@ -284,9 +286,14 @@ definition {
 
 		PortletEntry.changeLocale(locale = "fr-FR");
 
-		WebContent.viewCP(
-			webContentText = "WC contenu WebContent",
-			webContentTitle = "WC WebContent Titre");
+		AssertTextEquals(
+			locator1 = "TextInput#TITLE",
+			value1 = "WC WebContent Titre");
+
+		AssertTextEquals.assertValue(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT",
+			value1 = "WC contenu WebContent");
 
 		WebContent.viewStructureAndTemplateLocalization(
 			panel = "Modèle par défaut",

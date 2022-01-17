@@ -14,6 +14,7 @@
 
 package com.liferay.portal.search.web.internal.facet.display.builder;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
@@ -26,7 +27,6 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.internal.facet.display.context.ScopeSearchFacetDisplayContext;
 import com.liferay.portal.search.web.internal.facet.display.context.ScopeSearchFacetTermDisplayContext;
@@ -69,6 +69,8 @@ public class ScopeSearchFacetDisplayBuilder {
 		scopeSearchFacetDisplayContext.setDisplayStyleGroupId(
 			getDisplayStyleGroupId());
 		scopeSearchFacetDisplayContext.setNothingSelected(isNothingSelected());
+		scopeSearchFacetDisplayContext.setPaginationStartParameterName(
+			_paginationStartParameterName);
 		scopeSearchFacetDisplayContext.setParameterName(_parameterName);
 		scopeSearchFacetDisplayContext.setParameterValue(
 			getFirstParameterValueString());
@@ -113,6 +115,12 @@ public class ScopeSearchFacetDisplayBuilder {
 
 	public void setMaxTerms(int maxTerms) {
 		_maxTerms = maxTerms;
+	}
+
+	public void setPaginationStartParameterName(
+		String paginationStartParameterName) {
+
+		_paginationStartParameterName = paginationStartParameterName;
 	}
 
 	public void setParameterName(String parameterName) {
@@ -219,15 +227,10 @@ public class ScopeSearchFacetDisplayBuilder {
 			String name = group.getDescriptiveName(_locale);
 
 			if (group.isStagingGroup()) {
-				StringBundler sb = new StringBundler(5);
-
-				sb.append(name);
-				sb.append(StringPool.SPACE);
-				sb.append(StringPool.OPEN_PARENTHESIS);
-				sb.append(_language.get(_httpServletRequest, "staged"));
-				sb.append(StringPool.CLOSE_PARENTHESIS);
-
-				name = sb.toString();
+				name = StringBundler.concat(
+					name, StringPool.SPACE, StringPool.OPEN_PARENTHESIS,
+					_language.get(_httpServletRequest, "staged"),
+					StringPool.CLOSE_PARENTHESIS);
 			}
 
 			return name;
@@ -342,6 +345,7 @@ public class ScopeSearchFacetDisplayBuilder {
 	private Language _language;
 	private Locale _locale;
 	private int _maxTerms;
+	private String _paginationStartParameterName;
 	private String _parameterName;
 	private List<Long> _selectedGroupIds = Collections.emptyList();
 	private boolean _showCounts;

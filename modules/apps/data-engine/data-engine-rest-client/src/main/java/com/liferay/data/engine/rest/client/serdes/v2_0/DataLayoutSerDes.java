@@ -16,6 +16,7 @@ package com.liferay.data.engine.rest.client.serdes.v2_0;
 
 import com.liferay.data.engine.rest.client.dto.v2_0.DataLayout;
 import com.liferay.data.engine.rest.client.dto.v2_0.DataLayoutPage;
+import com.liferay.data.engine.rest.client.dto.v2_0.DataRule;
 import com.liferay.data.engine.rest.client.json.BaseJSONParser;
 
 import java.text.DateFormat;
@@ -85,6 +86,16 @@ public class DataLayoutSerDes {
 			sb.append(dataLayout.getDataDefinitionId());
 		}
 
+		if (dataLayout.getDataLayoutFields() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dataLayoutFields\": ");
+
+			sb.append(_toJSON(dataLayout.getDataLayoutFields()));
+		}
+
 		if (dataLayout.getDataLayoutKey() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -112,6 +123,26 @@ public class DataLayoutSerDes {
 				sb.append(String.valueOf(dataLayout.getDataLayoutPages()[i]));
 
 				if ((i + 1) < dataLayout.getDataLayoutPages().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (dataLayout.getDataRules() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"dataRules\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < dataLayout.getDataRules().length; i++) {
+				sb.append(String.valueOf(dataLayout.getDataRules()[i]));
+
+				if ((i + 1) < dataLayout.getDataRules().length) {
 					sb.append(", ");
 				}
 			}
@@ -250,6 +281,15 @@ public class DataLayoutSerDes {
 				String.valueOf(dataLayout.getDataDefinitionId()));
 		}
 
+		if (dataLayout.getDataLayoutFields() == null) {
+			map.put("dataLayoutFields", null);
+		}
+		else {
+			map.put(
+				"dataLayoutFields",
+				String.valueOf(dataLayout.getDataLayoutFields()));
+		}
+
 		if (dataLayout.getDataLayoutKey() == null) {
 			map.put("dataLayoutKey", null);
 		}
@@ -267,13 +307,30 @@ public class DataLayoutSerDes {
 				String.valueOf(dataLayout.getDataLayoutPages()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(dataLayout.getDateCreated()));
+		if (dataLayout.getDataRules() == null) {
+			map.put("dataRules", null);
+		}
+		else {
+			map.put("dataRules", String.valueOf(dataLayout.getDataRules()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(dataLayout.getDateModified()));
+		if (dataLayout.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(dataLayout.getDateCreated()));
+		}
+
+		if (dataLayout.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(dataLayout.getDateModified()));
+		}
 
 		if (dataLayout.getDescription() == null) {
 			map.put("description", null);
@@ -351,6 +408,13 @@ public class DataLayoutSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "dataLayoutFields")) {
+				if (jsonParserFieldValue != null) {
+					dataLayout.setDataLayoutFields(
+						(Map)DataLayoutSerDes.toMap(
+							(String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "dataLayoutKey")) {
 				if (jsonParserFieldValue != null) {
 					dataLayout.setDataLayoutKey((String)jsonParserFieldValue);
@@ -365,6 +429,18 @@ public class DataLayoutSerDes {
 							object -> DataLayoutPageSerDes.toDTO((String)object)
 						).toArray(
 							size -> new DataLayoutPage[size]
+						));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "dataRules")) {
+				if (jsonParserFieldValue != null) {
+					dataLayout.setDataRules(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> DataRuleSerDes.toDTO((String)object)
+						).toArray(
+							size -> new DataRule[size]
 						));
 				}
 			}
@@ -417,10 +493,6 @@ public class DataLayoutSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
-			}
 		}
 
 	}
@@ -449,7 +521,7 @@ public class DataLayoutSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -475,14 +547,17 @@ public class DataLayoutSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -16,16 +16,15 @@ package com.liferay.portal.util;
 
 import com.liferay.petra.nio.CharsetEncoderUtil;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.HttpUtil;
-
-import java.io.UnsupportedEncodingException;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.net.URLEncoder;
 
 import java.nio.charset.CharsetEncoder;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -33,12 +32,10 @@ import org.junit.Test;
  */
 public class FriendlyURLNormalizerImplTest {
 
-	@BeforeClass
-	public static void setUpClass() {
-		HttpUtil httpUtil = new HttpUtil();
-
-		httpUtil.setHttp(new HttpImpl());
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testNormalizeBlank() {
@@ -63,6 +60,15 @@ public class FriendlyURLNormalizerImplTest {
 			"company-grew-100-last-year",
 			_friendlyURLNormalizerImpl.normalizeWithEncoding(
 				"Company grew 100% last year"));
+		Assert.assertEquals(
+			"sample-web-content-title",
+			_friendlyURLNormalizerImpl.normalizeWithEncoding(
+				"Sample Web % Content Title"));
+		Assert.assertEquals(
+			"%5E_%5E", _friendlyURLNormalizerImpl.normalizeWithEncoding("^_^"));
+		Assert.assertEquals(
+			"%5E_%5E",
+			_friendlyURLNormalizerImpl.normalizeWithEncoding("%5E_%5E"));
 	}
 
 	@Test
@@ -185,9 +191,7 @@ public class FriendlyURLNormalizerImplTest {
 			"wordnc", _friendlyURLNormalizerImpl.normalize("word\u00F1\u00C7"));
 	}
 
-	private void _testNormalizeWithEncodingUnicode(String s)
-		throws UnsupportedEncodingException {
-
+	private void _testNormalizeWithEncodingUnicode(String s) throws Exception {
 		Assert.assertEquals(
 			URLEncoder.encode(s, StringPool.UTF8),
 			_friendlyURLNormalizerImpl.normalizeWithEncoding(s));

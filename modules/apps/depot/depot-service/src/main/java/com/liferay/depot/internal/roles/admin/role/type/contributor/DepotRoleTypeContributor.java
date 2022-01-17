@@ -18,12 +18,10 @@ import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.roles.admin.role.type.contributor.RoleTypeContributor;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.ResourceBundle;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -36,6 +34,11 @@ import org.osgi.service.component.annotations.Reference;
 	service = RoleTypeContributor.class
 )
 public class DepotRoleTypeContributor implements RoleTypeContributor {
+
+	@Override
+	public String[] getExcludedRoleNames() {
+		return _EXCLUDED_ROLE_NAMES;
+	}
 
 	@Override
 	public String getIcon() {
@@ -54,18 +57,12 @@ public class DepotRoleTypeContributor implements RoleTypeContributor {
 
 	@Override
 	public String getTabTitle(Locale locale) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			locale, DepotRoleTypeContributor.class);
-
-		return _language.get(resourceBundle, "asset-library-roles");
+		return _language.get(locale, "asset-library-roles");
 	}
 
 	@Override
 	public String getTitle(Locale locale) {
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			locale, DepotRoleTypeContributor.class);
-
-		return _language.get(resourceBundle, "asset-library-role");
+		return _language.get(locale, "asset-library-role");
 	}
 
 	@Override
@@ -79,10 +76,16 @@ public class DepotRoleTypeContributor implements RoleTypeContributor {
 	}
 
 	@Override
-	public boolean isAllowDefinePermissions(Role role) {
-		if (Objects.equals(
+	public boolean isAllowDelete(Role role) {
+		if ((role == null) ||
+			Objects.equals(
 				role.getName(),
 				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR) ||
+			Objects.equals(
+				role.getName(), DepotRolesConstants.ASSET_LIBRARY_MEMBER) ||
+			Objects.equals(
+				role.getName(),
+				DepotRolesConstants.ASSET_LIBRARY_CONNECTED_SITE_MEMBER) ||
 			Objects.equals(
 				role.getName(), DepotRolesConstants.ASSET_LIBRARY_OWNER)) {
 
@@ -93,24 +96,22 @@ public class DepotRoleTypeContributor implements RoleTypeContributor {
 	}
 
 	@Override
-	public boolean isAllowDelete(Role role) {
-		if (role == null) {
-			return false;
-		}
-
+	public boolean isAutomaticallyAssigned(Role role) {
 		if (Objects.equals(
-				role.getName(),
-				DepotRolesConstants.ASSET_LIBRARY_ADMINISTRATOR) ||
-			Objects.equals(
 				role.getName(), DepotRolesConstants.ASSET_LIBRARY_MEMBER) ||
 			Objects.equals(
-				role.getName(), DepotRolesConstants.ASSET_LIBRARY_OWNER)) {
+				role.getName(),
+				DepotRolesConstants.ASSET_LIBRARY_CONNECTED_SITE_MEMBER)) {
 
-			return false;
+			return true;
 		}
 
-		return true;
+		return false;
 	}
+
+	private static final String[] _EXCLUDED_ROLE_NAMES = {
+		DepotRolesConstants.ASSET_LIBRARY_OWNER
+	};
 
 	@Reference
 	private Language _language;

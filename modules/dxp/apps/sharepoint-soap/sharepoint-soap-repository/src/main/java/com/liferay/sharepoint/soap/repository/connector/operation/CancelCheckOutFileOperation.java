@@ -28,29 +28,20 @@ import java.rmi.RemoteException;
 public final class CancelCheckOutFileOperation extends BaseOperation {
 
 	public boolean execute(String filePath) throws SharepointException {
-		UndoCheckOutResponseDocument undoCheckOutResponseDocument = null;
-
 		try {
-			undoCheckOutResponseDocument = listsSoap12Stub.undoCheckOut(
-				getUndoCheckOutDocument(filePath));
+			UndoCheckOutResponseDocument undoCheckOutResponseDocument =
+				listsSoap12Stub.undoCheckOut(
+					_getUndoCheckOutDocument(filePath));
+
+			return _isUndoCheckOut(undoCheckOutResponseDocument);
 		}
 		catch (RemoteException remoteException) {
-			throw RemoteExceptionSharepointExceptionMapper.map(remoteException);
+			throw RemoteExceptionSharepointExceptionMapper.map(
+				remoteException, sharepointConnectionInfo);
 		}
-
-		return getResponse(undoCheckOutResponseDocument);
 	}
 
-	protected boolean getResponse(
-		UndoCheckOutResponseDocument undoCheckOutResponseDocument) {
-
-		UndoCheckOutResponseDocument.UndoCheckOutResponse undoCheckOutResponse =
-			undoCheckOutResponseDocument.getUndoCheckOutResponse();
-
-		return undoCheckOutResponse.getUndoCheckOutResult();
-	}
-
-	protected UndoCheckOutDocument getUndoCheckOutDocument(String filePath) {
+	private UndoCheckOutDocument _getUndoCheckOutDocument(String filePath) {
 		UndoCheckOutDocument undoCheckOutDocument =
 			UndoCheckOutDocument.Factory.newInstance();
 
@@ -60,6 +51,15 @@ public final class CancelCheckOutFileOperation extends BaseOperation {
 		undoCheckOut.setPageUrl(String.valueOf(toURL(filePath)));
 
 		return undoCheckOutDocument;
+	}
+
+	private boolean _isUndoCheckOut(
+		UndoCheckOutResponseDocument undoCheckOutResponseDocument) {
+
+		UndoCheckOutResponseDocument.UndoCheckOutResponse undoCheckOutResponse =
+			undoCheckOutResponseDocument.getUndoCheckOutResponse();
+
+		return undoCheckOutResponse.getUndoCheckOutResult();
 	}
 
 }

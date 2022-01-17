@@ -22,9 +22,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.util.HashMapDictionary;
-
-import java.util.Dictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -41,13 +39,9 @@ public class DDMDataProviderInstanceModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			"model.class.name", DDMDataProviderInstance.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<DDMDataProviderInstance>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				DDMDataProviderInstance.class,
 				DDMDataProviderInstance::getDataProviderInstanceId,
@@ -56,7 +50,9 @@ public class DDMDataProviderInstanceModelResourcePermissionRegistrar {
 				_portletResourcePermission,
 				(modelResourcePermission, consumer) -> {
 				}),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", DDMDataProviderInstance.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -74,7 +70,8 @@ public class DDMDataProviderInstanceModelResourcePermissionRegistrar {
 	@Reference(target = "(resource.name=" + DDMConstants.RESOURCE_NAME + ")")
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration
+		<ModelResourcePermission<DDMDataProviderInstance>> _serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

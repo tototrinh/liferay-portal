@@ -12,8 +12,6 @@
  * details.
  */
 
-'use strict';
-
 import createPortletURL from '../../../../src/main/resources/META-INF/resources/liferay/util/portlet_url/create_portlet_url.es';
 
 describe('Liferay.Util.PortletURL.createPortletURL', () => {
@@ -24,8 +22,8 @@ describe('Liferay.Util.PortletURL.createPortletURL', () => {
 	beforeEach(() => {
 		Liferay = {
 			ThemeDisplay: {
-				getPortalURL: jest.fn(() => 'http://localhost:8080')
-			}
+				getPortalURL: jest.fn(() => 'http://localhost:8080'),
+			},
 		};
 	});
 
@@ -49,7 +47,7 @@ describe('Liferay.Util.PortletURL.createPortletURL', () => {
 			createPortletURL(
 				'http://localhost:8080/group/control_panel/manage',
 				{
-					foo: 'bar'
+					foo: 'bar',
 				}
 			)
 		).toThrow('Portlet ID must not be null if parameters are provided');
@@ -60,7 +58,7 @@ describe('Liferay.Util.PortletURL.createPortletURL', () => {
 			'http://localhost:8080/group/control_panel/manage?p_p_id=com_liferay_roles_admin_web_portlet_RolesAdminPortlet',
 			{
 				doAsGroupId: 'fooBar',
-				foo: 'bar'
+				foo: 'bar',
 			}
 		);
 
@@ -92,7 +90,7 @@ describe('Liferay.Util.PortletURL.createPortletURL', () => {
 			'http://localhost:8080/group/control_panel/manage?p_p_id=com_liferay_roles_admin_web_portlet_RolesAdminPortlet&doAsGroupId=fooBar',
 			{
 				doAsGroupId: 'barBaz',
-				foo: 'bar'
+				foo: 'bar',
 			}
 		);
 		expect(portletURL.href).toEqual(

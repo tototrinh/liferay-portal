@@ -14,12 +14,20 @@
 
 package com.liferay.portal.search.web.internal.type.facet.portlet;
 
+import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
+import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.search.asset.SearchableAssetClassNamesProvider;
+import com.liferay.portal.search.searcher.SearchRequest;
+import com.liferay.portal.search.searcher.SearchResponse;
 import com.liferay.portal.search.web.internal.facet.display.builder.AssetEntriesSearchFacetDisplayBuilder;
 import com.liferay.portal.search.web.internal.facet.display.context.AssetEntriesSearchFacetDisplayContext;
 import com.liferay.portal.search.web.internal.type.facet.constants.TypeFacetPortletKeys;
@@ -30,7 +38,9 @@ import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchRe
 import java.io.IOException;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.portlet.Portlet;
@@ -107,8 +117,10 @@ public class TypeFacetPortlet extends MVCPortlet {
 
 		TypeFacetPortletPreferences typeFacetPortletPreferences =
 			new TypeFacetPortletPreferencesImpl(
+				objectDefinitionLocalService,
 				portletSharedSearchResponse.getPortletPreferences(
-					renderRequest));
+					renderRequest),
+				searchableAssetClassNamesProvider);
 
 		AssetEntriesSearchFacetDisplayBuilder
 			assetEntriesSearchFacetDisplayBuilder =
@@ -127,10 +139,15 @@ public class TypeFacetPortlet extends MVCPortlet {
 			typeFacetPortletPreferences.isFrequenciesVisible());
 		assetEntriesSearchFacetDisplayBuilder.setLocale(
 			themeDisplay.getLocale());
+		assetEntriesSearchFacetDisplayBuilder.setPaginationStartParameterName(
+			getPaginationStartParameterName(portletSharedSearchResponse));
 
 		String parameterName = typeFacetPortletPreferences.getParameterName();
 
 		assetEntriesSearchFacetDisplayBuilder.setParameterName(parameterName);
+
+		assetEntriesSearchFacetDisplayBuilder.setTypeNames(
+			getAssetTypesTypeNames(typeFacetPortletPreferences, themeDisplay));
 
 		SearchOptionalUtil.copy(
 			() -> getParameterValuesOptional(
@@ -164,6 +181,55 @@ public class TypeFacetPortlet extends MVCPortlet {
 			themeDisplay.getCompanyId());
 	}
 
+	protected Map<String, String> getAssetTypesTypeNames(
+		TypeFacetPortletPreferences typeFacetPortletPreferences,
+		ThemeDisplay themeDisplay) {
+
+		Map<String, String> assetTypesTypeNames = new HashMap<>();
+
+		String[] classNames = getAssetTypesClassNames(
+			typeFacetPortletPreferences, themeDisplay);
+
+		for (String className : classNames) {
+			AssetRendererFactory<?> assetRendererFactory =
+				AssetRendererFactoryRegistryUtil.
+					getAssetRendererFactoryByClassName(className);
+
+			String typeName = className;
+
+			if (assetRendererFactory != null) {
+				typeName = assetRendererFactory.getTypeName(
+					themeDisplay.getLocale());
+			}
+			else if (className.startsWith(
+						ObjectDefinition.class.getName() + "#")) {
+
+				String[] parts = StringUtil.split(className, "#");
+
+				ObjectDefinition objectDefinition =
+					objectDefinitionLocalService.fetchObjectDefinition(
+						Long.valueOf(parts[1]));
+
+				typeName = objectDefinition.getLabel(themeDisplay.getLocale());
+			}
+
+			assetTypesTypeNames.put(className, typeName);
+		}
+
+		return assetTypesTypeNames;
+	}
+
+	protected String getPaginationStartParameterName(
+		PortletSharedSearchResponse portletSharedSearchResponse) {
+
+		SearchResponse searchResponse =
+			portletSharedSearchResponse.getSearchResponse();
+
+		SearchRequest searchRequest = searchResponse.getRequest();
+
+		return searchRequest.getPaginationStartParameterName();
+	}
+
 	protected Optional<List<String>> getParameterValuesOptional(
 		String parameterName,
 		PortletSharedSearchResponse portletSharedSearchResponse,
@@ -177,9 +243,16 @@ public class TypeFacetPortlet extends MVCPortlet {
 	}
 
 	@Reference
+	protected ObjectDefinitionLocalService objectDefinitionLocalService;
+
+	@Reference
 	protected Portal portal;
 
 	@Reference
 	protected PortletSharedSearchRequest portletSharedSearchRequest;
+
+	@Reference
+	protected SearchableAssetClassNamesProvider
+		searchableAssetClassNamesProvider;
 
 }

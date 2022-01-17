@@ -38,7 +38,7 @@ import com.liferay.rss.model.SyndLink;
 import com.liferay.rss.model.SyndModelFactory;
 import com.liferay.rss.util.RSSUtil;
 import com.liferay.social.activities.constants.SocialActivitiesPortletKeys;
-import com.liferay.social.activities.web.internal.util.SocialActivitiesQueryHelper;
+import com.liferay.social.activities.web.internal.helper.SocialActivitiesQueryHelper;
 import com.liferay.social.kernel.model.SocialActivityFeedEntry;
 import com.liferay.social.kernel.model.SocialActivitySet;
 import com.liferay.social.kernel.service.SocialActivityInterpreterLocalService;
@@ -65,7 +65,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + SocialActivitiesPortletKeys.SOCIAL_ACTIVITIES,
-		"mvc.command.name=rss"
+		"mvc.command.name=/social_activities/rss"
 	},
 	service = MVCResourceCommand.class
 )
@@ -146,7 +146,7 @@ public class RSSMVCResourceCommand extends BaseRSSMVCResourceCommand {
 		ResourceURL rssURL = liferayPortletResponse.createResourceURL();
 
 		rssURL.setParameter("feedTitle", title);
-		rssURL.setResourceID("rss");
+		rssURL.setResourceID("/social_activities/rss");
 
 		selfSyndLink.setHref(rssURL.toString());
 

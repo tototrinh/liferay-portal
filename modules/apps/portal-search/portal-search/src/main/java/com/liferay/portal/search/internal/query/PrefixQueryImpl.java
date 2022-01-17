@@ -33,37 +33,31 @@ public class PrefixQueryImpl extends BaseQueryImpl implements PrefixQuery {
 		return queryVisitor.visit(this);
 	}
 
+	@Override
 	public String getField() {
 		return _field;
 	}
 
+	@Override
 	public String getPrefix() {
 		return _prefix;
 	}
 
+	@Override
 	public String getRewrite() {
 		return _rewrite;
 	}
 
+	@Override
 	public void setRewrite(String rewrite) {
 		_rewrite = rewrite;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(9);
-
-		sb.append("{(");
-		sb.append(_field);
-		sb.append("=");
-		sb.append(_prefix);
-		sb.append(", _rewrite=");
-		sb.append(_rewrite);
-		sb.append("), ");
-		sb.append(super.toString());
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{(", _field, "=", _prefix, ", _rewrite=", _rewrite, "), ",
+			super.toString(), "}");
 	}
 
 	private static final long serialVersionUID = 1L;

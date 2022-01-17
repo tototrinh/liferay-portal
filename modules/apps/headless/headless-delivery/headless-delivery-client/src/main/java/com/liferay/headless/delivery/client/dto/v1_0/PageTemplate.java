@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.PageTemplateSerDes;
 
+import java.io.Serializable;
+
 import java.util.Date;
 import java.util.Objects;
 
@@ -27,7 +29,11 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class PageTemplate implements Cloneable {
+public class PageTemplate implements Cloneable, Serializable {
+
+	public static PageTemplate toDTO(String json) {
+		return PageTemplateSerDes.toDTO(json);
+	}
 
 	public Creator getCreator() {
 		return creator;
@@ -197,27 +203,29 @@ public class PageTemplate implements Cloneable {
 
 	protected PageTemplateCollection pageTemplateCollection;
 
-	public TaxonomyCategory[] getTaxonomyCategories() {
-		return taxonomyCategories;
+	public TaxonomyCategoryBrief[] getTaxonomyCategoryBriefs() {
+		return taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(TaxonomyCategory[] taxonomyCategories) {
-		this.taxonomyCategories = taxonomyCategories;
+	public void setTaxonomyCategoryBriefs(
+		TaxonomyCategoryBrief[] taxonomyCategoryBriefs) {
+
+		this.taxonomyCategoryBriefs = taxonomyCategoryBriefs;
 	}
 
-	public void setTaxonomyCategories(
-		UnsafeSupplier<TaxonomyCategory[], Exception>
-			taxonomyCategoriesUnsafeSupplier) {
+	public void setTaxonomyCategoryBriefs(
+		UnsafeSupplier<TaxonomyCategoryBrief[], Exception>
+			taxonomyCategoryBriefsUnsafeSupplier) {
 
 		try {
-			taxonomyCategories = taxonomyCategoriesUnsafeSupplier.get();
+			taxonomyCategoryBriefs = taxonomyCategoryBriefsUnsafeSupplier.get();
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	protected TaxonomyCategory[] taxonomyCategories;
+	protected TaxonomyCategoryBrief[] taxonomyCategoryBriefs;
 
 	public Long[] getTaxonomyCategoryIds() {
 		return taxonomyCategoryIds;

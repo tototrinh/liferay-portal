@@ -20,29 +20,33 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.access.control.AccessControlUtil;
 import com.liferay.portal.kernel.security.auth.AccessControlContext;
+import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierConfiguration;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.servlet.ProtectedServletRequest;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.AuthVerifierPipeline;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 import com.liferay.portal.util.PropsUtil;
 
-import java.io.IOException;
-
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -60,10 +64,10 @@ public class AuthVerifierFilter extends BasePortalFilter {
 	public void init(FilterConfig filterConfig) {
 		super.init(filterConfig);
 
-		Enumeration<String> enu = filterConfig.getInitParameterNames();
+		Enumeration<String> enumeration = filterConfig.getInitParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			String value = filterConfig.getInitParameter(name);
 
@@ -117,6 +121,18 @@ public class AuthVerifierFilter extends BasePortalFilter {
 				_log.warn("use_permission_checker is deprecated");
 			}
 		}
+
+		ServletContext servletContext = filterConfig.getServletContext();
+
+		if (!servletContext.equals(
+				ServletContextPool.get(PortalUtil.getServletContextName()))) {
+
+			_initParametersMap.put(
+				AuthVerifierPipeline.class.getName(),
+				new AuthVerifierPipeline(
+					_buildAuthVerifierConfigurations(_initParametersMap),
+					servletContext.getContextPath()));
+		}
 	}
 
 	@Override
@@ -125,11 +141,9 @@ public class AuthVerifierFilter extends BasePortalFilter {
 			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		if (!_isAccessAllowed(httpServletRequest, httpServletResponse)) {
-			return;
-		}
+		if (!_isAccessAllowed(httpServletRequest, httpServletResponse) ||
+			_isApplySSL(httpServletRequest, httpServletResponse)) {
 
-		if (_isApplySSL(httpServletRequest, httpServletResponse)) {
 			return;
 		}
 
@@ -204,10 +218,68 @@ public class AuthVerifierFilter extends BasePortalFilter {
 		}
 	}
 
+	private List<AuthVerifierConfiguration> _buildAuthVerifierConfigurations(
+		Map<String, Object> initParametersMap) {
+
+		Map<String, Integer> authVerifierConfigurationIndexs = new HashMap<>();
+
+		ArrayList<AuthVerifierConfiguration> authVerifierConfigurations =
+			new ArrayList<>();
+
+		for (Map.Entry<String, Object> entry : initParametersMap.entrySet()) {
+			String propertyName = entry.getKey();
+
+			if (!propertyName.startsWith(PropsKeys.AUTH_VERIFIER)) {
+				continue;
+			}
+
+			String authVerifierPropertyName = propertyName.substring(
+				PropsKeys.AUTH_VERIFIER.length());
+
+			int indexOf = authVerifierPropertyName.indexOf('.');
+
+			String authVerifierClassName = authVerifierPropertyName.substring(
+				0, indexOf);
+
+			Integer authVerifierConfigurationIndex =
+				authVerifierConfigurationIndexs.get(authVerifierClassName);
+
+			if (authVerifierConfigurationIndex == null) {
+				authVerifierConfigurations.add(new AuthVerifierConfiguration());
+
+				authVerifierConfigurationIndex =
+					authVerifierConfigurations.size() - 1;
+
+				authVerifierConfigurationIndexs.put(
+					authVerifierClassName, authVerifierConfigurationIndex);
+			}
+
+			AuthVerifierConfiguration authVerifierConfiguration =
+				authVerifierConfigurations.get(authVerifierConfigurationIndex);
+
+			if (authVerifierConfiguration.getAuthVerifierClassName() == null) {
+				authVerifierConfiguration.setAuthVerifierClassName(
+					authVerifierClassName);
+			}
+
+			if (authVerifierConfiguration.getProperties() == null) {
+				authVerifierConfiguration.setProperties(new Properties());
+			}
+
+			Properties properties = authVerifierConfiguration.getProperties();
+
+			properties.put(
+				authVerifierPropertyName.substring(indexOf + 1),
+				entry.getValue());
+		}
+
+		return authVerifierConfigurations;
+	}
+
 	private boolean _isAccessAllowed(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse)
-		throws IOException {
+		throws Exception {
 
 		String remoteAddr = httpServletRequest.getRemoteAddr();
 
@@ -235,7 +307,7 @@ public class AuthVerifierFilter extends BasePortalFilter {
 	private boolean _isApplySSL(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse)
-		throws IOException {
+		throws Exception {
 
 		if (!_httpsRequired || PortalUtil.isSecure(httpServletRequest)) {
 			return false;

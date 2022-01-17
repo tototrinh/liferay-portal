@@ -41,6 +41,10 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 	/**
 	 * Adds the asset list entry asset entry rel to the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryAssetEntryRelLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetListEntryAssetEntryRel the asset list entry asset entry rel
 	 * @return the asset list entry asset entry rel that was added
 	 */
@@ -106,6 +110,10 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 	/**
 	 * Deletes the asset list entry asset entry rel from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryAssetEntryRelLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetListEntryAssetEntryRel the asset list entry asset entry rel
 	 * @return the asset list entry asset entry rel that was removed
 	 */
@@ -119,6 +127,10 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 
 	/**
 	 * Deletes the asset list entry asset entry rel with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryAssetEntryRelLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetListEntryAssetEntryRelId the primary key of the asset list entry asset entry rel
 	 * @return the asset list entry asset entry rel that was removed
@@ -162,6 +174,18 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 
 		return _assetListEntryAssetEntryRelLocalService.deletePersistedModel(
 			persistedModel);
+	}
+
+	@Override
+	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+		return _assetListEntryAssetEntryRelLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _assetListEntryAssetEntryRelLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -373,6 +397,22 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 	}
 
 	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	@Override
+	public java.util.List<AssetListEntryAssetEntryRel>
+		getAssetListEntryAssetEntryRels(
+			long assetListEntryId, long[] segmentsEntryIds,
+			long[][] assetCategoryIds, int start, int end) {
+
+		return _assetListEntryAssetEntryRelLocalService.
+			getAssetListEntryAssetEntryRels(
+				assetListEntryId, segmentsEntryIds, assetCategoryIds, start,
+				end);
+	}
+
+	/**
 	 * Returns all the asset list entry asset entry rels matching the UUID and company.
 	 *
 	 * @param uuid the UUID of the asset list entry asset entry rels
@@ -454,6 +494,20 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 				assetListEntryId, segmentsEntryIds);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	@Override
+	public int getAssetListEntryAssetEntryRelsCount(
+		long assetListEntryId, long[] segmentsEntryIds,
+		long[][] assetCategoryIds) {
+
+		return _assetListEntryAssetEntryRelLocalService.
+			getAssetListEntryAssetEntryRelsCount(
+				assetListEntryId, segmentsEntryIds, assetCategoryIds);
+	}
+
 	@Override
 	public com.liferay.portal.kernel.dao.orm.ExportActionableDynamicQuery
 		getExportActionableDynamicQuery(
@@ -508,6 +562,10 @@ public class AssetListEntryAssetEntryRelLocalServiceWrapper
 
 	/**
 	 * Updates the asset list entry asset entry rel in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetListEntryAssetEntryRelLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetListEntryAssetEntryRel the asset list entry asset entry rel
 	 * @return the asset list entry asset entry rel that was updated

@@ -19,6 +19,7 @@ import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeCon
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -76,13 +77,17 @@ public class MasterLayoutDisplayContext {
 		return _layoutPageTemplateEntryId;
 	}
 
-	public SearchContainer getMasterLayoutsSearchContainer() {
+	public SearchContainer<LayoutPageTemplateEntry>
+		getMasterLayoutsSearchContainer() {
+
 		if (_masterLayoutsSearchContainer != null) {
 			return _masterLayoutsSearchContainer;
 		}
 
-		SearchContainer masterLayoutsSearchContainer = new SearchContainer(
-			_renderRequest, getPortletURL(), null, "there-are-no-master-pages");
+		SearchContainer<LayoutPageTemplateEntry> masterLayoutsSearchContainer =
+			new SearchContainer(
+				_renderRequest, getPortletURL(), null,
+				"there-are-no-master-pages");
 
 		masterLayoutsSearchContainer.setOrderByCol(getOrderByCol());
 
@@ -172,31 +177,47 @@ public class MasterLayoutDisplayContext {
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			"/view_master_layouts.jsp"
+		).setRedirect(
+			_themeDisplay.getURLCurrent()
+		).setKeywords(
+			() -> {
+				String keywords = getKeywords();
 
-		portletURL.setParameter("mvcPath", "/view_master_layouts.jsp");
-		portletURL.setParameter("tabs1", "master-layouts");
-		portletURL.setParameter("redirect", _themeDisplay.getURLCurrent());
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = getKeywords();
+				return null;
+			}
+		).setTabs1(
+			"master-layouts"
+		).setParameter(
+			"orderByCol",
+			() -> {
+				String orderByCol = getOrderByCol();
 
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				if (Validator.isNotNull(orderByCol)) {
+					return orderByCol;
+				}
 
-		String orderByCol = getOrderByCol();
+				return null;
+			}
+		).setParameter(
+			"orderByType",
+			() -> {
+				String orderByType = getOrderByType();
 
-		if (Validator.isNotNull(orderByCol)) {
-			portletURL.setParameter("orderByCol", orderByCol);
-		}
+				if (Validator.isNotNull(orderByType)) {
+					return orderByType;
+				}
 
-		String orderByType = getOrderByType();
-
-		if (Validator.isNotNull(orderByType)) {
-			portletURL.setParameter("orderByType", orderByType);
-		}
-
-		return portletURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	public boolean isSearch() {
@@ -222,7 +243,8 @@ public class MasterLayoutDisplayContext {
 	private final HttpServletRequest _httpServletRequest;
 	private String _keywords;
 	private Long _layoutPageTemplateEntryId;
-	private SearchContainer _masterLayoutsSearchContainer;
+	private SearchContainer<LayoutPageTemplateEntry>
+		_masterLayoutsSearchContainer;
 	private String _orderByCol;
 	private String _orderByType;
 	private final RenderRequest _renderRequest;

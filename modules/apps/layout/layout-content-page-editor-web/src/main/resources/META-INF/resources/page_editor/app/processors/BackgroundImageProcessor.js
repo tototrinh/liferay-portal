@@ -16,7 +16,7 @@ import {openImageSelector} from '../../core/openImageSelector';
 
 function createEditor(element, changeCallback, destroyCallback) {
 	openImageSelector(
-		image => changeCallback(image && image.url ? image.url : ''),
+		(image) => changeCallback(image && image.url ? image.url : ''),
 		destroyCallback
 	);
 }
@@ -24,14 +24,14 @@ function createEditor(element, changeCallback, destroyCallback) {
 function destroyEditor(_element) {}
 
 function render(element, value) {
-	element.style.backgroundImage = value
-		? `url("${value.url ? value.url : value}")`
-		: '';
-	element.style.backgroundSize = 'cover';
+	if (value && (typeof value === 'string' || value?.url)) {
+		element.style.backgroundImage = `url("${value?.url ?? value}")`;
+		element.style.backgroundSize = 'cover';
+	}
 }
 
 export default {
 	createEditor,
 	destroyEditor,
-	render
+	render,
 };

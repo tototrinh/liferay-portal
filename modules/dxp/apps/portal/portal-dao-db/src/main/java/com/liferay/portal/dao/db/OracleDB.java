@@ -16,6 +16,7 @@ package com.liferay.portal.dao.db;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.Index;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
 
@@ -49,7 +51,7 @@ public class OracleDB extends BaseDB {
 	}
 
 	@Override
-	public String buildSQL(String template) throws IOException {
+	public String buildSQL(String template) throws IOException, SQLException {
 		template = replaceTemplate(template);
 		template = reword(template);
 		template = StringUtil.replace(
@@ -60,29 +62,20 @@ public class OracleDB extends BaseDB {
 	}
 
 	@Override
-	public List<Index> getIndexes(Connection con) throws SQLException {
+	public List<Index> getIndexes(Connection connection) throws SQLException {
 		List<Index> indexes = new ArrayList<>();
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select index_name, table_name, uniqueness from ",
+					"user_indexes where index_name like 'LIFERAY_%' or ",
+					"index_name like 'IX_%'"));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-		try {
-			StringBundler sb = new StringBundler(3);
-
-			sb.append("select index_name, table_name, uniqueness from ");
-			sb.append("user_indexes where index_name like 'LIFERAY_%' or ");
-			sb.append("index_name like 'IX_%'");
-
-			String sql = sb.toString();
-
-			ps = con.prepareStatement(sql);
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				String indexName = rs.getString("index_name");
-				String tableName = rs.getString("table_name");
-				String uniqueness = rs.getString("uniqueness");
+			while (resultSet.next()) {
+				String indexName = resultSet.getString("index_name");
+				String tableName = resultSet.getString("table_name");
+				String uniqueness = resultSet.getString("uniqueness");
 
 				boolean unique = true;
 
@@ -93,24 +86,14 @@ public class OracleDB extends BaseDB {
 				indexes.add(new Index(indexName, tableName, unique));
 			}
 		}
-		finally {
-			DataAccess.cleanUp(ps, rs);
-		}
 
 		return indexes;
 	}
 
 	@Override
 	public String getPopulateSQL(String databaseName, String sqlContent) {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("connect &1/&2;\n");
-		sb.append("set define off;\n");
-		sb.append("\n");
-		sb.append(sqlContent);
-		sb.append("quit");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"connect &1/&2;\n", "set define off;\n\n", sqlContent, "quit");
 	}
 
 	@Override
@@ -154,6 +137,21 @@ public class OracleDB extends BaseDB {
 		return _ORACLE;
 	}
 
+	protected boolean isNullable(String tableName, String columnName)
+		throws SQLException {
+
+		try (Connection connection = DataAccess.getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.isNullable(tableName, columnName);
+		}
+	}
+
+	@Override
+	protected String limitColumnLength(String column, int length) {
+		return StringBundler.concat("substr(", column, ", 1, ", length, ")");
+	}
+
 	@Override
 	protected String replaceTemplate(String template) {
 
@@ -181,7 +179,7 @@ public class OracleDB extends BaseDB {
 	}
 
 	@Override
-	protected String reword(String data) throws IOException {
+	protected String reword(String data) throws IOException, SQLException {
 		try (UnsyncBufferedReader unsyncBufferedReader =
 				new UnsyncBufferedReader(new UnsyncStringReader(data))) {
 
@@ -201,9 +199,25 @@ public class OracleDB extends BaseDB {
 				else if (line.startsWith(ALTER_COLUMN_TYPE)) {
 					String[] template = buildColumnTypeTokens(line);
 
+					String nullable = template[template.length - 1];
+
+					if (!Validator.isBlank(nullable)) {
+						boolean currentNullable = isNullable(
+							template[0], template[1]);
+
+						if ((nullable.equals("null") && currentNullable) ||
+							(nullable.equals("not null") && !currentNullable)) {
+
+							nullable = StringPool.BLANK;
+						}
+					}
+
 					line = StringUtil.replace(
-						"alter table @table@ modify @old-column@ @type@;",
+						"alter table @table@ modify @old-column@ @type@ " +
+							nullable + ";",
 						REWORD_TEMPLATE, template);
+
+					line = StringUtil.replace(line, " ;", ";");
 				}
 				else if (line.startsWith(ALTER_TABLE_NAME)) {
 					String[] template = buildTableNameTokens(line);

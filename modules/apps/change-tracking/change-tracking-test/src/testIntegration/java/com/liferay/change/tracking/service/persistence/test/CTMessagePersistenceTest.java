@@ -123,6 +123,8 @@ public class CTMessagePersistenceTest {
 
 		newCTMessage.setMvccVersion(RandomTestUtil.nextLong());
 
+		newCTMessage.setCompanyId(RandomTestUtil.nextLong());
+
 		newCTMessage.setCtCollectionId(RandomTestUtil.nextLong());
 
 		newCTMessage.setMessageContent(RandomTestUtil.randomString());
@@ -137,6 +139,8 @@ public class CTMessagePersistenceTest {
 		Assert.assertEquals(
 			existingCTMessage.getCtMessageId(), newCTMessage.getCtMessageId());
 		Assert.assertEquals(
+			existingCTMessage.getCompanyId(), newCTMessage.getCompanyId());
+		Assert.assertEquals(
 			existingCTMessage.getCtCollectionId(),
 			newCTMessage.getCtCollectionId());
 		Assert.assertEquals(
@@ -145,10 +149,10 @@ public class CTMessagePersistenceTest {
 	}
 
 	@Test
-	public void testCountByCTCollectionId() throws Exception {
-		_persistence.countByCTCollectionId(RandomTestUtil.nextLong());
+	public void testCountByCtCollectionId() throws Exception {
+		_persistence.countByCtCollectionId(RandomTestUtil.nextLong());
 
-		_persistence.countByCTCollectionId(0L);
+		_persistence.countByCtCollectionId(0L);
 	}
 
 	@Test
@@ -176,8 +180,8 @@ public class CTMessagePersistenceTest {
 
 	protected OrderByComparator<CTMessage> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create(
-			"CTMessage", "mvccVersion", true, "ctMessageId", true,
-			"ctCollectionId", true);
+			"CTMessage", "mvccVersion", true, "ctMessageId", true, "companyId",
+			true, "ctCollectionId", true);
 	}
 
 	@Test
@@ -395,6 +399,8 @@ public class CTMessagePersistenceTest {
 		CTMessage ctMessage = _persistence.create(pk);
 
 		ctMessage.setMvccVersion(RandomTestUtil.nextLong());
+
+		ctMessage.setCompanyId(RandomTestUtil.nextLong());
 
 		ctMessage.setCtCollectionId(RandomTestUtil.nextLong());
 

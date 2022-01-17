@@ -12,37 +12,170 @@
  * details.
  */
 
+import classNames from 'classnames';
+import {
+	EVENT_TYPES as CORE_EVENT_TYPES,
+	useConfig,
+	useForm,
+	useFormState,
+} from 'data-engine-js-components-web';
 import React from 'react';
 
+import {getSearchRegex} from '../../utils/search.es';
+import CollapsablePanel from '../collapsable-panel/CollapsablePanel.es';
+import EmptyState from '../empty-state/EmptyState.es';
 import FieldType from './FieldType.es';
 
-export default ({
-	deleteLabel,
+const FieldTypeWrapper = ({
+	expanded,
+	fieldType,
 	fieldTypes,
+	showArrows,
+	...otherProps
+}) => {
+	const dispatch = useForm();
+	const {activePage, pages} = useFormState();
+
+	const getIcon = () => {
+		if (showArrows) {
+			return expanded ? 'angle-down' : 'angle-right';
+		}
+
+		return fieldType.icon;
+	};
+
+	return (
+		<FieldType
+			{...otherProps}
+			{...fieldType}
+			icon={getIcon()}
+			onDoubleClick={({name}) => {
+				dispatch({
+					payload: {
+						fieldType: {
+							...fieldTypes.find(
+								({name: typeName}) => typeName === name
+							),
+							editable: true,
+						},
+						indexes: {
+							columnIndex: 0,
+							pageIndex: activePage,
+							rowIndex: pages[activePage].rows.length,
+						},
+					},
+					type: CORE_EVENT_TYPES.FIELD.ADD,
+				});
+			}}
+		/>
+	);
+};
+
+const FieldTypeList = ({
+	dataDefinition,
+	deleteLabel,
+	emptyState,
 	keywords,
 	onClick,
 	onDelete,
-	onDoubleClick
+	showEmptyState = true,
 }) => {
-	const regex = new RegExp(keywords, 'ig');
+	const {fieldTypes} = useConfig();
+	const regex = getSearchRegex(keywords);
 
-	return fieldTypes
-		.filter(({system}) => !system)
-		.filter(({description, label}) => {
+	const filteredFieldTypes = fieldTypes
+		.filter(({description, label, system}) => {
+			if (system) {
+				return false;
+			}
 			if (!keywords) {
 				return true;
 			}
 
 			return regex.test(description) || regex.test(label);
 		})
-		.map((fieldType, index) => (
-			<FieldType
-				{...fieldType}
+		.sort(({displayOrder: a}, {displayOrder: b}) => a - b);
+
+	if (showEmptyState && !filteredFieldTypes.length) {
+		return <EmptyState emptyState={emptyState} keywords={keywords} small />;
+	}
+
+	return filteredFieldTypes.map((fieldType, index) => {
+		const {isFieldSet, nestedDataDefinitionFields = []} = fieldType;
+
+		const handleOnClick = (props) => {
+			if (fieldType.disabled || !onClick) {
+				return;
+			}
+
+			onClick(props);
+		};
+
+		if (nestedDataDefinitionFields.length) {
+			const Header = ({expanded, setExpanded}) => (
+				<FieldTypeWrapper
+					dataDefinition={dataDefinition}
+					deleteLabel={deleteLabel}
+					expanded={expanded}
+					fieldType={{
+						...fieldType,
+						className: `${fieldType.className} field-type-header`,
+					}}
+					fieldTypes={filteredFieldTypes}
+					onClick={(props) => {
+						setExpanded(!expanded);
+
+						handleOnClick(props);
+					}}
+					onDelete={onDelete}
+					setExpanded={setExpanded}
+					showArrows
+				/>
+			);
+
+			return (
+				<div className="field-type-list" key={index}>
+					<CollapsablePanel
+						Header={Header}
+						className={classNames({
+							'field-type-fieldgroup': !isFieldSet,
+							'field-type-fieldset': isFieldSet,
+						})}
+					>
+						<div className="field-type-item position-relative">
+							{nestedDataDefinitionFields.map(
+								(nestedFieldType) => (
+									<FieldTypeWrapper
+										dataDefinition={dataDefinition}
+										draggable={false}
+										fieldType={{
+											...nestedFieldType,
+											disabled: fieldType.disabled,
+										}}
+										fieldTypes={filteredFieldTypes}
+										key={`${nestedFieldType.name}_${index}`}
+									/>
+								)
+							)}
+						</div>
+					</CollapsablePanel>
+				</div>
+			);
+		}
+
+		return (
+			<FieldTypeWrapper
+				dataDefinition={dataDefinition}
 				deleteLabel={deleteLabel}
-				key={`${fieldType.name}_${index}`}
-				onClick={onClick}
+				fieldType={fieldType}
+				fieldTypes={filteredFieldTypes}
+				key={index}
+				onClick={handleOnClick}
 				onDelete={onDelete}
-				onDoubleClick={onDoubleClick}
 			/>
-		));
+		);
+	});
 };
+
+FieldTypeList.displayName = 'FieldTypeList';
+export default FieldTypeList;

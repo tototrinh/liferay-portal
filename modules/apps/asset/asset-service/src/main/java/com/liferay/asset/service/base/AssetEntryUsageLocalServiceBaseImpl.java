@@ -16,6 +16,7 @@ package com.liferay.asset.service.base;
 
 import com.liferay.asset.model.AssetEntryUsage;
 import com.liferay.asset.service.AssetEntryUsageLocalService;
+import com.liferay.asset.service.AssetEntryUsageLocalServiceUtil;
 import com.liferay.asset.service.persistence.AssetEntryUsageFinder;
 import com.liferay.asset.service.persistence.AssetEntryUsagePersistence;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
@@ -24,6 +25,7 @@ import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -45,6 +47,7 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.change.tracking.CTService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -52,10 +55,13 @@ import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -80,11 +86,15 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>AssetEntryUsageLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.asset.service.AssetEntryUsageLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>AssetEntryUsageLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>AssetEntryUsageLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the asset entry usage to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetEntryUsage the asset entry usage
 	 * @return the asset entry usage that was added
@@ -112,6 +122,10 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	/**
 	 * Deletes the asset entry usage with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetEntryUsageId the primary key of the asset entry usage
 	 * @return the asset entry usage that was removed
 	 * @throws PortalException if a asset entry usage with the primary key could not be found
@@ -127,6 +141,10 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	/**
 	 * Deletes the asset entry usage from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetEntryUsage the asset entry usage
 	 * @return the asset entry usage that was removed
 	 */
@@ -136,6 +154,18 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 		AssetEntryUsage assetEntryUsage) {
 
 		return assetEntryUsagePersistence.remove(assetEntryUsage);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return assetEntryUsagePersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -369,6 +399,7 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	/**
 	 * @throws PortalException
 	 */
+	@Override
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
 
@@ -385,6 +416,11 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 
 		return assetEntryUsageLocalService.deleteAssetEntryUsage(
 			(AssetEntryUsage)persistedModel);
+	}
+
+	@Override
+	public BasePersistence<AssetEntryUsage> getBasePersistence() {
+		return assetEntryUsagePersistence;
 	}
 
 	/**
@@ -475,6 +511,10 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	/**
 	 * Updates the asset entry usage in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetEntryUsageLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetEntryUsage the asset entry usage
 	 * @return the asset entry usage that was updated
 	 */
@@ -484,6 +524,11 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 		AssetEntryUsage assetEntryUsage) {
 
 		return assetEntryUsagePersistence.update(assetEntryUsage);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
 	}
 
 	@Override
@@ -497,6 +542,8 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		assetEntryUsageLocalService = (AssetEntryUsageLocalService)aopProxy;
+
+		_setLocalServiceUtilService(assetEntryUsageLocalService);
 	}
 
 	/**
@@ -556,6 +603,23 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		AssetEntryUsageLocalService assetEntryUsageLocalService) {
+
+		try {
+			Field field =
+				AssetEntryUsageLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, assetEntryUsageLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected AssetEntryUsageLocalService assetEntryUsageLocalService;
 
 	@Reference
@@ -567,9 +631,5 @@ public abstract class AssetEntryUsageLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.LayoutLocalService
-		layoutLocalService;
 
 }

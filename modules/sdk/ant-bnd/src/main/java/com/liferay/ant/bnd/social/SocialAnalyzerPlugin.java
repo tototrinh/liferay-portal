@@ -28,6 +28,7 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -97,9 +98,7 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 	}
 
 	protected Document readXMLResource(Resource resource) throws Exception {
-		InputStream inputStream = resource.openInputStream();
-
-		try {
+		try (InputStream inputStream = resource.openInputStream()) {
 			DocumentBuilder documentBuilder =
 				_documentBuilderFactory.newDocumentBuilder();
 
@@ -133,13 +132,9 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 
 			return documentBuilder.parse(inputStream);
 		}
-		finally {
-			inputStream.close();
-		}
 	}
 
-	private static final DocumentBuilderFactory _documentBuilderFactory =
-		DocumentBuilderFactory.newInstance();
+	private static final DocumentBuilderFactory _documentBuilderFactory;
 	private static final Map<String, String> _publicIds =
 		new HashMap<String, String>() {
 			{
@@ -155,7 +150,30 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 				put(
 					"-//Liferay//DTD Social 7.1.0//EN",
 					"com/liferay/portal/definitions/liferay-social_7_1_0.dtd");
+				put(
+					"-//Liferay//DTD Social 7.2.0//EN",
+					"com/liferay/portal/definitions/liferay-social_7_2_0.dtd");
+				put(
+					"-//Liferay//DTD Social 7.3.0//EN",
+					"com/liferay/portal/definitions/liferay-social_7_3_0.dtd");
+				put(
+					"-//Liferay//DTD Social 7.4.0//EN",
+					"com/liferay/portal/definitions/liferay-social_7_4_0.dtd");
 			}
 		};
+
+	static {
+		_documentBuilderFactory = DocumentBuilderFactory.newInstance();
+
+		try {
+			_documentBuilderFactory.setFeature(
+				"http://apache.org/xml/features/nonvalidating" +
+					"/load-external-dtd",
+				false);
+		}
+		catch (ParserConfigurationException parserConfigurationException) {
+			throw new ExceptionInInitializerError(parserConfigurationException);
+		}
+	}
 
 }

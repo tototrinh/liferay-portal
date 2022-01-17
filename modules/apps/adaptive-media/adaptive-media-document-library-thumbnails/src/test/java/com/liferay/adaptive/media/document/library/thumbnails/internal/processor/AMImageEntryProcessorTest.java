@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.PrefsProps;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.InputStream;
 
@@ -34,6 +35,8 @@ import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -43,8 +46,15 @@ import org.mockito.Mockito;
  */
 public class AMImageEntryProcessorTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() {
+		_amImageEntryProcessor = new AMImageEntryProcessor();
+
 		Mockito.doReturn(
 			_amAsyncProcessor
 		).when(
@@ -652,14 +662,13 @@ public class AMImageEntryProcessorTest {
 		);
 	}
 
-	private final AdaptiveMedia _adaptiveMedia = Mockito.mock(
+	private final AdaptiveMedia<?> _adaptiveMedia = Mockito.mock(
 		AdaptiveMedia.class);
 	private final AMAsyncProcessor<FileVersion, ?> _amAsyncProcessor =
 		Mockito.mock(AMAsyncProcessor.class);
 	private final AMAsyncProcessorLocator _amAsyncProcessorLocator =
 		Mockito.mock(AMAsyncProcessorLocator.class);
-	private final AMImageEntryProcessor _amImageEntryProcessor =
-		new AMImageEntryProcessor();
+	private AMImageEntryProcessor _amImageEntryProcessor;
 	private final AMImageFinder _amImageFinder = Mockito.mock(
 		AMImageFinder.class);
 	private final AMImageMimeTypeProvider _amImageMimeTypeProvider =

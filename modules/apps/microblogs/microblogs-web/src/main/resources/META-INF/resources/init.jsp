@@ -25,9 +25,9 @@ taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
 
-<%@ page import="com.liferay.microblogs.exception.NoSuchEntryException" %><%@
+<%@ page import="com.liferay.microblogs.constants.MicroblogsEntryConstants" %><%@
+page import="com.liferay.microblogs.exception.NoSuchEntryException" %><%@
 page import="com.liferay.microblogs.model.MicroblogsEntry" %><%@
-page import="com.liferay.microblogs.model.MicroblogsEntryConstants" %><%@
 page import="com.liferay.microblogs.service.MicroblogsEntryLocalServiceUtil" %><%@
 page import="com.liferay.microblogs.service.MicroblogsEntryServiceUtil" %><%@
 page import="com.liferay.microblogs.util.comparator.EntryCreateDateComparator" %><%@
@@ -35,6 +35,7 @@ page import="com.liferay.microblogs.web.internal.security.permission.resource.Mi
 page import="com.liferay.microblogs.web.internal.security.permission.resource.MicroblogsPermission" %><%@
 page import="com.liferay.microblogs.web.internal.util.MicroblogsWebUtil" %><%@
 page import="com.liferay.microblogs.web.internal.util.WebKeys" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.dao.orm.QueryUtil" %><%@
 page import="com.liferay.portal.kernel.dao.search.SearchContainer" %><%@
@@ -72,8 +73,6 @@ page import="javax.portlet.WindowState" %>
 <portlet:defineObjects />
 
 <%
-WindowState windowState = renderRequest.getWindowState();
-
 boolean showStatus = PrefsParamUtil.getBoolean(portletPreferences, request, "showStatus", true);
 
 Format dateFormatDateTime = FastDateFormatFactoryUtil.getDateTime(locale, timeZone);

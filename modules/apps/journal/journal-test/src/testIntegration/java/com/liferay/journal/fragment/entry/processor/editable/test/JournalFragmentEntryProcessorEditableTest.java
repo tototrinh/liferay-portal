@@ -25,7 +25,6 @@ import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Group;
@@ -46,8 +45,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-
-import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -99,13 +96,12 @@ public class JournalFragmentEntryProcessorEditableTest {
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
 				TestPropsValues.getUserId(), _group.getGroupId(), 0,
-				RandomTestUtil.randomLong(),
-				_portal.getClassNameId(Layout.class), _layout.getPlid(),
+				RandomTestUtil.randomLong(), 0, _layout.getPlid(),
 				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, 0,
 				StringPool.BLANK, ServiceContextTestUtil.getServiceContext());
 
-		String editableValues = _getJsonFileAsString(
+		String editableValues = _readJSONFileToString(
 			"fragment_entry_link_mapped_ddm.json");
 
 		_fragmentEntryLinkLocalService.updateFragmentEntryLink(
@@ -136,7 +132,7 @@ public class JournalFragmentEntryProcessorEditableTest {
 		return PortalUtil.getClassNameId(compositeClassName);
 	}
 
-	private String _getFileAsString(String fileName) throws IOException {
+	private String _readFileToString(String fileName) throws Exception {
 		Class<?> clazz = getClass();
 
 		return StringUtil.read(
@@ -144,11 +140,9 @@ public class JournalFragmentEntryProcessorEditableTest {
 			"com/liferay/journal/dependencies/" + fileName);
 	}
 
-	private String _getJsonFileAsString(String jsonFileName)
-		throws IOException, JSONException {
-
+	private String _readJSONFileToString(String jsonFileName) throws Exception {
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			_getFileAsString(jsonFileName));
+			_readFileToString(jsonFileName));
 
 		return jsonObject.toString();
 	}

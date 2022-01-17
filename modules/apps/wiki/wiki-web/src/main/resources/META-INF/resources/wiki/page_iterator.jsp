@@ -25,9 +25,11 @@ String navigation = ParamUtil.getString(request, "navigation", "all-pages");
 long categoryId = ParamUtil.getLong(request, "categoryId");
 String tagName = ParamUtil.getString(request, "tag");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("nodeName", node.getName());
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setParameter(
+	"nodeName", node.getName()
+).buildPortletURL();
 
 if (wikiPage != null) {
 	portletURL.setParameter("title", wikiPage.getTitle());
@@ -48,17 +50,19 @@ else if (navigation.equals("draft-pages")) {
 	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "draft-pages"), portletURL.toString());
 }
 else if (navigation.equals("history")) {
-	PortletURL viewPageHistoryURL = PortletURLUtil.clone(portletURL, renderResponse);
-
 	if (wikiPage != null) {
 		portletURL.setParameter("mvcRenderCommandName", "/wiki/view");
 
 		PortalUtil.addPortletBreadcrumbEntry(request, wikiPage.getTitle(), portletURL.toString());
 	}
 
-	viewPageHistoryURL.setParameter("mvcRenderCommandName", "/wiki/view_page_activities");
-
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "history"), viewPageHistoryURL.toString());
+	PortalUtil.addPortletBreadcrumbEntry(
+		request, LanguageUtil.get(request, "history"),
+		PortletURLBuilder.create(
+			PortletURLUtil.clone(portletURL, renderResponse)
+		).setMVCRenderCommandName(
+			"/wiki/view_page_activities"
+		).buildString());
 }
 else if (navigation.equals("incoming-links")) {
 	if (wikiPage != null) {
@@ -118,9 +122,9 @@ WikiListPagesDisplayContext wikiListPagesDisplayContext = wikiDisplayContextProv
 String orderByCol = ParamUtil.getString(request, "orderByCol");
 String orderByType = ParamUtil.getString(request, "orderByType");
 
-SearchContainer searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, headerNames, wikiListPagesDisplayContext.getEmptyResultsMessage());
+SearchContainer<WikiPage> searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, headerNames, wikiListPagesDisplayContext.getEmptyResultsMessage());
 
-Map orderableHeaders = new HashMap();
+Map<String, String> orderableHeaders = new HashMap<>();
 
 if (navigation.equals("all-pages") || navigation.equals("categorized-pages") || navigation.equals("tagged-pages")) {
 	orderableHeaders.put("date", "modifiedDate");
@@ -143,7 +147,7 @@ wikiListPagesDisplayContext.populateResultsAndTotal(searchContainer);
 
 List<WikiPage> pages = searchContainer.getResults();
 
-List resultRows = searchContainer.getResultRows();
+List<com.liferay.portal.kernel.dao.search.ResultRow> resultRows = searchContainer.getResultRows();
 
 for (int i = 0; i < pages.size(); i++) {
 	WikiPage curWikiPage = pages.get(i);
@@ -161,7 +165,10 @@ for (int i = 0; i < pages.size(); i++) {
 		}
 
 		rowURL.setParameter("redirect", currentURL);
-		rowURL.setParameter("nodeName", curWikiPage.getNode().getName());
+
+		WikiNode wikiNode = curWikiPage.getNode();
+
+		rowURL.setParameter("nodeName", wikiNode.getName());
 	}
 	else {
 		rowURL.setParameter("mvcRenderCommandName", "/wiki/edit_page");
@@ -265,13 +272,13 @@ for (int i = 0; i < pages.size(); i++) {
 />
 
 <c:if test='<%= navigation.equals("history") %>'>
-	<aui:script require="metal-dom/src/dom as dom">
+	<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
 		function <portlet:namespace />initRowsChecked() {
 			var rowIdsNodes = document.querySelectorAll(
 				'input[name=<portlet:namespace />rowIds]'
 			);
 
-			Array.prototype.forEach.call(rowIdsNodes, function(rowIdsNode, index) {
+			Array.prototype.forEach.call(rowIdsNodes, (rowIdsNode, index) => {
 				if (index > 1) {
 					rowIdsNode.checked = false;
 				}
@@ -297,12 +304,12 @@ for (int i = 0; i < pages.size(); i++) {
 		<c:if test="<%= pages.size() > 1 %>">
 
 			<%
-			WikiPage latestWikiPage = (WikiPage)pages.get(1);
+			WikiPage latestWikiPage = pages.get(1);
 			%>
 
 			var compareButton = document.getElementById('<portlet:namespace />compare');
 
-			compareButton.addEventListener('click', function(event) {
+			compareButton.addEventListener('click', (event) => {
 				<portlet:renderURL var="compareVersionURL">
 					<portlet:param name="mvcRenderCommandName" value="/wiki/compare_versions" />
 					<portlet:param name="backURL" value="<%= currentURL %>" />
@@ -356,11 +363,13 @@ for (int i = 0; i < pages.size(); i++) {
 		);
 
 		if (searchContainer) {
-			dom.delegate(
+			var delegate = delegateModule.default;
+
+			delegate(
 				searchContainer,
 				'click',
 				'input[name=<portlet:namespace />rowIds]',
-				function(event) {
+				(event) => {
 					<portlet:namespace />updateRowsChecked(event.delegateTarget);
 				}
 			);

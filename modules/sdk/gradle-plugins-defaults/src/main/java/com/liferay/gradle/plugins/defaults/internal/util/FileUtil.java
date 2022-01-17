@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UncheckedIOException;
@@ -125,11 +129,7 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 					String name = file.getName();
 
-					if (!name.startsWith(prefix)) {
-						return false;
-					}
-
-					if (!name.endsWith(suffix)) {
+					if (!name.startsWith(prefix) || !name.endsWith(suffix)) {
 						return false;
 					}
 
@@ -161,6 +161,20 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 		return relativePath.replace('\\', '/');
 	}
 
+	public static String getUrl(File file) {
+		URI uri = file.toURI();
+
+		try {
+			uri = new URI("file", "", uri.getPath(), null, null);
+		}
+		catch (URISyntaxException uriSyntaxException) {
+			throw new GradleException(
+				"Unable to create URI for " + file, uriSyntaxException);
+		}
+
+		return uri.toString();
+	}
+
 	public static boolean hasFiles(
 		FileCollection fileCollection, Spec<File> spec) {
 
@@ -174,6 +188,10 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 	}
 
 	public static boolean hasSourceFiles(Task task, Spec<File> spec) {
+		if (exists(task.getProject(), ".lfrbuild-releng-skip-source")) {
+			return false;
+		}
+
 		TaskInputs taskInputs = task.getInputs();
 
 		return hasFiles(taskInputs.getSourceFiles(), spec);

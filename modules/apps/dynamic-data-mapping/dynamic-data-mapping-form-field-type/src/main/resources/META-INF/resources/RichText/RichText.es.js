@@ -12,161 +12,79 @@
  * details.
  */
 
-import '../FieldBase/FieldBase.es';
+import {ClassicEditor} from 'frontend-editor-ckeditor-web';
+import React, {useEffect, useMemo, useRef} from 'react';
 
-import './RichTextAdapter.soy';
+import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 
-import './RichTextRegister.soy';
+const RichText = ({
+	editable,
+	editingLanguageId,
+	editorConfig,
+	id,
+	name,
+	onBlur,
+	onChange,
+	onFocus,
+	predefinedValue = '',
+	readOnly,
+	value,
+	visible,
+	...otherProps
+}) => {
+	const editorRef = useRef();
 
-import './ReactRichTextAdapter.es';
+	const contents = useMemo(
+		() => (editable ? predefinedValue : value ?? predefinedValue),
+		[editable, predefinedValue, value]
+	);
 
-import Component from 'metal-component';
-import Soy from 'metal-soy';
-import {Config} from 'metal-state';
+	useEffect(() => {
+		const editor = editorRef.current?.editor;
 
-import templates from './RichText.soy';
+		if (editor) {
+			editor.config.contentsLangDirection =
+				Liferay.Language.direction[editingLanguageId];
 
-class RichText extends Component {
-	dispatchEvent(event, name, value) {
-		this.emit(name, {
-			fieldInstance: this,
-			originalEvent: event,
-			value
-		});
-	}
+			editor.config.contentsLanguage = editingLanguageId;
 
-	_handleOnDispatch(event) {
-		switch (event.type) {
-			case 'value':
-				this.dispatchEvent(event, 'fieldEdited', event.payload);
-				break;
-			default:
-				console.error(new TypeError(`There is no type ${event.type}`));
-				break;
+			editor.setData(contents);
 		}
-	}
-}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [editingLanguageId, predefinedValue]);
 
-RichText.STATE = {
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
+	return (
+		<FieldBase
+			{...otherProps}
+			id={id}
+			name={name}
+			readOnly={readOnly}
+			style={readOnly ? {pointerEvents: 'none'} : null}
+			visible={visible}
+		>
+			<ClassicEditor
+				contents={contents}
+				editorConfig={editorConfig}
+				name={name}
+				onBlur={onBlur}
+				onChange={(content) => {
+					if (contents !== content) {
+						onChange({target: {value: content}});
+					}
+				}}
+				onFocus={onFocus}
+				onSetData={({data: {dataValue: value}, editor: {mode}}) => {
+					if (mode === 'source') {
+						onChange({target: {value}});
+					}
+				}}
+				readOnly={readOnly}
+				ref={editorRef}
+			/>
 
-	errorMessage: Config.string(),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof RichText
-	 * @type {?bool}
-	 */
-
-	evaluable: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	fieldName: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	label: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	name: Config.string().required(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	predefinedValue: Config.string(),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Text
-	 * @type {?bool}
-	 */
-
-	readOnly: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof FieldBase
-	 * @type {?(bool|undefined)}
-	 */
-
-	repeatable: Config.bool().value(false),
-
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Text
-	 * @type {?(bool|undefined)}
-	 */
-
-	required: Config.bool().value(false),
-
-	/**
-	 * @default true
-	 * @instance
-	 * @memberof Text
-	 * @type {?(bool|undefined)}
-	 */
-
-	showLabel: Config.bool().value(true),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	spritemap: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	tip: Config.string(),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	value: Config.string()
+			<input name={name} type="hidden" value={contents} />
+		</FieldBase>
+	);
 };
 
-Soy.register(RichText, templates);
-
-export {RichText};
 export default RichText;

@@ -1,9 +1,17 @@
-$toolbarDesktopHeight: 64px;
-$toolbarHeight: 110px;
+@import 'atlas-variables';
+
+@import '../ddm_template_editor/components/PortletIcon';
+@import '../ddm_template_editor/components/PropertiesPanel';
+
+$toolbarDesktopHeight: 4rem;
+$toolbarHeight: 6.875rem;
 $toolbarZIndex: 971;
 
-$controlMenuDesktopHeight: 56px;
-$controlMenuHeight: 49px;
+$controlMenuHeight: 56px;
+$sidebarHeaderHeight: 104px;
+$sidebarWidth: 398px;
+
+$portletLayoutMargin: 35px;
 
 $productMenuTransitionDuration: 0.5s;
 $productMenuWidth: 320px;
@@ -43,6 +51,10 @@ $productMenuWidth: 320px;
 			margin-top: -40px;
 		}
 
+		.ddm-form-builder-app .CodeMirror {
+			height: 100%;
+		}
+
 		.form-builder-field {
 			box-shadow: none;
 			margin: 0;
@@ -72,12 +84,11 @@ $productMenuWidth: 320px;
 	}
 
 	.edit-article-form {
-		.component-tbar {
+		.component-tbar.tbar-article {
 			height: auto;
 			left: 0;
 			min-height: 3.5rem;
 			position: fixed;
-			top: $controlMenuHeight;
 			transition: left ease $productMenuTransitionDuration,
 				width ease $productMenuTransitionDuration;
 			width: 100%;
@@ -98,6 +109,10 @@ $productMenuWidth: 320px;
 
 				> .tbar-nav {
 					flex-wrap: wrap;
+
+					@include media-breakpoint-up(lg) {
+						flex-wrap: nowrap;
+					}
 
 					> .tbar-item {
 						padding: 0.5em;
@@ -146,9 +161,8 @@ $productMenuWidth: 320px;
 				border: 0;
 			}
 
-			@media (min-width: 768px) {
+			@include media-breakpoint-up(lg) {
 				min-height: $toolbarDesktopHeight;
-				top: $controlMenuDesktopHeight;
 
 				> .container-fluid > .tbar-nav {
 					> .tbar-item:first-child {
@@ -171,47 +185,63 @@ $productMenuWidth: 320px;
 		.contextual-sidebar-content {
 			margin-top: $toolbarHeight;
 
-			@media (min-width: 768px) {
+			@include media-breakpoint-up(lg) {
 				margin-top: $toolbarDesktopHeight;
 			}
 
-			@media (max-width: 769px) {
-				> .container-fluid {
-					margin: 0;
+			> .container-fluid {
+				max-height: calc(
+					100vh - #{$controlMenuHeight + $portletLayoutMargin} - #{$toolbarHeight}
+				);
+
+				@include media-breakpoint-up(lg) {
+					max-height: calc(
+						100vh - #{$controlMenuHeight + $portletLayoutMargin} - #{$toolbarDesktopHeight}
+					);
+				}
+
+				@include media-breakpoint-down(md) {
+					margin: 0 auto;
 					padding: 0;
 
 					> .sheet {
 						border: none;
 						border-radius: 0;
-						min-height: calc(
-							100vh - #{$controlMenuHeight + $toolbarHeight}
-						);
 					}
 				}
 			}
-		}
 
-		.data-layout-builder-sidebar {
-			top: 7.5rem;
+			.contextual-sidebar-mr {
+				margin-right: $sidebarWidth;
+			}
+
+			.contextual-sidebar-mr-n {
+				margin-right: -$sidebarWidth;
+			}
+
+			.sidebar-body {
+				@include media-breakpoint-down(lg) {
+					height: calc(
+						100vh - #{$controlMenuHeight +$sidebarHeaderHeight} - #{$toolbarHeight}
+					);
+				}
+			}
 		}
 
 		.edit-article-sidebar {
 			border-left: 1px #e7e7ed solid;
 			box-shadow: none;
-			height: calc(
-				100vh - #{$controlMenuHeight + $toolbarHeight}
-			) !important;
+			margin-top: $toolbarHeight;
+			max-width: 90vw;
 			overflow-y: scroll;
-			top: $controlMenuHeight + $toolbarHeight !important;
-			width: 100%;
+			padding-top: 0;
+			position: fixed;
+			top: auto;
+			width: $productMenuWidth;
 			z-index: 1;
 
-			@media (min-width: 768px) {
-				height: calc(
-					100vh - #{$controlMenuDesktopHeight + $toolbarDesktopHeight}
-				) !important;
-				top: $controlMenuDesktopHeight + $toolbarDesktopHeight !important;
-				width: $productMenuWidth;
+			@include media-breakpoint-up(lg) {
+				margin-top: $toolbarDesktopHeight;
 			}
 
 			.article-content-description {
@@ -242,6 +272,10 @@ $productMenuWidth: 320px;
 		}
 
 		.sidebar-body {
+			.panel {
+				margin-bottom: 0;
+			}
+
 			.panel-body {
 				margin-bottom: 16px;
 				padding: 0;

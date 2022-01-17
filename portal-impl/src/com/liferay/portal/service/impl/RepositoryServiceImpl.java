@@ -17,6 +17,9 @@ package com.liferay.portal.service.impl;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
+import com.liferay.document.library.kernel.service.DLFileVersionLocalService;
+import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.NoSuchRepositoryException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -28,10 +31,11 @@ import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
-import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionUtil;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermissionFactory;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.persistence.GroupPersistence;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.repository.registry.RepositoryClassDefinitionCatalog;
 import com.liferay.portal.service.base.RepositoryServiceBaseImpl;
@@ -47,7 +51,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 	public Repository addRepository(
 			long groupId, long classNameId, long parentFolderId, String name,
 			String description, String portletId,
-			UnicodeProperties typeSettingsProperties,
+			UnicodeProperties typeSettingsUnicodeProperties,
 			ServiceContext serviceContext)
 		throws PortalException {
 
@@ -56,7 +60,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 
 		return repositoryLocalService.addRepository(
 			getUserId(), groupId, classNameId, parentFolderId, name,
-			description, portletId, typeSettingsProperties, false,
+			description, portletId, typeSettingsUnicodeProperties, false,
 			serviceContext);
 	}
 
@@ -70,7 +74,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		Repository repository = repositoryPersistence.findByPrimaryKey(
 			repositoryId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_folderModelResourcePermission, getPermissionChecker(),
 			repository.getGroupId(), repository.getDlFolderId(),
 			ActionKeys.DELETE);
@@ -83,7 +87,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		Repository repository = repositoryPersistence.findByPrimaryKey(
 			repositoryId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_folderModelResourcePermission, getPermissionChecker(),
 			repository.getGroupId(), repository.getDlFolderId(),
 			ActionKeys.VIEW);
@@ -98,7 +102,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		Repository repository = repositoryPersistence.findByG_N_P(
 			groupId, portletId, portletId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_folderModelResourcePermission, getPermissionChecker(),
 			repository.getGroupId(), repository.getDlFolderId(),
 			ActionKeys.VIEW);
@@ -123,7 +127,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		Repository repository = repositoryPersistence.findByPrimaryKey(
 			repositoryId);
 
-		ModelResourcePermissionHelper.check(
+		ModelResourcePermissionUtil.check(
 			_folderModelResourcePermission, getPermissionChecker(),
 			repository.getGroupId(), repository.getDlFolderId(),
 			ActionKeys.UPDATE);
@@ -137,7 +141,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		throws PortalException {
 
 		if (folderId != 0) {
-			DLFolder dlFolder = dlFolderLocalService.fetchDLFolder(folderId);
+			DLFolder dlFolder = _dlFolderLocalService.fetchDLFolder(folderId);
 
 			if (dlFolder != null) {
 				_folderModelResourcePermission.check(
@@ -145,7 +149,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 			}
 		}
 		else if (fileEntryId != 0) {
-			DLFileEntry dlFileEntry = dlFileEntryLocalService.fetchDLFileEntry(
+			DLFileEntry dlFileEntry = _dlFileEntryLocalService.fetchDLFileEntry(
 				fileEntryId);
 
 			if (dlFileEntry != null) {
@@ -155,7 +159,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 		}
 		else if (fileVersionId != 0) {
 			DLFileVersion dlFileVersion =
-				dlFileVersionLocalService.fetchDLFileVersion(fileVersionId);
+				_dlFileVersionLocalService.fetchDLFileVersion(fileVersionId);
 
 			if (dlFileVersion != null) {
 				_fileEntryModelResourcePermission.check(
@@ -170,7 +174,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 			long fileVersionId)
 		throws PortalException {
 
-		Group group = groupPersistence.fetchByPrimaryKey(repositoryId);
+		Group group = _groupPersistence.fetchByPrimaryKey(repositoryId);
 
 		if (group != null) {
 			checkModelPermissions(folderId, fileEntryId, fileVersionId);
@@ -183,7 +187,7 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 				repositoryId);
 
 			if (repository != null) {
-				ModelResourcePermissionHelper.check(
+				ModelResourcePermissionUtil.check(
 					_folderModelResourcePermission, getPermissionChecker(),
 					repository.getGroupId(), repository.getDlFolderId(),
 					ActionKeys.VIEW);
@@ -210,6 +214,18 @@ public class RepositoryServiceImpl extends RepositoryServiceBaseImpl {
 			PortletResourcePermissionFactory.getInstance(
 				RepositoryServiceImpl.class, "_portletResourcePermission",
 				DLConstants.RESOURCE_NAME);
+
+	@BeanReference(type = DLFileEntryLocalService.class)
+	private DLFileEntryLocalService _dlFileEntryLocalService;
+
+	@BeanReference(type = DLFileVersionLocalService.class)
+	private DLFileVersionLocalService _dlFileVersionLocalService;
+
+	@BeanReference(type = DLFolderLocalService.class)
+	private DLFolderLocalService _dlFolderLocalService;
+
+	@BeanReference(type = GroupPersistence.class)
+	private GroupPersistence _groupPersistence;
 
 	@BeanReference(type = RepositoryClassDefinitionCatalog.class)
 	private RepositoryClassDefinitionCatalog _repositoryClassDefinitionCatalog;

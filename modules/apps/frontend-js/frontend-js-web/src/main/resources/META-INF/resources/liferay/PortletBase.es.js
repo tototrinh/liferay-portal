@@ -12,11 +12,21 @@
  * details.
  */
 
-import core from 'metal';
 import Component from 'metal-component';
-import dom from 'metal-dom';
 
 import objectToFormData from './util/form/object_to_form_data.es';
+
+function toElementHelper(elementOrSelector) {
+	if (typeof elementOrSelector === 'string') {
+		elementOrSelector = document.querySelector(elementOrSelector);
+	}
+
+	return elementOrSelector;
+}
+
+function isString(val) {
+	return typeof val === 'string';
+}
 
 /**
  * Provides helper functions that simplify querying the DOM for elements related
@@ -26,6 +36,7 @@ import objectToFormData from './util/form/object_to_form_data.es';
  * @extends {Component}
  */
 class PortletBase extends Component {
+
 	/**
 	 * Returns a Node List containing all the matching element nodes within the
 	 * subtrees of the root object, in tree order. If there are no matching
@@ -39,7 +50,7 @@ class PortletBase extends Component {
 	 *         tree order.
 	 */
 	all(selectors, root) {
-		root = dom.toElement(root) || this.rootNode || document;
+		root = toElementHelper(root) || this.rootNode || document;
 
 		return root.querySelectorAll(
 			this.namespaceSelectors_(
@@ -52,7 +63,7 @@ class PortletBase extends Component {
 	/**
 	 * Performs an HTTP POST request to the given URL with the given body.
 	 *
-	 * @deprecated since 7.3, use <code>Liferay.Util.fetch</code>.
+	 * @deprecated As of Athanasius (7.3.x), replaced by `Liferay.Util.fetch`.
 	 * @param      {!string} url The URL to send the post request to.
 	 * @param      {!Object|!FormData} body The request body.
 	 * @return     {Promise} A promise.
@@ -60,11 +71,11 @@ class PortletBase extends Component {
 	fetch(url, body) {
 		const requestBody = this.getRequestBody_(body);
 
-		// eslint-disable-next-line liferay-portal/no-global-fetch
+		// eslint-disable-next-line @liferay/portal/no-global-fetch
 		return fetch(url, {
 			body: requestBody,
 			credentials: 'include',
-			method: 'POST'
+			method: 'POST',
 		});
 	}
 
@@ -116,8 +127,8 @@ class PortletBase extends Component {
 	 * @return {Object|string} An object with its properties namespaced, using
 	 *         the portlet namespace or a namespaced string.
 	 */
-	ns(obj) {
-		return Liferay.Util.ns(this.portletNamespace || this.namespace, obj);
+	ns(object) {
+		return Liferay.Util.ns(this.portletNamespace || this.namespace, object);
 	}
 
 	/**
@@ -132,7 +143,7 @@ class PortletBase extends Component {
 	 *         or <code>null</code>.
 	 */
 	one(selectors, root) {
-		root = dom.toElement(root) || this.rootNode || document;
+		root = toElementHelper(root) || this.rootNode || document;
 
 		return root.querySelector(
 			this.namespaceSelectors_(
@@ -150,8 +161,8 @@ class PortletBase extends Component {
 	 * @return {Element} The portlet's default root node element.
 	 */
 	rootNodeValueFn_() {
-		return dom.toElement(
-			`#p_p_id${this.portletNamespace || this.namespace}`
+		return document.getElementById(
+			`p_p_id${this.portletNamespace || this.namespace}`
 		);
 	}
 }
@@ -164,16 +175,17 @@ class PortletBase extends Component {
  * @type {!Object}
  */
 PortletBase.STATE = {
+
 	/**
 	 * Portlet's namespace.
 	 *
-	 * @deprecated since 7.1
+	 * @deprecated As of Judson (7.1.x)
 	 * @instance
 	 * @memberof PortletBase
 	 * @type {string}
 	 */
 	namespace: {
-		validator: core.isString
+		validator: isString,
 	},
 
 	/**
@@ -184,7 +196,7 @@ PortletBase.STATE = {
 	 * @type {string}
 	 */
 	portletNamespace: {
-		validator: core.isString
+		validator: isString,
 	},
 
 	/**
@@ -195,9 +207,9 @@ PortletBase.STATE = {
 	 * @type {Element}
 	 */
 	rootNode: {
-		setter: dom.toElement,
-		valueFn: 'rootNodeValueFn_'
-	}
+		setter: toElementHelper,
+		valueFn: 'rootNodeValueFn_',
+	},
 };
 
 export default PortletBase;

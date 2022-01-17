@@ -22,8 +22,11 @@ import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serializable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -39,27 +42,37 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("Fragment")
+@GraphQLName(
+	description = "Represents a template made up of CSS, HTML, and JavaScript used to build Content Pages.",
+	value = "Fragment"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Fragment")
-public class Fragment {
+public class Fragment implements Serializable {
 
-	@Schema
-	public String getFragmentCollectionName() {
-		return fragmentCollectionName;
+	public static Fragment toDTO(String json) {
+		return ObjectMapperUtil.readValue(Fragment.class, json);
 	}
 
-	public void setFragmentCollectionName(String fragmentCollectionName) {
-		this.fragmentCollectionName = fragmentCollectionName;
+	public static Fragment unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(Fragment.class, json);
+	}
+
+	@Schema(description = "The collection name this fragment belongs to.")
+	public String getCollectionName() {
+		return collectionName;
+	}
+
+	public void setCollectionName(String collectionName) {
+		this.collectionName = collectionName;
 	}
 
 	@JsonIgnore
-	public void setFragmentCollectionName(
-		UnsafeSupplier<String, Exception>
-			fragmentCollectionNameUnsafeSupplier) {
+	public void setCollectionName(
+		UnsafeSupplier<String, Exception> collectionNameUnsafeSupplier) {
 
 		try {
-			fragmentCollectionName = fragmentCollectionNameUnsafeSupplier.get();
+			collectionName = collectionNameUnsafeSupplier.get();
 		}
 		catch (RuntimeException re) {
 			throw re;
@@ -69,25 +82,23 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The collection name this fragment belongs to.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected String fragmentCollectionName;
+	protected String collectionName;
 
-	@Schema
-	public String getFragmentKey() {
-		return fragmentKey;
+	@Schema(description = "The fragment's key.")
+	public String getKey() {
+		return key;
 	}
 
-	public void setFragmentKey(String fragmentKey) {
-		this.fragmentKey = fragmentKey;
+	public void setKey(String key) {
+		this.key = key;
 	}
 
 	@JsonIgnore
-	public void setFragmentKey(
-		UnsafeSupplier<String, Exception> fragmentKeyUnsafeSupplier) {
-
+	public void setKey(UnsafeSupplier<String, Exception> keyUnsafeSupplier) {
 		try {
-			fragmentKey = fragmentKeyUnsafeSupplier.get();
+			key = keyUnsafeSupplier.get();
 		}
 		catch (RuntimeException re) {
 			throw re;
@@ -97,25 +108,23 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment's key.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected String fragmentKey;
+	protected String key;
 
-	@Schema
-	public String getFragmentName() {
-		return fragmentName;
+	@Schema(description = "The fragment's name.")
+	public String getName() {
+		return name;
 	}
 
-	public void setFragmentName(String fragmentName) {
-		this.fragmentName = fragmentName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	@JsonIgnore
-	public void setFragmentName(
-		UnsafeSupplier<String, Exception> fragmentNameUnsafeSupplier) {
-
+	public void setName(UnsafeSupplier<String, Exception> nameUnsafeSupplier) {
 		try {
-			fragmentName = fragmentNameUnsafeSupplier.get();
+			name = nameUnsafeSupplier.get();
 		}
 		catch (RuntimeException re) {
 			throw re;
@@ -125,9 +134,9 @@ public class Fragment {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment's name.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected String fragmentName;
+	protected String name;
 
 	@Override
 	public boolean equals(Object object) {
@@ -156,44 +165,44 @@ public class Fragment {
 
 		sb.append("{");
 
-		if (fragmentCollectionName != null) {
+		if (collectionName != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"fragmentCollectionName\": ");
+			sb.append("\"collectionName\": ");
 
 			sb.append("\"");
 
-			sb.append(_escape(fragmentCollectionName));
+			sb.append(_escape(collectionName));
 
 			sb.append("\"");
 		}
 
-		if (fragmentKey != null) {
+		if (key != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"fragmentKey\": ");
+			sb.append("\"key\": ");
 
 			sb.append("\"");
 
-			sb.append(_escape(fragmentKey));
+			sb.append(_escape(key));
 
 			sb.append("\"");
 		}
 
-		if (fragmentName != null) {
+		if (name != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"fragmentName\": ");
+			sb.append("\"name\": ");
 
 			sb.append("\"");
 
-			sb.append(_escape(fragmentName));
+			sb.append(_escape(name));
 
 			sb.append("\"");
 		}
@@ -204,6 +213,7 @@ public class Fragment {
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.Fragment",
 		name = "x-class-name"
 	)
@@ -213,6 +223,16 @@ public class Fragment {
 		String string = String.valueOf(object);
 
 		return string.replaceAll("\"", "\\\\\"");
+	}
+
+	private static boolean _isArray(Object value) {
+		if (value == null) {
+			return false;
+		}
+
+		Class<?> clazz = value.getClass();
+
+		return clazz.isArray();
 	}
 
 	private static String _toJSON(Map<String, ?> map) {
@@ -229,13 +249,46 @@ public class Fragment {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
-			sb.append("\"");
-			sb.append(entry.getValue());
-			sb.append("\"");
+			sb.append("\": ");
+
+			Object value = entry.getValue();
+
+			if (_isArray(value)) {
+				sb.append("[");
+
+				Object[] valueArray = (Object[])value;
+
+				for (int i = 0; i < valueArray.length; i++) {
+					if (valueArray[i] instanceof String) {
+						sb.append("\"");
+						sb.append(valueArray[i]);
+						sb.append("\"");
+					}
+					else {
+						sb.append(valueArray[i]);
+					}
+
+					if ((i + 1) < valueArray.length) {
+						sb.append(", ");
+					}
+				}
+
+				sb.append("]");
+			}
+			else if (value instanceof Map) {
+				sb.append(_toJSON((Map<String, ?>)value));
+			}
+			else if (value instanceof String) {
+				sb.append("\"");
+				sb.append(value);
+				sb.append("\"");
+			}
+			else {
+				sb.append(value);
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

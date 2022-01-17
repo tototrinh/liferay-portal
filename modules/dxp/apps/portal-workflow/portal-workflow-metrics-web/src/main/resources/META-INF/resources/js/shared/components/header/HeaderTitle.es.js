@@ -9,7 +9,7 @@
  * distribution rights of the Software.
  */
 
-import {usePrevious} from 'frontend-js-react-web';
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import React, {useEffect, useState} from 'react';
 
 import Portal from '../portal/Portal.es';
@@ -30,7 +30,7 @@ const HeaderTitle = ({container, title}) => {
 	}, [title]);
 
 	return (
-		<Portal container={container} replace>
+		<Portal container={container} elementId="headerTitle" replace>
 			{currentTitle}
 		</Portal>
 	);

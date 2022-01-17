@@ -24,12 +24,15 @@ String assetTagName = ParamUtil.getString(request, "tag");
 
 boolean useAssetEntryQuery = (assetCategoryId > 0) || Validator.isNotNull(assetTagName);
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/blogs/view");
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/blogs/view"
+).buildPortletURL();
 %>
 
 <liferay-ui:success key='<%= portletDisplay.getId() + "requestProcessed" %>' message="your-request-completed-successfully" />
+<liferay-ui:success key="blogsEntryPublished" message="the-blog-entry-was-published-successfully" />
 
 <portlet:actionURL name="/blogs/edit_entry" var="restoreTrashEntriesURL">
 	<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.RESTORE %>" />
@@ -46,13 +49,13 @@ BlogsPortletInstanceConfiguration blogsPortletInstanceConfiguration = BlogsPortl
 
 int pageDelta = GetterUtil.getInteger(blogsPortletInstanceConfiguration.pageDelta());
 
-SearchContainer searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, pageDelta, currentURLObj, null, null);
+SearchContainer<BaseModel<?>> searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, pageDelta, currentURLObj, null, null);
 
 searchContainer.setDelta(pageDelta);
 searchContainer.setDeltaConfigurable(false);
 
 int total = 0;
-List results = null;
+List<BaseModel<?>> results = new ArrayList<>();
 
 int notPublishedEntriesCount = BlogsEntryServiceUtil.getGroupUserEntriesCount(scopeGroupId, themeDisplay.getUserId(), new int[] {WorkflowConstants.STATUS_DRAFT, WorkflowConstants.STATUS_PENDING, WorkflowConstants.STATUS_SCHEDULED});
 
@@ -61,16 +64,14 @@ if (useAssetEntryQuery) {
 
 	searchContainer.setTotal(searchContainerResults.getTotal());
 
-	results = searchContainerResults.getResults();
+	results.addAll(searchContainerResults.getResults());
 }
 else if ((notPublishedEntriesCount > 0) && mvcRenderCommandName.equals("/blogs/view_not_published_entries")) {
 	total = notPublishedEntriesCount;
 
 	searchContainer.setTotal(total);
 
-	results = BlogsEntryServiceUtil.getGroupUserEntries(scopeGroupId, themeDisplay.getUserId(), new int[] {WorkflowConstants.STATUS_DRAFT, WorkflowConstants.STATUS_PENDING, WorkflowConstants.STATUS_SCHEDULED}, searchContainer.getStart(), searchContainer.getEnd(), new EntryModifiedDateComparator());
-
-	searchContainer.setResults(results);
+	results.addAll(BlogsEntryServiceUtil.getGroupUserEntries(scopeGroupId, themeDisplay.getUserId(), new int[] {WorkflowConstants.STATUS_DRAFT, WorkflowConstants.STATUS_PENDING, WorkflowConstants.STATUS_SCHEDULED}, searchContainer.getStart(), searchContainer.getEnd(), new EntryModifiedDateComparator()));
 }
 else {
 	int status = WorkflowConstants.STATUS_APPROVED;
@@ -79,7 +80,7 @@ else {
 
 	searchContainer.setTotal(total);
 
-	results = BlogsEntryServiceUtil.getGroupEntries(scopeGroupId, status, searchContainer.getStart(), searchContainer.getEnd());
+	results.addAll(BlogsEntryServiceUtil.getGroupEntries(scopeGroupId, status, searchContainer.getStart(), searchContainer.getEnd()));
 }
 
 searchContainer.setResults(results);
@@ -94,14 +95,14 @@ searchContainer.setResults(results);
 						navigationItem -> {
 							navigationItem.setActive(!mvcRenderCommandName.equals("/blogs/view_not_published_entries"));
 							navigationItem.setHref(portletURL);
-							navigationItem.setLabel(LanguageUtil.get(request, "published"));
+							navigationItem.setLabel(LanguageUtil.get(httpServletRequest, "published"));
 						});
 
 					add(
 						navigationItem -> {
 							navigationItem.setActive(mvcRenderCommandName.equals("/blogs/view_not_published_entries"));
 							navigationItem.setHref(renderResponse.createRenderURL(), "mvcRenderCommandName", "/blogs/view_not_published_entries");
-							navigationItem.setLabel(LanguageUtil.format(request, "not-published-x", notPublishedEntriesCount, false));
+							navigationItem.setLabel(LanguageUtil.format(httpServletRequest, "not-published-x", notPublishedEntriesCount, false));
 						});
 				}
 			}

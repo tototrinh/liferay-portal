@@ -204,6 +204,20 @@ public interface KaleoInstanceTokenModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the kaleo definition ID of this kaleo instance token.
+	 *
+	 * @return the kaleo definition ID of this kaleo instance token
+	 */
+	public long getKaleoDefinitionId();
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo instance token.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo instance token
+	 */
+	public void setKaleoDefinitionId(long kaleoDefinitionId);
+
+	/**
 	 * Returns the kaleo definition version ID of this kaleo instance token.
 	 *
 	 * @return the kaleo definition version ID of this kaleo instance token
@@ -337,5 +351,8 @@ public interface KaleoInstanceTokenModel
 	 * @param completionDate the completion date of this kaleo instance token
 	 */
 	public void setCompletionDate(Date completionDate);
+
+	@Override
+	public KaleoInstanceToken cloneWithOriginalValues();
 
 }

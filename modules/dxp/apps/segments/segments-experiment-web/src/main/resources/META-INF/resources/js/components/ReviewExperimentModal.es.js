@@ -18,7 +18,7 @@ import React, {
 	useContext,
 	useEffect,
 	useRef,
-	useState
+	useState,
 } from 'react';
 
 import SegmentsExperimentContext from '../context.es';
@@ -30,7 +30,7 @@ import {
 	INITIAL_CONFIDENCE_LEVEL,
 	MAX_CONFIDENCE_LEVEL,
 	MIN_CONFIDENCE_LEVEL,
-	percentageNumberToIndex
+	percentageNumberToIndex,
 } from '../util/percentages.es';
 import BusyButton from './BusyButton/BusyButton.es';
 import {SliderWithLabel} from './SliderWithLabel.es';
@@ -43,7 +43,7 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 	const [success, setSuccess] = useState(false);
 	const [estimation, setEstimation] = useState({
 		days: null,
-		loading: true
+		loading: true,
 	});
 	const [confidenceLevel, setConfidenceLevel] = useState(
 		INITIAL_CONFIDENCE_LEVEL
@@ -65,35 +65,35 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 			return {...variant, split};
 		})
 	);
-	const {APIService, assetsPath} = useContext(SegmentsExperimentContext);
+	const {APIService, imagesPath} = useContext(SegmentsExperimentContext);
 	const {experiment} = useContext(StateContext);
 
-	const mounted = useRef();
+	const mountedRef = useRef();
 
 	useEffect(() => {
-		mounted.current = true;
+		mountedRef.current = true;
 
 		return () => {
-			mounted.current = false;
+			mountedRef.current = false;
 		};
 	});
 
-	const successAnimationPath = `${assetsPath}${SUCCESS_ANIMATION_FILE_NAME}`;
+	const successAnimationPath = `${imagesPath}${SUCCESS_ANIMATION_FILE_NAME}`;
 
-	const [getEstimation] = useDebounceCallback(body => {
+	const [getEstimation] = useDebounceCallback((body) => {
 		APIService.getEstimatedTime(body)
 			.then(({segmentsExperimentEstimatedDaysDuration}) => {
-				if (mounted.current) {
+				if (mountedRef.current) {
 					setEstimation({
 						days: segmentsExperimentEstimatedDaysDuration,
-						loading: false
+						loading: false,
 					});
 				}
 			})
-			.catch(_error => {
-				if (mounted.current) {
+			.catch((_error) => {
+				if (mountedRef.current) {
 					setEstimation({
-						error: true
+						error: true,
 					});
 				}
 			});
@@ -107,19 +107,19 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 			segmentsExperimentId: experiment.segmentsExperimentId,
 			segmentsExperimentRels: JSON.stringify(
 				_variantsToSplitVariantsMap(draftVariants)
-			)
+			),
 		});
 	}, [
 		draftVariants,
 		confidenceLevel,
 		getEstimation,
-		experiment.segmentsExperimentId
+		experiment.segmentsExperimentId,
 	]);
 
 	const [height, setHeight] = useState(0);
 
 	const measureHeight = useCallback(
-		node => {
+		(node) => {
 			if (node !== null && !success) {
 				setHeight(node.getBoundingClientRect().height);
 			}
@@ -134,6 +134,7 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 					? Liferay.Language.get('test-started-successfully')
 					: Liferay.Language.get('review-and-run-test')}
 			</ClayModal.Header>
+
 			<ClayModal.Body>
 				{success ? (
 					<div
@@ -146,6 +147,7 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 							src={successAnimationPath}
 							width="250px"
 						/>
+
 						<h3>{Liferay.Language.get('test-running-message')}</h3>
 					</div>
 				) : (
@@ -155,7 +157,7 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 						</h3>
 
 						<SplitPicker
-							onChange={variants => {
+							onChange={(variants) => {
 								setDraftVariants(variants);
 							}}
 							variants={draftVariants}
@@ -178,6 +180,7 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 						/>
 
 						<hr />
+
 						<div className="d-flex">
 							<div className="w-100">
 								<label>
@@ -262,9 +265,9 @@ function ReviewExperimentModal({modalObserver, onModalClose, onRun, variants}) {
 
 		onRun({
 			confidenceLevel: percentageNumberToIndex(confidenceLevel),
-			splitVariantsMap
+			splitVariantsMap,
 		}).then(() => {
-			if (mounted.current) {
+			if (mountedRef.current) {
 				setBusy(false);
 				setSuccess(true);
 			}
@@ -276,7 +279,7 @@ function _variantsToSplitVariantsMap(variants) {
 	return variants.reduce((acc, v) => {
 		return {
 			...acc,
-			[v.segmentsExperimentRelId]: percentageNumberToIndex(v.split)
+			[v.segmentsExperimentRelId]: percentageNumberToIndex(v.split),
 		};
 	}, {});
 }
@@ -294,7 +297,7 @@ ReviewExperimentModal.propTypes = {
 	modalObserver: PropTypes.object.isRequired,
 	onModalClose: PropTypes.func.isRequired,
 	onRun: PropTypes.func.isRequired,
-	variants: PropTypes.arrayOf(SegmentsVariantType)
+	variants: PropTypes.arrayOf(SegmentsVariantType),
 };
 
 export {ReviewExperimentModal};

@@ -17,37 +17,26 @@ package com.liferay.portal.dao.db;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.test.BaseDBTestCase;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
-import com.liferay.portal.kernel.test.util.PropsTestUtil;
-import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
-
-import java.io.IOException;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+import com.liferay.portal.test.rule.PortalProps;
 
 import java.lang.reflect.Method;
 
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * @author Miguel Pastor
+ * @author Alberto Chaparro
  */
+@PortalProps(properties = PropsKeys.DATABASE_STRING_INDEX_MAX_LENGTH + "=-1")
 public class SybaseDBTest extends BaseDBTestCase {
 
-	@BeforeClass
-	public static void setUpClass() {
-		_props = PropsUtil.getProps();
-
-		PropsTestUtil.setProps(
-			PropsKeys.DATABASE_STRING_INDEX_MAX_LENGTH, "-1");
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		PropsUtil.setProps(_props);
-	}
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testApplyMaxStringIndexLengthLimitation() throws Exception {
@@ -67,7 +56,36 @@ public class SybaseDBTest extends BaseDBTestCase {
 	}
 
 	@Test
-	public void testRewordRenameTable() throws IOException {
+	public void testRewordAlterColumnType() throws Exception {
+		Assert.assertEquals(
+			"alter table DLFolder modify userName varchar(75)\ngo\n",
+			buildSQL("alter_column_type DLFolder userName VARCHAR(75);"));
+	}
+
+	@Test
+	public void testRewordAlterColumnTypeNoSemicolon() throws Exception {
+		Assert.assertEquals(
+			"alter table DLFolder modify userName varchar(75)\ngo\n",
+			buildSQL("alter_column_type DLFolder userName VARCHAR(75)"));
+	}
+
+	@Test
+	public void testRewordAlterColumnTypeNotNull() throws Exception {
+		Assert.assertEquals(
+			"alter table DLFolder modify userName varchar(75) not null;\n",
+			buildSQL(
+				"alter_column_type DLFolder userName VARCHAR(75) not null;"));
+	}
+
+	@Test
+	public void testRewordAlterColumnTypeNull() throws Exception {
+		Assert.assertEquals(
+			"alter table DLFolder modify userName varchar(75) null;\n",
+			buildSQL("alter_column_type DLFolder userName VARCHAR(75) null;"));
+	}
+
+	@Test
+	public void testRewordRenameTable() throws Exception {
 		Assert.assertEquals(
 			"exec sp_rename a, b;\n", buildSQL(RENAME_TABLE_QUERY));
 	}
@@ -76,7 +94,5 @@ public class SybaseDBTest extends BaseDBTestCase {
 	protected DB getDB() {
 		return new SybaseDB(0, 0);
 	}
-
-	private static Props _props;
 
 }

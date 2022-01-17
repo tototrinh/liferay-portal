@@ -78,12 +78,12 @@ if (organization != null) {
 
 <c:choose>
 	<c:when test="<%= (organizationGroup == null) || GroupPermissionUtil.contains(permissionChecker, organizationGroup, ActionKeys.UPDATE) %>">
-		<div class="sheet-section">
+		<clay:sheet-section>
 			<c:choose>
 				<c:when test="<%= (organization == null) || ((publicLayoutSetPrototype == null) && (privateLayoutSetPrototype == null)) %>">
 					<p class="sheet-text"><liferay-ui:message key="by-clicking-this-toggle-you-could-create-a-public-and-or-private-site-for-your-organization" /></p>
 
-					<aui:input label="create-site" name="site" type="toggle-switch" value="<%= site %>" />
+					<aui:input inlineLabel="right" label="create-site" labelCssClass="simple-toggle-switch" name="site" type="toggle-switch" value="<%= site %>" />
 				</c:when>
 				<c:otherwise>
 					<aui:input label="create-site" name="site" type="hidden" value="<%= site %>" />
@@ -91,13 +91,6 @@ if (organization != null) {
 			</c:choose>
 
 			<c:if test="<%= site %>">
-
-				<%
-				PortletURL editOrganizationSiteURL = PortletProviderUtil.getPortletURL(request, organizationGroup, Group.class.getName(), PortletProvider.Action.EDIT);
-
-				editOrganizationSiteURL.setParameter("viewOrganizationsRedirect", currentURL);
-				%>
-
 				<aui:input inlineField="<%= true %>" name="siteId" type="resource" value="<%= String.valueOf(organizationGroup.getGroupId()) %>" />
 
 				<div class="form-group">
@@ -105,26 +98,31 @@ if (organization != null) {
 						iconCssClass="icon-cog"
 						label="<%= true %>"
 						message="manage-site"
-						url="<%= editOrganizationSiteURL.toString() %>"
+						url='<%=
+							PortletURLBuilder.create(
+								PortletProviderUtil.getPortletURL(request, organizationGroup, Group.class.getName(), PortletProvider.Action.EDIT)
+							).setParameter(
+								"viewOrganizationsRedirect", currentURL
+							).buildString()
+						%>'
 					/>
 				</div>
 			</c:if>
-		</div>
+		</clay:sheet-section>
 
 		<%
 		boolean hasUnlinkLayoutSetPrototypePermission = PortalPermissionUtil.contains(permissionChecker, ActionKeys.UNLINK_LAYOUT_SET_PROTOTYPE);
 		%>
 
 		<div id="<portlet:namespace />siteTemplates">
-			<div class="sheet-section">
+			<clay:sheet-section>
 				<h3 class="sheet-subtitle"><liferay-ui:message key="public-pages" /></h3>
 
 				<c:choose>
 					<c:when test="<%= ((organization == null) || ((publicLayoutSetPrototype == null) && (organization.getPublicLayoutsPageCount() == 0))) && !layoutSetPrototypes.isEmpty() %>">
 						<clay:alert
-							message='<%= LanguageUtil.get(request, "this-action-cannot-be-undone") %>'
-							style="warning"
-							title='<%= LanguageUtil.get(request, "warning") + ":" %>'
+							displayType="warning"
+							message="this-action-cannot-be-undone"
 						/>
 
 						<aui:select label="" name="publicLayoutSetPrototypeId">
@@ -180,7 +178,7 @@ if (organization != null) {
 											<aui:input label='<%= LanguageUtil.format(request, "enable-propagation-of-changes-from-the-site-template-x", HtmlUtil.escape(publicLayoutSetPrototype.getName(locale)), false) %>' name="publicLayoutSetPrototypeLinkEnabled" type="checkbox" value="<%= publicLayoutSetPrototypeLinkEnabled %>" />
 										</c:when>
 										<c:when test="<%= publicLayoutSetPrototype != null %>">
-											<liferay-ui:message arguments="<%= new Object[] {HtmlUtil.escape(publicLayoutSetPrototype.getName(locale))} %>" key="these-pages-are-linked-to-site-template-x" translateArguments="<%= false %>" />
+											<liferay-ui:message arguments="<%= HtmlUtil.escape(publicLayoutSetPrototype.getName(locale)) %>" key="these-pages-are-linked-to-site-template-x" translateArguments="<%= false %>" />
 
 											<aui:input name="publicLayoutSetPrototypeLinkEnabled" type="hidden" value="<%= publicLayoutSetPrototypeLinkEnabled %>" />
 										</c:when>
@@ -190,17 +188,16 @@ if (organization != null) {
 						</c:choose>
 					</c:otherwise>
 				</c:choose>
-			</div>
+			</clay:sheet-section>
 
-			<div class="sheet-section">
+			<clay:sheet-section>
 				<h3 class="sheet-subtitle"><liferay-ui:message key="private-pages" /></h3>
 
 				<c:choose>
 					<c:when test="<%= ((organization == null) || ((privateLayoutSetPrototype == null) && (organization.getPrivateLayoutsPageCount() == 0))) && !layoutSetPrototypes.isEmpty() %>">
 						<clay:alert
-							message='<%= LanguageUtil.get(request, "this-action-cannot-be-undone") %>'
-							style="warning"
-							title='<%= LanguageUtil.get(request, "warning") + ":" %>'
+							displayType="warning"
+							message="this-action-cannot-be-undone"
 						/>
 
 						<aui:select label="" name="privateLayoutSetPrototypeId">
@@ -256,7 +253,7 @@ if (organization != null) {
 											<aui:input label='<%= LanguageUtil.format(request, "enable-propagation-of-changes-from-the-site-template-x", HtmlUtil.escape(privateLayoutSetPrototype.getName(locale)), false) %>' name="privateLayoutSetPrototypeLinkEnabled" type="checkbox" value="<%= privateLayoutSetPrototypeLinkEnabled %>" />
 										</c:when>
 										<c:when test="<%= privateLayoutSetPrototype != null %>">
-											<liferay-ui:message arguments="<%= new Object[] {HtmlUtil.escape(privateLayoutSetPrototype.getName(locale))} %>" key="these-pages-are-linked-to-site-template-x" translateArguments="<%= false %>" />
+											<liferay-ui:message arguments="<%= HtmlUtil.escape(privateLayoutSetPrototype.getName(locale)) %>" key="these-pages-are-linked-to-site-template-x" translateArguments="<%= false %>" />
 
 											<aui:input name="privateLayoutSetPrototypeLinkEnabled" type="hidden" value="<%= privateLayoutSetPrototypeLinkEnabled %>" />
 										</c:when>
@@ -266,9 +263,9 @@ if (organization != null) {
 						</c:choose>
 					</c:otherwise>
 				</c:choose>
-			</div>
+			</clay:sheet-section>
 
-			<div class="sheet-footer">
+			<clay:sheet-footer>
 				<aui:button primary="<%= true %>" type="submit" />
 
 				<%
@@ -276,7 +273,7 @@ if (organization != null) {
 				%>
 
 				<aui:button href="<%= organizationScreenNavigationDisplayContext.getBackURL() %>" type="cancel" />
-			</div>
+			</clay:sheet-footer>
 		</div>
 
 		<%

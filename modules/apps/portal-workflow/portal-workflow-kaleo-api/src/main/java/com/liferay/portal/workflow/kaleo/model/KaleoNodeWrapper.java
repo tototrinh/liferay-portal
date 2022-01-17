@@ -50,6 +50,7 @@ public class KaleoNodeWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("kaleoDefinitionId", getKaleoDefinitionId());
 		attributes.put(
 			"kaleoDefinitionVersionId", getKaleoDefinitionVersionId());
 		attributes.put("name", getName());
@@ -112,6 +113,12 @@ public class KaleoNodeWrapper
 			setModifiedDate(modifiedDate);
 		}
 
+		Long kaleoDefinitionId = (Long)attributes.get("kaleoDefinitionId");
+
+		if (kaleoDefinitionId != null) {
+			setKaleoDefinitionId(kaleoDefinitionId);
+		}
+
 		Long kaleoDefinitionVersionId = (Long)attributes.get(
 			"kaleoDefinitionVersionId");
 
@@ -154,6 +161,11 @@ public class KaleoNodeWrapper
 		if (terminal != null) {
 			setTerminal(terminal);
 		}
+	}
+
+	@Override
+	public KaleoNode cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
 	}
 
 	/**
@@ -211,6 +223,16 @@ public class KaleoNodeWrapper
 	@Override
 	public boolean getInitial() {
 		return model.getInitial();
+	}
+
+	/**
+	 * Returns the kaleo definition ID of this kaleo node.
+	 *
+	 * @return the kaleo definition ID of this kaleo node
+	 */
+	@Override
+	public long getKaleoDefinitionId() {
+		return model.getKaleoDefinitionId();
 	}
 
 	/**
@@ -423,6 +445,16 @@ public class KaleoNodeWrapper
 	@Override
 	public void setInitial(boolean initial) {
 		model.setInitial(initial);
+	}
+
+	/**
+	 * Sets the kaleo definition ID of this kaleo node.
+	 *
+	 * @param kaleoDefinitionId the kaleo definition ID of this kaleo node
+	 */
+	@Override
+	public void setKaleoDefinitionId(long kaleoDefinitionId) {
+		model.setKaleoDefinitionId(kaleoDefinitionId);
 	}
 
 	/**

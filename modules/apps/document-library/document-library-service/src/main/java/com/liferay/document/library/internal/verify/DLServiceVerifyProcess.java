@@ -27,6 +27,7 @@ import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.change.tracking.store.CTStoreFactory;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
@@ -106,7 +107,7 @@ public class DLServiceVerifyProcess extends VerifyProcess {
 		}
 	}
 
-	protected void checkFileVersionMimeTypes(final String[] originalMimeTypes)
+	protected void checkFileVersionMimeTypes(String[] originalMimeTypes)
 		throws Exception {
 
 		ActionableDynamicQuery actionableDynamicQuery =
@@ -184,14 +185,12 @@ public class DLServiceVerifyProcess extends VerifyProcess {
 								exception);
 						}
 						else {
-							StringBundler sb = new StringBundler(4);
-
-							sb.append("Unable to find file version ");
-							sb.append(dlFileVersion.getVersion());
-							sb.append(" for file entry ");
-							sb.append(dlFileEntry.getName());
-
-							_log.warn(sb.toString(), exception);
+							_log.warn(
+								StringBundler.concat(
+									"Unable to find file version ",
+									dlFileVersion.getVersion(),
+									" for file entry ", dlFileEntry.getName()),
+								exception);
 						}
 					}
 				}
@@ -211,12 +210,11 @@ public class DLServiceVerifyProcess extends VerifyProcess {
 
 	protected void checkMimeTypes() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			String[] mimeTypes = {
-				ContentTypes.APPLICATION_OCTET_STREAM,
-				_MS_OFFICE_2010_TEXT_XML_UTF8
-			};
-
-			checkFileVersionMimeTypes(mimeTypes);
+			checkFileVersionMimeTypes(
+				new String[] {
+					ContentTypes.APPLICATION_OCTET_STREAM,
+					_MS_OFFICE_2010_TEXT_XML_UTF8
+				});
 
 			if (_log.isDebugEnabled()) {
 				_log.debug("Fixed file entries with invalid mime types");
@@ -376,6 +374,9 @@ public class DLServiceVerifyProcess extends VerifyProcess {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DLServiceVerifyProcess.class);
+
+	@Reference
+	private CTStoreFactory _ctStoreFactory;
 
 	@Reference
 	private DDMStructureLocalService _ddmStructureLocalService;

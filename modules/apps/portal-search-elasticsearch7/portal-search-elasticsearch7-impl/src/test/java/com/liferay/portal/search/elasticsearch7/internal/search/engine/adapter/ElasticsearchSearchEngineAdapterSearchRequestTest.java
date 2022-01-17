@@ -34,6 +34,7 @@ import com.liferay.portal.search.engine.adapter.search.SuggestSearchRequest;
 import com.liferay.portal.search.engine.adapter.search.SuggestSearchResponse;
 import com.liferay.portal.search.engine.adapter.search.SuggestSearchResult;
 import com.liferay.portal.search.test.util.indexing.DocumentFixture;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.IOException;
 
@@ -58,12 +59,17 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * @author Michael C. Han
  */
 public class ElasticsearchSearchEngineAdapterSearchRequestTest {
+
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -90,24 +96,23 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 
 		_createIndex();
 
-		StringBundler sb = new StringBundler(14);
-
-		sb.append("{\n\"dynamic_templates\": [\n{\n");
-		sb.append("\"template_en\": {\n\"mapping\": {\n");
-		sb.append("\"analyzer\": \"english\",\n\"store\": true,\n");
-		sb.append("\"term_vector\": \"with_positions_offsets\",\n");
-		sb.append("\"type\": \"text\"\n},\n");
-		sb.append("\"match\": \"\\\\w+_en\\\\b|\\\\w+_en_[A-Z]{2}\\\\b\",\n");
-		sb.append("\"match_mapping_type\": \"string\",\n");
-		sb.append("\"match_pattern\": \"regex\"\n}\n}\n],\n");
-		sb.append("\"properties\": {\n\"companyId\": {\n");
-		sb.append("\"store\": true,\n\"type\": \"keyword\"\n},\n");
-		sb.append("\"languageId\": {\n\"index\": false,\n");
-		sb.append("\"store\": true,\n\"type\": \"keyword\"\n},");
-		sb.append("\"keywordSuggestion\" : {\n\"type\" : \"completion\"\n");
-		sb.append("}\n\n}\n}");
-
-		_putMapping(_MAPPING_NAME, sb.toString());
+		_putMapping(
+			_MAPPING_NAME,
+			StringBundler.concat(
+				"{\n\"dynamic_templates\": [\n{\n",
+				"\"template_en\": {\n\"mapping\": {\n",
+				"\"analyzer\": \"english\",\n\"store\": true,\n",
+				"\"term_vector\": \"with_positions_offsets\",\n",
+				"\"type\": \"text\"\n},\n",
+				"\"match\": \"\\\\w+_en\\\\b|\\\\w+_en_[A-Z]{2}\\\\b\",\n",
+				"\"match_mapping_type\": \"string\",\n",
+				"\"match_pattern\": \"regex\"\n}\n}\n],\n",
+				"\"properties\": {\n\"companyId\": {\n",
+				"\"store\": true,\n\"type\": \"keyword\"\n},\n",
+				"\"languageId\": {\n\"index\": false,\n",
+				"\"store\": true,\n\"type\": \"keyword\"\n},",
+				"\"keywordSuggestion\" : {\n\"type\" : \"completion\"\n",
+				"}\n\n}\n}"));
 	}
 
 	@After
@@ -125,10 +130,10 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchRequest suggestSearchRequest = new SuggestSearchRequest(
 			_INDEX_NAME);
 
-		Suggester suggester = new CompletionSuggester(
+		Suggester suggester1 = new CompletionSuggester(
 			"completion", "keywordSuggestion", "sear");
 
-		suggestSearchRequest.addSuggester(suggester);
+		suggestSearchRequest.addSuggester(suggester1);
 
 		Suggester suggester2 = new CompletionSuggester(
 			"completion2", "keywordSuggestion", "messa");
@@ -138,12 +143,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchResponse suggestSearchResponse =
 			_searchEngineAdapter.execute(suggestSearchRequest);
 
-		Map<String, SuggestSearchResult> suggestSearchResultMap =
-			suggestSearchResponse.getSuggestSearchResultMap();
-
 		assertSuggestion(
-			suggestSearchResultMap, "completion|[search]",
-			"completion2|[message]");
+			suggestSearchResponse.getSuggestSearchResultMap(),
+			"completion|[search]", "completion2|[message]");
 	}
 
 	@Test
@@ -167,11 +169,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchResponse suggestSearchResponse =
 			_searchEngineAdapter.execute(suggestSearchRequest);
 
-		Map<String, SuggestSearchResult> suggestSearchResultMap =
-			suggestSearchResponse.getSuggestSearchResultMap();
-
 		assertSuggestion(
-			suggestSearchResultMap, "completion|[search]", "term|[search]");
+			suggestSearchResponse.getSuggestSearchResultMap(),
+			"completion|[search]", "term|[search]");
 	}
 
 	@Test
@@ -196,11 +196,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchResponse suggestSearchResponse =
 			_searchEngineAdapter.execute(suggestSearchRequest);
 
-		Map<String, SuggestSearchResult> suggestSearchResultMap =
-			suggestSearchResponse.getSuggestSearchResultMap();
-
 		assertSuggestion(
-			suggestSearchResultMap, "completion|[message]", "term|[search]");
+			suggestSearchResponse.getSuggestSearchResultMap(),
+			"completion|[message]", "term|[search]");
 	}
 
 	@Test
@@ -220,11 +218,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchResponse suggestSearchResponse =
 			_searchEngineAdapter.execute(suggestSearchRequest);
 
-		Map<String, SuggestSearchResult> suggestSearchResultMap =
-			suggestSearchResponse.getSuggestSearchResultMap();
-
 		assertSuggestion(
-			suggestSearchResultMap, 2, "phrase|[indexef phrase, index phrasd]");
+			suggestSearchResponse.getSuggestSearchResultMap(), 2,
+			"phrase|[indexef phrase, index phrasd]");
 	}
 
 	@Test
@@ -243,10 +239,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		SuggestSearchResponse suggestSearchResponse =
 			_searchEngineAdapter.execute(suggestSearchRequest);
 
-		Map<String, SuggestSearchResult> suggestSearchResultMap =
-			suggestSearchResponse.getSuggestSearchResultMap();
-
-		assertSuggestion(suggestSearchResultMap, "termSuggestion|[search]");
+		assertSuggestion(
+			suggestSearchResponse.getSuggestSearchResultMap(),
+			"termSuggestion|[search]");
 	}
 
 	protected void assertSuggestion(
@@ -322,15 +317,8 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 	}
 
 	protected String getUID(String value) {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(_DEFAULT_COMPANY_ID);
-		sb.append("_");
-		sb.append(_LOCALIZED_FIELD_NAME);
-		sb.append("_");
-		sb.append(value);
-
-		return sb.toString();
+		return StringBundler.concat(
+			_DEFAULT_COMPANY_ID, "_", _LOCALIZED_FIELD_NAME, "_", value);
 	}
 
 	protected void indexSuggestKeyword(String value) throws IOException {
@@ -415,10 +403,9 @@ public class ElasticsearchSearchEngineAdapterSearchRequestTest {
 		ElasticsearchDocumentFactory elasticsearchDocumentFactory =
 			new DefaultElasticsearchDocumentFactory();
 
-		String elasticsearchDocument =
-			elasticsearchDocumentFactory.getElasticsearchDocument(document);
-
-		indexRequest.source(elasticsearchDocument, XContentType.JSON);
+		indexRequest.source(
+			elasticsearchDocumentFactory.getElasticsearchDocument(document),
+			XContentType.JSON);
 
 		try {
 			_restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);

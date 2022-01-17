@@ -33,9 +33,13 @@ portletDisplay.setURLBack(redirect);
 renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 %>
 
-<div class="container-fluid container-fluid-max-xl container-form-lg">
-	<div class="row">
-		<div class="col-lg-3">
+<clay:container-fluid
+	cssClass="container-form-lg"
+>
+	<clay:row>
+		<clay:col
+			lg="3"
+		>
 			<nav class="menubar menubar-transparent menubar-vertical-expand-lg">
 				<ul class="nav nav-nested">
 					<li class="nav-item">
@@ -45,50 +49,58 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 
 						<ul class="nav nav-stacked">
 							<li class="nav-item">
-
-								<%
-								PortletURL allNavigationURL = assetListEntryUsagesDisplayContext.getPortletURL();
-
-								allNavigationURL.setParameter("navigation", "all");
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>" href="<%= allNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetListEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"all"
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetListEntryUsagesDisplayContext.getAllUsageCount() %>" key="all-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pagesNavigationURL = assetListEntryUsagesDisplayContext.getPortletURL();
-
-								pagesNavigationURL.setParameter("navigation", "pages");
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>" href="<%= pagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetListEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"pages"
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetListEntryUsagesDisplayContext.getPagesUsageCount() %>" key="pages-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pageTemplatesNavigationURL = assetListEntryUsagesDisplayContext.getPortletURL();
-
-								pageTemplatesNavigationURL.setParameter("navigation", "page-templates");
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>" href="<%= pageTemplatesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetListEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"page-templates"
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetListEntryUsagesDisplayContext.getPageTemplatesUsageCount() %>" key="page-templates-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL displayPagesNavigationURL = assetListEntryUsagesDisplayContext.getPortletURL();
-
-								displayPagesNavigationURL.setParameter("navigation", "display-page-templates");
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>" href="<%= displayPagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetListEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"display-page-templates"
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetListEntryUsagesDisplayContext.getDisplayPagesUsageCount() %>" key="display-page-templates-x" />
 								</a>
 							</li>
@@ -96,10 +108,14 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 					</li>
 				</ul>
 			</nav>
-		</div>
+		</clay:col>
 
-		<div class="col-lg-9">
-			<div class="sheet">
+		<clay:col
+			lg="9"
+		>
+			<clay:sheet
+				size="full"
+			>
 				<h3 class="sheet-title">
 					<c:choose>
 						<c:when test='<%= Objects.equals(assetListEntryUsagesDisplayContext.getNavigation(), "pages") %>'>
@@ -117,12 +133,8 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 					</c:choose>
 				</h3>
 
-				<%
-				AssetListEntryUsagesManagementToolbarDisplayContext assetListEntryUsagesManagementToolbarDisplayContext = new AssetListEntryUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetListEntryUsagesDisplayContext.getSearchContainer());
-				%>
-
 				<clay:management-toolbar
-					displayContext="<%= assetListEntryUsagesManagementToolbarDisplayContext %>"
+					managementToolbarDisplayContext="<%= new AssetListEntryUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetListEntryUsagesDisplayContext.getSearchContainer()) %>"
 				/>
 
 				<liferay-ui:search-container
@@ -157,7 +169,7 @@ renderResponse.setTitle(assetListDisplayContext.getAssetListEntryTitle());
 						searchResultCssClass="show-quick-actions-on-hover table table-autofit"
 					/>
 				</liferay-ui:search-container>
-			</div>
-		</div>
-	</div>
-</div>
+			</clay:sheet>
+		</clay:col>
+	</clay:row>
+</clay:container-fluid>

@@ -282,8 +282,7 @@ public class FileUtil {
 		}
 	}
 
-	public static void zip(
-			Path sourcePath, final File zipFile, boolean includeFolder)
+	public static void zip(Path sourcePath, File zipFile, boolean includeFolder)
 		throws Exception {
 
 		final Path parentPath;
@@ -384,7 +383,7 @@ public class FileUtil {
 
 	private static void _unsevenZip(
 			Path sevenZipPath, Path destinationDirPath, int stripComponents)
-		throws IOException {
+		throws Exception {
 
 		try (SevenZFile sevenZFile = new SevenZFile(sevenZipPath.toFile())) {
 			SevenZArchiveEntry sevenZArchiveEntry = null;
@@ -418,7 +417,7 @@ public class FileUtil {
 
 	private static void _untar(
 			Path tarPath, Path destinationDirPath, int stripComponents)
-		throws IOException {
+		throws Exception {
 
 		try (InputStream inputStream = Files.newInputStream(tarPath);
 			TarArchiveInputStream tarArchiveInputStream =

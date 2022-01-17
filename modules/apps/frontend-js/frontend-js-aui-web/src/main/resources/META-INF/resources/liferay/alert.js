@@ -12,16 +12,20 @@
  * details.
  */
 
+/*
+ * @deprecated As of Athanasius (7.3.x), replaced by Liferay.Util.openToast
+ * @module liferay-alert
+ */
 AUI.add(
 	'liferay-alert',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var Alert = A.Component.create({
 			ATTRS: {
 				animated: {
 					validator: Lang.isBoolean,
-					value: true
+					value: true,
 				},
 
 				closeableNode: {
@@ -33,27 +37,27 @@ AUI.add(
 								Liferay.Util.getLexiconIconTpl('times') +
 								'</button>'
 						);
-					}
+					},
 				},
 
 				icon: {
 					validator: Lang.isString,
-					value: 'info-circle'
+					value: 'info-circle',
 				},
 
 				message: {
 					validator: Lang.isString,
-					value: ''
+					value: '',
 				},
 
 				title: {
-					validator: Lang.isString
+					validator: Lang.isString,
 				},
 
 				type: {
 					validator: Lang.isString,
-					value: 'info'
-				}
+					value: 'info',
+				},
 			},
 
 			AUGMENTS: [Liferay.PortletBase],
@@ -86,6 +90,7 @@ AUI.add(
 						var rootNode =
 							targetNode ||
 							instance.get('rootNode') ||
+							// eslint-disable-next-line @liferay/aui/no-get-body
 							A.getBody();
 
 						alertsContainer =
@@ -206,7 +211,7 @@ AUI.add(
 										? instance
 												.get('boundingBox')
 												.outerHeight() + 'px'
-										: 0
+										: 0,
 								},
 								() => {
 									parentNode.toggleClass('in', visible);
@@ -235,7 +240,7 @@ AUI.add(
 						icon: instance.get('icon'),
 						message: instance.get('message'),
 						pathThemeImages: themeDisplay.getPathThemeImages(),
-						title: instance.get('title') || ''
+						title: instance.get('title') || '',
 					});
 
 					instance.set('bodyContent', bodyContent);
@@ -253,7 +258,7 @@ AUI.add(
 				TPL_ALERTS_CONTAINER: '<div class="lfr-alert-container"></div>',
 
 				TPL_CONTENT:
-					'<strong class="lead"><svg class="lexicon-icon" focusable="false"><use data-href="{pathThemeImages}/lexicon/icons.svg#{icon}" /><title>{title}</title></svg> {title}</strong>{message}',
+					'<strong class="lead"><svg class="lexicon-icon" focusable="false"><use href="{pathThemeImages}/clay/icons.svg#{icon}" /><title>{title}</title></svg> {title}</strong>{message}',
 
 				bindUI() {
 					var instance = this;
@@ -280,7 +285,7 @@ AUI.add(
 							'mouseleave',
 							instance._onMouseLeave,
 							instance
-						)
+						),
 					];
 
 					boundingBox.attr('role', 'alert');
@@ -300,8 +305,8 @@ AUI.add(
 						this,
 						this._getParentNode(parentNode)
 					);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Alert = Alert;
@@ -313,7 +318,7 @@ AUI.add(
 			'aui-component',
 			'event-mouseenter',
 			'liferay-portlet-base',
-			'timers'
-		]
+			'timers',
+		],
 	}
 );

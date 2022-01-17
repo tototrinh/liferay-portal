@@ -18,7 +18,7 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
-String backURL = HttpUtil.setParameter(currentURL, renderResponse.getNamespace() + "historyKey", "fields");
+String backURL = HttpUtil.setParameter(currentURL, liferayPortletResponse.getNamespace() + "historyKey", "fields");
 
 KaleoProcess kaleoProcess = (KaleoProcess)request.getAttribute(KaleoFormsWebKeys.KALEO_PROCESS);
 
@@ -79,7 +79,7 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 
 		searchContainer.setTotal(total);
 
-		results = DDMStructureServiceUtil.search(company.getCompanyId(), PortalUtil.getCurrentAndAncestorSiteGroupIds(scopeGroupId), scopeClassNameId, displayTerms.getKeywords(), WorkflowConstants.STATUS_ANY, searchContainer.getStart(), searchContainer.getEnd(), null);
+		results = DDMStructureServiceUtil.search(company.getCompanyId(), PortalUtil.getCurrentAndAncestorSiteGroupIds(scopeGroupId), scopeClassNameId, displayTerms.getKeywords(), WorkflowConstants.STATUS_ANY, searchContainer.getStart(), searchContainer.getEnd(), new StructureModifiedDateComparator(true));
 
 		searchContainer.setResults(results);
 		%>
@@ -99,7 +99,7 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 		</liferay-portlet:renderURL>
 
 		<aui:button-row>
-			<aui:button onClick='<%= "javascript:" + renderResponse.getNamespace() + "editStructure('" + LanguageUtil.format(request, "new-x", LanguageUtil.get(request, "field-set"), false) + "','" + addURL + "');" %>' primary="<%= true %>" value="add-field-set" />
+			<aui:button onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "editStructure('" + LanguageUtil.format(request, "new-x", LanguageUtil.get(request, "field-set"), false) + "','" + addURL + "');" %>' primary="<%= true %>" value="add-field-set" />
 		</aui:button-row>
 	</c:if>
 
@@ -120,13 +120,14 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 			<%
 			JSONArray definitionFieldsJSONArray = DDMUtil.getDDMFormFieldsJSONArray(structure, structure.getDefinition());
 
-			JSONObject definitionJSONObject = JSONFactoryUtil.createJSONObject();
-
-			definitionJSONObject.put("definitionFields", definitionFieldsJSONArray);
-			definitionJSONObject.put("definitionId", structure.getStructureId());
-			definitionJSONObject.put("definitionName", structure.getName(locale));
-
-			availableDefinitionsJSONArray.put(definitionJSONObject);
+			availableDefinitionsJSONArray.put(
+				JSONUtil.put(
+					"definitionFields", definitionFieldsJSONArray
+				).put(
+					"definitionId", structure.getStructureId()
+				).put(
+					"definitionName", structure.getName(locale)
+				));
 			%>
 
 			(<aui:a cssClass="kaleo-process-preview-definition" data-definition-id="<%= structure.getStructureId() %>" href="javascript:;" label="view-fields" />)
@@ -162,7 +163,7 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 <aui:script>
 	Liferay.on(
 		'<portlet:namespace />chooseDefinition',
-		function(event) {
+		(event) => {
 			var A = AUI();
 
 			var ddmStructureId = event.ddmStructureId;
@@ -175,13 +176,13 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 			A.one('#<portlet:namespace />ddmStructureName').val(ddmStructureName);
 
 			var kaleoFormsAdmin = Liferay.component(
-				'<portlet:namespace/>KaleoFormsAdmin'
+				'<portlet:namespace />KaleoFormsAdmin'
 			);
 
 			kaleoFormsAdmin.saveInPortletSession(
 				{
 					ddmStructureId: ddmStructureId,
-					ddmStructureName: ddmStructureName
+					ddmStructureName: ddmStructureName,
 				},
 				event.dialogId
 			);
@@ -191,23 +192,43 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 		['aui-base']
 	);
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />editStructure',
-		function(title, uri) {
-			var A = AUI();
+	<portlet:namespace />editStructure = (title, uri) => {
+		let closeRedirectURL;
+		let redirectOnClose = false;
 
-			var WIN = A.config.win;
+		Liferay.Util.openModal({
+			onClose: () => {
+				if (redirectOnClose) {
+					Liferay.Util.navigate(closeRedirectURL);
+				}
+			},
+			onOpen: ({iframeWindow}) => {
+				const closeRedirectElement = iframeWindow.document.getElementById(
+					'_<%= DDMPortletKeys.DYNAMIC_DATA_MAPPING %>_closeRedirect'
+				);
 
-			Liferay.Util.openWindow({
-				id: A.guid(),
-				refreshWindow: WIN,
-				title: title,
-				uri: uri
-			});
-		},
-		['liferay-util']
-	);
+				if (closeRedirectElement) {
+					closeRedirectURL = closeRedirectElement.value;
+				}
+
+				const saveButton = iframeWindow.document.querySelector(
+					'.btn-primary'
+				);
+
+				if (saveButton) {
+					const onClick = () => {
+						redirectOnClose = true;
+
+						saveButton.removeEventListener('click', onClick);
+					};
+
+					saveButton.addEventListener('click', onClick);
+				}
+			},
+			title: title,
+			url: uri,
+		});
+	};
 </aui:script>
 
 <aui:script use="liferay-kaleo-forms-components">
@@ -216,19 +237,19 @@ JSONArray availableDefinitionsJSONArray = JSONFactoryUtil.createJSONArray();
 		height: 600,
 		namespace: '<portlet:namespace />',
 		on: {
-			choose: function(event) {
+			choose: function (event) {
 				Liferay.fire('<portlet:namespace />chooseDefinition', {
 					ddmStructureId: event.definitionId,
-					name: event.definitionName
+					name: event.definitionName,
 				});
-			}
+			},
 		},
-		width: 700
+		width: 700,
 	});
 
 	A.one('#p_p_id<portlet:namespace />').delegate(
 		'click',
-		function(event) {
+		(event) => {
 			var definitionId = event.target.attr('data-definition-id');
 
 			kaleoDefinitionPreview.select(definitionId);

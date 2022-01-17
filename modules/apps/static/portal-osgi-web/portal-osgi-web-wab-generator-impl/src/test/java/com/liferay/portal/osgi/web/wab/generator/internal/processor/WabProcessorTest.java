@@ -27,18 +27,13 @@ import aQute.lib.filter.Filter;
 
 import com.liferay.portal.kernel.deploy.auto.context.AutoDeploymentContext;
 import com.liferay.portal.kernel.security.xml.SecureXMLFactoryProviderUtil;
-import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
 import com.liferay.portal.security.xml.SecureXMLFactoryProviderImpl;
-import com.liferay.portal.util.FileImpl;
-import com.liferay.portal.util.HttpImpl;
-import com.liferay.portal.util.PropsImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.xml.SAXReaderImpl;
 
 import java.io.File;
@@ -64,6 +59,7 @@ import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -71,18 +67,12 @@ import org.junit.Test;
  */
 public class WabProcessorTest {
 
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@BeforeClass
 	public static void setUpClass() {
-		PropsUtil.setProps(new PropsImpl());
-
-		FileUtil fileUtil = new FileUtil();
-
-		fileUtil.setFile(new FileImpl());
-
-		HttpUtil httpUtil = new HttpUtil();
-
-		httpUtil.setHttp(new HttpImpl());
-
 		SAXReaderUtil saxReaderUtil = new SAXReaderUtil();
 
 		SAXReaderImpl secureSAXReaderImpl = new SAXReaderImpl();
@@ -100,9 +90,7 @@ public class WabProcessorTest {
 		UnsecureSAXReaderUtil unsecureSAXReaderUtil =
 			new UnsecureSAXReaderUtil();
 
-		SAXReaderImpl unsecureSAXReaderImpl = new SAXReaderImpl();
-
-		unsecureSAXReaderUtil.setSAXReader(unsecureSAXReaderImpl);
+		unsecureSAXReaderUtil.setSAXReader(new SAXReaderImpl());
 	}
 
 	@Test
@@ -117,13 +105,13 @@ public class WabProcessorTest {
 			Assert.assertEquals(resources.toString(), 1244, resources.size());
 		}
 
-		Map<String, String[]> parameters = HashMapBuilder.put(
-			"Bundle-Version", new String[] {"7.0.0.8"}
-		).put(
-			"Web-ContextPath", new String[] {"/classic-theme"}
-		).build();
-
-		WabProcessor wabProcessor = new TestWabProcessor(file, parameters);
+		WabProcessor wabProcessor = new TestWabProcessor(
+			file,
+			HashMapBuilder.put(
+				"Bundle-Version", new String[] {"7.0.0.8"}
+			).put(
+				"Web-ContextPath", new String[] {"/classic-theme"}
+			).build());
 
 		File processedFile = wabProcessor.getProcessedFile();
 
@@ -221,10 +209,8 @@ public class WabProcessorTest {
 
 	@Test
 	public void testFatCDIWabOptsOutOfOSGiCDIIntegration() throws Exception {
-		File file = getFile("/jsf.cdi.applicant.portlet.war");
-
 		WabProcessor wabProcessor = new TestWabProcessor(
-			file,
+			getFile("/jsf.cdi.applicant.portlet.war"),
 			Collections.singletonMap(
 				"Web-ContextPath",
 				new String[] {"/jsf-cdi-applicant-portlet"}));
@@ -308,10 +294,8 @@ public class WabProcessorTest {
 
 	@Test
 	public void testSkinnyCDIWabGainsOSGiCDIIntegration() throws Exception {
-		File file = getFile("/PortletV3AnnotatedDemo.war");
-
 		WabProcessor wabProcessor = new TestWabProcessor(
-			file,
+			getFile("/PortletV3AnnotatedDemo.war"),
 			Collections.singletonMap(
 				"Web-ContextPath",
 				new String[] {"/portlet-V3-annotated-demo"}));
@@ -373,14 +357,13 @@ public class WabProcessorTest {
 
 			Parameters requirements = domain.getRequireCapability();
 
-			Map<String, Object> arguments = HashMapBuilder.<String, Object>put(
-				"osgi.extender", "osgi.cdi"
-			).put(
-				"version", new Version(1)
-			).build();
-
 			Map.Entry<String, Attrs> entry = findRequirement(
-				requirements, "osgi.extender", arguments);
+				requirements, "osgi.extender",
+				HashMapBuilder.<String, Object>put(
+					"osgi.extender", "osgi.cdi"
+				).put(
+					"version", new Version(1)
+				).build());
 
 			Assert.assertNotNull(entry);
 
@@ -423,10 +406,8 @@ public class WabProcessorTest {
 
 	@Test
 	public void testThatEmbeddedLibsAreHandledProperly() throws Exception {
-		File file = getFile("/tck-V3URLTests.wab.war");
-
 		WabProcessor wabProcessor = new TestWabProcessor(
-			file,
+			getFile("/tck-V3URLTests.wab.war"),
 			Collections.singletonMap(
 				"Web-ContextPath",
 				new String[] {"/portlet-V3-annotated-demo"}));
@@ -469,14 +450,13 @@ public class WabProcessorTest {
 
 			Parameters requirements = domain.getRequireCapability();
 
-			Map<String, Object> arguments = HashMapBuilder.<String, Object>put(
-				"osgi.extender", "osgi.cdi"
-			).put(
-				"version", new Version(1)
-			).build();
-
 			Map.Entry<String, Attrs> entry = findRequirement(
-				requirements, "osgi.extender", arguments);
+				requirements, "osgi.extender",
+				HashMapBuilder.<String, Object>put(
+					"osgi.extender", "osgi.cdi"
+				).put(
+					"version", new Version(1)
+				).build());
 
 			Assert.assertNotNull(entry);
 

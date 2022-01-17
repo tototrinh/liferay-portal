@@ -15,8 +15,6 @@
 package com.liferay.document.library.web.internal.portlet.action;
 
 import com.liferay.document.library.constants.DLPortletKeys;
-import com.liferay.document.library.web.internal.constants.DLWebKeys;
-import com.liferay.document.library.web.internal.display.context.DLEditFileEntryTypeDisplayContext;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStorageLinkLocalService;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
@@ -47,7 +45,7 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY,
 		"javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY_ADMIN,
 		"javax.portlet.name=" + DLPortletKeys.MEDIA_GALLERY_DISPLAY,
-		"mvc.command.name=/document_library/ddm/edit_ddm_structure"
+		"mvc.command.name=/document_library/edit_ddm_structure"
 	},
 	service = MVCRenderCommand.class
 )
@@ -60,16 +58,8 @@ public class EditDDMStructureMVCRenderCommand implements MVCRenderCommand {
 
 		try {
 			renderRequest.setAttribute(
-				DLWebKeys.
-					DOCUMENT_LIBRARY_EDIT_EDIT_FILE_ENTRY_TYPE_DISPLAY_CONTEXT,
-				new DLEditFileEntryTypeDisplayContext(
-					_ddm, _ddmStorageLinkLocalService,
-					_ddmStructureLocalService, _language,
-					_portal.getLiferayPortletRequest(renderRequest)));
-
-			renderRequest.setAttribute(
 				WebKeys.DOCUMENT_LIBRARY_DYNAMIC_DATA_MAPPING_STRUCTURE,
-				_getDDMStructure(renderRequest));
+				_fetchDDMStructure(renderRequest));
 		}
 		catch (PortalException portalException) {
 			SessionErrors.add(renderRequest, portalException.getClass());
@@ -80,7 +70,7 @@ public class EditDDMStructureMVCRenderCommand implements MVCRenderCommand {
 		return "/document_library/ddm/edit_ddm_structure.jsp";
 	}
 
-	private DDMStructure _getDDMStructure(RenderRequest renderRequest)
+	private DDMStructure _fetchDDMStructure(RenderRequest renderRequest)
 		throws PortalException {
 
 		DDMStructure ddmStructure = _ddmStructureLocalService.fetchDDMStructure(

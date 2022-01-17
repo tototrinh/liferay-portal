@@ -23,10 +23,10 @@ import {
 	TODAY,
 	WEEKS,
 	YEARS,
-	YESTERDAY
+	YESTERDAY,
 } from './chartConstants.es';
 
-export const formatMonthDate = (date, timeRange) => {
+export function formatMonthDate(date, timeRange) {
 	const currentDate = moment.utc(date);
 	const dateEnd = moment.utc(timeRange.dateEnd);
 	const dateStart = moment.utc(timeRange.dateStart);
@@ -48,9 +48,9 @@ export const formatMonthDate = (date, timeRange) => {
 	return `${firstDayOfMonth.format(
 		Liferay.Language.get('mmm-dd')
 	)}-${lastDayOfMonth.format(Liferay.Language.get('dd-yyyy'))}`;
-};
+}
 
-export const formatWeekDate = (date, timeRange) => {
+export function formatWeekDate(date, timeRange) {
 	const currentDate = moment.utc(date);
 	const dateEnd = moment.utc(timeRange.dateEnd);
 	const dateStart = moment.utc(timeRange.dateStart);
@@ -79,9 +79,9 @@ export const formatWeekDate = (date, timeRange) => {
 	return `${firstDayOfWeek.format(
 		Liferay.Language.get('mmm-dd')
 	)}-${lastDayOfWeek.format(Liferay.Language.get('mmm-dd'))}`;
-};
+}
 
-export const formatWeekDateWithYear = (date, timeRange) => {
+export function formatWeekDateWithYear(date, timeRange) {
 	const currentDate = moment.utc(date);
 	const dateEnd = moment.utc(timeRange.dateEnd);
 	const dateStart = moment.utc(timeRange.dateStart);
@@ -118,9 +118,33 @@ export const formatWeekDateWithYear = (date, timeRange) => {
 	return `${firstDayOfWeek.format(
 		Liferay.Language.get('mmm-dd')
 	)} - ${lastDayOfWeek.format(Liferay.Language.get('dd-yyyy'))}`;
-};
+}
 
-export const formatXAxisDate = (date, isAmPm, timeRangeKey, timeRange) => {
+export function getRangeKey(timeRange) {
+	const endDate = moment.utc(timeRange.dateEnd);
+	const startDate = moment.utc(timeRange.dateStart);
+
+	const diff = parseInt(moment.duration(endDate.diff(startDate)).asDays());
+
+	const diffList = [
+		TODAY,
+		YESTERDAY,
+		LAST_7_DAYS,
+		LAST_30_DAYS,
+		LAST_90_DAYS,
+		LAST_180_DAYS,
+		LAST_YEAR,
+	];
+
+	const diffItem = diffList.find((key) => key >= diff);
+	if (typeof diffItem !== 'undefined') {
+		return diffItem;
+	}
+
+	return LAST_YEAR;
+}
+
+export function formatXAxisDate(date, isAmPm, timeRangeKey, timeRange) {
 	const currentDate = moment.utc(date);
 	const rangeUnit = getRangeKey(timeRange);
 
@@ -150,9 +174,9 @@ export const formatXAxisDate = (date, isAmPm, timeRangeKey, timeRange) => {
 	}
 
 	return currentDate.format(Liferay.Language.get('mmm-dd'));
-};
+}
 
-export const formatYearDate = (date, timeRange) => {
+export function formatYearDate(date, timeRange) {
 	const currentDate = moment.utc(date);
 	const dateEnd = moment.utc(timeRange.dateEnd);
 	const dateStart = moment.utc(timeRange.dateStart);
@@ -174,9 +198,9 @@ export const formatYearDate = (date, timeRange) => {
 	return `${firstDayOfYear.format(
 		Liferay.Language.get('mmm-dd')
 	)}-${lastDayOfYear.format(Liferay.Language.get('mmm-dd-yyyy'))}`;
-};
+}
 
-export const getAxisMeasures = value => {
+export function getAxisMeasures(value) {
 	const numChars = Math.floor(value).toString().length;
 	const decOrder = Math.pow(10, numChars - 1);
 	let maxValue = decOrder * Math.floor(value / decOrder) + decOrder;
@@ -212,44 +236,21 @@ export const getAxisMeasures = value => {
 		intervalCount,
 		intervalValue,
 		intervals,
-		maxValue
+		maxValue,
 	};
-};
+}
 
-export const getAxisMeasuresFromData = data =>
-	getAxisMeasures(
+export function getAxisMeasuresFromData(data) {
+	return getAxisMeasures(
 		Math.max(
 			...data
 				.reduce((prev, next) => prev.concat(next), [])
-				.filter(value => typeof value === 'number')
+				.filter((value) => typeof value === 'number')
 		)
 	);
+}
 
-export const getRangeKey = timeRange => {
-	const endDate = moment.utc(timeRange.dateEnd);
-	const startDate = moment.utc(timeRange.dateStart);
-
-	const diff = parseInt(moment.duration(endDate.diff(startDate)).asDays());
-
-	const diffList = [
-		TODAY,
-		YESTERDAY,
-		LAST_7_DAYS,
-		LAST_30_DAYS,
-		LAST_90_DAYS,
-		LAST_180_DAYS,
-		LAST_YEAR
-	];
-
-	const diffItem = diffList.find(key => key >= diff);
-	if (typeof diffItem !== 'undefined') {
-		return diffItem;
-	}
-
-	return LAST_YEAR;
-};
-
-export const getXAxisIntervals = (timeRange, keys, type) => {
+export function getXAxisIntervals(timeRange, keys, type) {
 	const endDate = moment.utc(timeRange.dateEnd);
 	const lengthKeys = keys.length;
 	const secondDate = moment.utc(keys[1]);
@@ -274,14 +275,14 @@ export const getXAxisIntervals = (timeRange, keys, type) => {
 			return {
 				offset: 4,
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
 		[YESTERDAY]: () => {
 			return {
 				offset: 6,
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
 		// eslint-disable-next-line sort-keys
@@ -289,69 +290,71 @@ export const getXAxisIntervals = (timeRange, keys, type) => {
 			return {
 				offset: 1,
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
-		[LAST_30_DAYS]: type => {
+		[LAST_30_DAYS]: (type) => {
 			if (type === DAYS) {
 				return {
 					offset: 6,
 					padLeft: 0,
-					padRight: diffRightDays < 2 ? diffRightDays + 2 : 0
+					padRight: diffRightDays < 2 ? diffRightDays + 2 : 0,
 				};
 			}
 
 			return {
 				offset: 1,
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
-		[LAST_90_DAYS]: type => {
+		[LAST_90_DAYS]: (type) => {
 			if (type === DAYS) {
 				return {
 					offset: 11,
 					padLeft: 0,
-					padRight: 3
+					padRight: 3,
 				};
 			}
 			else if (type === WEEKS) {
+				const pad = diffLeftDays < 7 ? 3 : 0;
+
 				return {
 					offset: 2,
-					padLeft: 0,
-					padRight: 0
+					padLeft: pad,
+					padRight: pad,
 				};
 			}
 
 			return {
 				offset: 1,
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
-		[LAST_180_DAYS]: type => {
+		[LAST_180_DAYS]: (type) => {
 			if (type === WEEKS) {
 				return {
 					offset: 4,
 					padLeft: 0,
-					padRight: 3
+					padRight: 3,
 				};
 			}
 
 			return {
 				offset: 1,
 				padLeft: diffLeftDays < 14 ? 1 : 0,
-				padRight: 0
+				padRight: 0,
 			};
 		},
-		[LAST_YEAR]: type => {
+		[LAST_YEAR]: (type) => {
 			if (type === WEEKS) {
 				const lengthWeek = lengthKeys === 52 ? 5 : 6;
 
 				return {
 					offset: parseInt(lengthKeys / lengthWeek),
 					padLeft: 0,
-					padRight: 6
+					padRight: 6,
 				};
 			}
 			else if (type === YEARS) {
@@ -362,16 +365,16 @@ export const getXAxisIntervals = (timeRange, keys, type) => {
 						diffLeftMonths < 2
 							? 1
 							: 0,
-					padRight: 0
+					padRight: 0,
 				};
 			}
 
 			return {
 				offset: parseInt(lengthKeys / 5),
 				padLeft: 0,
-				padRight: 0
+				padRight: 0,
 			};
-		}
+		},
 	};
 	const diffMapKey = getRangeKey(timeRange);
 
@@ -385,4 +388,4 @@ export const getXAxisIntervals = (timeRange, keys, type) => {
 				index > diffIndex.padLeft &&
 				index < lengthKeys - diffIndex.padRight + 1)
 	);
-};
+}

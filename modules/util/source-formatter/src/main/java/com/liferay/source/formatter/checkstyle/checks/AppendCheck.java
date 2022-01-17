@@ -35,8 +35,6 @@ public class AppendCheck extends BaseStringConcatenationCheck {
 		List<DetailAST> methodCallDetailASTList = getMethodCalls(
 			detailAST, "append");
 
-		boolean previousParameterIsLiteralString = false;
-
 		for (int i = 0; i < methodCallDetailASTList.size(); i++) {
 			DetailAST methodCallDetailAST = methodCallDetailASTList.get(i);
 
@@ -49,7 +47,7 @@ public class AppendCheck extends BaseStringConcatenationCheck {
 				continue;
 			}
 
-			DetailAST parameterDetailAST = _getParameterDetailAST(
+			DetailAST parameterDetailAST = getParameterDetailAST(
 				methodCallDetailAST);
 
 			if (parameterDetailAST == null) {
@@ -58,14 +56,45 @@ public class AppendCheck extends BaseStringConcatenationCheck {
 
 			_checkPlusOperator(parameterDetailAST);
 
-			if (parameterDetailAST.getType() != TokenTypes.STRING_LITERAL) {
-				previousParameterIsLiteralString = false;
+			if ((parameterDetailAST.getType() != TokenTypes.STRING_LITERAL) ||
+				_containsMethodCall(
+					detailAST, variableName, "setIndex", "setStringAt")) {
 
 				continue;
 			}
-			else if (!previousParameterIsLiteralString) {
-				previousParameterIsLiteralString = true;
 
+			if (i < (methodCallDetailASTList.size() - 1)) {
+				DetailAST nextMethodCallDetailAST = methodCallDetailASTList.get(
+					i + 1);
+
+				if (!variableName.equals(
+						getVariableName(nextMethodCallDetailAST)) ||
+					(getEndLineNumber(methodCallDetailAST) !=
+						(getStartLineNumber(nextMethodCallDetailAST) - 1))) {
+
+					continue;
+				}
+
+				DetailAST nextParameterDetailAST = getParameterDetailAST(
+					nextMethodCallDetailAST);
+
+				if (nextParameterDetailAST != null) {
+					if (nextParameterDetailAST.getType() ==
+							TokenTypes.STRING_LITERAL) {
+
+						_checkLiteralStrings(
+							methodCallDetailAST, nextMethodCallDetailAST,
+							parameterDetailAST.getText(),
+							nextParameterDetailAST.getText());
+					}
+					else {
+						checkCombineOperand(
+							parameterDetailAST, nextParameterDetailAST);
+					}
+				}
+			}
+
+			if (i == 0) {
 				continue;
 			}
 
@@ -73,94 +102,82 @@ public class AppendCheck extends BaseStringConcatenationCheck {
 				i - 1);
 
 			if (!variableName.equals(
-					getVariableName(previousMethodCallDetailAST))) {
+					getVariableName(previousMethodCallDetailAST)) ||
+				(getEndLineNumber(previousMethodCallDetailAST) !=
+					(getStartLineNumber(methodCallDetailAST) - 1))) {
 
 				continue;
 			}
 
-			if (_containsMethodCall(
-					detailAST, variableName, "setIndex", "setStringAt")) {
-
-				continue;
-			}
-
-			DetailAST previousParameterDetailAST = _getParameterDetailAST(
+			DetailAST previousParameterDetailAST = getParameterDetailAST(
 				previousMethodCallDetailAST);
 
 			if ((previousParameterDetailAST != null) &&
-				(previousParameterDetailAST.getType() ==
+				(previousParameterDetailAST.getType() !=
 					TokenTypes.STRING_LITERAL)) {
 
-				_checkLiteralStrings(
-					methodCallDetailAST, previousMethodCallDetailAST,
-					parameterDetailAST.getText(),
-					previousParameterDetailAST.getText());
+				checkCombineOperand(
+					parameterDetailAST, previousParameterDetailAST);
 			}
 		}
 	}
 
 	private void _checkLiteralStrings(
-		DetailAST methodCallDetailAST, DetailAST previousMethodCallDetailAST,
-		String literalStringValue, String previousLiteralStringValue) {
-
-		if (getEndLineNumber(previousMethodCallDetailAST) !=
-				(methodCallDetailAST.getLineNo() - 1)) {
-
-			return;
-		}
-
-		previousLiteralStringValue = previousLiteralStringValue.substring(
-			1, previousLiteralStringValue.length() - 1);
-
-		if (previousLiteralStringValue.endsWith("\\n")) {
-			return;
-		}
+		DetailAST methodCallDetailAST, DetailAST nextMethodCallDetailAST,
+		String literalStringValue, String nextLiteralStringValue) {
 
 		literalStringValue = literalStringValue.substring(
 			1, literalStringValue.length() - 1);
 
+		if (literalStringValue.endsWith("\\n")) {
+			return;
+		}
+
+		nextLiteralStringValue = nextLiteralStringValue.substring(
+			1, nextLiteralStringValue.length() - 1);
+
 		checkLiteralStringStartAndEndCharacter(
-			previousLiteralStringValue, literalStringValue,
-			previousMethodCallDetailAST.getLineNo());
+			literalStringValue, nextLiteralStringValue,
+			methodCallDetailAST.getLineNo());
 
-		if (_hasIncorrectLineBreaks(methodCallDetailAST) |
-			_hasIncorrectLineBreaks(previousMethodCallDetailAST)) {
-
-			return;
-		}
-
-		if (literalStringValue.startsWith("<") ||
+		if ((_hasIncorrectLineBreaks(methodCallDetailAST) |
+			 _hasIncorrectLineBreaks(nextMethodCallDetailAST)) ||
+			literalStringValue.startsWith("<") ||
 			literalStringValue.endsWith(">") ||
-			previousLiteralStringValue.startsWith("<") ||
-			previousLiteralStringValue.endsWith(">")) {
+			nextLiteralStringValue.startsWith("<") ||
+			nextLiteralStringValue.endsWith(">")) {
 
 			return;
 		}
 
-		String previousLine = getLine(
-			previousMethodCallDetailAST.getLineNo() - 1);
+		String line = getLine(methodCallDetailAST.getLineNo() - 1);
 
-		int previousLineLength = CommonUtil.lengthExpandedTabs(
-			previousLine, previousLine.length(), getTabWidth());
+		int lineLength = CommonUtil.lengthExpandedTabs(
+			line, line.length(), getTabWidth());
 
-		if ((previousLineLength + literalStringValue.length()) <=
+		if ((lineLength + nextLiteralStringValue.length()) <=
 				getMaxLineLength()) {
 
 			log(
-				methodCallDetailAST, MSG_COMBINE_LITERAL_STRINGS,
-				previousLiteralStringValue, literalStringValue);
+				nextMethodCallDetailAST, MSG_COMBINE_LITERAL_STRINGS,
+				literalStringValue, nextLiteralStringValue);
 		}
 		else {
 			int pos = getStringBreakPos(
-				previousLiteralStringValue, literalStringValue,
-				getMaxLineLength() - previousLineLength);
+				literalStringValue, nextLiteralStringValue,
+				getMaxLineLength() - lineLength);
 
 			if (pos != -1) {
 				log(
-					methodCallDetailAST, MSG_MOVE_LITERAL_STRING,
-					literalStringValue.substring(0, pos + 1));
+					nextMethodCallDetailAST, MSG_MOVE_LITERAL_STRING,
+					nextLiteralStringValue.substring(0, pos + 1), "previous");
 			}
 		}
+
+		checkLiteralStringBreaks(
+			nextMethodCallDetailAST, line,
+			getLine(methodCallDetailAST.getLineNo()), literalStringValue,
+			nextLiteralStringValue);
 	}
 
 	private void _checkPlusOperator(DetailAST parameterDetailAST) {
@@ -189,20 +206,6 @@ public class AppendCheck extends BaseStringConcatenationCheck {
 		}
 
 		return false;
-	}
-
-	private DetailAST _getParameterDetailAST(DetailAST methodCallDetailAST) {
-		DetailAST elistDetailAST = methodCallDetailAST.findFirstToken(
-			TokenTypes.ELIST);
-
-		DetailAST exprDetailAST = elistDetailAST.findFirstToken(
-			TokenTypes.EXPR);
-
-		if (exprDetailAST == null) {
-			return null;
-		}
-
-		return exprDetailAST.getFirstChild();
 	}
 
 	private boolean _hasIncorrectLineBreaks(DetailAST methodCallDetailAST) {

@@ -29,9 +29,7 @@
 		<requiredProperty key="author">
 		</requiredProperty>
 		<requiredProperty key="liferayVersion">
-		</requiredProperty>
-		<requiredProperty key="projectType">
-			<defaultValue>standalone</defaultValue>
+			<validationRegex>^[0-7]\.\d+\.\d+.*</validationRegex>
 		</requiredProperty>
 	</requiredProperties>
 </archetype-descriptor>

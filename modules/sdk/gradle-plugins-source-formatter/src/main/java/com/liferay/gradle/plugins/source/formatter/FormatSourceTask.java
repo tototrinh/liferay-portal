@@ -14,7 +14,6 @@
 
 package com.liferay.gradle.plugins.source.formatter;
 
-import com.liferay.gradle.util.FileUtil;
 import com.liferay.gradle.util.GradleUtil;
 import com.liferay.source.formatter.SourceFormatterArgs;
 
@@ -27,6 +26,7 @@ import java.util.List;
 
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.util.CollectionUtils;
 
@@ -34,6 +34,7 @@ import org.gradle.util.CollectionUtils;
  * @author Raymond Augé
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class FormatSourceTask extends JavaExec {
 
 	public FormatSourceTask() {
@@ -54,6 +55,14 @@ public class FormatSourceTask extends JavaExec {
 
 	public String getBaseDirName() {
 		return _sourceFormatterArgs.getBaseDirName();
+	}
+
+	public List<String> getCheckCategoryNames() {
+		return _sourceFormatterArgs.getCheckCategoryNames();
+	}
+
+	public List<String> getCheckNames() {
+		return _sourceFormatterArgs.getCheckNames();
 	}
 
 	public List<String> getFileExtensions() {
@@ -92,6 +101,14 @@ public class FormatSourceTask extends JavaExec {
 		return _sourceFormatterArgs.isAutoFix();
 	}
 
+	public boolean isFailOnAutoFix() {
+		return _sourceFormatterArgs.isFailOnAutoFix();
+	}
+
+	public boolean isFailOnHasWarning() {
+		return _sourceFormatterArgs.isFailOnHasWarning();
+	}
+
 	public boolean isFormatCurrentBranch() {
 		return _sourceFormatterArgs.isFormatCurrentBranch();
 	}
@@ -124,8 +141,8 @@ public class FormatSourceTask extends JavaExec {
 		return _sourceFormatterArgs.isShowStatusUpdates();
 	}
 
-	public boolean isThrowException() {
-		return _sourceFormatterArgs.isThrowException();
+	public boolean isValidateCommitMessages() {
+		return _sourceFormatterArgs.isValidateCommitMessages();
 	}
 
 	public void setAutoFix(boolean autoFix) {
@@ -134,6 +151,32 @@ public class FormatSourceTask extends JavaExec {
 
 	public void setBaseDirName(String baseDirName) {
 		_sourceFormatterArgs.setBaseDirName(baseDirName);
+	}
+
+	public void setCheckCategoryNames(Iterable<String> checkCategoryNames) {
+		_sourceFormatterArgs.setCheckCategoryNames(
+			CollectionUtils.toList(checkCategoryNames));
+	}
+
+	public void setCheckCategoryNames(String... checkCategoryNames) {
+		_sourceFormatterArgs.setCheckCategoryNames(
+			CollectionUtils.toList(checkCategoryNames));
+	}
+
+	public void setCheckNames(Iterable<String> checkNames) {
+		_sourceFormatterArgs.setCheckNames(CollectionUtils.toList(checkNames));
+	}
+
+	public void setCheckNames(String... checkNames) {
+		_sourceFormatterArgs.setCheckNames(CollectionUtils.toList(checkNames));
+	}
+
+	public void setFailOnAutoFix(boolean failOnAutoFix) {
+		_sourceFormatterArgs.setFailOnAutoFix(failOnAutoFix);
+	}
+
+	public void setFailOnHasWarning(boolean failOnHasWarning) {
+		_sourceFormatterArgs.setFailOnHasWarning(failOnHasWarning);
 	}
 
 	public void setFileExtensions(Iterable<String> fileExtensions) {
@@ -199,8 +242,8 @@ public class FormatSourceTask extends JavaExec {
 		_sourceFormatterArgs.setShowStatusUpdates(showStatusUpdates);
 	}
 
-	public void setThrowException(boolean throwException) {
-		_sourceFormatterArgs.setThrowException(throwException);
+	public void setValidateCommitMessages(boolean validateCommitMessages) {
+		_sourceFormatterArgs.setValidateCommitMessages(validateCommitMessages);
 	}
 
 	private List<String> _getCompleteArgs() {
@@ -218,26 +261,31 @@ public class FormatSourceTask extends JavaExec {
 		args.add("show.status.updates=" + isShowStatusUpdates());
 		args.add("source.auto.fix=" + isAutoFix());
 		args.add(
+			"source.check.category.names=" +
+				CollectionUtils.join(",", getCheckCategoryNames()));
+		args.add(
+			"source.check.names=" + CollectionUtils.join(",", getCheckNames()));
+		args.add("source.fail.on.auto.fix=" + isFailOnAutoFix());
+		args.add("source.fail.on.has.warning=" + isFailOnHasWarning());
+		args.add(
 			"source.file.extensions=" +
 				CollectionUtils.join(",", getFileExtensions()));
 		args.add("source.print.errors=" + isPrintErrors());
-		args.add("source.throw.exception=" + isThrowException());
+		args.add("validate.commit.messages=" + isValidateCommitMessages());
 
 		FileCollection fileCollection = getFiles();
 
 		if (fileCollection.isEmpty()) {
-			args.add(
-				"source.base.dir=" +
-					_relativizeDir(getBaseDir(), getWorkingDir()));
+			args.add("source.base.dir=" + _normalize(getBaseDir()));
 		}
 		else {
-			args.add("source.files=" + _merge(fileCollection, getWorkingDir()));
+			args.add("source.files=" + _merge(fileCollection));
 		}
 
 		return args;
 	}
 
-	private String _merge(Iterable<File> files, File startFile) {
+	private String _merge(Iterable<File> files) {
 		StringBuilder sb = new StringBuilder();
 
 		int i = 0;
@@ -247,7 +295,7 @@ public class FormatSourceTask extends JavaExec {
 				sb.append(',');
 			}
 
-			sb.append(FileUtil.relativize(file, startFile));
+			sb.append(_normalize(file));
 
 			i++;
 		}
@@ -255,20 +303,18 @@ public class FormatSourceTask extends JavaExec {
 		return sb.toString();
 	}
 
-	private String _relativizeDir(File dir, File startDir) {
-		String relativePath = FileUtil.relativize(dir, startDir);
+	private String _normalize(File file) {
+		String pathString = String.valueOf(file.toPath());
 
-		if (!relativePath.isEmpty()) {
-			if (File.separatorChar != '/') {
-				relativePath = relativePath.replace(File.separatorChar, '/');
-			}
-
-			if (relativePath.charAt(relativePath.length() - 1) != '/') {
-				relativePath += '/';
-			}
+		if (File.separatorChar != '/') {
+			pathString = pathString.replace(File.separatorChar, '/');
 		}
 
-		return relativePath;
+		if (pathString.charAt(pathString.length() - 1) != '/') {
+			pathString += '/';
+		}
+
+		return pathString;
 	}
 
 	private final SourceFormatterArgs _sourceFormatterArgs =

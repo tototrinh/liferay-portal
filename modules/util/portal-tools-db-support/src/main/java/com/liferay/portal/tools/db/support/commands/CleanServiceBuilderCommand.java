@@ -29,7 +29,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.HashSet;
@@ -128,7 +127,7 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 		_deleteServiceComponentRows(connection, namespace);
 	}
 
-	private void _deleteReleaseRows(Connection connection) throws SQLException {
+	private void _deleteReleaseRows(Connection connection) throws Exception {
 		String sql = "delete from Release_ where servletContextName = ?";
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
@@ -142,7 +141,7 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 
 	private void _deleteServiceComponentRows(
 			Connection connection, String namespace)
-		throws SQLException {
+		throws Exception {
 
 		String sql = "delete from ServiceComponent where buildNamespace = ?";
 
@@ -156,23 +155,23 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 	}
 
 	private void _dropTable(Connection connection, String tableName)
-		throws SQLException {
+		throws Exception {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 		try (Statement statement = connection.createStatement();
-			ResultSet rs1 = databaseMetaData.getTables(
+			ResultSet resultSet1 = databaseMetaData.getTables(
 				null, null, tableName, new String[] {"TABLE"})) {
 
-			if (rs1.next()) {
+			if (resultSet1.next()) {
 				statement.executeUpdate("DROP TABLE " + tableName);
 			}
 			else {
-				try (ResultSet rs2 = databaseMetaData.getTables(
+				try (ResultSet resultSet2 = databaseMetaData.getTables(
 						null, null, tableName.toUpperCase(),
 						new String[] {"TABLE"})) {
 
-					if (rs2.next()) {
+					if (resultSet2.next()) {
 						statement.executeUpdate("DROP TABLE " + tableName);
 					}
 				}

@@ -17,12 +17,17 @@ package com.liferay.depot.web.internal.portlet.action;
 import com.liferay.depot.exception.DepotEntryNameException;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryService;
+import com.liferay.depot.web.internal.constants.DepotEntryConstants;
 import com.liferay.depot.web.internal.constants.DepotPortletKeys;
 import com.liferay.depot.web.internal.util.DepotEntryURLUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.DuplicateGroupException;
 import com.liferay.portal.kernel.exception.GroupKeyException;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
@@ -41,7 +46,6 @@ import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -52,7 +56,7 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	property = {
 		"javax.portlet.name=" + DepotPortletKeys.DEPOT_ADMIN,
-		"mvc.command.name=/depot_entry/add"
+		"mvc.command.name=/depot/add_depot_entry"
 	},
 	service = MVCActionCommand.class
 )
@@ -75,55 +79,102 @@ public class AddDepotEntryMVCActionCommand extends BaseMVCActionCommand {
 			LocalizationUtil.getLocalizationMap(actionRequest, "description");
 
 		try {
-			DepotEntry depotEntry = _depotEntryService.addDepotEntry(
-				nameMap, descriptionMap,
-				ServiceContextFactory.getInstance(
-					DepotEntry.class.getName(), actionRequest));
-
-			PortletURL editDepotURL =
-				DepotEntryURLUtil.getEditDepotEntryPortletURL(
-					depotEntry, ParamUtil.getString(actionRequest, "redirect"),
-					_portal.getLiferayPortletRequest(actionRequest));
-
 			MultiSessionMessages.add(
 				actionRequest,
 				DepotPortletKeys.DEPOT_ADMIN + "requestProcessed");
 
 			JSONPortletResponseUtil.writeJSON(
 				actionRequest, actionResponse,
-				JSONUtil.put("redirectURL", editDepotURL.toString()));
+				JSONUtil.put(
+					"redirectURL",
+					() -> {
+						DepotEntry depotEntry =
+							_depotEntryService.addDepotEntry(
+								nameMap, descriptionMap,
+								ServiceContextFactory.getInstance(
+									DepotEntry.class.getName(), actionRequest));
+
+						return String.valueOf(
+							DepotEntryURLUtil.getEditDepotEntryPortletURL(
+								depotEntry,
+								ParamUtil.getString(actionRequest, "redirect"),
+								_portal.getLiferayPortletRequest(
+									actionRequest)));
+					}));
 		}
 		catch (Exception exception) {
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)actionRequest.getAttribute(WebKeys.THEME_DISPLAY);
-
 			JSONPortletResponseUtil.writeJSON(
 				actionRequest, actionResponse,
 				JSONUtil.put(
-					"error", _getErrorMessage(exception, themeDisplay)));
+					"error",
+					_getErrorMessage(
+						(ThemeDisplay)actionRequest.getAttribute(
+							WebKeys.THEME_DISPLAY),
+						exception.getCause())));
 		}
 	}
 
 	private String _getErrorMessage(
-		Exception exception, ThemeDisplay themeDisplay) {
+		ThemeDisplay themeDisplay, Throwable throwable) {
 
-		if (exception instanceof DepotEntryNameException) {
+		if (throwable instanceof DepotEntryNameException) {
 			return LanguageUtil.get(
 				themeDisplay.getRequest(), "please-enter-a-name");
 		}
 
-		if (exception instanceof DuplicateGroupException) {
+		if (throwable instanceof DuplicateGroupException) {
 			return LanguageUtil.get(
 				themeDisplay.getRequest(), "please-enter-a-unique-name");
 		}
 
-		if (exception instanceof GroupKeyException) {
-			return LanguageUtil.get(
-				themeDisplay.getRequest(), "please-enter-a-valid-name");
+		if (throwable instanceof GroupKeyException) {
+			return _handleGroupKeyException(themeDisplay);
 		}
 
 		return LanguageUtil.get(
 			themeDisplay.getRequest(), "an-unexpected-error-occurred");
+	}
+
+	private String _handleGroupKeyException(ThemeDisplay themeDisplay) {
+		StringBundler sb = new StringBundler(5);
+
+		sb.append(
+			LanguageUtil.format(
+				themeDisplay.getRequest(),
+				"the-x-cannot-be-x-or-a-reserved-word-such-as-x",
+				new String[] {
+					DepotEntryConstants.NAME_LABEL,
+					DepotEntryConstants.getNameGeneralRestrictions(
+						themeDisplay.getLocale()),
+					DepotEntryConstants.NAME_RESERVED_WORDS
+				}));
+
+		sb.append(StringPool.SPACE);
+
+		sb.append(
+			LanguageUtil.format(
+				themeDisplay.getRequest(),
+				"the-x-cannot-contain-the-following-invalid-characters-x",
+				new String[] {
+					DepotEntryConstants.NAME_LABEL,
+					DepotEntryConstants.NAME_INVALID_CHARACTERS
+				}));
+
+		sb.append(StringPool.SPACE);
+
+		int groupKeyMaxLength = ModelHintsUtil.getMaxLength(
+			Group.class.getName(), "groupKey");
+
+		sb.append(
+			LanguageUtil.format(
+				themeDisplay.getRequest(),
+				"the-x-cannot-contain-more-than-x-characters",
+				new String[] {
+					DepotEntryConstants.NAME_LABEL,
+					String.valueOf(groupKeyMaxLength)
+				}));
+
+		return sb.toString();
 	}
 
 	@Reference

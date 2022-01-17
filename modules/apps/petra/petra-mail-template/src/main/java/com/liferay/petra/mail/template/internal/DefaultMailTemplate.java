@@ -16,7 +16,7 @@ package com.liferay.petra.mail.template.internal;
 
 import com.liferay.mail.kernel.template.MailTemplate;
 import com.liferay.mail.kernel.template.MailTemplateContext;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.util.EscapableLocalizableFunction;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -53,7 +53,7 @@ public class DefaultMailTemplate implements MailTemplate {
 
 			EscapableLocalizableFunction value = replacement.getValue();
 
-			final String valueString;
+			String valueString;
 
 			if (_escapeHtml) {
 				valueString = value.getEscapedValue(locale);

@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.htmlparser.jericho.Renderer;
 import net.htmlparser.jericho.Source;
-import net.htmlparser.jericho.TextExtractor;
 
 /**
  * Provides the implementation of the HTML utility interface for escaping,
@@ -506,6 +504,8 @@ public class HtmlImpl implements Html {
 			return StringPool.BLANK;
 		}
 
+		link = StringUtil.trim(link);
+
 		if (link.indexOf(StringPool.COLON) == 10) {
 			String protocol = StringUtil.toLowerCase(link.substring(0, 10));
 
@@ -535,7 +535,7 @@ public class HtmlImpl implements Html {
 			return xPath;
 		}
 
-		StringBuilder sb = new StringBuilder(xPath.length());
+		StringBundler sb = new StringBundler(xPath.length());
 
 		for (int i = 0; i < xPath.length(); i++) {
 			char c = xPath.charAt(i);
@@ -569,26 +569,17 @@ public class HtmlImpl implements Html {
 		if (hasQuote && hasApostrophe) {
 			String[] parts = xPathAttribute.split(StringPool.APOSTROPHE);
 
-			return "concat('".concat(
-				StringUtil.merge(parts, "', \"'\", '")
-			).concat(
-				"')"
-			);
+			return StringBundler.concat(
+				"concat('", StringUtil.merge(parts, "', \"'\", '"), "')");
 		}
 
 		if (hasQuote) {
-			return StringPool.APOSTROPHE.concat(
-				xPathAttribute
-			).concat(
-				StringPool.APOSTROPHE
-			);
+			return StringBundler.concat(
+				StringPool.APOSTROPHE, xPathAttribute, StringPool.APOSTROPHE);
 		}
 
-		return StringPool.QUOTE.concat(
-			xPathAttribute
-		).concat(
-			StringPool.QUOTE
-		);
+		return StringBundler.concat(
+			StringPool.QUOTE, xPathAttribute, StringPool.QUOTE);
 	}
 
 	/**
@@ -612,9 +603,7 @@ public class HtmlImpl implements Html {
 
 		Source source = new Source(html);
 
-		TextExtractor textExtractor = source.getTextExtractor();
-
-		return textExtractor.toString();
+		return String.valueOf(source.getTextExtractor());
 	}
 
 	@Override
@@ -698,9 +687,7 @@ public class HtmlImpl implements Html {
 
 		Source source = new Source(html);
 
-		Renderer renderer = source.getRenderer();
-
-		return renderer.toString();
+		return String.valueOf(source.getRenderer());
 	}
 
 	/**
@@ -763,7 +750,7 @@ public class HtmlImpl implements Html {
 
 		text = stripComments(text);
 
-		StringBuilder sb = new StringBuilder(text.length());
+		StringBundler sb = new StringBundler(text.length());
 
 		int x = 0;
 		int y = text.indexOf("<");
@@ -773,7 +760,10 @@ public class HtmlImpl implements Html {
 
 			// Look for text enclosed by <abc></abc>
 
-			if (isTag(_TAG_SCRIPT, text, y + 1)) {
+			if (isTag(_TAG_NOSCRIPT, text, y + 1)) {
+				y = stripTag(_TAG_NOSCRIPT, text, y);
+			}
+			else if (isTag(_TAG_SCRIPT, text, y + 1)) {
 				y = stripTag(_TAG_SCRIPT, text, y);
 			}
 			else if (isTag(_TAG_STYLE, text, y + 1)) {
@@ -970,9 +960,19 @@ public class HtmlImpl implements Html {
 		return pos;
 	}
 
-	private static void _appendHexChars(
-		StringBuilder sb, char[] buffer, char c) {
+	private static boolean _isValidXmlCharacter(char c) {
+		if (((c >= CharPool.SPACE) && (c <= '\ud7ff')) ||
+			((c >= '\ue000') && (c <= '\ufffd')) || Character.isSurrogate(c) ||
+			(c == CharPool.TAB) || (c == CharPool.NEW_LINE) ||
+			(c == CharPool.RETURN)) {
 
+			return true;
+		}
+
+		return false;
+	}
+
+	private void _appendHexChars(StringBuilder sb, char[] buffer, char c) {
 		int index = buffer.length;
 
 		do {
@@ -992,18 +992,6 @@ public class HtmlImpl implements Html {
 		sb.append(buffer, index, buffer.length - index);
 	}
 
-	private static boolean _isValidXmlCharacter(char c) {
-		if (((c >= CharPool.SPACE) && (c <= '\ud7ff')) ||
-			((c >= '\ue000') && (c <= '\ufffd')) || Character.isSurrogate(c) ||
-			(c == CharPool.TAB) || (c == CharPool.NEW_LINE) ||
-			(c == CharPool.RETURN)) {
-
-			return true;
-		}
-
-		return false;
-	}
-
 	private boolean _isUnicodeCompatibilityCharacter(char c) {
 		if (((c >= '\u007f') && (c <= '\u0084')) ||
 			((c >= '\u0086') && (c <= '\u009f')) ||
@@ -1020,6 +1008,10 @@ public class HtmlImpl implements Html {
 	private static final char[] _HEX_DIGITS = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
 		'e', 'f'
+	};
+
+	private static final char[] _TAG_NOSCRIPT = {
+		'n', 'o', 's', 'c', 'r', 'i', 'p', 't'
 	};
 
 	private static final char[] _TAG_SCRIPT = {'s', 'c', 'r', 'i', 'p', 't'};
@@ -1064,6 +1056,8 @@ public class HtmlImpl implements Html {
 		"gt", ">"
 	).put(
 		"lt", "<"
+	).put(
+		"nbsp", " "
 	).put(
 		"rsquo", "\u2019"
 	).build();

@@ -32,6 +32,7 @@ public class IdsQueryImpl extends BaseQueryImpl implements IdsQuery {
 		return queryVisitor.visit(this);
 	}
 
+	@Override
 	public void addIds(String... ids) {
 		if (ArrayUtil.isEmpty(ids)) {
 			return;
@@ -40,6 +41,7 @@ public class IdsQueryImpl extends BaseQueryImpl implements IdsQuery {
 		Collections.addAll(_ids, ids);
 	}
 
+	@Override
 	public void addTypes(String... types) {
 		if (ArrayUtil.isEmpty(types)) {
 			return;
@@ -48,10 +50,12 @@ public class IdsQueryImpl extends BaseQueryImpl implements IdsQuery {
 		Collections.addAll(_types, types);
 	}
 
+	@Override
 	public Set<String> getIds() {
 		return Collections.unmodifiableSet(_ids);
 	}
 
+	@Override
 	public Set<String> getTypes() {
 		return Collections.unmodifiableSet(_types);
 	}

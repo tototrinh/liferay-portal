@@ -19,7 +19,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.PermissionService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -58,10 +58,11 @@ public class PermissionServiceImplTest {
 
 		boolean[] calledCheckBaseModel = {false};
 
-		ServiceRegistration<ModelResourcePermission> serviceRegistration =
+		ServiceRegistration<ModelResourcePermission<?>> serviceRegistration =
 			bundleContext.registerService(
-				ModelResourcePermission.class,
-				(ModelResourcePermission)ProxyUtil.newProxyInstance(
+				(Class<ModelResourcePermission<?>>)
+					(Class<?>)ModelResourcePermission.class,
+				(ModelResourcePermission<?>)ProxyUtil.newProxyInstance(
 					ModelResourcePermission.class.getClassLoader(),
 					new Class<?>[] {ModelResourcePermission.class},
 					(proxy, method, args) -> {
@@ -69,12 +70,11 @@ public class PermissionServiceImplTest {
 
 						return null;
 					}),
-				new HashMapDictionary<String, Object>() {
-					{
-						put("model.class.name", _CLASS_NAME);
-						put("service.ranking", Integer.MAX_VALUE);
-					}
-				});
+				HashMapDictionaryBuilder.<String, Object>put(
+					"model.class.name", _CLASS_NAME
+				).put(
+					"service.ranking", Integer.MAX_VALUE
+				).build());
 
 		try {
 			_permissionService.checkPermission(0, _CLASS_NAME, 0);

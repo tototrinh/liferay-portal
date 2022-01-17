@@ -17,24 +17,26 @@ import {
 	render,
 	wait,
 	waitForElement,
-	within
+	within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import configModule from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config';
+import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import serviceFetch from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/services/serviceFetch';
-import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/store/index';
 import {
 	CREATE_SEGMENTS_EXPERIENCE,
+	DELETE_SEGMENTS_EXPERIENCE,
 	UPDATE_SEGMENTS_EXPERIENCE,
-	UPDATE_SEGMENTS_EXPERIENCE_PRIORITY
+	UPDATE_SEGMENTS_EXPERIENCES_LIST,
 } from '../../../../../../src/main/resources/META-INF/resources/page_editor/plugins/experience/actions';
 import ExperienceToolbarSection from '../../../../../../src/main/resources/META-INF/resources/page_editor/plugins/experience/components/ExperienceToolbarSection';
 
 import '@testing-library/jest-dom/extend-expect';
 
 const MOCK_DELETE_URL = 'delete-experience-test-url';
+const MOCK_DUPLICATE_URL = 'duplicate-experience-test-url';
 const MOCK_CREATE_URL = 'create-experience-test-url';
 const MOCK_UPDATE_PRIORITY_URL = 'update-experience-priority-test-url';
 const MOCK_UPDATE_URL = 'update-experience-test-url';
@@ -55,7 +57,7 @@ function renderExperienceToolbarSection(
 	mockDispatch = () => {}
 ) {
 	Object.defineProperty(configModule, 'config', {
-		get: () => mockConfig
+		get: () => mockConfig,
 	});
 
 	return render(
@@ -66,72 +68,99 @@ function renderExperienceToolbarSection(
 			<ExperienceToolbarSection selectId="test-select-id" />
 		</StoreAPIContextProvider>,
 		{
-			baseElement: document.body
+			baseElement: document.body,
 		}
 	);
 }
 
 const mockState = {
 	availableSegmentsExperiences: {
-		0: {
-			active: true,
+		'0': {
 			hasLockedSegmentsExperiment: false,
 			name: 'Default Experience',
 			priority: -1,
 			segmentsEntryId: 'test-segment-id-00',
 			segmentsExperienceId: '0',
 			segmentsExperimentStatus: undefined,
-			segmentsExperimentURL: 'https//:default-experience.com'
+			segmentsExperimentURL: 'https//:default-experience.com',
 		},
 		'test-experience-id-01': {
-			active: true,
 			hasLockedSegmentsExperiment: false,
+			languageIds: ['en_US', 'es_ES'],
 			name: 'Experience #1',
 			priority: 3,
 			segmentsEntryId: 'test-segment-id-00',
 			segmentsExperienceId: 'test-experience-id-01',
 			segmentsExperimentStatus: undefined,
-			segmentsExperimentURL: 'https//:experience-1.com'
+			segmentsExperimentURL: 'https//:experience-1.com',
 		},
 		'test-experience-id-02': {
-			active: true,
 			hasLockedSegmentsExperiment: false,
+			languageIds: ['en_US', 'es_ES', 'ar_SA'],
 			name: 'Experience #2',
 			priority: 1,
 			segmentsEntryId: 'test-segment-id-01',
 			segmentsExperienceId: 'test-experience-id-02',
 			segmentsExperimentStatus: undefined,
-			segmentsExperimentURL: 'https//:experience-2.com'
-		}
+			segmentsExperimentURL: 'https//:experience-2.com',
+		},
 	},
 	permissions: {
 		EDIT_SEGMENTS_ENTRY: true,
-		UPDATE: true
+		UPDATE: true,
 	},
 	segmentsExperienceId: '0',
-	widgets: []
+	widgets: [],
 };
 
 const mockConfig = {
 	addSegmentsExperienceURL: MOCK_CREATE_URL,
+	availableLanguages: {
+		ar_SA: {
+			default: false,
+			displayName: 'Arabic (Saudi Arabia)',
+			languageIcon: 'ar-sa',
+			languageId: 'ar_SA',
+			w3cLanguageId: 'ar-SA',
+		},
+		en_US: {
+			default: false,
+			displayName: 'English (United States)',
+			languageIcon: 'en-us',
+			languageId: 'en_US',
+			w3cLanguageId: 'en-US',
+		},
+		es_ES: {
+			default: true,
+			displayName: 'Spanish (Spain)',
+			languageIcon: 'es-es',
+			languageId: 'es_ES',
+			w3cLanguageId: 'es-ES',
+		},
+	},
 	availableSegmentsEntries: {
 		'test-segment-id-00': {
 			name: 'A segment 0',
-			segmentsEntryId: 'test-segment-id-00'
+			segmentsEntryId: 'test-segment-id-00',
 		},
 		'test-segment-id-01': {
 			name: 'A segment 1',
-			segmentsEntryId: 'test-segment-id-01'
-		}
+			segmentsEntryId: 'test-segment-id-01',
+		},
 	},
 	classPK: 'test-classPK',
 	defaultSegmentsExperienceId: '0',
 	deleteSegmentsExperienceURL: MOCK_DELETE_URL,
+	duplicateSegmentsExperienceURL: MOCK_DUPLICATE_URL,
 	updateSegmentsExperiencePriorityURL: MOCK_UPDATE_PRIORITY_URL,
-	updateSegmentsExperienceURL: MOCK_UPDATE_URL
+	updateSegmentsExperienceURL: MOCK_UPDATE_URL,
 };
 
 describe('ExperienceToolbarSection', () => {
+	beforeAll(() => {
+		Liferay.component = jest.fn();
+	});
+
 	afterEach(() => {
 		cleanup();
 		serviceFetch.mockReset();
@@ -141,7 +170,7 @@ describe('ExperienceToolbarSection', () => {
 		const {
 			getAllByRole,
 			getByLabelText,
-			getByRole
+			getByRole,
 		} = renderExperienceToolbarSection(mockState, mockConfig);
 
 		const dropDownButton = getByLabelText('experience');
@@ -176,7 +205,6 @@ describe('ExperienceToolbarSection', () => {
 			availableSegmentsExperiences: {
 				...mockState.availableSegmentsExperiences,
 				'test-experience-id-03': {
-					active: true,
 					hasLockedSegmentsExperiment: true,
 					name: 'Experience #3',
 					priority: 5,
@@ -184,22 +212,23 @@ describe('ExperienceToolbarSection', () => {
 					segmentsExperienceId: 'test-experience-id-03',
 					segmentsExperimentStatus: {
 						label: 'running',
-						value: 3
+						value: 3,
 					},
-					segmentsExperimentURL: 'https//:locked-experience.com'
-				}
-			}
+					segmentsExperimentURL: 'https//:locked-experience.com',
+				},
+			},
 		};
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
 		});
 
 		const {
+			getAllByRole,
 			getByLabelText,
 			getByRole,
-			getByText
+			getByText,
 		} = renderExperienceToolbarSection(
 			mockStateWithLockedExperience,
 			mockConfig,
@@ -212,15 +241,18 @@ describe('ExperienceToolbarSection', () => {
 
 		await waitForElement(() => getByRole('list'));
 
-		const experience = getByText('Experience #3');
+		expect(getByText('Experience #3')).toBeInTheDocument();
 
-		const lockIcon = within(experience).getByRole('presentation');
+		const icons = getAllByRole('presentation');
+
+		const lockIcon = icons[1];
 
 		// Hackily work around:
 		//
 		//      "TypeError: Cannot read property '_defaultView' of undefined"
 		//
 		// Caused by: https://github.com/jsdom/jsdom/issues/2499
+
 		document.activeElement.blur = () => {};
 
 		userEvent.click(lockIcon);
@@ -233,11 +265,11 @@ describe('ExperienceToolbarSection', () => {
 		serviceFetch.mockImplementation((url, {body}) =>
 			Promise.resolve({
 				priority: body.newPriority,
-				segmentsExperienceId: 'test-experience-id-02'
+				segmentsExperienceId: 'test-experience-id-02',
 			})
 		);
 
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
@@ -246,7 +278,7 @@ describe('ExperienceToolbarSection', () => {
 		const {
 			getAllByRole,
 			getByLabelText,
-			getByRole
+			getByRole,
 		} = renderExperienceToolbarSection(mockState, mockConfig, mockDispatch);
 
 		const dropDownButton = getByLabelText('experience');
@@ -292,15 +324,15 @@ describe('ExperienceToolbarSection', () => {
 			expect.objectContaining({
 				body: expect.objectContaining({
 					newPriority: 3,
-					segmentsExperienceId: 'test-experience-id-02'
-				})
+					segmentsExperienceId: 'test-experience-id-02',
+				}),
 			}),
 			expect.any(Function)
 		);
 
 		expect(mockDispatch).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: UPDATE_SEGMENTS_EXPERIENCE_PRIORITY
+				type: UPDATE_SEGMENTS_EXPERIENCES_LIST,
 			})
 		);
 	});
@@ -309,11 +341,11 @@ describe('ExperienceToolbarSection', () => {
 		serviceFetch.mockImplementation((url, {body}) =>
 			Promise.resolve({
 				priority: body.newPriority,
-				segmentsExperienceId: 'test-experience-id-01'
+				segmentsExperienceId: 'test-experience-id-01',
 			})
 		);
 
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
@@ -322,7 +354,7 @@ describe('ExperienceToolbarSection', () => {
 		const {
 			getAllByRole,
 			getByLabelText,
-			getByRole
+			getByRole,
 		} = renderExperienceToolbarSection(mockState, mockConfig, mockDispatch);
 
 		const dropDownButton = getByLabelText('experience');
@@ -357,7 +389,7 @@ describe('ExperienceToolbarSection', () => {
 		/**
 		 * Bottom Experience cannot be deprioritized
 		 */
-		expect(bottomExperiencePriorityButton.disabled).toBe(true);
+		expect(bottomExperiencePriorityButton.disabled).toBe(false);
 
 		userEvent.click(topExperiencePriorityButton);
 
@@ -368,15 +400,15 @@ describe('ExperienceToolbarSection', () => {
 			expect.objectContaining({
 				body: expect.objectContaining({
 					newPriority: 1,
-					segmentsExperienceId: 'test-experience-id-01'
-				})
+					segmentsExperienceId: 'test-experience-id-01',
+				}),
 			}),
 			expect.any(Function)
 		);
 
 		expect(mockDispatch).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: UPDATE_SEGMENTS_EXPERIENCE_PRIORITY
+				type: UPDATE_SEGMENTS_EXPERIENCES_LIST,
 			})
 		);
 	});
@@ -390,15 +422,15 @@ describe('ExperienceToolbarSection', () => {
 						name: body.name,
 						priority: '1000',
 						segmentsEntryId: body.segmentsEntryId,
-						segmentsExperienceId: 'a-new-test-experience-id'
-					}
+						segmentsExperienceId: 'a-new-test-experience-id',
+					},
 				})
 			)
 			.mockImplementationOnce(() => {
 				return Promise.resolve([]);
 			});
 
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
@@ -408,7 +440,7 @@ describe('ExperienceToolbarSection', () => {
 			getAllByRole,
 			getByLabelText,
 			getByRole,
-			getByText
+			getByText,
 		} = renderExperienceToolbarSection(mockState, mockConfig, mockDispatch);
 
 		const dropDownButton = getByLabelText('experience');
@@ -436,6 +468,7 @@ describe('ExperienceToolbarSection', () => {
 
 		// Grab parentElement here to work around jsdom v13 issue.
 		// "TypeError: Cannot read property '_defaultView' of undefined"
+
 		userEvent.click(getByText('save').parentElement);
 
 		await wait(() => expect(serviceFetch).toHaveBeenCalledTimes(2));
@@ -445,15 +478,15 @@ describe('ExperienceToolbarSection', () => {
 			expect.objectContaining({
 				body: expect.objectContaining({
 					name: 'New Experience #1',
-					segmentsEntryId: 'test-segment-id-00'
-				})
+					segmentsEntryId: 'test-segment-id-00',
+				}),
 			}),
 			expect.any(Function)
 		);
 
 		expect(mockDispatch).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: CREATE_SEGMENTS_EXPERIENCE
+				type: CREATE_SEGMENTS_EXPERIENCE,
 			})
 		);
 	});
@@ -462,11 +495,11 @@ describe('ExperienceToolbarSection', () => {
 		serviceFetch.mockImplementation((url, {body}) =>
 			Promise.resolve({
 				name: body.name,
-				segmentsEntryId: body.segmentsEntryId
+				segmentsEntryId: body.segmentsEntryId,
 			})
 		);
 
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
@@ -476,7 +509,7 @@ describe('ExperienceToolbarSection', () => {
 			getAllByRole,
 			getByLabelText,
 			getByRole,
-			getByText
+			getByText,
 		} = renderExperienceToolbarSection(mockState, mockConfig, mockDispatch);
 
 		const dropDownButton = getByLabelText('experience');
@@ -517,6 +550,7 @@ describe('ExperienceToolbarSection', () => {
 
 		// Grab parentElement here to work around jsdom v13 issue.
 		// "TypeError: Cannot read property '_defaultView' of undefined"
+
 		userEvent.click(getByText('save').parentElement);
 
 		await wait(() => expect(serviceFetch).toHaveBeenCalledTimes(1));
@@ -525,18 +559,17 @@ describe('ExperienceToolbarSection', () => {
 			expect.stringContaining(MOCK_UPDATE_URL),
 			expect.objectContaining({
 				body: expect.objectContaining({
-					active: true,
 					name: 'New Experience #1',
 					segmentsEntryId: 'test-segment-id-00',
-					segmentsExperienceId: 'test-experience-id-01'
-				})
+					segmentsExperienceId: 'test-experience-id-01',
+				}),
 			}),
 			expect.any(Function)
 		);
 
 		expect(mockDispatch).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: UPDATE_SEGMENTS_EXPERIENCE
+				type: UPDATE_SEGMENTS_EXPERIENCE,
 			})
 		);
 	});
@@ -551,7 +584,7 @@ describe('ExperienceToolbarSection', () => {
 		 */
 		window.confirm = jest.fn(() => true);
 
-		const mockDispatch = jest.fn(a => {
+		const mockDispatch = jest.fn((a) => {
 			if (typeof a === 'function') {
 				return a(mockDispatch);
 			}
@@ -563,17 +596,17 @@ describe('ExperienceToolbarSection', () => {
 				items: {
 					'00001': {
 						config: {
-							fragmentEntryLinkId: 1000
+							fragmentEntryLinkId: 1000,
 						},
-						type: 'fragment'
+						type: 'fragment',
 					},
 					'00004': {
 						config: {
-							fragmentEntryLinkId: 4000 // latest version of layoutData is not in layoutDataList
+							fragmentEntryLinkId: 4000, // latest version of layoutData is not in layoutDataList
 						},
-						type: 'fragment'
-					}
-				}
+						type: 'fragment',
+					},
+				},
 			},
 			layoutDataList: [
 				{
@@ -581,65 +614,65 @@ describe('ExperienceToolbarSection', () => {
 						items: {
 							'00001': {
 								config: {
-									fragmentEntryLinkId: 10000
+									fragmentEntryLinkId: 10000,
 								},
-								type: 'fragment'
-							}
-						}
+								type: 'fragment',
+							},
+						},
 					},
-					segmentsExperienceId: 'test-experience-id-00'
+					segmentsExperienceId: 'test-experience-id-00',
 				},
 				{
 					layoutData: {
 						items: {
 							'00001': {
 								config: {
-									fragmentEntryLinkId: 1000
+									fragmentEntryLinkId: 1000,
 								},
-								type: 'fragment'
+								type: 'fragment',
 							},
 							'0002': {
 								config: {
-									fragmentEntryLinkId: 2000
+									fragmentEntryLinkId: 2000,
 								},
-								type: 'fragment' // unique to the experience we delete
+								type: 'fragment', // unique to the experience we delete
 							},
 							'0004': {
 								config: {
-									fragmentEntryLinkId: 4000
+									fragmentEntryLinkId: 4000,
 								},
-								type: 'fragment'
-							}
-						}
+								type: 'fragment',
+							},
+						},
 					},
-					segmentsExperienceId: 'test-experience-id-01'
+					segmentsExperienceId: 'test-experience-id-01',
 				},
 				{
 					layoutData: {
 						items: {
 							'00001': {
 								config: {
-									fragmentEntryLinkId: 1000
+									fragmentEntryLinkId: 1000,
 								},
-								type: 'fragment'
+								type: 'fragment',
 							},
 							'0003': {
 								config: {
-									fragmentEntryLinkId: 3000
+									fragmentEntryLinkId: 3000,
 								},
-								type: 'fragment'
-							}
-						}
+								type: 'fragment',
+							},
+						},
 					},
-					segmentsExperienceId: 'test-experience-id-02'
-				}
-			]
+					segmentsExperienceId: 'test-experience-id-02',
+				},
+			],
 		};
 
 		const {
 			getAllByRole,
 			getByLabelText,
-			getByRole
+			getByRole,
 		} = renderExperienceToolbarSection(
 			mockStateForDelete,
 			mockConfig,
@@ -674,11 +707,84 @@ describe('ExperienceToolbarSection', () => {
 			expect.stringContaining(MOCK_DELETE_URL),
 			expect.objectContaining({
 				body: expect.objectContaining({
-					fragmentEntryLinkIds: '[2000]',
-					segmentsExperienceId: 'test-experience-id-01'
-				})
+					segmentsExperienceId: 'test-experience-id-01',
+				}),
 			}),
 			expect.any(Function)
+		);
+
+		expect(mockDispatch).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: DELETE_SEGMENTS_EXPERIENCE,
+			})
+		);
+	});
+
+	it('calls the backend to duplicate an experience', async () => {
+		serviceFetch
+			.mockImplementationOnce((url, {body}) =>
+				Promise.resolve({
+					segmentsExperience: {
+						active: true,
+						name: body.name,
+						priority: '1000',
+						segmentsEntryId: body.segmentsEntryId,
+						segmentsExperienceId: 'a-new-test-experience-id',
+					},
+				})
+			)
+			.mockImplementationOnce(() => {
+				return Promise.resolve([]);
+			});
+
+		const mockDispatch = jest.fn((a) => {
+			if (typeof a === 'function') {
+				return a(mockDispatch);
+			}
+		});
+
+		const {
+			getAllByRole,
+			getByLabelText,
+			getByRole,
+		} = renderExperienceToolbarSection(mockState, mockConfig, mockDispatch);
+
+		const dropDownButton = getByLabelText('experience');
+
+		userEvent.click(dropDownButton);
+
+		await waitForElement(() => getByRole('list'));
+
+		const experienceItems = getAllByRole('listitem');
+
+		expect(experienceItems.length).toBe(3);
+
+		expect(
+			within(experienceItems[0]).getByText('Experience #1')
+		).toBeInTheDocument();
+
+		const duplicateExperienceButton = within(experienceItems[0]).getByTitle(
+			'duplicate-experience'
+		);
+
+		userEvent.click(duplicateExperienceButton);
+
+		await wait(() => expect(serviceFetch).toHaveBeenCalledTimes(2));
+
+		expect(serviceFetch).toHaveBeenCalledWith(
+			expect.stringContaining(MOCK_DUPLICATE_URL),
+			expect.objectContaining({
+				body: expect.objectContaining({
+					segmentsExperienceId: 'test-experience-id-01',
+				}),
+			}),
+			expect.any(Function)
+		);
+
+		expect(mockDispatch).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: CREATE_SEGMENTS_EXPERIENCE,
+			})
 		);
 	});
 });

@@ -17,6 +17,7 @@ package com.liferay.source.formatter.checks;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.checks.util.JSPSourceUtil;
 
 import java.util.regex.Matcher;
@@ -31,9 +32,13 @@ public class JSPStylingCheck extends BaseStylingCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
+		content = _combineJavaSourceBlocks(fileName, content);
+
 		content = _formatLineBreak(fileName, content);
 
 		content = _fixEmptyJavaSourceTag(content);
+
+		content = _fixIncorrectBacktick(content);
 
 		content = _fixIncorrectClosingTag(content);
 
@@ -55,12 +60,81 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		content = content.replaceAll("'<%= (\"[^.(\\[\"]+\") %>'", "$1");
 
+		content = content.replaceAll(
+			"((['\"])<%= ((?<!%>).)*?)\\\\(\".+?)\\\\(\".*?%>\\2)", "$1$4$5");
+
+		Matcher matcher = _portletNamespacePattern.matcher(content);
+
+		while (matcher.find()) {
+			String s = matcher.group(2);
+
+			if (s.endsWith(StringPool.CLOSE_PARENTHESIS) &&
+				(getLevel(s) == 0)) {
+
+				return StringUtil.insert(
+					content, StringPool.SEMICOLON, matcher.end() - 1);
+			}
+		}
+
 		return formatStyling(content);
 	}
 
-	@Override
-	protected boolean isJavaSource(String content, int pos) {
-		return JSPSourceUtil.isJavaSource(content, pos, true);
+	private String _combineJavaSourceBlocks(String fileName, String content) {
+		int x = -1;
+
+		while (true) {
+			x = content.indexOf("<%!", x + 1);
+
+			if ((x == -1) || !ToolsUtil.isInsideQuotes(content, x)) {
+				break;
+			}
+		}
+
+		int y = x;
+
+		while (true) {
+			y = content.indexOf("<%\n", y + 1);
+
+			if ((y == -1) || !ToolsUtil.isInsideQuotes(content, y)) {
+				break;
+			}
+		}
+
+		if ((x != -1) && (y != -1) && (x < y)) {
+			addMessage(
+				fileName, "'<%!...%>' block should come after <%...%> blcok",
+				getLineNumber(content, x));
+		}
+
+		y = x;
+
+		while (true) {
+			y = content.indexOf("<%!", y + 1);
+
+			if (y == -1) {
+				break;
+			}
+
+			if (!ToolsUtil.isInsideQuotes(content, y)) {
+				addMessage(
+					fileName,
+					StringBundler.concat(
+						"Combine <%!...%> blocks at line '",
+						getLineNumber(content, x), "' and ",
+						getLineNumber(content, y)));
+
+				return content;
+			}
+		}
+
+		Matcher matcher = _adjacentJavaBlocksPattern.matcher(content);
+
+		if (matcher.find()) {
+			return StringUtil.replaceFirst(
+				content, matcher.group(), "\n\n", matcher.start() - 1);
+		}
+
+		return content;
 	}
 
 	private String _fixEmptyJavaSourceTag(String content) {
@@ -68,6 +142,20 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		if (matcher.find()) {
 			return StringUtil.removeSubstring(content, matcher.group());
+		}
+
+		return content;
+	}
+
+	private String _fixIncorrectBacktick(String content) {
+		Matcher matcher = _incorrectBacktickPattern.matcher(content);
+
+		if (matcher.find() &&
+			JSPSourceUtil.isJSSource(content, matcher.start())) {
+
+			return StringUtil.replaceFirst(
+				content, matcher.group(), "'" + matcher.group(1) + "'",
+				matcher.start());
 		}
 
 		return content;
@@ -128,7 +216,7 @@ public class JSPStylingCheck extends BaseStylingCheck {
 		matcher = _incorrectLineBreakPattern2.matcher(content);
 
 		while (matcher.find()) {
-			if (JSPSourceUtil.isJavaSource(content, matcher.start())) {
+			if (isJavaSource(content, matcher.start())) {
 				return StringUtil.replaceFirst(
 					content, matcher.group(1), StringPool.SPACE,
 					matcher.start());
@@ -137,11 +225,23 @@ public class JSPStylingCheck extends BaseStylingCheck {
 
 		matcher = _incorrectLineBreakPattern3.matcher(content);
 
+		while (matcher.find()) {
+			addMessage(
+				fileName, "There should be a line break after '<%='",
+				getLineNumber(content, matcher.start()));
+		}
+
+		matcher = _incorrectLineBreakPattern4.matcher(content);
+
 		return matcher.replaceAll("$1\n\t$2$4\n$2$5");
 	}
 
+	private static final Pattern _adjacentJavaBlocksPattern = Pattern.compile(
+		"\n\t*%>\n+\t*<%\n");
 	private static final Pattern _emptyJavaSourceTagPattern = Pattern.compile(
 		"\n\t*<%\\!?\n+\t*%>(\n|\\Z)");
+	private static final Pattern _incorrectBacktickPattern = Pattern.compile(
+		"`((.(?!\\{.+\\}))*)`");
 	private static final Pattern _incorrectClosingTagPattern = Pattern.compile(
 		"\n(\t*)\t((?!<\\w).)* />\n");
 	private static final Pattern _incorrectLineBreakPattern1 = Pattern.compile(
@@ -149,8 +249,12 @@ public class JSPStylingCheck extends BaseStylingCheck {
 	private static final Pattern _incorrectLineBreakPattern2 = Pattern.compile(
 		"=(\n\\s*).*;\n");
 	private static final Pattern _incorrectLineBreakPattern3 = Pattern.compile(
+		"<%= *\\S((?!%>).)*\n");
+	private static final Pattern _incorrectLineBreakPattern4 = Pattern.compile(
 		"(\n(\t*)<(\\w+)>)(<\\w+>.*)(</\\3>\n)");
 	private static final Pattern _incorrectSingleLineJavaSourcePattern =
 		Pattern.compile("(\t*)(<% (.*) %>)\n");
+	private static final Pattern _portletNamespacePattern = Pattern.compile(
+		"=([\"'])<portlet:namespace />(\\w+\\(.*?)\\1");
 
 }

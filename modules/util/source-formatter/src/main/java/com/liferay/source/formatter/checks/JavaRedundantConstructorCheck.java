@@ -16,6 +16,8 @@ package com.liferay.source.formatter.checks;
 
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
@@ -54,16 +56,9 @@ public class JavaRedundantConstructorCheck extends BaseJavaTermCheck {
 			return constructorContent;
 		}
 
-		String classAccessModifier = javaClass.getAccessModifier();
-		String constructorAccessModifier = javaTerm.getAccessModifier();
-
-		if ((constructorAccessModifier.equals(
-				JavaTerm.ACCESS_MODIFIER_PRIVATE) &&
-			 !classAccessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) ||
-			(constructorAccessModifier.equals(
-				JavaTerm.ACCESS_MODIFIER_PROTECTED) &&
-			 !classAccessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE) &&
-			 !classAccessModifier.equals(JavaTerm.ACCESS_MODIFIER_PROTECTED))) {
+		if ((javaTerm.isPrivate() && !javaClass.isPrivate()) ||
+			(javaTerm.isProtected() && !javaClass.isPrivate() &&
+			 !javaClass.isProtected())) {
 
 			return constructorContent;
 		}
@@ -84,6 +79,10 @@ public class JavaRedundantConstructorCheck extends BaseJavaTermCheck {
 			javaProjectBuilder.addSource(new UnsyncStringReader(fileContent));
 		}
 		catch (ParseException parseException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(parseException, parseException);
+			}
+
 			return constructorContent;
 		}
 
@@ -132,5 +131,8 @@ public class JavaRedundantConstructorCheck extends BaseJavaTermCheck {
 
 		return count;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JavaRedundantConstructorCheck.class);
 
 }

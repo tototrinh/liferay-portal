@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.model.StagedGroupedModel;
 import com.liferay.portal.kernel.model.WorkflowedModel;
+import com.liferay.portal.kernel.model.change.tracking.CTModel;
 
 import java.util.Date;
 
@@ -38,8 +39,8 @@ import org.osgi.annotation.versioning.ProviderType;
  */
 @ProviderType
 public interface DLFileVersionModel
-	extends BaseModel<DLFileVersion>, MVCCModel, ShardedModel,
-			StagedGroupedModel, WorkflowedModel {
+	extends BaseModel<DLFileVersion>, CTModel<DLFileVersion>, MVCCModel,
+			ShardedModel, StagedGroupedModel, WorkflowedModel {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -52,6 +53,7 @@ public interface DLFileVersionModel
 	 *
 	 * @return the primary key of this document library file version
 	 */
+	@Override
 	public long getPrimaryKey();
 
 	/**
@@ -59,6 +61,7 @@ public interface DLFileVersionModel
 	 *
 	 * @param primaryKey the primary key of this document library file version
 	 */
+	@Override
 	public void setPrimaryKey(long primaryKey);
 
 	/**
@@ -76,6 +79,22 @@ public interface DLFileVersionModel
 	 */
 	@Override
 	public void setMvccVersion(long mvccVersion);
+
+	/**
+	 * Returns the ct collection ID of this document library file version.
+	 *
+	 * @return the ct collection ID of this document library file version
+	 */
+	@Override
+	public long getCtCollectionId();
+
+	/**
+	 * Sets the ct collection ID of this document library file version.
+	 *
+	 * @param ctCollectionId the ct collection ID of this document library file version
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId);
 
 	/**
 	 * Returns the uuid of this document library file version.
@@ -442,6 +461,34 @@ public interface DLFileVersionModel
 	public void setChecksum(String checksum);
 
 	/**
+	 * Returns the expiration date of this document library file version.
+	 *
+	 * @return the expiration date of this document library file version
+	 */
+	public Date getExpirationDate();
+
+	/**
+	 * Sets the expiration date of this document library file version.
+	 *
+	 * @param expirationDate the expiration date of this document library file version
+	 */
+	public void setExpirationDate(Date expirationDate);
+
+	/**
+	 * Returns the review date of this document library file version.
+	 *
+	 * @return the review date of this document library file version
+	 */
+	public Date getReviewDate();
+
+	/**
+	 * Sets the review date of this document library file version.
+	 *
+	 * @param reviewDate the review date of this document library file version
+	 */
+	public void setReviewDate(Date reviewDate);
+
+	/**
 	 * Returns the last publish date of this document library file version.
 	 *
 	 * @return the last publish date of this document library file version
@@ -601,5 +648,8 @@ public interface DLFileVersionModel
 	 */
 	@Override
 	public boolean isScheduled();
+
+	@Override
+	public DLFileVersion cloneWithOriginalValues();
 
 }

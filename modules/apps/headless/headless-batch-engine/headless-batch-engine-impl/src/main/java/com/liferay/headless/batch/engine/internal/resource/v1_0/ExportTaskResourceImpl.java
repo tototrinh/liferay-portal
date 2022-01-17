@@ -92,7 +92,7 @@ public class ExportTaskResourceImpl extends BaseExportTaskResourceImpl {
 	@Override
 	public ExportTask postExportTask(
 			String className, String contentType, String callbackURL,
-			String fieldNames)
+			String fieldNames, String taskItemDelegateName)
 		throws Exception {
 
 		Class<?> clazz = _itemClassRegistry.getItemClass(className);
@@ -112,8 +112,8 @@ public class ExportTaskResourceImpl extends BaseExportTaskResourceImpl {
 				callbackURL, className, StringUtil.upperCase(contentType),
 				BatchEngineTaskExecuteStatus.INITIAL.name(),
 				_toList(fieldNames),
-				ParametersUtil.toParameters(
-					contextUriInfo, _ignoredParameters));
+				ParametersUtil.toParameters(contextUriInfo, _ignoredParameters),
+				taskItemDelegateName);
 
 		executorService.submit(
 			() -> _batchEngineExportTaskExecutor.execute(
@@ -131,10 +131,13 @@ public class ExportTaskResourceImpl extends BaseExportTaskResourceImpl {
 				contentType = batchEngineExportTask.getContentType();
 				endTime = batchEngineExportTask.getEndTime();
 				errorMessage = batchEngineExportTask.getErrorMessage();
-				executeStatus = ExportTask.ExecuteStatus.valueOf(
+				executeStatus = ExportTask.ExecuteStatus.create(
 					batchEngineExportTask.getExecuteStatus());
 				id = batchEngineExportTask.getBatchEngineExportTaskId();
+				processedItemsCount =
+					batchEngineExportTask.getProcessedItemsCount();
 				startTime = batchEngineExportTask.getStartTime();
+				totalItemsCount = batchEngineExportTask.getTotalItemsCount();
 			}
 		};
 	}

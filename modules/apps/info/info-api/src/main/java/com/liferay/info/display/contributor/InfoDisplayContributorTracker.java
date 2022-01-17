@@ -18,14 +18,17 @@ import java.util.List;
 
 /**
  * @author Jürgen Kappler
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public interface InfoDisplayContributorTracker {
 
-	public InfoDisplayContributor getInfoDisplayContributor(String className);
+	public InfoDisplayContributor<?> getInfoDisplayContributor(
+		String className);
 
-	public InfoDisplayContributor getInfoDisplayContributorByURLSeparator(
+	public InfoDisplayContributor<?> getInfoDisplayContributorByURLSeparator(
 		String urlSeparator);
 
-	public List<InfoDisplayContributor> getInfoDisplayContributors();
+	public List<InfoDisplayContributor<?>> getInfoDisplayContributors();
 
 }

@@ -20,24 +20,24 @@ import {parse, stringify} from '../router/queryString.es';
 
 const SearchField = ({
 	disabled,
-	placeholder = Liferay.Language.get('search-for')
+	placeholder = Liferay.Language.get('search-for'),
 }) => {
 	const routerProps = useRouter();
 
 	const query = parse(routerProps.location.search);
-	const {search = null} = query;
+	const {search = ''} = query;
 
-	const [searchValue, setSearchValue] = useState(null);
+	const [searchValue, setSearchValue] = useState('');
 
 	useEffect(() => {
 		setSearchValue(search);
 	}, [search]);
 
-	const handleChange = event => {
+	const handleChange = (event) => {
 		setSearchValue(event.target.value);
 	};
 
-	const handleSubmit = event => {
+	const handleSubmit = (event) => {
 		event.preventDefault();
 
 		query.search = searchValue;
@@ -47,7 +47,6 @@ const SearchField = ({
 
 	return (
 		<ClayManagementToolbar.Search
-			data-testid="searchFieldForm"
 			method="GET"
 			onSubmit={handleSubmit}
 			showMobile={true}
@@ -57,7 +56,6 @@ const SearchField = ({
 					<ClayInput
 						aria-label="Search"
 						className="form-control input-group-inset input-group-inset-after"
-						data-testid="searchField"
 						disabled={disabled}
 						onChange={handleChange}
 						placeholder={placeholder}

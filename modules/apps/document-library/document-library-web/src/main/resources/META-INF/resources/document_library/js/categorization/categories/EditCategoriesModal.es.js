@@ -17,8 +17,8 @@ import ClayButton from '@clayui/button';
 import {ClayRadio, ClayRadioGroup} from '@clayui/form';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal from '@clayui/modal';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {AssetCategoriesSelector} from 'asset-taglib';
-import {useIsMounted} from 'frontend-js-react-web';
 import {fetch} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
@@ -38,7 +38,7 @@ const EditCategoriesModal = ({
 	pathModule,
 	repositoryId,
 	selectAll = false,
-	selectCategoriesUrl
+	selectCategoriesUrl,
 }) => {
 	const {namespace} = useContext(EditCategoriesContext);
 
@@ -62,7 +62,7 @@ const EditCategoriesModal = ({
 
 	const bulkStatusComponent = Liferay.component(`${namespace}BulkStatus`);
 
-	const getDescription = size => {
+	const getDescription = (size) => {
 		if (size === 1) {
 			return Liferay.Language.get(
 				'you-are-editing-the-categories-for-the-selected-item'
@@ -89,20 +89,20 @@ const EditCategoriesModal = ({
 		return Array.from(categories);
 	};
 
-	const handleMultiSelectOptionChange = value => {
+	const handleMultiSelectOptionChange = (value) => {
 		setAppend(value === 'add');
 		setSelectedRadioGroupValue(value);
 	};
 
-	const handleVocabulariesChange = newVocabularies => {
+	const handleVocabulariesChange = (newVocabularies) => {
 		const requiredVocabularies = newVocabularies.filter(
-			vocabulary =>
+			(vocabulary) =>
 				vocabulary.required && !vocabulary.selectedItems.length
 		);
 
 		const isInvalid = requiredVocabularies.length
 			? requiredVocabularies.some(
-					item => item.required && !item.selectedItems.length
+					(item) => item.required && !item.selectedItems.length
 			  )
 			: false;
 
@@ -110,7 +110,28 @@ const EditCategoriesModal = ({
 		setVocabularies(newVocabularies);
 	};
 
-	const handleSubmit = event => {
+	const fetchCategories = useCallback(
+		(url, method, bodyData) => {
+			const init = {
+				body: JSON.stringify(bodyData),
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				method,
+			};
+
+			return fetch(`${pathModule}${url}`, init)
+				.then((response) =>
+					response.status === 204 ? '' : response.json()
+				)
+				.catch(() => {
+					onModalClose();
+				});
+		},
+		[onModalClose, pathModule]
+	);
+
+	const handleSubmit = (event) => {
 		event.preventDefault();
 
 		const finalCategories = getFinalCategories();
@@ -122,12 +143,12 @@ const EditCategoriesModal = ({
 		}
 		else {
 			addedCategories = finalCategories.filter(
-				categoryId => initialCategories.indexOf(categoryId) == -1
+				(categoryId) => initialCategories.indexOf(categoryId) === -1
 			);
 		}
 
 		const removedCategories = initialCategories.filter(
-			category => finalCategories.indexOf(category) == -1
+			(category) => finalCategories.indexOf(category) === -1
 		);
 
 		fetchCategories(URL_UPDATE_CATEGORIES, append ? 'PATCH' : 'PUT', {
@@ -136,11 +157,11 @@ const EditCategoriesModal = ({
 				selectionScope: {
 					folderId,
 					repositoryId,
-					selectAll
-				}
+					selectAll,
+				},
 			},
 			taxonomyCategoryIdsToAdd: addedCategories,
-			taxonomyCategoryIdsToRemove: removedCategories
+			taxonomyCategoryIdsToRemove: removedCategories,
 		}).then(() => {
 			onModalClose();
 
@@ -152,40 +173,40 @@ const EditCategoriesModal = ({
 
 	const isMounted = useIsMounted();
 
-	const parseCategories = categories => {
-		return categories.map(item => {
+	const parseCategories = (categories) => {
+		return categories.map((item) => {
 			return {
 				label: item.taxonomyCategoryName,
-				value: item.taxonomyCategoryId
+				value: item.taxonomyCategoryId,
 			};
 		});
 	};
 
-	const parseVocabularies = useCallback(vocabularies => {
+	const parseVocabularies = useCallback((vocabularies) => {
 		let initialCategories = [];
 		const requiredVocabularies = [];
 		const vocabulariesList = [];
 
-		vocabularies.forEach(vocabulary => {
+		vocabularies.forEach((vocabulary) => {
 			const categories = parseCategories(
 				vocabulary.taxonomyCategories || []
 			);
 
-			const categoryIds = categories.map(item => item.value);
+			const categoryIds = categories.map((item) => item.value);
 
-			const obj = {
+			const object = {
 				id: vocabulary.taxonomyVocabularyId.toString(),
 				required: vocabulary.required,
 				selectedCategoryIds: categoryIds.join(','),
 				selectedItems: categories,
 				singleSelect: !vocabulary.multiValued,
-				title: vocabulary.name
+				title: vocabulary.name,
 			};
 
-			vocabulariesList.push(obj);
+			vocabulariesList.push(object);
 
 			if (vocabulary.required) {
-				requiredVocabularies.push(obj);
+				requiredVocabularies.push(object);
 			}
 
 			initialCategories = initialCategories.concat(categoryIds);
@@ -202,15 +223,15 @@ const EditCategoriesModal = ({
 			selectionScope: {
 				folderId,
 				repositoryId,
-				selectAll
-			}
+				selectAll,
+			},
 		};
 
 		const urlCategories = `/bulk/v1.0/sites/${groupIds[0]}/taxonomy-vocabularies/common`;
 
 		Promise.all([
 			fetchCategories(urlCategories, 'POST', selection),
-			fetchCategories(URL_SELECTION, 'POST', selection)
+			fetchCategories(URL_SELECTION, 'POST', selection),
 		]).then(([responseCategories, responseSelection]) => {
 			if (responseCategories && responseSelection) {
 				if (isMounted()) {
@@ -232,27 +253,8 @@ const EditCategoriesModal = ({
 		isMounted,
 		parseVocabularies,
 		repositoryId,
-		selectAll
+		selectAll,
 	]);
-
-	const fetchCategories = useCallback(
-		(url, method, bodyData) => {
-			const init = {
-				body: JSON.stringify(bodyData),
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				method
-			};
-
-			return fetch(`${pathModule}${url}`, init)
-				.then(response => response.json())
-				.catch(() => {
-					onModalClose();
-				});
-		},
-		[onModalClose, pathModule]
-	);
 
 	return (
 		<ClayModal observer={observer} size="md">
@@ -330,6 +332,7 @@ const EditCategoriesModal = ({
 							>
 								{Liferay.Language.get('cancel')}
 							</ClayButton>
+
 							<ClayButton
 								disabled={!isValid}
 								displayType="primary"
@@ -355,7 +358,7 @@ EditCategoriesModal.propTypes = {
 	pathModule: PropTypes.string.isRequired,
 	repositoryId: PropTypes.string.isRequired,
 	selectAll: PropTypes.bool,
-	selectCategoriesUrl: PropTypes.string.isRequired
+	selectCategoriesUrl: PropTypes.string.isRequired,
 };
 
 export default EditCategoriesModal;

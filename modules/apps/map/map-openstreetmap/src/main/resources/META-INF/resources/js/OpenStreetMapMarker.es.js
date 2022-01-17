@@ -12,13 +12,14 @@
  * details.
  */
 
-import MarkerBase from 'map-common/js/MarkerBase.es';
+import MarkerBase from '@liferay/map-common/js/MarkerBase.es';
 
 /**
  * OpenStreetMapMarker
  * @review
  */
 class OpenStreetMapMarker extends MarkerBase {
+
 	/**
 	 * @inheritDoc
 	 * @review
@@ -26,7 +27,7 @@ class OpenStreetMapMarker extends MarkerBase {
 	_getNativeMarker(location, map) {
 		if (!this._nativeMarker) {
 			this._nativeMarker = L.marker(location, {
-				draggable: true
+				draggable: true,
 			}).addTo(map);
 
 			this._nativeMarker.on(
@@ -69,7 +70,7 @@ class OpenStreetMapMarker extends MarkerBase {
 	 */
 	_getNormalizedEventData(nativeEvent) {
 		return {
-			location: nativeEvent.target.getLatLng()
+			location: nativeEvent.target.getLatLng(),
 		};
 	}
 

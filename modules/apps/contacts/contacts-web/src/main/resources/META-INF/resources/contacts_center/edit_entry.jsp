@@ -56,7 +56,7 @@ if (entryId > 0) {
 
 	var form = A.one('#<portlet:namespace />addEntry');
 
-	var failureCallback = function() {
+	var failureCallback = function () {
 		var errorMessage = A.one('#<portlet:namespace />errorMessage');
 
 		if (errorMessage) {
@@ -68,7 +68,7 @@ if (entryId > 0) {
 		}
 	};
 
-	form.on('submit', function(event) {
+	form.on('submit', (event) => {
 		var end = <%= ContactsConstants.MAX_RESULT_COUNT %>;
 
 		var lastNameAnchor = '';
@@ -101,12 +101,12 @@ if (entryId > 0) {
 
 		Liferay.Util.fetch(url, {
 			body: new FormData(form.getDOM()),
-			method: 'POST'
+			method: 'POST',
 		})
-			.then(function(response) {
+			.then((response) => {
 				return response.json();
 			})
-			.then(function(data) {
+			.then((data) => {
 				if (!data.success) {
 					var message = A.one('#<portlet:namespace />errorMessage');
 
@@ -122,7 +122,7 @@ if (entryId > 0) {
 					Liferay.component('contactsCenter').closePopup();
 				}
 			})
-			.catch(function() {
+			.catch(() => {
 				failureCallback();
 			});
 	});

@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.model.LocalizedModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.model.StagedGroupedModel;
+import com.liferay.portal.kernel.model.change.tracking.CTModel;
 
 import java.util.Date;
 import java.util.Locale;
@@ -41,8 +42,8 @@ import org.osgi.annotation.versioning.ProviderType;
  */
 @ProviderType
 public interface DLFileEntryTypeModel
-	extends BaseModel<DLFileEntryType>, LocalizedModel, MVCCModel, ShardedModel,
-			StagedGroupedModel {
+	extends BaseModel<DLFileEntryType>, CTModel<DLFileEntryType>,
+			LocalizedModel, MVCCModel, ShardedModel, StagedGroupedModel {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -55,6 +56,7 @@ public interface DLFileEntryTypeModel
 	 *
 	 * @return the primary key of this document library file entry type
 	 */
+	@Override
 	public long getPrimaryKey();
 
 	/**
@@ -62,6 +64,7 @@ public interface DLFileEntryTypeModel
 	 *
 	 * @param primaryKey the primary key of this document library file entry type
 	 */
+	@Override
 	public void setPrimaryKey(long primaryKey);
 
 	/**
@@ -79,6 +82,22 @@ public interface DLFileEntryTypeModel
 	 */
 	@Override
 	public void setMvccVersion(long mvccVersion);
+
+	/**
+	 * Returns the ct collection ID of this document library file entry type.
+	 *
+	 * @return the ct collection ID of this document library file entry type
+	 */
+	@Override
+	public long getCtCollectionId();
+
+	/**
+	 * Sets the ct collection ID of this document library file entry type.
+	 *
+	 * @param ctCollectionId the ct collection ID of this document library file entry type
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId);
 
 	/**
 	 * Returns the uuid of this document library file entry type.
@@ -223,6 +242,20 @@ public interface DLFileEntryTypeModel
 	 */
 	@Override
 	public void setModifiedDate(Date modifiedDate);
+
+	/**
+	 * Returns the data definition ID of this document library file entry type.
+	 *
+	 * @return the data definition ID of this document library file entry type
+	 */
+	public long getDataDefinitionId();
+
+	/**
+	 * Sets the data definition ID of this document library file entry type.
+	 *
+	 * @param dataDefinitionId the data definition ID of this document library file entry type
+	 */
+	public void setDataDefinitionId(long dataDefinitionId);
 
 	/**
 	 * Returns the file entry type key of this document library file entry type.
@@ -440,6 +473,20 @@ public interface DLFileEntryTypeModel
 		Map<Locale, String> descriptionMap, Locale defaultLocale);
 
 	/**
+	 * Returns the scope of this document library file entry type.
+	 *
+	 * @return the scope of this document library file entry type
+	 */
+	public int getScope();
+
+	/**
+	 * Sets the scope of this document library file entry type.
+	 *
+	 * @param scope the scope of this document library file entry type
+	 */
+	public void setScope(int scope);
+
+	/**
 	 * Returns the last publish date of this document library file entry type.
 	 *
 	 * @return the last publish date of this document library file entry type
@@ -467,5 +514,8 @@ public interface DLFileEntryTypeModel
 	@Override
 	public void prepareLocalizedFieldsForImport(Locale defaultImportLocale)
 		throws LocaleException;
+
+	@Override
+	public DLFileEntryType cloneWithOriginalValues();
 
 }

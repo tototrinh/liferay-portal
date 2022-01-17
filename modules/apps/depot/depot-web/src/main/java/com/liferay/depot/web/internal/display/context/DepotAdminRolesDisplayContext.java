@@ -16,17 +16,23 @@ package com.liferay.depot.web.internal.display.context;
 
 import com.liferay.admin.kernel.util.PortalMyAccountApplicationType;
 import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.depot.web.internal.constants.DepotPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroupRole;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
+import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
+import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.UserGroupRolePermissionUtil;
@@ -41,24 +47,30 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.portlet.WindowStateException;
 
 /**
  * @author Cristina González
  */
 public class DepotAdminRolesDisplayContext {
 
-	public DepotAdminRolesDisplayContext(HttpServletRequest httpServletRequest)
+	public DepotAdminRolesDisplayContext(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse)
 		throws PortalException {
 
-		_themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
+		_liferayPortletRequest = liferayPortletRequest;
+		_liferayPortletResponse = liferayPortletResponse;
+
+		_themeDisplay = (ThemeDisplay)liferayPortletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
 		_permissionChecker = _themeDisplay.getPermissionChecker();
 
-		_user = PortalUtil.getSelectedUser(httpServletRequest);
+		_user = PortalUtil.getSelectedUser(liferayPortletRequest);
 	}
 
 	public String getAssetLibraryLabel() {
@@ -66,6 +78,13 @@ public class DepotAdminRolesDisplayContext {
 			_themeDisplay.getLocale(), getClass());
 
 		return ResourceBundleUtil.getString(resourceBundle, "asset-library");
+	}
+
+	public String getDepotRoleSyncEntitiesEventName() {
+		String portletNamespace = PortalUtil.getPortletNamespace(
+			DepotPortletKeys.DEPOT_ADMIN);
+
+		return portletNamespace + "syncDepotRoles";
 	}
 
 	public String getLabel() {
@@ -76,18 +95,70 @@ public class DepotAdminRolesDisplayContext {
 			resourceBundle, "asset-library-roles");
 	}
 
+	public String getSelectDepotRolesEventName() {
+		String portletNamespace = PortalUtil.getPortletNamespace(
+			DepotPortletKeys.DEPOT_ADMIN);
+
+		return portletNamespace + "selectDepotRole";
+	}
+
+	public String getSelectDepotRolesURL() throws WindowStateException {
+		RequestBackedPortletURLFactory requestBackedPortletURLFactory =
+			RequestBackedPortletURLFactoryUtil.create(_liferayPortletRequest);
+
+		return PortletURLBuilder.create(
+			requestBackedPortletURLFactory.createRenderURL(
+				DepotPortletKeys.DEPOT_ADMIN)
+		).setMVCRenderCommandName(
+			"/depot/select_depot_role"
+		).setParameter(
+			"p_u_i_d",
+			Optional.ofNullable(
+				_user
+			).map(
+				User::getUserId
+			).map(
+				String::valueOf
+			).orElse(
+				"0"
+			)
+		).setParameter(
+			"step", "1"
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
+	}
+
 	public List<UserGroupRole> getUserGroupRoles(int start, int end)
 		throws PortalException {
 
-		List<UserGroupRole> userGroupRoles = _getUserGroupRoles();
-
-		return ListUtil.subList(userGroupRoles, start, end);
+		return ListUtil.subList(_getUserGroupRoles(), start, end);
 	}
 
 	public int getUserGroupRolesCount() throws PortalException {
 		List<UserGroupRole> userGroupRoles = _getUserGroupRoles();
 
 		return userGroupRoles.size();
+	}
+
+	public boolean isDeletable() {
+		return isSelectable();
+	}
+
+	public boolean isSelectable() {
+		String myAccountPortletId = PortletProviderUtil.getPortletId(
+			PortalMyAccountApplicationType.MyAccount.CLASS_NAME,
+			PortletProvider.Action.VIEW);
+
+		PortletDisplay portletDisplay = _themeDisplay.getPortletDisplay();
+
+		if (!Objects.equals(
+				portletDisplay.getPortletName(), myAccountPortletId)) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private boolean _contains(UserGroupRole userGroupRole) {
@@ -146,17 +217,17 @@ public class DepotAdminRolesDisplayContext {
 		List<UserGroupRole> filteredUserGroupRoles = ListUtil.copy(
 			userGroupRoles);
 
-		Iterator<UserGroupRole> itr = filteredUserGroupRoles.iterator();
+		Iterator<UserGroupRole> iterator = filteredUserGroupRoles.iterator();
 
-		while (itr.hasNext()) {
-			UserGroupRole userGroupRole = itr.next();
+		while (iterator.hasNext()) {
+			UserGroupRole userGroupRole = iterator.next();
 
 			Role role = userGroupRole.getRole();
 
 			if (Objects.equals(
 					role.getName(), DepotRolesConstants.ASSET_LIBRARY_MEMBER)) {
 
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -164,11 +235,11 @@ public class DepotAdminRolesDisplayContext {
 			return filteredUserGroupRoles;
 		}
 
-		itr = filteredUserGroupRoles.iterator();
+		iterator = filteredUserGroupRoles.iterator();
 
-		while (itr.hasNext()) {
-			if (!_contains(itr.next())) {
-				itr.remove();
+		while (iterator.hasNext()) {
+			if (!_contains(iterator.next())) {
+				iterator.remove();
 			}
 		}
 
@@ -182,9 +253,7 @@ public class DepotAdminRolesDisplayContext {
 			Group group = userGroupRole.getGroup();
 			Role role = userGroupRole.getRole();
 
-			if ((group != null) &&
-				Objects.equals(group.getType(), GroupConstants.TYPE_DEPOT) &&
-				(role != null) &&
+			if ((group != null) && group.isDepot() && (role != null) &&
 				(role.getType() == RoleConstants.TYPE_DEPOT)) {
 
 				return true;
@@ -221,6 +290,8 @@ public class DepotAdminRolesDisplayContext {
 	private static final Log _log = LogFactoryUtil.getLog(
 		DepotAdminRolesDisplayContext.class);
 
+	private final LiferayPortletRequest _liferayPortletRequest;
+	private final LiferayPortletResponse _liferayPortletResponse;
 	private final PermissionChecker _permissionChecker;
 	private final ThemeDisplay _themeDisplay;
 	private final User _user;

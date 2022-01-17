@@ -18,7 +18,8 @@ import com.liferay.headless.delivery.client.dto.v1_0.AdaptedImage;
 import com.liferay.headless.delivery.client.dto.v1_0.CustomField;
 import com.liferay.headless.delivery.client.dto.v1_0.Document;
 import com.liferay.headless.delivery.client.dto.v1_0.RelatedContent;
-import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategory;
+import com.liferay.headless.delivery.client.dto.v1_0.RenderedContent;
+import com.liferay.headless.delivery.client.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.headless.delivery.client.json.BaseJSONParser;
 
 import java.text.DateFormat;
@@ -104,6 +105,20 @@ public class DocumentSerDes {
 			sb.append(String.valueOf(document.getAggregateRating()));
 		}
 
+		if (document.getAssetLibraryKey() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"assetLibraryKey\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(document.getAssetLibraryKey()));
+
+			sb.append("\"");
+		}
+
 		if (document.getContentUrl() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -114,6 +129,20 @@ public class DocumentSerDes {
 			sb.append("\"");
 
 			sb.append(_escape(document.getContentUrl()));
+
+			sb.append("\"");
+		}
+
+		if (document.getContentValue() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"contentValue\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(document.getContentValue()));
 
 			sb.append("\"");
 		}
@@ -202,6 +231,16 @@ public class DocumentSerDes {
 			sb.append(document.getDocumentFolderId());
 		}
 
+		if (document.getDocumentType() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"documentType\": ");
+
+			sb.append(String.valueOf(document.getDocumentType()));
+		}
+
 		if (document.getEncodingFormat() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -212,6 +251,20 @@ public class DocumentSerDes {
 			sb.append("\"");
 
 			sb.append(_escape(document.getEncodingFormat()));
+
+			sb.append("\"");
+		}
+
+		if (document.getExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(document.getExternalReferenceCode()));
 
 			sb.append("\"");
 		}
@@ -294,6 +347,36 @@ public class DocumentSerDes {
 			sb.append("]");
 		}
 
+		if (document.getRenderedContents() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"renderedContents\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < document.getRenderedContents().length; i++) {
+				sb.append(String.valueOf(document.getRenderedContents()[i]));
+
+				if ((i + 1) < document.getRenderedContents().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (document.getSiteId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"siteId\": ");
+
+			sb.append(document.getSiteId());
+		}
+
 		if (document.getSizeInBytes() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -304,19 +387,22 @@ public class DocumentSerDes {
 			sb.append(document.getSizeInBytes());
 		}
 
-		if (document.getTaxonomyCategories() != null) {
+		if (document.getTaxonomyCategoryBriefs() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"taxonomyCategories\": ");
+			sb.append("\"taxonomyCategoryBriefs\": ");
 
 			sb.append("[");
 
-			for (int i = 0; i < document.getTaxonomyCategories().length; i++) {
-				sb.append(String.valueOf(document.getTaxonomyCategories()[i]));
+			for (int i = 0; i < document.getTaxonomyCategoryBriefs().length;
+				 i++) {
 
-				if ((i + 1) < document.getTaxonomyCategories().length) {
+				sb.append(
+					String.valueOf(document.getTaxonomyCategoryBriefs()[i]));
+
+				if ((i + 1) < document.getTaxonomyCategoryBriefs().length) {
 					sb.append(", ");
 				}
 			}
@@ -417,11 +503,27 @@ public class DocumentSerDes {
 				String.valueOf(document.getAggregateRating()));
 		}
 
+		if (document.getAssetLibraryKey() == null) {
+			map.put("assetLibraryKey", null);
+		}
+		else {
+			map.put(
+				"assetLibraryKey",
+				String.valueOf(document.getAssetLibraryKey()));
+		}
+
 		if (document.getContentUrl() == null) {
 			map.put("contentUrl", null);
 		}
 		else {
 			map.put("contentUrl", String.valueOf(document.getContentUrl()));
+		}
+
+		if (document.getContentValue() == null) {
+			map.put("contentValue", null);
+		}
+		else {
+			map.put("contentValue", String.valueOf(document.getContentValue()));
 		}
 
 		if (document.getCreator() == null) {
@@ -438,13 +540,23 @@ public class DocumentSerDes {
 			map.put("customFields", String.valueOf(document.getCustomFields()));
 		}
 
-		map.put(
-			"dateCreated",
-			liferayToJSONDateFormat.format(document.getDateCreated()));
+		if (document.getDateCreated() == null) {
+			map.put("dateCreated", null);
+		}
+		else {
+			map.put(
+				"dateCreated",
+				liferayToJSONDateFormat.format(document.getDateCreated()));
+		}
 
-		map.put(
-			"dateModified",
-			liferayToJSONDateFormat.format(document.getDateModified()));
+		if (document.getDateModified() == null) {
+			map.put("dateModified", null);
+		}
+		else {
+			map.put(
+				"dateModified",
+				liferayToJSONDateFormat.format(document.getDateModified()));
+		}
 
 		if (document.getDescription() == null) {
 			map.put("description", null);
@@ -462,12 +574,28 @@ public class DocumentSerDes {
 				String.valueOf(document.getDocumentFolderId()));
 		}
 
+		if (document.getDocumentType() == null) {
+			map.put("documentType", null);
+		}
+		else {
+			map.put("documentType", String.valueOf(document.getDocumentType()));
+		}
+
 		if (document.getEncodingFormat() == null) {
 			map.put("encodingFormat", null);
 		}
 		else {
 			map.put(
 				"encodingFormat", String.valueOf(document.getEncodingFormat()));
+		}
+
+		if (document.getExternalReferenceCode() == null) {
+			map.put("externalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"externalReferenceCode",
+				String.valueOf(document.getExternalReferenceCode()));
 		}
 
 		if (document.getFileExtension() == null) {
@@ -510,6 +638,22 @@ public class DocumentSerDes {
 				String.valueOf(document.getRelatedContents()));
 		}
 
+		if (document.getRenderedContents() == null) {
+			map.put("renderedContents", null);
+		}
+		else {
+			map.put(
+				"renderedContents",
+				String.valueOf(document.getRenderedContents()));
+		}
+
+		if (document.getSiteId() == null) {
+			map.put("siteId", null);
+		}
+		else {
+			map.put("siteId", String.valueOf(document.getSiteId()));
+		}
+
 		if (document.getSizeInBytes() == null) {
 			map.put("sizeInBytes", null);
 		}
@@ -517,13 +661,13 @@ public class DocumentSerDes {
 			map.put("sizeInBytes", String.valueOf(document.getSizeInBytes()));
 		}
 
-		if (document.getTaxonomyCategories() == null) {
-			map.put("taxonomyCategories", null);
+		if (document.getTaxonomyCategoryBriefs() == null) {
+			map.put("taxonomyCategoryBriefs", null);
 		}
 		else {
 			map.put(
-				"taxonomyCategories",
-				String.valueOf(document.getTaxonomyCategories()));
+				"taxonomyCategoryBriefs",
+				String.valueOf(document.getTaxonomyCategoryBriefs()));
 		}
 
 		if (document.getTaxonomyCategoryIds() == null) {
@@ -595,9 +739,19 @@ public class DocumentSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "assetLibraryKey")) {
+				if (jsonParserFieldValue != null) {
+					document.setAssetLibraryKey((String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "contentUrl")) {
 				if (jsonParserFieldValue != null) {
 					document.setContentUrl((String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "contentValue")) {
+				if (jsonParserFieldValue != null) {
+					document.setContentValue((String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "creator")) {
@@ -641,9 +795,23 @@ public class DocumentSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "documentType")) {
+				if (jsonParserFieldValue != null) {
+					document.setDocumentType(
+						DocumentTypeSerDes.toDTO((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "encodingFormat")) {
 				if (jsonParserFieldValue != null) {
 					document.setEncodingFormat((String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "externalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					document.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "fileExtension")) {
@@ -680,6 +848,25 @@ public class DocumentSerDes {
 						));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "renderedContents")) {
+				if (jsonParserFieldValue != null) {
+					document.setRenderedContents(
+						Stream.of(
+							toStrings((Object[])jsonParserFieldValue)
+						).map(
+							object -> RenderedContentSerDes.toDTO(
+								(String)object)
+						).toArray(
+							size -> new RenderedContent[size]
+						));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "siteId")) {
+				if (jsonParserFieldValue != null) {
+					document.setSiteId(
+						Long.valueOf((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "sizeInBytes")) {
 				if (jsonParserFieldValue != null) {
 					document.setSizeInBytes(
@@ -687,17 +874,17 @@ public class DocumentSerDes {
 				}
 			}
 			else if (Objects.equals(
-						jsonParserFieldName, "taxonomyCategories")) {
+						jsonParserFieldName, "taxonomyCategoryBriefs")) {
 
 				if (jsonParserFieldValue != null) {
-					document.setTaxonomyCategories(
+					document.setTaxonomyCategoryBriefs(
 						Stream.of(
 							toStrings((Object[])jsonParserFieldValue)
 						).map(
-							object -> TaxonomyCategorySerDes.toDTO(
+							object -> TaxonomyCategoryBriefSerDes.toDTO(
 								(String)object)
 						).toArray(
-							size -> new TaxonomyCategory[size]
+							size -> new TaxonomyCategoryBrief[size]
 						));
 				}
 			}
@@ -720,10 +907,6 @@ public class DocumentSerDes {
 						Document.ViewableBy.create(
 							(String)jsonParserFieldValue));
 				}
-			}
-			else {
-				throw new IllegalArgumentException(
-					"Unsupported field name " + jsonParserFieldName);
 			}
 		}
 
@@ -753,7 +936,7 @@ public class DocumentSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -779,14 +962,17 @@ public class DocumentSerDes {
 
 				sb.append("]");
 			}
-			else {
+			else if (value instanceof String) {
 				sb.append("\"");
 				sb.append(_escape(entry.getValue()));
 				sb.append("\"");
 			}
+			else {
+				sb.append(String.valueOf(entry.getValue()));
+			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

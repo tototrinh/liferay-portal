@@ -14,7 +14,7 @@
 
 AUI.add(
 	'liferay-scheduler',
-	A => {
+	(A) => {
 		var AArray = A.Array;
 		var DateMath = A.DataType.DateMath;
 		var Lang = A.Lang;
@@ -57,6 +57,10 @@ AUI.add(
 			Liferay.Language.get('today') +
 			'</button>';
 
+		var TPL_SCHEDULER_VIEWS =
+			'<div aria-label="{ariaLabel}" class="col-xs-5 form-inline scheduler-base-views" role="listbox">' +
+			'</div>';
+
 		var WEEKLY = 'WEEKLY';
 
 		var Time = Liferay.Time;
@@ -85,7 +89,7 @@ AUI.add(
 						(daysInMonth - daysInFirstWeek) / DateMath.WEEK_LENGTH
 					) + 1
 				);
-			}
+			},
 		});
 
 		var CalendarUtil = Liferay.CalendarUtil;
@@ -94,24 +98,24 @@ AUI.add(
 			ATTRS: {
 				calendarContainer: {
 					validator: isObject,
-					value: null
+					value: null,
 				},
 
 				currentTime: {
 					validator: isDate,
-					value: new Date()
+					value: new Date(),
 				},
 
 				eventsPerPage: {},
 
 				filterCalendarBookings: {
-					validator: isFunction
+					validator: isFunction,
 				},
 
 				iconAddEventNode: {
 					valueFn() {
 						return A.Node.create(TPL_ICON_ADD_EVENT_NODE);
-					}
+					},
 				},
 
 				iconNextNode: {
@@ -120,10 +124,10 @@ AUI.add(
 
 						return A.Node.create(
 							A.Lang.sub(TPL_SCHEDULER_ICON_NEXT, {
-								ariaLabel: instance.getAriaLabel('next')
+								ariaLabel: instance.getAriaLabel('next'),
 							})
 						);
-					}
+					},
 				},
 
 				iconPrevNode: {
@@ -132,10 +136,10 @@ AUI.add(
 
 						return A.Node.create(
 							A.Lang.sub(TPL_SCHEDULER_ICON_PREV, {
-								ariaLabel: instance.getAriaLabel('previous')
+								ariaLabel: instance.getAriaLabel('previous'),
 							})
 						);
-					}
+					},
 				},
 
 				maxDaysDisplayed: {},
@@ -143,22 +147,22 @@ AUI.add(
 				portletNamespace: {
 					setter: String,
 					validator: isValue,
-					value: STR_BLANK
+					value: STR_BLANK,
 				},
 
 				preventPersistence: {
 					validator: isBoolean,
-					value: false
+					value: false,
 				},
 
 				remoteServices: {
 					validator: isObject,
-					value: null
+					value: null,
 				},
 
 				showAddEventBtn: {
 					validator: isBoolean,
-					value: true
+					value: true,
 				},
 
 				todayNode: {
@@ -169,12 +173,24 @@ AUI.add(
 							A.Lang.sub(
 								this._processTemplate(TPL_SCHEDULER_TODAY),
 								{
-									ariaLabel: instance.getAriaLabel('today')
+									ariaLabel: instance.getAriaLabel('today'),
 								}
 							)
 						);
-					}
-				}
+					},
+				},
+
+				viewsNode: {
+					valueFn() {
+						var instance = this;
+
+						return A.Node.create(
+							A.Lang.sub(TPL_SCHEDULER_VIEWS, {
+								ariaLabel: instance.getAriaLabel('calendar'),
+							})
+						);
+					},
+				},
 			},
 
 			AUGMENTS: [Liferay.RecurrenceConverter],
@@ -221,7 +237,7 @@ AUI.add(
 							endDate: 1,
 							endTime: 1,
 							startDate: 1,
-							startTime: 1
+							startTime: 1,
 						};
 
 						var persist = true;
@@ -263,16 +279,16 @@ AUI.add(
 
 					var viewName = view.get('name');
 
-					if (viewName == 'agenda') {
+					if (viewName === 'agenda') {
 						schedulerViewText = Liferay.Language.get('agenda-view');
 					}
-					else if (viewName == 'day') {
+					else if (viewName === 'day') {
 						schedulerViewText = Liferay.Language.get('day-view');
 					}
-					else if (viewName == 'month') {
+					else if (viewName === 'month') {
 						schedulerViewText = Liferay.Language.get('month-view');
 					}
-					else if (viewName == 'week') {
+					else if (viewName === 'week') {
 						schedulerViewText = Liferay.Language.get('week-view');
 					}
 
@@ -396,7 +412,7 @@ AUI.add(
 						startTimeDay: startTimeDate.getDate(),
 						startTimeMonth: startTimeDate.getMonth(),
 						startTimeYear: startTimeDate.getFullYear(),
-						titleCurrentValue: ''
+						titleCurrentValue: '',
 					};
 
 					Liferay.Util.openWindow({
@@ -404,16 +420,16 @@ AUI.add(
 							after: {
 								destroy() {
 									instance.load();
-								}
+								},
 							},
 							destroyOnHide: true,
-							modal: true
+							modal: true,
 						},
 						title: Liferay.Language.get('new-calendar-booking'),
 						uri: CalendarUtil.fillURLParameters(
 							editCalendarBookingURL,
 							data
-						)
+						),
 					});
 				},
 
@@ -424,7 +440,7 @@ AUI.add(
 
 					var remoteServices = instance.get('remoteServices');
 
-					var success = function() {
+					var success = function () {
 						instance.load();
 						instance.get('eventRecorder').hidePopover();
 					};
@@ -537,7 +553,7 @@ AUI.add(
 
 					var currentTimeFn = instance.get('currentTimeFn');
 
-					currentTimeFn(time => {
+					currentTimeFn((time) => {
 						instance.set('currentTime', time);
 					});
 				},
@@ -548,7 +564,7 @@ AUI.add(
 					var currentTime = event.newVal;
 
 					var pastSchedulerEvents = instance.getEvents(
-						schedulerEvent => {
+						(schedulerEvent) => {
 							var endDate = schedulerEvent.get('endDate');
 
 							return endDate.getTime() <= currentTime;
@@ -556,7 +572,7 @@ AUI.add(
 						false
 					);
 
-					A.each(pastSchedulerEvents, schedulerEvent => {
+					A.each(pastSchedulerEvents, (schedulerEvent) => {
 						return schedulerEvent._uiSetPast(true);
 					});
 				},
@@ -592,7 +608,7 @@ AUI.add(
 							instance._queueableQuestionResolver,
 							instance
 						),
-						schedulerEvent
+						schedulerEvent,
 					});
 				},
 
@@ -602,14 +618,14 @@ AUI.add(
 					instance.after({
 						'scheduler-base:dateChange': instance._afterDateChange,
 						'scheduler-event:change':
-							instance._afterSchedulerEventChange
+							instance._afterSchedulerEventChange,
 					});
 
 					instance.on({
 						'*:load': instance._onLoadSchedulerEvents,
 						'scheduler-event-recorder:delete':
 							instance._onDeleteEvent,
-						'scheduler-event-recorder:save': instance._onSaveEvent
+						'scheduler-event-recorder:save': instance._onSaveEvent,
 					});
 
 					instance._bindCurrentTimeInterval();
@@ -629,7 +645,7 @@ AUI.add(
 
 					clearInterval(instance._currentTimeInterval);
 
-					instance.get('views').forEach(item => {
+					instance.get('views').forEach((item) => {
 						item.destroy();
 					});
 
@@ -642,7 +658,7 @@ AUI.add(
 				getEventsByCalendarBookingId(calendarBookingId) {
 					var instance = this;
 
-					return instance.getEvents(schedulerEvent => {
+					return instance.getEvents((schedulerEvent) => {
 						return (
 							schedulerEvent.get('calendarBookingId') ===
 							calendarBookingId
@@ -664,7 +680,7 @@ AUI.add(
 					var calendarEvents = {};
 					var events = [];
 
-					calendarBookings.forEach(item => {
+					calendarBookings.forEach((item) => {
 						var calendarId = item.calendarId;
 
 						if (!calendarEvents[calendarId]) {
@@ -676,7 +692,7 @@ AUI.add(
 						);
 
 						schedulerEvent.set('scheduler', instance, {
-							silent: true
+							silent: true,
 						});
 
 						events.push(schedulerEvent);
@@ -691,7 +707,7 @@ AUI.add(
 						calendarContainer.get('availableCalendars'),
 						(item, index) => {
 							item.reset(calendarEvents[index], {
-								skipSyncUI: true
+								skipSyncUI: true,
 							});
 						}
 					);
@@ -749,8 +765,8 @@ AUI.add(
 					var events = instance._events;
 
 					return events.sync.apply(events, arguments);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.Scheduler = Scheduler;
@@ -766,9 +782,9 @@ AUI.add(
 
 						return A.DataType.Date.format(date, {
 							format: Liferay.Language.get('a-b-d-y'),
-							locale: scheduler.get('locale')
+							locale: scheduler.get('locale'),
 						});
-					}
+					},
 				},
 
 				syncCurrentTimeUI() {
@@ -779,12 +795,12 @@ AUI.add(
 					var currentTime = scheduler.get('currentTime');
 
 					instance._moveCurrentTimeNode(currentTime);
-				}
+				},
 			},
 
 			EXTENDS: A.SchedulerDayView,
 
-			NAME: 'scheduler-day-view'
+			NAME: 'scheduler-day-view',
 		});
 
 		Liferay.SchedulerDayView = SchedulerDayView;
@@ -800,9 +816,9 @@ AUI.add(
 
 						return A.DataType.Date.format(date, {
 							format: Liferay.Language.get('a-d'),
-							locale: scheduler.get('locale')
+							locale: scheduler.get('locale'),
 						});
-					}
+					},
 				},
 
 				navigationDateFormatter: {
@@ -835,24 +851,24 @@ AUI.add(
 
 						var startDateLabel = A.DataType.Date.format(startDate, {
 							format: startDateFormat,
-							locale
+							locale,
 						});
 
 						var endDateLabel = A.DataType.Date.format(endDate, {
 							format: endDateFormat,
-							locale
+							locale,
 						});
 
 						return [startDateLabel, '&mdash;', endDateLabel].join(
 							' '
 						);
-					}
-				}
+					},
+				},
 			},
 
 			EXTENDS: A.SchedulerWeekView,
 
-			NAME: 'scheduler-week-view'
+			NAME: 'scheduler-week-view',
 		});
 
 		var SchedulerMonthView = A.Component.create({
@@ -866,10 +882,10 @@ AUI.add(
 
 						return A.DataType.Date.format(date, {
 							format: Liferay.Language.get('b-y'),
-							locale: scheduler.get('locale')
+							locale: scheduler.get('locale'),
 						});
-					}
-				}
+					},
+				},
 			},
 
 			EXTENDS: A.SchedulerMonthView,
@@ -922,8 +938,8 @@ AUI.add(
 						this,
 						arguments
 					);
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.SchedulerMonthView = SchedulerMonthView;
@@ -961,9 +977,15 @@ AUI.add(
 							if (startDate.getHours() >= 12) {
 								startDateMask += 'pm';
 							}
+							else {
+								startDateMask += 'am';
+							}
 
 							if (endDate.getHours() >= 12) {
 								endDateMask += 'pm';
+							}
+							else {
+								endDateMask += 'am';
 							}
 						}
 
@@ -984,9 +1006,9 @@ AUI.add(
 						return [
 							startDateFormatter.call(instance, startDate),
 							'&mdash;',
-							endDateFormatter.call(instance, endDate)
+							endDateFormatter.call(instance, endDate),
 						].join(' ');
-					}
+					},
 				},
 
 				headerDayDateFormatter: {
@@ -1012,7 +1034,7 @@ AUI.add(
 						formatter = instance._getFormatter.call(instance, mask);
 
 						return formatter.call(instance, date);
-					}
+					},
 				},
 
 				headerExtraDateFormatter: {
@@ -1023,7 +1045,7 @@ AUI.add(
 						return instance._getFormatter(
 							Liferay.Language.get('b-e')
 						);
-					}
+					},
 				},
 
 				infoDayDateFormatter: {
@@ -1034,7 +1056,7 @@ AUI.add(
 						return instance._getFormatter(
 							Liferay.Language.get('e')
 						);
-					}
+					},
 				},
 
 				infoLabelBigDateFormatter: {
@@ -1045,7 +1067,7 @@ AUI.add(
 						return instance._getFormatter(
 							Liferay.Language.get('a')
 						);
-					}
+					},
 				},
 
 				infoLabelSmallDateFormatter: {
@@ -1056,8 +1078,8 @@ AUI.add(
 						return instance._getFormatter(
 							Liferay.Language.get('b-d-y')
 						);
-					}
-				}
+					},
+				},
 			},
 
 			EXTENDS: A.SchedulerAgendaView,
@@ -1066,14 +1088,14 @@ AUI.add(
 
 			prototype: {
 				_getFormatter(mask) {
-					return function(date) {
+					return function (date) {
 						var instance = this;
 
 						var scheduler = instance.get('scheduler');
 
 						return A.DataType.Date.format(date, {
 							format: mask,
-							locale: scheduler.get('locale')
+							locale: scheduler.get('locale'),
 						});
 					};
 				},
@@ -1096,8 +1118,8 @@ AUI.add(
 					else {
 						headerContent.hide();
 					}
-				}
-			}
+				},
+			},
 		});
 
 		Liferay.SchedulerAgendaView = SchedulerAgendaView;
@@ -1109,6 +1131,7 @@ AUI.add(
 			'aui-datatype',
 			'aui-scheduler',
 			'dd-plugin',
+			'liferay-calendar-a11y',
 			'liferay-calendar-message-util',
 			'liferay-calendar-recurrence-converter',
 			'liferay-calendar-recurrence-util',
@@ -1116,7 +1139,7 @@ AUI.add(
 			'liferay-scheduler-event-recorder',
 			'liferay-scheduler-models',
 			'promise',
-			'resize-plugin'
-		]
+			'resize-plugin',
+		],
 	}
 );

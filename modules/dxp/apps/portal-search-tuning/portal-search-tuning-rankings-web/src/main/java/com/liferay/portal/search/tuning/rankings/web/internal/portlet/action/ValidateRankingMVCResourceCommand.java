@@ -31,6 +31,8 @@ import com.liferay.portal.search.index.IndexNameBuilder;
 import com.liferay.portal.search.searcher.SearchRequestBuilderFactory;
 import com.liferay.portal.search.tuning.rankings.web.internal.constants.ResultRankingsPortletKeys;
 import com.liferay.portal.search.tuning.rankings.web.internal.index.DuplicateQueryStringsDetector;
+import com.liferay.portal.search.tuning.rankings.web.internal.index.name.RankingIndexName;
+import com.liferay.portal.search.tuning.rankings.web.internal.index.name.RankingIndexNameBuilder;
 
 import java.io.IOException;
 
@@ -56,7 +58,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ResultRankingsPortletKeys.RESULT_RANKINGS,
-		"mvc.command.name=/results_ranking/validate"
+		"mvc.command.name=/result_rankings/validate_ranking"
 	},
 	service = MVCResourceCommand.class
 )
@@ -132,6 +134,9 @@ public class ValidateRankingMVCResourceCommand implements MVCResourceCommand {
 	protected Portal portal;
 
 	@Reference
+	protected RankingIndexNameBuilder rankingIndexNameBuilder;
+
+	@Reference
 	protected SearchRequestBuilderFactory searchRequestBuilderFactory;
 
 	private List<String> _getAliases(
@@ -151,11 +156,13 @@ public class ValidateRankingMVCResourceCommand implements MVCResourceCommand {
 		);
 	}
 
+	private long _getCompanyId(ResourceRequest resourceRequest) {
+		return portal.getCompanyId(resourceRequest);
+	}
+
 	private List<String> _getDuplicateQueryStrings(
 		ResourceRequest resourceRequest,
 		ValidateRankingMVCResourceRequest validateRankingMVCResourceRequest) {
-
-		String index = _getIndexName(resourceRequest);
 
 		List<String> aliases = _getAliases(validateRankingMVCResourceRequest);
 
@@ -173,17 +180,25 @@ public class ValidateRankingMVCResourceCommand implements MVCResourceCommand {
 		return duplicateQueryStringsDetector.detect(
 			duplicateQueryStringsDetector.builder(
 			).index(
-				index
+				_getIndexName(resourceRequest)
 			).queryStrings(
 				queryStrings
-			).unlessRankingId(
+			).rankingIndexName(
+				_getRankingIndexName(resourceRequest)
+			).unlessRankingDocumentId(
 				validateRankingMVCResourceRequest.getResultsRankingUid()
 			).build());
 	}
 
 	private String _getIndexName(ResourceRequest resourceRequest) {
-		return indexNameBuilder.getIndexName(
-			portal.getCompanyId(resourceRequest));
+		return indexNameBuilder.getIndexName(_getCompanyId(resourceRequest));
+	}
+
+	private RankingIndexName _getRankingIndexName(
+		ResourceRequest resourceRequest) {
+
+		return rankingIndexNameBuilder.getRankingIndexName(
+			_getCompanyId(resourceRequest));
 	}
 
 	private boolean _isUpdateSpecial(String string) {

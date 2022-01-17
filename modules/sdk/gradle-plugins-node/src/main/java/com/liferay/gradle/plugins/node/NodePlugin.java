@@ -27,6 +27,7 @@ import com.liferay.gradle.plugins.node.tasks.PackageRunBuildTask;
 import com.liferay.gradle.plugins.node.tasks.PackageRunTask;
 import com.liferay.gradle.plugins.node.tasks.PackageRunTestTask;
 import com.liferay.gradle.plugins.node.tasks.PublishNodeModuleTask;
+import com.liferay.gradle.util.OSGiUtil;
 import com.liferay.gradle.util.Validator;
 
 import groovy.json.JsonSlurper;
@@ -34,8 +35,10 @@ import groovy.json.JsonSlurper;
 import groovy.lang.Closure;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 
@@ -51,17 +54,17 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.UncheckedIOException;
 import org.gradle.api.file.CopySpec;
-import org.gradle.api.internal.plugins.osgi.OsgiHelper;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Delete;
-import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskOutputs;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.util.VersionNumber;
@@ -93,10 +96,12 @@ public class NodePlugin implements Plugin<Project> {
 		final NodeExtension nodeExtension = GradleUtil.addExtension(
 			project, EXTENSION_NAME, NodeExtension.class);
 
+		_configureExtensionNode(project, nodeExtension);
+
+		Delete cleanNpmTask = _addTaskCleanNpm(project, nodeExtension);
+
 		final DownloadNodeTask downloadNodeTask = _addTaskDownloadNode(
 			project, nodeExtension);
-
-		Delete cleanNpmTask = _addTaskCleanNpm(project);
 
 		NpmInstallTask npmInstallTask = _addTaskNpmInstall(
 			project, cleanNpmTask);
@@ -135,25 +140,50 @@ public class NodePlugin implements Plugin<Project> {
 					_configureTasksExecutePackageManagerArgs(
 						project, nodeExtension);
 					_configureTasksNpmInstall(project, nodeExtension);
-					_configureTasksPackageRun(project);
 				}
 
 			});
 	}
 
-	private Delete _addTaskCleanNpm(Project project) {
+	private Delete _addTaskCleanNpm(
+		final Project project, final NodeExtension nodeExtension) {
+
 		Delete delete = GradleUtil.addTask(
 			project, CLEAN_NPM_TASK_NAME, Delete.class);
 
-		delete.delete(
-			"node_modules", "npm-shrinkwrap.json", "package-lock.json");
+		delete.delete("node_modules", "npm-shrinkwrap.json");
 		delete.setDescription("Deletes NPM files from this project.");
+
+		delete.doLast(
+			new Action<Task>() {
+
+				@Override
+				public void execute(Task task) {
+					File file = project.file("package-lock.json");
+
+					if (!file.exists()) {
+						return;
+					}
+
+					try {
+						Files.delete(file.toPath());
+					}
+					catch (IOException ioException) {
+						throw new UncheckedIOException(ioException);
+					}
+
+					// LPS-110486
+
+					nodeExtension.setUseNpm(true);
+				}
+
+			});
 
 		return delete;
 	}
 
 	private DownloadNodeTask _addTaskDownloadNode(
-		Project project, final NodeExtension nodeExtension) {
+		Project project, NodeExtension nodeExtension) {
 
 		return _addTaskDownloadNode(
 			project, DOWNLOAD_NODE_TASK_NAME, nodeExtension);
@@ -191,6 +221,16 @@ public class NodePlugin implements Plugin<Project> {
 				@Override
 				public String call() throws Exception {
 					return nodeExtension.getNpmUrl();
+				}
+
+			});
+
+		downloadNodeTask.setYarnUrl(
+			new Callable<String>() {
+
+				@Override
+				public String call() throws Exception {
+					return nodeExtension.getYarnUrl();
 				}
 
 			});
@@ -260,7 +300,7 @@ public class NodePlugin implements Plugin<Project> {
 
 		String taskName = _PACKAGE_RUN_TASK_NAME_PREFIX + suffix;
 
-		final PackageRunTask packageRunTask = GradleUtil.addTask(
+		PackageRunTask packageRunTask = GradleUtil.addTask(
 			project, taskName, PackageRunTask.class);
 
 		packageRunTask.dependsOn(npmInstallTask);
@@ -380,6 +420,29 @@ public class NodePlugin implements Plugin<Project> {
 		}
 	}
 
+	private void _configureExtensionNode(
+		Project project, NodeExtension nodeExtension) {
+
+		if (FileUtil.exists(project, "package-lock.json")) {
+			return;
+		}
+
+		Project rootProject = project.getRootProject();
+
+		PluginContainer rootPluginContainer = rootProject.getPlugins();
+
+		rootPluginContainer.withId(
+			"com.liferay.yarn",
+			new Action<Plugin>() {
+
+				@Override
+				public void execute(Plugin plugin) {
+					nodeExtension.setUseNpm(false);
+				}
+
+			});
+	}
+
 	private void _configureTaskDownloadNodeGlobal(
 		DownloadNodeTask downloadNodeTask, NodeExtension nodeExtension) {
 
@@ -448,12 +511,9 @@ public class NodePlugin implements Plugin<Project> {
 					File moduleParentDir = moduleDir.getParentFile();
 
 					if (!moduleParentDir.equals(
-							npmInstallTask.getNodeModulesDir())) {
+							npmInstallTask.getNodeModulesDir()) ||
+						(packageJsonMap == null)) {
 
-						return true;
-					}
-
-					if (packageJsonMap == null) {
 						return true;
 					}
 
@@ -562,9 +622,9 @@ public class NodePlugin implements Plugin<Project> {
 						return project.file("node_modules");
 					}
 
-					File scriptFile = executePackageManagerTask.getScriptFile();
+					Project rootProject = project.getRootProject();
 
-					return new File(scriptFile.getParent(), "node_modules");
+					return rootProject.file("node_modules");
 				}
 
 			});
@@ -604,32 +664,20 @@ public class NodePlugin implements Plugin<Project> {
 
 		npmInstallTask.setNodeVersion(nodeExtension.getNodeVersion());
 		npmInstallTask.setNpmVersion(nodeExtension.getNpmVersion());
-	}
 
-	private void _configureTaskPackageRun(PackageRunTask packageRunTask) {
-		Project project = packageRunTask.getProject();
+		if (!npmInstallTask.isUseNpm()) {
+			Project curProject = npmInstallTask.getProject();
 
-		PluginContainer pluginContainer = project.getPlugins();
+			do {
+				TaskProvider<Task> yarnInstallTaskProvider =
+					GradleUtil.fetchTaskProvider(
+						curProject, YarnPlugin.YARN_INSTALL_TASK_NAME);
 
-		if (pluginContainer.hasPlugin(JavaPlugin.class)) {
-			SourceSet sourceSet = GradleUtil.getSourceSet(
-				packageRunTask.getProject(), SourceSet.MAIN_SOURCE_SET_NAME);
-
-			File javaClassesDir = FileUtil.getJavaClassesDir(sourceSet);
-
-			if (!javaClassesDir.exists()) {
-				TaskOutputs taskOutputs = packageRunTask.getOutputs();
-
-				taskOutputs.upToDateWhen(
-					new Spec<Task>() {
-
-						@Override
-						public boolean isSatisfiedBy(Task task) {
-							return false;
-						}
-
-					});
+				if (yarnInstallTaskProvider != null) {
+					npmInstallTask.finalizedBy(yarnInstallTaskProvider);
+				}
 			}
+			while ((curProject = curProject.getParent()) != null);
 		}
 	}
 
@@ -736,6 +784,9 @@ public class NodePlugin implements Plugin<Project> {
 
 					@SuppressWarnings("unused")
 					public void doCall(CopySpec copySpec) {
+						copySpec.exclude("**/*.d.js");
+						copySpec.exclude("**/*.d.js.map");
+						copySpec.exclude("**/*.ts");
 						copySpec.into("META-INF/resources");
 					}
 
@@ -781,8 +832,7 @@ public class NodePlugin implements Plugin<Project> {
 
 				@Override
 				public String call() throws Exception {
-					String moduleName = _osgiHelper.getBundleSymbolicName(
-						project);
+					String moduleName = OSGiUtil.getBundleSymbolicName(project);
 
 					int pos = moduleName.indexOf('.');
 
@@ -905,21 +955,6 @@ public class NodePlugin implements Plugin<Project> {
 			});
 	}
 
-	private void _configureTasksPackageRun(Project project) {
-		TaskContainer taskContainer = project.getTasks();
-
-		taskContainer.withType(
-			PackageRunTask.class,
-			new Action<PackageRunTask>() {
-
-				@Override
-				public void execute(PackageRunTask packageRunTask) {
-					_configureTaskPackageRun(packageRunTask);
-				}
-
-			});
-	}
-
 	private void _configureTasksPublishNodeModule(Project project) {
 		TaskContainer taskContainer = project.getTasks();
 
@@ -977,14 +1012,24 @@ public class NodePlugin implements Plugin<Project> {
 		Map<String, Object> devDependencies =
 			(Map<String, Object>)packageJSONMap.get("devDependencies");
 
-		if ((devDependencies == null) ||
-			!devDependencies.containsKey("liferay-npm-scripts")) {
+		if (devDependencies == null) {
+			return false;
+		}
 
+		String dependencyName = null;
+
+		if (devDependencies.containsKey("@liferay/npm-scripts")) {
+			dependencyName = "@liferay/npm-scripts";
+		}
+		else if (devDependencies.containsKey("liferay-npm-scripts")) {
+			dependencyName = "liferay-npm-scripts";
+		}
+		else {
 			return false;
 		}
 
 		VersionNumber versionNumber = VersionNumber.parse(
-			(String)devDependencies.get("liferay-npm-scripts"));
+			(String)devDependencies.get(dependencyName));
 
 		int majorVersion = versionNumber.getMajor();
 
@@ -1069,6 +1114,5 @@ public class NodePlugin implements Plugin<Project> {
 		VersionNumber.version(8);
 	private static final VersionNumber _npm5VersionNumber =
 		VersionNumber.version(5);
-	private static final OsgiHelper _osgiHelper = new OsgiHelper();
 
 }

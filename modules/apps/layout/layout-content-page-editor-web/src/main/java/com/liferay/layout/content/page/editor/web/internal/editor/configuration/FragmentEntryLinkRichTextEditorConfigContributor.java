@@ -18,35 +18,29 @@ import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.ItemSelectorCriterion;
 import com.liferay.item.selector.criteria.DownloadURLItemSelectorReturnType;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
+import com.liferay.item.selector.criteria.file.criterion.FileItemSelectorCriterion;
 import com.liferay.item.selector.criteria.image.criterion.ImageItemSelectorCriterion;
 import com.liferay.item.selector.criteria.url.criterion.URLItemSelectorCriterion;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
+import com.liferay.layout.item.selector.criterion.LayoutItemSelectorCriterion;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.editor.configuration.BaseEditorConfigContributor;
 import com.liferay.portal.kernel.editor.configuration.EditorConfigContributor;
 import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Pavel Savinov
@@ -67,35 +61,36 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 		ThemeDisplay themeDisplay,
 		RequestBackedPortletURLFactory requestBackedPortletURLFactory) {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(getAllowedContentText());
-		sb.append(" a[*](*); div[*](*){text-align}; img[*](*){*}; p[*](*); ");
-		sb.append(getAllowedContentLists());
-		sb.append(getAllowedContentTable());
-		sb.append(" span[*](*){*}; ");
-
-		jsonObject.put(
-			"allowedContent", sb.toString()
-		).put(
-			"enterMode", 2
-		).put(
-			"extraPlugins", getExtraPluginsLists()
-		);
-
 		PortletURL itemSelectorURL = _itemSelector.getItemSelectorURL(
+			requestBackedPortletURLFactory, "_EDITOR_NAME_selectItem",
+			getFileItemSelectorCriterion(), getLayoutItemSelectorURL());
+		PortletURL imageSelectorURL = _itemSelector.getItemSelectorURL(
 			requestBackedPortletURLFactory, "_EDITOR_NAME_selectItem",
 			getImageItemSelectorCriterion(), getURLItemSelectorCriterion());
 
 		jsonObject.put(
-			"filebrowserImageBrowseLinkUrl", itemSelectorURL.toString()
+			"allowedContent",
+			StringBundler.concat(
+				getAllowedContentText(),
+				" a[*](*); div[*](*){text-align}; img[*](*){*}; p[*](*); ",
+				getAllowedContentLists(), getAllowedContentTable(),
+				" span[*](*){*}; ")
 		).put(
-			"filebrowserImageBrowseUrl", itemSelectorURL.toString()
+			"documentBrowseLinkUrl", itemSelectorURL.toString()
+		).put(
+			"enterMode", 2
+		).put(
+			"extraPlugins", getExtraPluginsLists()
+		).put(
+			"filebrowserImageBrowseLinkUrl", imageSelectorURL.toString()
+		).put(
+			"filebrowserImageBrowseUrl", imageSelectorURL.toString()
 		).put(
 			"removePlugins", getRemovePluginsLists()
 		).put(
-			"spritemap",
-			themeDisplay.getPathThemeImages() + "/lexicon/icons.svg"
+			"skin", "moono-lisa"
+		).put(
+			"spritemap", themeDisplay.getPathThemeImages() + "/clay/icons.svg"
 		).put(
 			"toolbars", getToolbarsJSONObject(themeDisplay.getLocale())
 		);
@@ -120,6 +115,16 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 				"ae_tabletools,ae_uicore,itemselector,media,adaptivemedia";
 	}
 
+	protected ItemSelectorCriterion getFileItemSelectorCriterion() {
+		ItemSelectorCriterion fileItemSelectorCriterion =
+			new FileItemSelectorCriterion();
+
+		fileItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new DownloadURLItemSelectorReturnType());
+
+		return fileItemSelectorCriterion;
+	}
+
 	protected ItemSelectorCriterion getImageItemSelectorCriterion() {
 		ItemSelectorCriterion itemSelectorCriterion =
 			new ImageItemSelectorCriterion();
@@ -128,6 +133,17 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 			new DownloadURLItemSelectorReturnType());
 
 		return itemSelectorCriterion;
+	}
+
+	protected ItemSelectorCriterion getLayoutItemSelectorURL() {
+		LayoutItemSelectorCriterion layoutItemSelectorCriterion =
+			new LayoutItemSelectorCriterion();
+
+		layoutItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new URLItemSelectorReturnType());
+		layoutItemSelectorCriterion.setShowHiddenPages(true);
+
+		return layoutItemSelectorCriterion;
 	}
 
 	protected String getRemovePluginsLists() {
@@ -146,41 +162,25 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 	}
 
 	protected JSONArray getStyleFormatsJSONArray(Locale locale) {
-		Class<?> clazz = getClass();
-
-		ResourceBundle resourceBundle = null;
-
-		ResourceBundleLoader resourceBundleLoader =
-			new AggregateResourceBundleLoader(
-				ResourceBundleUtil.getResourceBundleLoader(
-					"content.Language", clazz.getClassLoader()),
-				_resourceBundleLoader,
-				LanguageUtil.getPortalResourceBundleLoader());
-
-		try {
-			resourceBundle = resourceBundleLoader.loadResourceBundle(locale);
-		}
-		catch (MissingResourceException missingResourceException) {
-			resourceBundle = ResourceBundleUtil.EMPTY_RESOURCE_BUNDLE;
-		}
-
 		return JSONUtil.putAll(
 			getStyleFormatJSONObject(
-				LanguageUtil.get(resourceBundle, "small"), "p", "small", 1),
+				LanguageUtil.get(locale, "small"), "span", "small",
+				_CKEDITOR_STYLE_INLINE),
 			getStyleFormatJSONObject(
-				LanguageUtil.get(resourceBundle, "lead"), "p", "lead", 1),
+				LanguageUtil.get(locale, "lead"), "span", "lead",
+				_CKEDITOR_STYLE_INLINE),
 			getStyleFormatJSONObject(
-				LanguageUtil.format(resourceBundle, "heading-x", "1"), "h1",
-				null, 1),
+				LanguageUtil.format(locale, "heading-x", "1"), "h1", null,
+				_CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
-				LanguageUtil.format(resourceBundle, "heading-x", "2"), "h2",
-				null, 1),
+				LanguageUtil.format(locale, "heading-x", "2"), "h2", null,
+				_CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
-				LanguageUtil.format(resourceBundle, "heading-x", "3"), "h3",
-				null, 1),
+				LanguageUtil.format(locale, "heading-x", "3"), "h3", null,
+				_CKEDITOR_STYLE_BLOCK),
 			getStyleFormatJSONObject(
-				LanguageUtil.format(resourceBundle, "heading-x", "4"), "h4",
-				null, 1));
+				LanguageUtil.format(locale, "heading-x", "4"), "h4", null,
+				_CKEDITOR_STYLE_BLOCK));
 	}
 
 	protected JSONObject getStyleFormatsJSONObject(Locale locale) {
@@ -194,30 +194,30 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 	protected JSONObject getStyleJSONObject(
 		String element, String cssClass, int type) {
 
-		JSONObject styleJSONObject = JSONFactoryUtil.createJSONObject();
+		return JSONUtil.put(
+			"attributes",
+			() -> {
+				if (Validator.isNotNull(cssClass)) {
+					return JSONUtil.put("class", cssClass);
+				}
 
-		if (Validator.isNotNull(cssClass)) {
-			styleJSONObject.put("attributes", JSONUtil.put("class", cssClass));
-		}
-
-		styleJSONObject.put(
+				return null;
+			}
+		).put(
 			"element", element
 		).put(
 			"type", type
 		);
-
-		return styleJSONObject;
 	}
 
 	protected JSONObject getToolbarsJSONObject(Locale locale) {
-		JSONObject toolbarJSONObject = JSONUtil.put(
-			"buttons", toJSONArray("['image', 'hline']")
-		).put(
-			"tabIndex", 1
-		);
-
 		return JSONUtil.put(
-			"add", toolbarJSONObject
+			"add",
+			JSONUtil.put(
+				"buttons", toJSONArray("['image', 'hline']")
+			).put(
+				"tabIndex", 1
+			)
 		).put(
 			"styles", getToolbarsStylesJSONObject(locale)
 		);
@@ -231,8 +231,19 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 		);
 	}
 
+	protected JSONObject getToolbarsStylesSelectionsImageJSONObject() {
+		return JSONUtil.put(
+			"buttons", JSONUtil.putAll("imageLeft", "imageCenter", "imageRight")
+		).put(
+			"name", "image"
+		).put(
+			"test", "AlloyEditor.SelectionTest.image"
+		);
+	}
+
 	protected JSONArray getToolbarsStylesSelectionsJSONArray(Locale locale) {
 		return JSONUtil.putAll(
+			getToolbarsStylesSelectionsImageJSONObject(),
 			getToolbarsStylesSelectionsLinkJSONObject(),
 			getToolbarsStylesSelectionsTextJSONObject(locale));
 	}
@@ -289,14 +300,11 @@ public class FragmentEntryLinkRichTextEditorConfigContributor
 		return itemSelectorCriterion;
 	}
 
+	private static final int _CKEDITOR_STYLE_BLOCK = 1;
+
+	private static final int _CKEDITOR_STYLE_INLINE = 2;
+
 	@Reference
 	private ItemSelector _itemSelector;
-
-	@Reference(
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY,
-		target = "(bundle.symbolic.name=com.liferay.frontend.editor.lang)"
-	)
-	private volatile ResourceBundleLoader _resourceBundleLoader;
 
 }

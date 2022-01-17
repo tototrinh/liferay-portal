@@ -36,39 +36,35 @@ public class TermsQueryImpl extends BaseQueryImpl implements TermsQuery {
 		return queryVisitor.visit(this);
 	}
 
+	@Override
 	public void addValue(Object value) {
 		_values.add(value);
 	}
 
+	@Override
 	public void addValues(Object... values) {
 		Collections.addAll(_values, values);
 	}
 
+	@Override
 	public String getField() {
 		return _field;
 	}
 
+	@Override
 	public String[] getValues() {
 		return _values.toArray(new String[0]);
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return _values.isEmpty();
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(7);
-
-		sb.append("{(");
-		sb.append(_field);
-		sb.append("=");
-		sb.append(_values);
-		sb.append("), ");
-		sb.append(super.toString());
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{(", _field, "=", _values, "), ", super.toString(), "}");
 	}
 
 	private static final long serialVersionUID = 1L;

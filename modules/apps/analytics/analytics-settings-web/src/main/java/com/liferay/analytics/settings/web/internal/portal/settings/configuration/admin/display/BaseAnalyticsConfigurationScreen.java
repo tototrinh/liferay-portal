@@ -19,9 +19,9 @@ import com.liferay.analytics.settings.web.internal.constants.AnalyticsSettingsWe
 import com.liferay.analytics.settings.web.internal.user.AnalyticsUsersManager;
 import com.liferay.configuration.admin.display.ConfigurationScreen;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
@@ -48,8 +48,7 @@ public abstract class BaseAnalyticsConfigurationScreen
 
 	@Override
 	public String getName(Locale locale) {
-		return LanguageUtil.get(
-			ResourceBundleUtil.getBundle(locale, getClass()), getKey());
+		return LanguageUtil.get(locale, getKey());
 	}
 
 	@Override
@@ -99,6 +98,13 @@ public abstract class BaseAnalyticsConfigurationScreen
 		httpServletRequest.setAttribute(
 			AnalyticsSettingsWebKeys.ANALYTICS_USERS_MANAGER,
 			analyticsUsersManager);
+	}
+
+	@Reference(
+		target = "(&(release.bundle.symbolic.name=com.liferay.analytics.settings.web)(release.schema.version>=1.0.1))",
+		unbind = "-"
+	)
+	protected void setRelease(Release release) {
 	}
 
 	@Reference

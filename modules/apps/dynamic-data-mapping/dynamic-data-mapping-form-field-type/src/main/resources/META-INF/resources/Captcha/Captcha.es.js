@@ -12,66 +12,54 @@
  * details.
  */
 
-import '../FieldBase/FieldBase.es';
+import {runScriptsInElement} from 'frontend-js-web';
+import React, {useEffect, useMemo, useRef} from 'react';
 
-import './CaptchaRegister.soy';
+import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 
-import Component from 'metal-component';
-import Soy from 'metal-soy';
-import {Config} from 'metal-state';
+const Captcha = ({html, name, ...otherProps}) => {
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const contentMemoized = useMemo(() => html, []);
+	const elRef = useRef(null);
 
-import templates from './Captcha.soy';
-
-/**
- * Captcha.
- * @extends Component
- */
-
-class Captcha extends Component {
-	rendered() {
+	useEffect(() => {
 		if (window.grecaptcha) {
 			window.grecaptcha.ready(() => {
 				try {
 					window.grecaptcha.reset();
 				}
-				catch (e) {
-					console.warn('Could not reset reCAPTCHA.');
+				catch (error) {
+					console.warn('Could not reset reCAPTCHA');
 				}
 			});
 		}
-	}
+	}, []);
 
-	shouldUpdate() {
-		return false;
-	}
-}
+	useEffect(() => {
+		if (elRef.current) {
+			runScriptsInElement(elRef.current);
+		}
+	}, [elRef]);
 
-Soy.register(Captcha, templates);
+	useEffect(() => {
+		if (elRef.current) {
+			const fieldIndex = name.indexOf('_ddm');
+			Liferay.fire(
+				`${name.substring(0, fieldIndex)}_simplecaptcha_attachEvent`
+			);
+		}
+	}, [elRef, name]);
 
-Captcha.STATE = {
-	/**
-	 * @default false
-	 * @memberof FieldBase
-	 * @type {?bool}
-	 */
+	return (
+		<FieldBase {...otherProps} hideEditedFlag name={name} visible={true}>
+			<div
+				dangerouslySetInnerHTML={{__html: contentMemoized}}
+				ref={elRef}
+			/>
 
-	evaluable: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @memberof Captcha
-	 * @type {?(string|undefined)}
-	 */
-
-	spritemap: Config.string(),
-
-	/**
-	 * @default 'captcha'
-	 * @memberof Text
-	 * @type {?(string|undefined)}
-	 */
-
-	type: Config.string().value('captcha')
+			<input id={name} type="hidden" />
+		</FieldBase>
+	);
 };
 
 export default Captcha;

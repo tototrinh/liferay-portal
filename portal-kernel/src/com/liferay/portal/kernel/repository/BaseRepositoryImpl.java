@@ -47,6 +47,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -59,15 +60,17 @@ public abstract class BaseRepositoryImpl
 
 	@Override
 	public FileEntry addFileEntry(
-			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog, File file,
-			ServiceContext serviceContext)
+			String externalReferenceCode, long userId, long folderId,
+			String sourceFileName, String mimeType, String title,
+			String description, String changeLog, File file,
+			Date expirationDate, Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
-		try (InputStream is = new FileInputStream(file)) {
+		try (InputStream inputStream = new FileInputStream(file)) {
 			return addFileEntry(
-				userId, folderId, sourceFileName, mimeType, title, description,
-				changeLog, is, file.length(), serviceContext);
+				externalReferenceCode, userId, folderId, sourceFileName,
+				mimeType, title, description, changeLog, inputStream,
+				file.length(), expirationDate, reviewDate, serviceContext);
 		}
 		catch (IOException ioException) {
 			throw new SystemException(ioException);
@@ -171,18 +174,20 @@ public abstract class BaseRepositoryImpl
 	@Override
 	public List<Folder> getFolders(
 			long parentFolderId, int status, boolean includeMountfolders,
-			int start, int end, OrderByComparator<Folder> obc)
+			int start, int end, OrderByComparator<Folder> orderByComparator)
 		throws PortalException {
 
-		return getFolders(parentFolderId, includeMountfolders, start, end, obc);
+		return getFolders(
+			parentFolderId, includeMountfolders, start, end, orderByComparator);
 	}
 
 	public abstract List<Object> getFoldersAndFileEntries(
-		long folderId, int start, int end, OrderByComparator<?> obc);
+		long folderId, int start, int end,
+		OrderByComparator<?> orderByComparator);
 
 	public abstract List<Object> getFoldersAndFileEntries(
 			long folderId, String[] mimeTypes, int start, int end,
-			OrderByComparator<?> obc)
+			OrderByComparator<?> orderByComparator)
 		throws PortalException;
 
 	@Override
@@ -190,9 +195,10 @@ public abstract class BaseRepositoryImpl
 	public List<com.liferay.portal.kernel.repository.model.RepositoryEntry>
 		getFoldersAndFileEntriesAndFileShortcuts(
 			long folderId, int status, boolean includeMountFolders, int start,
-			int end, OrderByComparator<?> obc) {
+			int end, OrderByComparator<?> orderByComparator) {
 
-		return (List)getFoldersAndFileEntries(folderId, start, end, obc);
+		return (List)getFoldersAndFileEntries(
+			folderId, start, end, orderByComparator);
 	}
 
 	@Override
@@ -201,11 +207,11 @@ public abstract class BaseRepositoryImpl
 			getFoldersAndFileEntriesAndFileShortcuts(
 				long folderId, int status, String[] mimeTypes,
 				boolean includeMountFolders, int start, int end,
-				OrderByComparator<?> obc)
+				OrderByComparator<?> orderByComparator)
 		throws PortalException {
 
 		return (List)getFoldersAndFileEntries(
-			folderId, mimeTypes, start, end, obc);
+			folderId, mimeTypes, start, end, orderByComparator);
 	}
 
 	@Override
@@ -250,19 +256,20 @@ public abstract class BaseRepositoryImpl
 	@Override
 	public List<FileEntry> getRepositoryFileEntries(
 			long userId, long rootFolderId, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return getFileEntries(rootFolderId, start, end, obc);
+		return getFileEntries(rootFolderId, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getRepositoryFileEntries(
 			long userId, long rootFolderId, String[] mimeTypes, int status,
-			int start, int end, OrderByComparator<FileEntry> obc)
+			int start, int end, OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return getFileEntries(rootFolderId, mimeTypes, start, end, obc);
+		return getFileEntries(
+			rootFolderId, mimeTypes, start, end, orderByComparator);
 	}
 
 	@Override
@@ -295,7 +302,7 @@ public abstract class BaseRepositoryImpl
 	}
 
 	public UnicodeProperties getTypeSettingsProperties() {
-		return _typeSettingsProperties;
+		return _typeSettingsUnicodeProperties;
 	}
 
 	@Override
@@ -369,9 +376,9 @@ public abstract class BaseRepositoryImpl
 
 	@Override
 	public void setTypeSettingsProperties(
-		UnicodeProperties typeSettingsProperties) {
+		UnicodeProperties typeSettingsUnicodeProperties) {
 
-		_typeSettingsProperties = typeSettingsProperties;
+		_typeSettingsUnicodeProperties = typeSettingsUnicodeProperties;
 	}
 
 	@Override
@@ -393,14 +400,14 @@ public abstract class BaseRepositoryImpl
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
 			DLVersionNumberIncrease dlVersionNumberIncrease, File file,
-			ServiceContext serviceContext)
+			Date expirationDate, Date reviewDate, ServiceContext serviceContext)
 		throws PortalException {
 
-		try (InputStream is = new FileInputStream(file)) {
+		try (InputStream inputStream = new FileInputStream(file)) {
 			return updateFileEntry(
 				userId, fileEntryId, sourceFileName, mimeType, title,
-				description, changeLog, dlVersionNumberIncrease, is,
-				file.length(), serviceContext);
+				description, changeLog, dlVersionNumberIncrease, inputStream,
+				file.length(), expirationDate, reviewDate, serviceContext);
 		}
 		catch (IOException ioException) {
 			throw new SystemException(ioException);
@@ -411,8 +418,9 @@ public abstract class BaseRepositoryImpl
 	public abstract FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			DLVersionNumberIncrease dlVersionNumberIncrease, InputStream is,
-			long size, ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease,
+			InputStream inputStream, long size, Date expirationDate,
+			Date reviewDate, ServiceContext serviceContext)
 		throws PortalException;
 
 	@Override
@@ -494,6 +502,6 @@ public abstract class BaseRepositoryImpl
 	private final LocalRepository _localRepository =
 		new DefaultLocalRepositoryImpl(this);
 	private long _repositoryId;
-	private UnicodeProperties _typeSettingsProperties;
+	private UnicodeProperties _typeSettingsUnicodeProperties;
 
 }

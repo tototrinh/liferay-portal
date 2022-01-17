@@ -30,7 +30,9 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 }
 %>
 
-<div class="closed consent container-fluid-1280">
+<clay:container-fluid
+	cssClass="closed consent"
+>
 	<aui:form action="<%= replyTo %>" data-senna-off="true" method="post" name="fm">
 		<aui:fieldset-group markupView="lexicon">
 			<div class="panel-body">
@@ -84,15 +86,17 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 							%>
 
 								<li class="list-group-item list-group-item-flex">
-									<div class="autofit-col">
+									<clay:content-col>
 										<clay:icon
 											symbol="check"
 										/>
-									</div>
+									</clay:content-col>
 
-									<div class="autofit-col autofit-col-expand">
+									<clay:content-col
+										expand="<%= true %>"
+									>
 										<liferay-ui:message arguments="<%= messageArguments %>" key="for-x-y" />
-									</div>
+									</clay:content-col>
 								</li>
 
 							<%
@@ -100,6 +104,12 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 							%>
 
 						</ul>
+
+						<c:if test="<%= oAuth2Application.isRememberDevice() %>">
+							<aui:field-wrapper>
+								<aui:input checked="<%= false %>" helpMessage="remember-device-help" id="rememberDevice" label="remember-device" name="rememberDevice" type="checkbox" />
+							</aui:field-wrapper>
+						</c:if>
 
 						<c:if test="<%= !Validator.isBlank(oAuth2Application.getPrivacyPolicyURL()) %>">
 							<p class="privacy-policy text-truncate">
@@ -136,18 +146,18 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 								var allowButton = document.getElementById('<portlet:namespace />allow');
 
 								if (allowButton) {
-									allowButton.addEventListener('click', function() {
+									allowButton.addEventListener('click', () => {
 										document.getElementById('oauthDecision').value = 'allow';
-										Liferay.Util.postForm(document.<portlet:namespace/>fm);
+										Liferay.Util.postForm(document.<portlet:namespace />fm);
 									});
 								}
 
 								var cancelButton = document.getElementById('<portlet:namespace />cancel');
 
 								if (cancelButton) {
-									cancelButton.addEventListener('click', function() {
+									cancelButton.addEventListener('click', () => {
 										document.getElementById('oauthDecision').value = 'deny';
-										Liferay.Util.postForm(document.<portlet:namespace/>fm);
+										Liferay.Util.postForm(document.<portlet:namespace />fm);
 									});
 								}
 							</script>
@@ -157,4 +167,4 @@ if (Validator.isNotNull(replyTo) && !replyTo.startsWith(PortalUtil.getPortalURL(
 			</div>
 		</aui:fieldset-group>
 	</aui:form>
-</div>
+</clay:container-fluid>

@@ -17,11 +17,12 @@ package com.liferay.layout.page.template.validator.test;
 import com.liferay.layout.page.template.exception.PageDefinitionValidatorException;
 import com.liferay.layout.page.template.validator.PageDefinitionValidator;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.util.FileImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
+import org.hamcrest.core.StringContains;
 import org.hamcrest.core.StringStartsWith;
 
-import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -31,10 +32,9 @@ import org.junit.rules.ExpectedException;
  */
 public class PageDefinitionValidatorTest {
 
-	@Before
-	public void setUp() {
-		new FileUtil().setFile(new FileImpl());
-	}
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testValidatePageDefinitionInvalidColumnExtraProperties()
@@ -48,6 +48,26 @@ public class PageDefinitionValidatorTest {
 
 		PageDefinitionValidator.validatePageDefinition(
 			_read("page_definition_invalid_column_extra_properties.json"));
+	}
+
+	@Test
+	public void testValidatePageDefinitionInvalidDropZoneAllowedFragmentsUnallowedFragments()
+		throws Exception {
+
+		expectedException.expect(PageDefinitionValidatorException.class);
+		expectedException.expectMessage(
+			new StringContains(
+				"/pageElement/pageElements/0/definition/fragmentSettings: " +
+					"extraneous key [allowedFragments] is not permitted"));
+		expectedException.expectMessage(
+			new StringContains(
+				"/pageElement/pageElements/0/definition/fragmentSettings: " +
+					"extraneous key [unallowedFragments] is not permitted"));
+
+		PageDefinitionValidator.validatePageDefinition(
+			_read(
+				"page_definition_invalid_drop_zone_allowed_fragments_" +
+					"unallowed_fragments.json"));
 	}
 
 	@Test
@@ -77,18 +97,17 @@ public class PageDefinitionValidatorTest {
 	}
 
 	@Test
-	public void testValidatePageDefinitionInvalidFragmentMissingFragmentKey()
+	public void testValidatePageDefinitionInvalidFragmentMissingKey()
 		throws Exception {
 
 		expectedException.expect(PageDefinitionValidatorException.class);
 		expectedException.expectMessage(
 			new StringStartsWith(
 				"/pageElement/pageElements/0/definition/fragment: required " +
-					"key [fragmentKey] not found"));
+					"key [key] not found"));
 
 		PageDefinitionValidator.validatePageDefinition(
-			_read(
-				"page_definition_invalid_fragment_missing_fragment_key.json"));
+			_read("page_definition_invalid_fragment_missing_key.json"));
 	}
 
 	@Test
@@ -172,6 +191,26 @@ public class PageDefinitionValidatorTest {
 	}
 
 	@Test
+	public void testValidatePageDefinitionValidDropZoneAllowedFragmentsComplete()
+		throws Exception {
+
+		PageDefinitionValidator.validatePageDefinition(
+			_read(
+				"page_definition_valid_drop_zone_allowed_fragments_complete." +
+					"json"));
+	}
+
+	@Test
+	public void testValidatePageDefinitionValidDropZoneUnallowedFragmentsComplete()
+		throws Exception {
+
+		PageDefinitionValidator.validatePageDefinition(
+			_read(
+				"page_definition_valid_drop_zone_unallowed_fragments_" +
+					"complete.json"));
+	}
+
+	@Test
 	public void testValidatePageDefinitionValidFragmentComplete()
 		throws Exception {
 
@@ -211,6 +250,17 @@ public class PageDefinitionValidatorTest {
 
 		PageDefinitionValidator.validatePageDefinition(
 			_read("page_definition_valid_fragment_field_text_complete.json"));
+	}
+
+	@Test
+	public void testValidatePageDefinitionValidFragmentFieldTextFragmentLinkHrefFragmentMappedValueMappingItemReferenceClassFieldReference()
+		throws Exception {
+
+		PageDefinitionValidator.validatePageDefinition(
+			_read(
+				"page_definition_valid_fragment_field_text_fragment_link_href" +
+					"_fragment_mapped_value_mapping_item_reference_class_" +
+						"field_reference.json"));
 	}
 
 	@Test

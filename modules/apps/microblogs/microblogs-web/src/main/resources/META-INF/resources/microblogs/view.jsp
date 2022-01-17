@@ -42,12 +42,15 @@ if (!tabs1.equals("mentions") && !tabs1.equals("timeline")) {
 	assetTagName = StringUtil.toLowerCase(tabs1);
 }
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setWindowState(WindowState.NORMAL);
-
-portletURL.setParameter("mvcPath", "/microblogs/view.jsp");
-portletURL.setParameter("tabs1", tabs1);
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCPath(
+	"/microblogs/view.jsp"
+).setTabs1(
+	tabs1
+).setWindowState(
+	WindowState.NORMAL
+).buildPortletURL();
 %>
 
 <div class="microblogs-container">
@@ -62,7 +65,7 @@ portletURL.setParameter("tabs1", tabs1);
 	/>
 
 	<%
-	SearchContainer searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, 10, portletURL, null, null);
+	SearchContainer<MicroblogsEntry> searchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, 10, portletURL, null, null);
 
 	searchContainer.setDeltaConfigurable(false);
 
@@ -146,13 +149,17 @@ portletURL.setParameter("tabs1", tabs1);
 
 	searchContainer.setResults(results);
 
-	PortletURL microblogsEntriesURL = renderResponse.createRenderURL();
-
-	microblogsEntriesURL.setWindowState(LiferayWindowState.EXCLUSIVE);
-
-	microblogsEntriesURL.setParameter("mvcPath", "/microblogs/view.jsp");
-	microblogsEntriesURL.setParameter("tabs1", tabs1);
-	microblogsEntriesURL.setParameter("cur", String.valueOf(cur));
+	PortletURL microblogsEntriesURL = PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCPath(
+		"/microblogs/view.jsp"
+	).setTabs1(
+		tabs1
+	).setParameter(
+		"cur", cur
+	).setWindowState(
+		LiferayWindowState.EXCLUSIVE
+	).buildPortletURL();
 
 	request.setAttribute(WebKeys.MICROBLOGS_ENTRIES, results);
 	request.setAttribute(WebKeys.MICROBLOGS_ENTRIES_URL, microblogsEntriesURL);
@@ -167,12 +174,12 @@ portletURL.setParameter("tabs1", tabs1);
 </div>
 
 <aui:script use="aui-base,aui-io-deprecated">
-	AUI().ready(function() {
+	AUI().ready(function () {
 		Liferay.Microblogs.init({
 			baseActionURL:
 				'<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), PortletRequest.ACTION_PHASE) %>',
 			microblogsEntriesURL:
-				'<portlet:renderURL windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcPath" value="/microblogs/view.jsp" /><portlet:param name="tabs1" value="timeline" /></portlet:renderURL>'
+				'<portlet:renderURL windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcPath" value="/microblogs/view.jsp" /><portlet:param name="tabs1" value="timeline" /></portlet:renderURL>',
 		});
 
 		Liferay.Microblogs.updateViewCount(<%= parentMicroblogsEntryId %>);
@@ -182,7 +189,7 @@ portletURL.setParameter("tabs1", tabs1);
 		'#p_p_id<portlet:namespace /> .microblogs-container'
 	);
 
-	var showComments = function(microblogsEntryId) {
+	var showComments = function (microblogsEntryId) {
 		var uri =
 			'<portlet:renderURL windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>"><portlet:param name="mvcPath" value="/microblogs/view_comments.jsp" /></portlet:renderURL>';
 
@@ -204,7 +211,7 @@ portletURL.setParameter("tabs1", tabs1);
 			if (!commentsContainer.io) {
 				commentsContainer.plug(A.Plugin.IO, {
 					autoLoad: false,
-					method: 'POST'
+					method: 'POST',
 				});
 			}
 
@@ -222,7 +229,7 @@ portletURL.setParameter("tabs1", tabs1);
 
 	microblogsContainer.delegate(
 		'click',
-		function(event) {
+		function (event) {
 			event.preventDefault();
 
 			showComments(
@@ -234,7 +241,7 @@ portletURL.setParameter("tabs1", tabs1);
 
 	microblogsContainer.delegate(
 		'click',
-		function(event) {
+		function (event) {
 			event.preventDefault();
 
 			var uri = event.currentTarget.getAttribute('href');
@@ -257,7 +264,7 @@ portletURL.setParameter("tabs1", tabs1);
 				if (!editContainer.io) {
 					editContainer.plug(A.Plugin.IO, {
 						autoLoad: false,
-						method: 'GET'
+						method: 'GET',
 					});
 				}
 
@@ -277,13 +284,13 @@ portletURL.setParameter("tabs1", tabs1);
 
 	microblogsContainer.delegate(
 		'click',
-		function(event) {
+		function (event) {
 			event.preventDefault();
 
 			if (confirm('Are you sure you want to delete this post?')) {
 				Liferay.Util.fetch(event.currentTarget.getAttribute('href'), {
-					method: 'POST'
-				}).then(function() {
+					method: 'POST',
+				}).then(function () {
 					var updateContainer = A.one(
 						'#p_p_id<portlet:namespace /> .portlet-body'
 					);

@@ -25,6 +25,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONSerializable;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionsManagerUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -127,6 +129,11 @@ public class AlloyControllerInvokerManager {
 			_alloyControllerInvokers.put(controller, alloyControllerInvoker);
 		}
 		catch (NoClassNecessaryException noClassNecessaryException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					noClassNecessaryException, noClassNecessaryException);
+			}
+
 			return;
 		}
 		catch (Exception exception) {
@@ -171,9 +178,6 @@ public class AlloyControllerInvokerManager {
 		String alloyControllerInvokerClassName =
 			getAlloyControllerInvokerClassName(controllerClass);
 
-		Class<? extends AlloyControllerInvoker> alloyControllerInvokerClass =
-			null;
-
 		synchronized (classLoader) {
 			try {
 				Method defineClassMethod = ReflectionUtil.getDeclaredMethod(
@@ -213,13 +217,10 @@ public class AlloyControllerInvokerManager {
 
 				};
 
-				alloyControllerInvokerClass =
-					(Class<? extends AlloyControllerInvoker>)
-						defineClassMethod.invoke(
-							customClassLoader, alloyControllerInvokerClassName,
-							classData, 0, classData.length);
-
-				return alloyControllerInvokerClass;
+				return (Class<? extends AlloyControllerInvoker>)
+					defineClassMethod.invoke(
+						customClassLoader, alloyControllerInvokerClassName,
+						classData, 0, classData.length);
 			}
 			catch (NoClassNecessaryException noClassNecessaryException) {
 				throw noClassNecessaryException;
@@ -317,7 +318,7 @@ public class AlloyControllerInvokerManager {
 			methodVisitor.visitLdcInsn(jsonWebServiceMethod.lifecycle());
 
 			methodVisitor.visitIntInsn(
-				Opcodes.BIPUSH, parameterTypes.length * 2 + 2);
+				Opcodes.BIPUSH, (parameterTypes.length * 2) + 2);
 			methodVisitor.visitTypeInsn(
 				Opcodes.ANEWARRAY, getClassBinaryName(Object.class.getName()));
 
@@ -340,22 +341,20 @@ public class AlloyControllerInvokerManager {
 				methodVisitor.visitInsn(Opcodes.AASTORE);
 
 				methodVisitor.visitInsn(Opcodes.DUP);
-				methodVisitor.visitIntInsn(Opcodes.BIPUSH, (i + 1) * 2 + 1);
+				methodVisitor.visitIntInsn(Opcodes.BIPUSH, ((i + 1) * 2) + 1);
 				methodVisitor.visitVarInsn(Opcodes.ALOAD, i + 1);
 				methodVisitor.visitInsn(Opcodes.AASTORE);
 			}
 
-			sb = new StringBundler(5);
-
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(Type.getDescriptor(String.class));
-			sb.append(Type.getDescriptor(Object[].class));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-			sb.append(Type.getDescriptor(JSONSerializable.class));
-
 			methodVisitor.visitMethodInsn(
 				Opcodes.INVOKEVIRTUAL, alloyControllerInvokerClassBinaryName,
-				"invokeAlloyController", sb.toString());
+				"invokeAlloyController",
+				StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					Type.getDescriptor(String.class),
+					Type.getDescriptor(Object[].class),
+					StringPool.CLOSE_PARENTHESIS,
+					Type.getDescriptor(JSONSerializable.class)));
 
 			methodVisitor.visitInsn(Opcodes.ARETURN);
 
@@ -419,14 +418,8 @@ public class AlloyControllerInvokerManager {
 	}
 
 	protected String getAPIPath(String controller, Method method) {
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(StringPool.SLASH);
-		sb.append(controller);
-		sb.append(StringPool.SLASH);
-		sb.append(method.getName());
-
-		return sb.toString();
+		return StringBundler.concat(
+			StringPool.SLASH, controller, StringPool.SLASH, method.getName());
 	}
 
 	protected String getClassBinaryName(String className) {
@@ -445,6 +438,9 @@ public class AlloyControllerInvokerManager {
 	}
 
 	private static final String _BASE_CLASS_NAME = "AlloyControllerInvokerImpl";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AlloyControllerInvokerManager.class);
 
 	private final Map<String, AlloyControllerInvoker> _alloyControllerInvokers =
 		new ConcurrentHashMap<>();

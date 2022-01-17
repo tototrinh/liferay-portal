@@ -15,13 +15,18 @@
 package com.liferay.change.tracking.web.internal.portlet.action;
 
 import com.liferay.change.tracking.constants.CTPortletKeys;
+import com.liferay.change.tracking.exception.CTLocalizedException;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
+import com.liferay.change.tracking.service.CTCollectionService;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -29,6 +34,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -39,8 +46,8 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	immediate = true,
 	property = {
-		"javax.portlet.name=" + CTPortletKeys.CHANGE_LISTS_HISTORY,
-		"mvc.command.name=/change_lists_history/undo_ct_collection"
+		"javax.portlet.name=" + CTPortletKeys.PUBLICATIONS,
+		"mvc.command.name=/change_tracking/undo_ct_collection"
 	},
 	service = MVCActionCommand.class
 )
@@ -49,7 +56,7 @@ public class UndoCTCollectionMVCActionCommand extends BaseMVCActionCommand {
 	@Override
 	protected void doProcessAction(
 			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws PortalException {
+		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -65,16 +72,55 @@ public class UndoCTCollectionMVCActionCommand extends BaseMVCActionCommand {
 				_ctCollectionLocalService.getCTCollection(ctCollectionId);
 
 			name = StringBundler.concat(
-				_language.get(themeDisplay.getLocale(), "undo"), " \"",
+				_language.get(themeDisplay.getLocale(), "revert"), " \"",
 				ctCollection.getName(), "\"");
 		}
 
-		_ctCollectionLocalService.undoCTCollection(
-			ctCollectionId, themeDisplay.getUserId(), name, description);
+		try {
+			CTCollection ctCollection = _ctCollectionService.undoCTCollection(
+				ctCollectionId, themeDisplay.getUserId(), name, description);
+
+			PortletURL redirectURL = PortletURLFactoryUtil.create(
+				actionRequest, CTPortletKeys.PUBLICATIONS,
+				PortletRequest.RENDER_PHASE);
+
+			String publishTime = ParamUtil.get(
+				actionRequest, "publishTime", "now");
+
+			if (publishTime.equals("now")) {
+				redirectURL.setParameter(
+					"mvcRenderCommandName", "/change_tracking/view_conflicts");
+			}
+			else {
+				redirectURL.setParameter(
+					"mvcRenderCommandName", "/change_tracking/view_changes");
+			}
+
+			redirectURL.setParameter(
+				"ctCollectionId",
+				String.valueOf(ctCollection.getCtCollectionId()));
+
+			sendRedirect(actionRequest, actionResponse, redirectURL.toString());
+		}
+		catch (CTLocalizedException ctLocalizedException) {
+			_log.error(ctLocalizedException, ctLocalizedException);
+
+			SessionErrors.add(
+				actionRequest, CTLocalizedException.class.getName(),
+				ctLocalizedException);
+
+			hideDefaultErrorMessage(actionRequest);
+		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		UndoCTCollectionMVCActionCommand.class);
 
 	@Reference
 	private CTCollectionLocalService _ctCollectionLocalService;
+
+	@Reference
+	private CTCollectionService _ctCollectionService;
 
 	@Reference
 	private Language _language;

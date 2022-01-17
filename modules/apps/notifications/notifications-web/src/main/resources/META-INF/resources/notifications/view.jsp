@@ -25,7 +25,7 @@ if (actionRequired) {
 	navigation = "unread";
 }
 
-SearchContainer notificationsSearchContainer = new SearchContainer(renderRequest, currentURLObj, null, actionRequired ? "you-do-not-have-any-requests" : "you-do-not-have-any-notifications");
+SearchContainer<UserNotificationEvent> notificationsSearchContainer = new SearchContainer(renderRequest, currentURLObj, null, actionRequired ? "you-do-not-have-any-requests" : "you-do-not-have-any-notifications");
 
 String searchContainerId = "userNotificationEvents";
 
@@ -38,10 +38,6 @@ notificationsSearchContainer.setId(searchContainerId);
 NotificationsManagementToolbarDisplayContext notificationsManagementToolbarDisplayContext = new NotificationsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, currentURLObj);
 
 NotificationsUtil.populateResults(themeDisplay.getUserId(), actionRequired, navigation, notificationsManagementToolbarDisplayContext.getOrderByType(), notificationsSearchContainer);
-
-PortletURL navigationURL = PortletURLUtil.clone(currentURLObj, renderResponse);
-
-navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 %>
 
 <clay:navigation-bar
@@ -53,29 +49,49 @@ navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 					navigationItem -> {
 						navigationItem.setActive(!actionRequired);
 						navigationItem.setHref(renderResponse.createRenderURL(), "actionRequired", StringPool.FALSE);
-						navigationItem.setLabel(LanguageUtil.format(request, "notifications-list-x", UserNotificationEventLocalServiceUtil.getDeliveredUserNotificationEventsCount(themeDisplay.getUserId(), UserNotificationDeliveryConstants.TYPE_WEBSITE, true, false)));
+						navigationItem.setLabel(LanguageUtil.format(httpServletRequest, "notifications-list-x", UserNotificationEventLocalServiceUtil.getDeliveredUserNotificationEventsCount(themeDisplay.getUserId(), UserNotificationDeliveryConstants.TYPE_WEBSITE, true, false)));
 					});
 
 				add(
 					navigationItem -> {
-
 						navigationItem.setActive(actionRequired);
 						navigationItem.setHref(renderResponse.createRenderURL(), "actionRequired", StringPool.TRUE);
-						navigationItem.setLabel(LanguageUtil.format(request, "requests-list-x", String.valueOf(UserNotificationEventLocalServiceUtil.getArchivedUserNotificationEventsCount(themeDisplay.getUserId(), UserNotificationDeliveryConstants.TYPE_WEBSITE, true, true, false))));
+						navigationItem.setLabel(LanguageUtil.format(httpServletRequest, "requests-list-x", String.valueOf(UserNotificationEventLocalServiceUtil.getArchivedUserNotificationEventsCount(themeDisplay.getUserId(), UserNotificationDeliveryConstants.TYPE_WEBSITE, true, true, false))));
 					});
 			}
 		}
 	%>'
 />
 
+<portlet:actionURL name="deleteNotifications" var="deleteNotificationsURL">
+	<portlet:param name="redirect" value="<%= currentURL %>" />
+</portlet:actionURL>
+
+<portlet:actionURL name="markNotificationsAsRead" var="markNotificationsAsReadURL">
+	<portlet:param name="redirect" value="<%= currentURL %>" />
+</portlet:actionURL>
+
+<portlet:actionURL name="markNotificationsAsUnread" var="markNotificationsAsUnreadURL">
+	<portlet:param name="redirect" value="<%= currentURL %>" />
+</portlet:actionURL>
+
 <clay:management-toolbar
 	actionDropdownItems="<%= notificationsManagementToolbarDisplayContext.getActionDropdownItems() %>"
+	additionalProps='<%=
+		HashMapBuilder.<String, Object>put(
+			"deleteNotificationsURL", deleteNotificationsURL.toString()
+		).put(
+			"markNotificationsAsReadURL", markNotificationsAsReadURL.toString()
+		).put(
+			"markNotificationsAsUnreadURL", markNotificationsAsUnreadURL.toString()
+		).build()
+	%>'
 	clearResultsURL="<%= notificationsManagementToolbarDisplayContext.getClearResultsURL() %>"
-	componentId="notificationsManagementToolbar"
 	disabled="<%= NotificationsUtil.getAllNotificationsCount(themeDisplay.getUserId(), actionRequired) == 0 %>"
 	filterDropdownItems="<%= notificationsManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 	filterLabelItems="<%= notificationsManagementToolbarDisplayContext.getFilterLabelItems() %>"
 	itemsTotal="<%= notificationsSearchContainer.getTotal() %>"
+	propsTransformer="notifications/js/NotificationsManagementToolbarPropsTransformer"
 	searchContainerId="<%= searchContainerId %>"
 	selectable="<%= actionRequired ? false : true %>"
 	showCreationMenu="<%= false %>"
@@ -85,7 +101,7 @@ navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 	sortingURL="<%= String.valueOf(notificationsManagementToolbarDisplayContext.getSortingURL()) %>"
 />
 
-<div class="container-fluid-1280 main-content-body">
+<clay:container-fluid>
 	<aui:form action="<%= currentURL %>" method="get" name="fm">
 		<div class="user-notifications">
 			<liferay-ui:search-container
@@ -99,14 +115,14 @@ navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 				>
 
 					<%
-					Map<String, Object> rowData = new HashMap<String, Object>();
-
 					UserNotificationFeedEntry userNotificationFeedEntry = UserNotificationManagerUtil.interpret(StringPool.BLANK, userNotificationEvent, ServiceContextFactory.getInstance(request));
 
-					rowData.put("actions", StringUtil.merge(notificationsManagementToolbarDisplayContext.getAvailableActions(userNotificationEvent, userNotificationFeedEntry)));
-					rowData.put("userNotificationFeedEntry", userNotificationFeedEntry);
-
-					row.setData(rowData);
+					row.setData(
+						HashMapBuilder.<String, Object>put(
+							"actions", StringUtil.merge(notificationsManagementToolbarDisplayContext.getAvailableActions(userNotificationEvent, userNotificationFeedEntry))
+						).put(
+							"userNotificationFeedEntry", userNotificationFeedEntry
+						).build());
 					%>
 
 					<%@ include file="/notifications/user_notification_entry.jspf" %>
@@ -119,78 +135,25 @@ navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 			</liferay-ui:search-container>
 		</div>
 	</aui:form>
-</div>
+</clay:container-fluid>
 
-<aui:script sandbox="<%= true %>">
-	var deleteNotifications = function() {
-		var form = document.getElementById('<portlet:namespace />fm');
-
-		form.setAttribute('method', 'post');
-
-		submitForm(
-			form,
-			'<portlet:actionURL name="deleteNotifications"><portlet:param name="redirect" value="<%= currentURL %>" /></portlet:actionURL>'
-		);
-	};
-
-	var markNotificationsAsRead = function() {
-		var form = document.getElementById('<portlet:namespace />fm');
-
-		form.setAttribute('method', 'post');
-
-		submitForm(
-			form,
-			'<portlet:actionURL name="markNotificationsAsRead"><portlet:param name="redirect" value="<%= currentURL %>" /></portlet:actionURL>'
-		);
-	};
-
-	var markNotificationsAsUnread = function() {
-		var form = document.getElementById('<portlet:namespace />fm');
-
-		form.setAttribute('method', 'post');
-
-		submitForm(
-			form,
-			'<portlet:actionURL name="markNotificationsAsUnread"><portlet:param name="redirect" value="<%= currentURL %>" /></portlet:actionURL>'
-		);
-	};
-
-	var ACTIONS = {
-		deleteNotifications: deleteNotifications,
-		markNotificationsAsRead: markNotificationsAsRead,
-		markNotificationsAsUnread: markNotificationsAsUnread
-	};
-
-	Liferay.componentReady('notificationsManagementToolbar').then(function(
-		managementToolbar
-	) {
-		managementToolbar.on('actionItemClicked', function(event) {
-			var itemData = event.data.item.data;
-
-			if (itemData && itemData.action && ACTIONS[itemData.action]) {
-				ACTIONS[itemData.action]();
-			}
-		});
-	});
-</aui:script>
-
-<aui:script use="aui-base,liferay-notice">
+<aui:script use="aui-base">
 	var form = A.one('#<portlet:namespace />fm');
 
 	form.delegate(
 		'click',
-		function(event) {
+		(event) => {
 			event.preventDefault();
 
 			var currentTarget = event.currentTarget;
 
 			Liferay.Util.fetch(currentTarget.attr('href'), {
-				method: 'POST'
+				method: 'POST',
 			})
-				.then(function(response) {
+				.then((response) => {
 					return response.json();
 				})
-				.then(function(response) {
+				.then((response) => {
 					if (response.success) {
 						var notificationContainer = currentTarget.ancestor(
 							'li.list-group-item'
@@ -209,30 +172,17 @@ navigationURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
 						}
 					}
 					else {
-						getNotice().show();
+						Liferay.Util.openToast({
+							message:
+								'<liferay-ui:message key="an-unexpected-error-occurred" />',
+							toastProps: {
+								autoClose: 5000,
+							},
+							type: 'warning',
+						});
 					}
 				});
 		},
 		'.user-notification-action'
 	);
-
-	var notice;
-
-	function getNotice() {
-		if (!notice) {
-			notice = new Liferay.Notice({
-				closeText: false,
-				content:
-					'<liferay-ui:message key="an-unexpected-error-occurred" /><button aria-label="' +
-					Liferay.Language.get('close') +
-					'" class="close" type="button">&times;</button>',
-				timeout: 5000,
-				toggleText: false,
-				type: 'warning',
-				useAnimation: false
-			});
-		}
-
-		return notice;
-	}
 </aui:script>

@@ -17,6 +17,8 @@ package com.liferay.headless.delivery.client.dto.v1_0;
 import com.liferay.headless.delivery.client.function.UnsafeSupplier;
 import com.liferay.headless.delivery.client.serdes.v1_0.PageElementSerDes;
 
+import java.io.Serializable;
+
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -26,38 +28,10 @@ import javax.annotation.Generated;
  * @generated
  */
 @Generated("")
-public class PageElement implements Cloneable {
+public class PageElement implements Cloneable, Serializable {
 
-	public static enum Type {
-
-		COLUMN("Column"), DROP_ZONE("DropZone"), FRAGMENT("Fragment"),
-		ROOT("Root"), ROW("Row"), SECTION("Section");
-
-		public static Type create(String value) {
-			for (Type type : values()) {
-				if (Objects.equals(type.getValue(), value)) {
-					return type;
-				}
-			}
-
-			return null;
-		}
-
-		public String getValue() {
-			return _value;
-		}
-
-		@Override
-		public String toString() {
-			return _value;
-		}
-
-		private Type(String value) {
-			_value = value;
-		}
-
-		private final String _value;
-
+	public static PageElement toDTO(String json) {
+		return PageElementSerDes.toDTO(json);
 	}
 
 	public Object getDefinition() {
@@ -158,6 +132,42 @@ public class PageElement implements Cloneable {
 
 	public String toString() {
 		return PageElementSerDes.toJSON(this);
+	}
+
+	public static enum Type {
+
+		COLLECTION("Collection"), COLLECTION_ITEM("CollectionItem"),
+		COLUMN("Column"), DROP_ZONE("DropZone"), FRAGMENT("Fragment"),
+		FRAGMENT_DROP_ZONE("FragmentDropZone"), ROOT("Root"), ROW("Row"),
+		SECTION("Section"), WIDGET("Widget");
+
+		public static Type create(String value) {
+			for (Type type : values()) {
+				if (Objects.equals(type.getValue(), value) ||
+					Objects.equals(type.name(), value)) {
+
+					return type;
+				}
+			}
+
+			return null;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private Type(String value) {
+			_value = value;
+		}
+
+		private final String _value;
+
 	}
 
 }

@@ -20,9 +20,8 @@ import com.liferay.exportimport.kernel.staging.permission.StagingPermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.StagedPortletPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
-
-import java.util.Dictionary;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -39,24 +38,27 @@ public class AccountPortletResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("resource.name", AccountConstants.RESOURCE_NAME);
-
 		_serviceRegistration = bundleContext.registerService(
 			PortletResourcePermission.class,
 			PortletResourcePermissionFactory.create(
 				AccountConstants.RESOURCE_NAME,
+				new AccountPortletResourcePermissionLogic(
+					_organizationLocalService),
 				new StagedPortletPermissionLogic(
 					_stagingPermission,
 					AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN)),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"resource.name", AccountConstants.RESOURCE_NAME
+			).build());
 	}
 
 	@Deactivate
 	protected void deactivate() {
 		_serviceRegistration.unregister();
 	}
+
+	@Reference
+	private OrganizationLocalService _organizationLocalService;
 
 	private ServiceRegistration<PortletResourcePermission> _serviceRegistration;
 

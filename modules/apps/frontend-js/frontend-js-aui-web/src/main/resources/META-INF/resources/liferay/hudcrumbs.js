@@ -15,13 +15,13 @@
 /**
  * The Hudcrumbs Component.
  *
- * @deprecated since 7.2, unused
+ * @deprecated As of Mueller (7.2.x), with no direct replacement
  * @module liferay-hudcrumbs
  */
 
 AUI.add(
 	'liferay-hudcrumbs',
-	A => {
+	(A) => {
 		var Lang = A.Lang;
 
 		var NAME = 'hudcrumbs';
@@ -29,20 +29,20 @@ AUI.add(
 		var Hudcrumbs = A.Component.create({
 			ATTRS: {
 				clone: {
-					value: null
+					value: null,
 				},
 				hostMidpoint: {
 					validator: Lang.isNumber,
-					value: 0
+					value: 0,
 				},
 				scrollDelay: {
 					validator: Lang.isNumber,
-					value: 50
+					value: 50,
 				},
 				width: {
 					validtor: Lang.isNumber,
-					value: 0
-				}
+					value: 0,
+				},
 			},
 
 			EXTENDS: A.Plugin.Base,
@@ -59,7 +59,7 @@ AUI.add(
 
 					instance.get('clone').setStyles({
 						left: region.left + 'px',
-						width: region.width + 'px'
+						width: region.width + 'px',
 					});
 
 					instance.set(
@@ -81,7 +81,7 @@ AUI.add(
 						action = 'show';
 					}
 
-					if (instance.lastAction != action) {
+					if (instance.lastAction !== action) {
 						hudcrumbs[action]();
 					}
 
@@ -113,6 +113,7 @@ AUI.add(
 
 					hudcrumbs.resetId();
 
+					// eslint-disable-next-line @liferay/aui/no-get-body
 					var body = A.getBody();
 					var win = A.getWin();
 
@@ -147,14 +148,14 @@ AUI.add(
 						instance._onStartNavigate,
 						instance
 					);
-				}
-			}
+				},
+			},
 		});
 
 		A.Hudcrumbs = Hudcrumbs;
 	},
 	'',
 	{
-		requires: ['aui-base', 'aui-debounce', 'event-resize']
+		requires: ['aui-base', 'aui-debounce', 'event-resize'],
 	}
 );

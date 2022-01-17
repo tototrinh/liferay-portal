@@ -13,14 +13,19 @@
  */
 
 import domAlign from 'dom-align';
-import dom from 'metal-dom';
+import {delegate} from 'frontend-js-web';
 
 const CssClass = {
-	SHOW: 'show'
+	SHOW: 'show',
 };
 
 const Selector = {
-	TRIGGER: '[data-toggle="liferay-dropdown"]'
+	TRIGGER: '[data-toggle="liferay-dropdown"]',
+};
+
+const KEYCODES = {
+	ENTER: 13,
+	SPACE: 32,
 };
 
 class DropdownProvider {
@@ -34,12 +39,14 @@ class DropdownProvider {
 			return Liferay.DropdownProvider;
 		}
 
-		dom.delegate(
+		delegate(
 			document.body,
 			'click',
 			Selector.TRIGGER,
 			this._onTriggerClick
 		);
+
+		delegate(document.body, 'keydown', Selector.TRIGGER, this._onKeyDown);
 
 		Liferay.DropdownProvider = this;
 	}
@@ -85,14 +92,29 @@ class DropdownProvider {
 		trigger.parentElement.classList.add(CssClass.SHOW);
 		trigger.setAttribute('aria-expanded', true);
 
+		const clickOutsideHandler = (event) => {
+			if (
+				!menu.contains(event.target) &&
+				!trigger.contains(event.target)
+			) {
+				this.hide({menu, trigger});
+
+				document.removeEventListener('mousedown', clickOutsideHandler);
+				document.removeEventListener('touchstart', clickOutsideHandler);
+			}
+		};
+
+		document.addEventListener('mousedown', clickOutsideHandler);
+		document.addEventListener('touchstart', clickOutsideHandler);
+
 		menu.classList.add(CssClass.SHOW);
 
 		domAlign(menu, trigger, {
 			overflow: {
 				adjustX: true,
-				adjustY: true
+				adjustY: true,
 			},
-			points: ['tl', 'bl']
+			points: ['tl', 'bl'],
 		});
 
 		Liferay.fire(this.EVENT_SHOWN, {menu, trigger});
@@ -106,7 +128,16 @@ class DropdownProvider {
 		return menu.parentElement.querySelector('.dropdown-toggle');
 	}
 
-	_onTriggerClick = event => {
+	_onKeyDown = (event) => {
+		if (
+			event.keyCode === KEYCODES.ENTER ||
+			event.keyCode === KEYCODES.SPACE
+		) {
+			this._onTriggerClick(event);
+		}
+	};
+
+	_onTriggerClick = (event) => {
 		const trigger = event.delegateTarget;
 
 		if (trigger.tagName === 'A') {

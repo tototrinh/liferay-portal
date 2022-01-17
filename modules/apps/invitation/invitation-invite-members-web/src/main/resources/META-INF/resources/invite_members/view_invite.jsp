@@ -36,7 +36,7 @@ Group group = GroupLocalServiceUtil.getGroup(scopeGroupId);
 		<aui:input name="invitedTeamId" type="hidden" value="" />
 
 		<div class="dialog-body">
-			<div class="container-fluid main-content-body">
+			<clay:container-fluid>
 				<aui:fieldset-group markupView="lexicon">
 					<aui:fieldset>
 						<label><liferay-ui:message key="find-members" /></label>
@@ -118,7 +118,7 @@ Group group = GroupLocalServiceUtil.getGroup(scopeGroupId);
 						</c:if>
 					</aui:fieldset>
 				</aui:fieldset-group>
-			</div>
+			</clay:container-fluid>
 		</div>
 
 		<aui:button-row>
@@ -134,13 +134,13 @@ Group group = GroupLocalServiceUtil.getGroup(scopeGroupId);
 		availableUsersURL: '<portlet:resourceURL id="getAvailableUsers" />',
 		form: {
 			method: 'POST',
-			node: '#<portlet:namespace />fm'
+			node: '#<portlet:namespace />fm',
 		},
 		namespace: '<portlet:namespace />',
-		rootNode: '#<portlet:namespace />inviteMembersContainer'
+		rootNode: '#<portlet:namespace />inviteMembersContainer',
 	});
 
-	var destroyInstance = function(event) {
+	var destroyInstance = function (event) {
 		if (event.portletId === '<%= portletDisplay.getRootPortletId() %>') {
 			portletInviteMembers.destroy();
 

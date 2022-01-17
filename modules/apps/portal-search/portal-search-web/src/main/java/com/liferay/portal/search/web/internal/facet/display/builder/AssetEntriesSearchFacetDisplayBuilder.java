@@ -14,8 +14,6 @@
 
 package com.liferay.portal.search.web.internal.facet.display.builder;
 
-import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
-import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.search.facet.Facet;
@@ -27,6 +25,7 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.SortedArrayList;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.web.internal.facet.display.context.AssetEntriesSearchFacetDisplayContext;
 import com.liferay.portal.search.web.internal.facet.display.context.AssetEntriesSearchFacetTermDisplayContext;
@@ -38,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.portlet.RenderRequest;
@@ -72,6 +72,8 @@ public class AssetEntriesSearchFacetDisplayBuilder implements Serializable {
 			getDisplayStyleGroupId());
 		assetEntriesSearchFacetDisplayContext.setNothingSelected(
 			isNothingSelected());
+		assetEntriesSearchFacetDisplayContext.setPaginationStartParameterName(
+			_paginationStartParameterName);
 		assetEntriesSearchFacetDisplayContext.setParameterName(_parameterName);
 		assetEntriesSearchFacetDisplayContext.setParameterValue(
 			getFirstParameterValue());
@@ -146,17 +148,21 @@ public class AssetEntriesSearchFacetDisplayBuilder implements Serializable {
 				continue;
 			}
 
-			AssetRendererFactory<?> assetRendererFactory =
-				AssetRendererFactoryRegistryUtil.
-					getAssetRendererFactoryByClassName(assetType);
+			boolean selected = false;
 
-			boolean selected = _parameterValues.contains(
-				termCollector.getTerm());
+			if (termCollector != null) {
+				selected = _parameterValues.contains(termCollector.getTerm());
+			}
+
+			String typeName = _typeNames.get(assetType);
+
+			if (Validator.isBlank(typeName)) {
+				typeName = assetType;
+			}
 
 			AssetEntriesSearchFacetTermDisplayContext
 				assetEntriesSearchFacetFieldDisplayContext = buildTermDisplay(
-					assetRendererFactory.getTypeName(_locale), selected,
-					assetType, termCollector.getFrequency());
+					typeName, selected, assetType, frequency);
 
 			assetEntriesSearchFacetFieldDisplayContexts.add(
 				assetEntriesSearchFacetFieldDisplayContext);
@@ -201,6 +207,12 @@ public class AssetEntriesSearchFacetDisplayBuilder implements Serializable {
 		_locale = locale;
 	}
 
+	public void setPaginationStartParameterName(
+		String paginationStartParameterName) {
+
+		_paginationStartParameterName = paginationStartParameterName;
+	}
+
 	public void setParameterName(String parameterName) {
 		_parameterName = parameterName;
 	}
@@ -218,6 +230,10 @@ public class AssetEntriesSearchFacetDisplayBuilder implements Serializable {
 
 	public void setParameterValues(List<String> paramValues) {
 		_parameterValues = paramValues;
+	}
+
+	public void setTypeNames(Map<String, String> typeNames) {
+		_typeNames = typeNames;
 	}
 
 	protected long getDisplayStyleGroupId() {
@@ -244,10 +260,12 @@ public class AssetEntriesSearchFacetDisplayBuilder implements Serializable {
 	private boolean _frequenciesVisible;
 	private int _frequencyThreshold;
 	private Locale _locale;
+	private String _paginationStartParameterName;
 	private String _parameterName;
 	private List<String> _parameterValues = Collections.emptyList();
 	private final ThemeDisplay _themeDisplay;
 	private final TypeFacetPortletInstanceConfiguration
 		_typeFacetPortletInstanceConfiguration;
+	private Map<String, String> _typeNames = Collections.emptyMap();
 
 }

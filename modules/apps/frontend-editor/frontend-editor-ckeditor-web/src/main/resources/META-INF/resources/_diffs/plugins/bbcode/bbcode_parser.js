@@ -12,28 +12,27 @@
  * details.
  */
 
-(function() {
+(function () {
 	var A = AUI();
 
-	var LString = A.Lang.String;
-
-	var entities = A.merge(Liferay.Util.MAP_HTML_CHARS_ESCAPED, {
+	var entities = {
+		...Liferay.Util.MAP_HTML_CHARS_ESCAPED,
 		'(': '&#40;',
 		')': '&#41;',
 		'[': '&#91;',
-		']': '&#93;'
-	});
+		']': '&#93;',
+	};
 
 	var BBCodeUtil = Liferay.namespace('BBCodeUtil');
 
-	BBCodeUtil.escape = A.rbind('escapeHTML', LString, true, entities);
-	BBCodeUtil.unescape = A.rbind('unescapeHTML', LString, entities);
+	BBCodeUtil.escape = A.rbind('escapeHTML', Liferay.Util, true, entities);
+	BBCodeUtil.unescape = A.rbind('unescapeHTML', Liferay.Util, entities);
 })();
-(function() {
+(function () {
 	// eslint-disable-next-line no-control-regex
 	var REGEX_BBCODE = /(?:\[((?:[a-z]|\*){1,16})(?:[=\s]([^\x00-\x1F'<>[\]]{1,2083}))?\])|(?:\[\/([a-z]{1,16})\])/gi;
 
-	var Lexer = function(data) {
+	var Lexer = function (data) {
 		var instance = this;
 
 		instance._data = data;
@@ -50,37 +49,37 @@
 			var instance = this;
 
 			return REGEX_BBCODE.exec(instance._data);
-		}
+		},
 	};
 
 	Liferay.BBCodeLexer = Lexer;
 })();
-(function() {
+(function () {
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-	var isString = function(val) {
-		return typeof val == 'string';
+	var isString = function (val) {
+		return typeof val === 'string';
 	};
 
 	var ELEMENTS_BLOCK = {
 		'*': 1,
-		center: 1,
-		code: 1,
-		justify: 1,
-		left: 1,
-		li: 1,
-		list: 1,
-		q: 1,
-		quote: 1,
-		right: 1,
-		table: 1,
-		td: 1,
-		th: 1,
-		tr: 1
+		'center': 1,
+		'code': 1,
+		'justify': 1,
+		'left': 1,
+		'li': 1,
+		'list': 1,
+		'q': 1,
+		'quote': 1,
+		'right': 1,
+		'table': 1,
+		'td': 1,
+		'th': 1,
+		'tr': 1,
 	};
 
 	var ELEMENTS_CLOSE_SELF = {
-		'*': 1
+		'*': 1,
 	};
 
 	var ELEMENTS_INLINE = {
@@ -88,18 +87,19 @@
 		color: 1,
 		font: 1,
 		i: 1,
+		// eslint-disable-next-line @liferay/no-abbreviations
 		img: 1,
 		s: 1,
 		size: 1,
 		u: 1,
-		url: 1
+		url: 1,
 	};
 
 	var REGEX_TAG_NAME = /^\/?(?:b|center|code|colou?r|email|i|img|justify|left|pre|q|quote|right|\*|s|size|table|tr|th|td|li|list|font|u|url)$/i;
 
 	var STR_TAG_CODE = 'code';
 
-	var Parser = function(config) {
+	var Parser = function (config) {
 		var instance = this;
 
 		config = config || {};
@@ -132,7 +132,7 @@
 			if (length > instance._dataPointer) {
 				instance._result.push({
 					type: Parser.TOKEN_DATA,
-					value: data.substring(instance._dataPointer, length)
+					value: data.substring(instance._dataPointer, length),
 				});
 			}
 
@@ -159,7 +159,7 @@
 				tagName = tagName.toLowerCase();
 
 				for (pos = stack.length - 1; pos >= 0; pos--) {
-					if (stack[pos] == tagName) {
+					if (stack[pos] === tagName) {
 						break;
 					}
 				}
@@ -171,7 +171,7 @@
 				for (var i = stack.length - 1; i >= pos; i--) {
 					instance._result.push({
 						type: tokenTagEnd,
-						value: stack[i]
+						value: stack[i],
 					});
 				}
 
@@ -200,7 +200,7 @@
 
 				if (
 					hasOwnProperty.call(ELEMENTS_CLOSE_SELF, tagName) &&
-					stack.last() == tagName
+					stack.last() === tagName
 				) {
 					instance._handleTagEnd(tagName);
 				}
@@ -210,7 +210,7 @@
 				instance._result.push({
 					attribute: token[2],
 					type: Parser.TOKEN_TAG_START,
-					value: tagName
+					value: tagName,
 				});
 			}
 		},
@@ -243,7 +243,7 @@
 
 			stack.last =
 				stack.last ||
-				function() {
+				function () {
 					var instance = this;
 
 					return instance[instance.length - 1];
@@ -271,12 +271,14 @@
 				if (token[1]) {
 					instance._handleTagStart(token);
 
-					if (token[1].toLowerCase() == STR_TAG_CODE) {
+					if (token[1].toLowerCase() === STR_TAG_CODE) {
 						while (
 							(token = lexer.getNextToken()) &&
-							token[3] != STR_TAG_CODE
+							token[3] !== STR_TAG_CODE
 						) {
+
 							// Continue.
+
 						}
 
 						instance._handleData(token, data);
@@ -303,7 +305,7 @@
 			instance._reset();
 
 			return result;
-		}
+		},
 	};
 
 	Parser.TOKEN_DATA = 4;
@@ -312,9 +314,7 @@
 
 	Liferay.BBCodeParser = Parser;
 })();
-(function() {
-	var A = AUI();
-
+(function () {
 	var BBCodeUtil = Liferay.BBCodeUtil;
 	var CKTools = CKEDITOR.tools;
 
@@ -331,48 +331,49 @@
 		6: 24,
 		7: 32,
 		8: 48,
-		defaultSize: 14
+		defaultSize: 14,
 	};
 
 	var MAP_HANDLERS = {
 		'*': '_handleListItem',
-		b: '_handleStrong',
-		center: '_handleTextAlign',
-		code: '_handleCode',
-		color: '_handleColor',
-		colour: '_handleColor',
-		email: '_handleEmail',
-		font: '_handleFont',
-		i: '_handleEm',
-		img: '_handleImage',
-		justify: '_handleTextAlign',
-		left: '_handleTextAlign',
-		li: '_handleListItem',
-		list: '_handleList',
-		q: '_handleQuote',
-		quote: '_handleQuote',
-		right: '_handleTextAlign',
-		s: '_handleStrikeThrough',
-		size: '_handleSize',
-		table: '_handleTable',
-		td: '_handleTableCell',
-		th: '_handleTableHeader',
-		tr: '_handleTableRow',
-		url: '_handleURL'
+		'b': '_handleStrong',
+		'center': '_handleTextAlign',
+		'code': '_handleCode',
+		'color': '_handleColor',
+		'colour': '_handleColor',
+		'email': '_handleEmail',
+		'font': '_handleFont',
+		'i': '_handleEm',
+		// eslint-disable-next-line @liferay/no-abbreviations
+		'img': '_handleImage',
+		'justify': '_handleTextAlign',
+		'left': '_handleTextAlign',
+		'li': '_handleListItem',
+		'list': '_handleList',
+		'q': '_handleQuote',
+		'quote': '_handleQuote',
+		'right': '_handleTextAlign',
+		's': '_handleStrikeThrough',
+		'size': '_handleSize',
+		'table': '_handleTable',
+		'td': '_handleTableCell',
+		'th': '_handleTableHeader',
+		'tr': '_handleTableRow',
+		'url': '_handleURL',
 	};
 
 	var MAP_IMAGE_ATTRIBUTES = {
-		alt: 1,
-		class: 1,
+		'alt': 1,
+		'class': 1,
 		'data-image-id': 1,
-		dir: 1,
-		height: 1,
-		id: 1,
-		lang: 1,
-		longdesc: 1,
-		style: 1,
-		title: 1,
-		width: 1
+		'dir': 1,
+		'height': 1,
+		'id': 1,
+		'lang': 1,
+		'longdesc': 1,
+		'style': 1,
+		'title': 1,
+		'width': 1,
 	};
 
 	var MAP_ORDERED_LIST_STYLES = {
@@ -380,22 +381,22 @@
 		A: 'list-style-type: upper-alpha;',
 		I: 'list-style-type: upper-roman;',
 		a: 'list-style-type: lower-alpha;',
-		i: 'list-style-type: lower-roman;'
+		i: 'list-style-type: lower-roman;',
 	};
 
 	var MAP_TOKENS_EXCLUDE_NEW_LINE = {
 		'*': 3,
-		li: 3,
-		table: 2,
-		td: 3,
-		th: 3,
-		tr: 3
+		'li': 3,
+		'table': 2,
+		'td': 3,
+		'th': 3,
+		'tr': 3,
 	};
 
 	var MAP_UNORDERED_LIST_STYLES = {
 		circle: 'list-style-type: circle;',
 		disc: 'list-style-type: disc;',
-		square: 'list-style-type: square;'
+		square: 'list-style-type: square;',
 	};
 
 	var REGEX_ATTRS = /\s*([^=]+)\s*=\s*"([^"]*)"\s*/g;
@@ -466,7 +467,7 @@
 		'<img src="{imageSrc}" {attributes} />'
 	);
 
-	var Converter = function(config) {
+	var Converter = function (config) {
 		var instance = this;
 
 		config = config || {};
@@ -477,7 +478,7 @@
 	};
 
 	Converter.prototype = {
-		_escapeHTML: A.Lang.String.escapeHTML,
+		_escapeHTML: Liferay.Util.escapeHTML,
 
 		_extractData(toTagName, consume) {
 			var instance = this;
@@ -556,7 +557,7 @@
 
 				for (var i = 0; i < length; i++) {
 					var image = tplImage.output({
-						imageSrc: emoticonPath + emoticonImages[i]
+						imageSrc: emoticonPath + emoticonImages[i],
 					});
 
 					var escapedSymbol = emoticonSymbols[i].replace(
@@ -633,7 +634,7 @@
 
 			var result = tplImage.output({
 				attributes: instance._handleImageAttributes(token, token.value),
-				imageSrc
+				imageSrc,
 			});
 
 			instance._result.push(result);
@@ -767,7 +768,7 @@
 
 			var cite = token.attribute;
 
-			var result = '<blockquote>';
+			var result = '<blockquote><p>';
 
 			if (cite && cite.length) {
 				cite = BBCodeUtil.escape(cite);
@@ -777,7 +778,7 @@
 
 			instance._result.push(result);
 
-			instance._stack.push('</blockquote>');
+			instance._stack.push('</p></blockquote>');
 		},
 
 		_handleSimpleTag(tagName) {
@@ -966,7 +967,7 @@
 
 			instance._result = [];
 			instance._stack = [];
-		}
+		},
 	};
 
 	CKEDITOR.BBCode2HTML = Converter;

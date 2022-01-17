@@ -12,6 +12,5 @@
  * details.
  */
 
-import FormBuilderWithLayoutProvider from './components/FormBuilder/FormBuilderWithLayoutProvider.es';
-
-export default FormBuilderWithLayoutProvider;
+export {Token} from './expressions/Token.es';
+export {Tokenizer} from './expressions/Tokenizer.es';

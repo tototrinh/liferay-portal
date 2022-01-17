@@ -19,13 +19,11 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.StagedModelPermissionLogic;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.wiki.constants.WikiConstants;
 import com.liferay.wiki.constants.WikiPortletKeys;
 import com.liferay.wiki.model.WikiNode;
 import com.liferay.wiki.service.WikiNodeLocalService;
-
-import java.util.Dictionary;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -42,12 +40,9 @@ public class WikiNodeModelResourcePermissionRegistrar {
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("model.class.name", WikiNode.class.getName());
-
 		_serviceRegistration = bundleContext.registerService(
-			ModelResourcePermission.class,
+			(Class<ModelResourcePermission<WikiNode>>)
+				(Class<?>)ModelResourcePermission.class,
 			ModelResourcePermissionFactory.create(
 				WikiNode.class, WikiNode::getNodeId,
 				_wikiNodeLocalService::getWikiNode, _portletResourcePermission,
@@ -55,7 +50,9 @@ public class WikiNodeModelResourcePermissionRegistrar {
 					new StagedModelPermissionLogic<>(
 						_stagingPermission, WikiPortletKeys.WIKI,
 						WikiNode::getNodeId))),
-			properties);
+			HashMapDictionaryBuilder.<String, Object>put(
+				"model.class.name", WikiNode.class.getName()
+			).build());
 	}
 
 	@Deactivate
@@ -66,7 +63,8 @@ public class WikiNodeModelResourcePermissionRegistrar {
 	@Reference(target = "(resource.name=" + WikiConstants.RESOURCE_NAME + ")")
 	private PortletResourcePermission _portletResourcePermission;
 
-	private ServiceRegistration<ModelResourcePermission> _serviceRegistration;
+	private ServiceRegistration<ModelResourcePermission<WikiNode>>
+		_serviceRegistration;
 
 	@Reference
 	private StagingPermission _stagingPermission;

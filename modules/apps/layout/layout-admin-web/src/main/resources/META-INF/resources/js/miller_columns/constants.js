@@ -13,9 +13,10 @@
  */
 
 export const ACCEPTING_TYPES = {
-	ITEM: 'ITEM'
+	ITEM: 'ITEM',
 };
 
 // Defines the distance in px from the border to the center of an item where
 // dropZone changes from TOP/BOTTOM to ELEMENT
+
 export const ITEM_HOVER_BORDER_LIMIT = 20;
