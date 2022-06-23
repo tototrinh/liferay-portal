@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Map;
 
 /**
@@ -204,7 +206,17 @@ public class HtmlUtil {
 	public void setHtml(Html html) {
 		_html = html;
 	}
+	public static String stripJSSourceMapping(String jsText) {
+		return _html.stripJSSourceMapping(jsText);
+	}
 
+	public static String stripCSSSourceMapping(String cssText) {
+		return _html.stripCSSSourceMapping(cssText);
+	}
+
+	public static InputStream stripJSSourceMapping(InputStream jsInputStream) {
+		return _html.stripJSSourceMapping(jsInputStream);
+	}
 	private static Html _html;
 
 }

@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Map;
 
 /**
@@ -64,4 +66,9 @@ public interface Html {
 
 	public String wordBreak(String text, int columns);
 
+	public String stripJSSourceMapping(String jsText);
+
+	public String stripCSSSourceMapping(String cssText);
+
+	public InputStream stripJSSourceMapping(InputStream jsInputStream);
 }

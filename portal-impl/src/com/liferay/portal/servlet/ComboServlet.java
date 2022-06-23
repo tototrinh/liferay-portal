@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -398,6 +399,9 @@ public class ComboServlet extends HttpServlet {
 					stringFileContent = AggregateUtil.updateRelativeURLs(
 						stringFileContent, baseURL);
 
+					stringFileContent = HtmlUtil.stripCSSSourceMapping(
+						stringFileContent);
+
 					stringFileContent = MinifierUtil.minifyCss(
 						stringFileContent);
 				}
@@ -420,6 +424,9 @@ public class ComboServlet extends HttpServlet {
 						stringFileContent = MinifierUtil.minifyJavaScript(
 							resourcePath, stringFileContent);
 					}
+
+					stringFileContent = HtmlUtil.stripJSSourceMapping(
+						stringFileContent);
 
 					stringFileContent = stringFileContent.concat(
 						StringPool.NEW_LINE);

@@ -23,9 +23,19 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import java.io.BufferedReader;
 
 /**
  * Provides the implementation of the HTML utility interface for escaping,
@@ -762,6 +772,42 @@ public class HtmlImpl implements Html {
 
 		return sb.toString();
 	}
+	@Override
+	public String stripJSSourceMapping(String jsText) {
+		if (Validator.isNotNull(jsText)) {
+			return jsText.replaceAll(
+				_JAVASCRIPT_SOURCE_MAPPING_URL_PATTERN, StringPool.BLANK);
+		}
+
+		return jsText;
+	}
+
+	@Override
+	public String stripCSSSourceMapping(String cssText) {
+		if (Validator.isNotNull(cssText)) {
+			return cssText.replaceAll(
+				_CSS_SOURCE_MAPPING_URL_PATTERN, StringPool.BLANK);
+		}
+
+		return cssText;
+	}
+
+	@Override
+	public InputStream stripJSSourceMapping(InputStream jsInputStream) {
+		StringWriter writer = new StringWriter();
+
+		String text = new BufferedReader(
+			new InputStreamReader(jsInputStream, StandardCharsets.UTF_8))
+			.lines()
+			.collect(Collectors.joining("\n"));
+		String theString = stripJSSourceMapping(text);
+
+		if(Validator.isNotNull(theString)) {
+			return new ByteArrayInputStream(
+				theString.getBytes(StandardCharsets.UTF_8));
+		}
+		return null;
+	}
 
 	protected boolean isTag(char[] tag, String text, int pos) {
 		if ((pos + tag.length + 1) <= text.length()) {
@@ -951,5 +997,9 @@ public class HtmlImpl implements Html {
 		_VALID_CHARS['-'] = true;
 		_VALID_CHARS['_'] = true;
 	}
+	private static final String _JAVASCRIPT_SOURCE_MAPPING_URL_PATTERN = 
+		"\\/\\/# sourceMappingURL=([a-zA-Z0-9\\s_\\\\.\\-\\(\\):])+(.js.map)$";
 
+	private static final String _CSS_SOURCE_MAPPING_URL_PATTERN = 
+		"(\\/\\*# sourceMappingURL=)([a-zA-Z0-9\\s_\\\\.\\-\\(\\):])+(.css.map )(\\*\\/)";
 }

@@ -30,6 +30,12 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.BufferedReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
 /**
  * @author Olaf Kock
@@ -441,6 +447,52 @@ public class HtmlImplTest {
 	@Test
 	public void testUnescapeHtmlEncodingRightSingleQuote() {
 		Assert.assertEquals("\u2019", _htmlImpl.unescape("&rsquo;"));
+	}
+
+	@Test
+	public void testStripCSSSourceMapping() {
+		Assert.assertEquals(
+			"Hello World!",
+			_htmlImpl.stripCSSSourceMapping(
+				"Hello World!"));
+
+		Assert.assertEquals(
+			"Hello World!",
+			_htmlImpl.stripCSSSourceMapping(
+				"Hello World!/*# sourceMappingURL=main.css.map */"));
+
+		Assert.assertEquals(
+			null,
+			_htmlImpl.stripCSSSourceMapping(
+				null));
+	}
+
+	@Test
+	public void testStripJSSourceMapping() {
+		Assert.assertEquals(
+			"Hello World!",
+			_htmlImpl.stripJSSourceMapping(
+				"Hello World!"));
+
+		Assert.assertEquals(
+			"Hello World!",
+			_htmlImpl.stripJSSourceMapping(
+				"Hello World!//# sourceMappingURL=main.js.map"));
+
+	}
+
+	@Test
+	public void testStripJSSourceMappingFromInputSource() {
+		String string = "Hello World!//# sourceMappingURL=main.js.map";
+
+		InputStream stream = new ByteArrayInputStream(string.getBytes
+			(StandardCharsets.UTF_8));
+
+		String text = new BufferedReader(
+			new InputStreamReader(_htmlImpl.stripJSSourceMapping(stream), StandardCharsets.UTF_8))
+			.lines()
+			.collect(Collectors.joining("\n"));
+		Assert.assertEquals( "Hello World!", text);	
 	}
 
 	protected void assertUnchangedEscape(String input) {
