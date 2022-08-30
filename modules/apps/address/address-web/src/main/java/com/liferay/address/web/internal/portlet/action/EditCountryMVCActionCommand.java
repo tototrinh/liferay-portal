@@ -15,6 +15,7 @@
 package com.liferay.address.web.internal.portlet.action;
 
 import com.liferay.address.web.internal.constants.AddressPortletKeys;
+import com.liferay.address.web.internal.exception.CountryTitleException;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.CountryA2Exception;
 import com.liferay.portal.kernel.exception.CountryA3Exception;
@@ -24,6 +25,8 @@ import com.liferay.portal.kernel.exception.DuplicateCountryException;
 import com.liferay.portal.kernel.exception.NoSuchCountryException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Country;
+import com.liferay.portal.kernel.model.CountryLocalization;
+import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -109,6 +112,7 @@ public class EditCountryMVCActionCommand
 					 throwable instanceof CountryA3Exception ||
 					 throwable instanceof CountryNameException ||
 					 throwable instanceof CountryNumberException ||
+					 throwable instanceof CountryTitleException ||
 					 throwable instanceof DuplicateCountryException) {
 
 				hideDefaultErrorMessage(actionRequest);
@@ -140,6 +144,10 @@ public class EditCountryMVCActionCommand
 		boolean subjectToVAT = ParamUtil.getBoolean(
 			actionRequest, "subjectToVAT");
 
+		Map<Locale, String> titleLocalizationMap = LocalizationUtil.getLocalizationMap(actionRequest, "title");
+
+		_validateCountryLocalizationTitle(titleLocalizationMap);
+
 		Country country = _countryService.addCountry(
 			a2, a3, active, billingAllowed, idd, name, number, position,
 			shippingAllowed, subjectToVAT, false,
@@ -148,7 +156,7 @@ public class EditCountryMVCActionCommand
 
 		_updateCountryLocalizations(
 			country,
-			LocalizationUtil.getLocalizationMap(actionRequest, "title"));
+			titleLocalizationMap);
 
 		return country;
 	}
@@ -172,16 +180,21 @@ public class EditCountryMVCActionCommand
 		boolean subjectToVAT = ParamUtil.getBoolean(
 			actionRequest, "subjectToVAT");
 
+		Map<Locale, String> titleLocalizationMap = LocalizationUtil.getLocalizationMap(actionRequest, "title");
+
+		_validateCountryLocalizationTitle(titleLocalizationMap);
+
 		Country country = _countryService.updateCountry(
 			countryId, a2, a3, active, billingAllowed, idd, name, number,
 			position, shippingAllowed, subjectToVAT);
 
 		_updateCountryLocalizations(
 			country,
-			LocalizationUtil.getLocalizationMap(actionRequest, "title"));
+			titleLocalizationMap);
 
 		return country;
 	}
+
 
 	private void _updateCountryLocalizations(
 			Country country, Map<Locale, String> localizationMap)
@@ -195,7 +208,23 @@ public class EditCountryMVCActionCommand
 
 		_countryLocalService.updateCountryLocalizations(country, map);
 	}
+	private void _validateCountryLocalizationTitle(Map<Locale, String> titleLocalizationMap)
+		throws CountryTitleException.MustNotExceedMaximumLength {
 
+		int titleMaxLength = ModelHintsUtil.getMaxLength(
+			CountryLocalization.class.getName(), "title");
+
+		for (Map.Entry<Locale, String> entry : titleLocalizationMap.entrySet()) {
+			String title = entry.getValue();
+
+			if (Validator.isNull(title) || (title.length() <= titleMaxLength)) {
+				continue;
+			}
+
+			throw new CountryTitleException.MustNotExceedMaximumLength(
+				title, titleMaxLength);
+		}
+	}
 	@Reference
 	private CountryLocalService _countryLocalService;
 
