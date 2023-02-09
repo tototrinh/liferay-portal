@@ -14,8 +14,8 @@
 
 package com.liferay.portal.workflow.metrics.internal.background.task;
 
+import com.liferay.background.task.kernel.constants.BackgroundTaskContextMapConstants;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.background.task.constants.BackgroundTaskContextMapConstants;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskExecutor;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;

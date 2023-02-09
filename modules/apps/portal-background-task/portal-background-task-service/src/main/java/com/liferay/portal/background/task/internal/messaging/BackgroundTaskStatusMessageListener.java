@@ -14,8 +14,8 @@
 
 package com.liferay.portal.background.task.internal.messaging;
 
+import com.liferay.background.task.kernel.constants.BackgroundTaskContextMapConstants;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.background.task.constants.BackgroundTaskContextMapConstants;
 import com.liferay.portal.background.task.constants.BackgroundTaskPortletKeys;
 import com.liferay.portal.background.task.internal.BackgroundTaskImpl;
 import com.liferay.portal.background.task.internal.lock.helper.BackgroundTaskLockHelper;

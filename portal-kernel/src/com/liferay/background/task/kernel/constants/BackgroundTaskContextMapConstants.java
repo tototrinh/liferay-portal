@@ -12,7 +12,7 @@
  * details.
  */
 
-package com.liferay.portal.background.task.constants;
+package com.liferay.background.task.kernel.constants;
 
 /**
  * @author Michael C. Han

@@ -14,12 +14,12 @@
 
 package com.liferay.bulk.selection.internal;
 
+import com.liferay.background.task.kernel.constants.BackgroundTaskContextMapConstants;
 import com.liferay.bulk.selection.BulkSelection;
 import com.liferay.bulk.selection.BulkSelectionAction;
 import com.liferay.bulk.selection.BulkSelectionFactory;
 import com.liferay.bulk.selection.BulkSelectionRunner;
 import com.liferay.bulk.selection.internal.constants.BulkSelectionBackgroundTaskConstants;
-import com.liferay.portal.background.task.constants.BackgroundTaskContextMapConstants;
 import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
