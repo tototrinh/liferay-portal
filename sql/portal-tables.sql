@@ -468,6 +468,7 @@ create table DLFolder (
 	defaultFileEntryTypeId LONG,
 	hidden_ BOOLEAN,
 	restrictionType INTEGER,
+	allowedPropagation BOOLEAN,
 	lastPublishDate DATE null,
 	status INTEGER,
 	statusByUserId LONG,

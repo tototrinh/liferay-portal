@@ -66,6 +66,7 @@ public class DLFolderWrapper
 		attributes.put("defaultFileEntryTypeId", getDefaultFileEntryTypeId());
 		attributes.put("hidden", isHidden());
 		attributes.put("restrictionType", getRestrictionType());
+		attributes.put("allowedPropagation", isAllowedPropagation());
 		attributes.put("lastPublishDate", getLastPublishDate());
 		attributes.put("status", getStatus());
 		attributes.put("statusByUserId", getStatusByUserId());
@@ -205,6 +206,13 @@ public class DLFolderWrapper
 			setRestrictionType(restrictionType);
 		}
 
+		Boolean allowedPropagation = (Boolean)attributes.get(
+			"allowedPropagation");
+
+		if (allowedPropagation != null) {
+			setAllowedPropagation(allowedPropagation);
+		}
+
 		Date lastPublishDate = (Date)attributes.get("lastPublishDate");
 
 		if (lastPublishDate != null) {
@@ -246,6 +254,16 @@ public class DLFolderWrapper
 	@Override
 	public DLFolder cloneWithOriginalValues() {
 		return wrap(model.cloneWithOriginalValues());
+	}
+
+	/**
+	 * Returns the allowed propagation of this document library folder.
+	 *
+	 * @return the allowed propagation of this document library folder
+	 */
+	@Override
+	public boolean getAllowedPropagation() {
+		return model.getAllowedPropagation();
 	}
 
 	@Override
@@ -624,6 +642,16 @@ public class DLFolderWrapper
 	}
 
 	/**
+	 * Returns <code>true</code> if this document library folder is allowed propagation.
+	 *
+	 * @return <code>true</code> if this document library folder is allowed propagation; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isAllowedPropagation() {
+		return model.isAllowedPropagation();
+	}
+
+	/**
 	 * Returns <code>true</code> if this document library folder is approved.
 	 *
 	 * @return <code>true</code> if this document library folder is approved; <code>false</code> otherwise
@@ -751,6 +779,16 @@ public class DLFolderWrapper
 	@Override
 	public void persist() {
 		model.persist();
+	}
+
+	/**
+	 * Sets whether this document library folder is allowed propagation.
+	 *
+	 * @param allowedPropagation the allowed propagation of this document library folder
+	 */
+	@Override
+	public void setAllowedPropagation(boolean allowedPropagation) {
+		model.setAllowedPropagation(allowedPropagation);
 	}
 
 	/**

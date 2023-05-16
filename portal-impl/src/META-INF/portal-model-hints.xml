@@ -398,6 +398,7 @@
 		<field name="defaultFileEntryTypeId" type="long" />
 		<field name="hidden" type="boolean" />
 		<field name="restrictionType" type="int" />
+		<field name="allowedPropagation" type="boolean" />
 		<field name="lastPublishDate" type="Date" />
 		<field name="status" type="int" />
 		<field name="statusByUserId" type="long" />

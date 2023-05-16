@@ -941,6 +941,15 @@ public class DLFolderLocalServiceWrapper
 		_dlFolderLocalService.unlockFolder(folderId, lockUuid);
 	}
 
+	@Override
+	public void updateAllowedPropagation(
+			long folderId, boolean allowedPropagation)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_dlFolderLocalService.updateAllowedPropagation(
+			folderId, allowedPropagation);
+	}
+
 	/**
 	 * Updates the document library folder in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *

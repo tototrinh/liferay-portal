@@ -800,6 +800,13 @@ public class DLFolderLocalServiceUtil {
 		getService().unlockFolder(folderId, lockUuid);
 	}
 
+	public static void updateAllowedPropagation(
+			long folderId, boolean allowedPropagation)
+		throws PortalException {
+
+		getService().updateAllowedPropagation(folderId, allowedPropagation);
+	}
+
 	/**
 	 * Updates the document library folder in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *

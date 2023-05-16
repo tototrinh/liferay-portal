@@ -598,6 +598,10 @@ public interface DLFolderLocalService
 	public void unlockFolder(long folderId, String lockUuid)
 		throws PortalException;
 
+	public void updateAllowedPropagation(
+			long folderId, boolean allowedPropagation)
+		throws PortalException;
+
 	/**
 	 * Updates the document library folder in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *

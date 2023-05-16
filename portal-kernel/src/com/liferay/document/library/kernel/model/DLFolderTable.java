@@ -78,6 +78,10 @@ public class DLFolderTable extends BaseTable<DLFolderTable> {
 		"hidden_", Boolean.class, Types.BOOLEAN, Column.FLAG_DEFAULT);
 	public final Column<DLFolderTable, Integer> restrictionType = createColumn(
 		"restrictionType", Integer.class, Types.INTEGER, Column.FLAG_DEFAULT);
+	public final Column<DLFolderTable, Boolean> allowedPropagation =
+		createColumn(
+			"allowedPropagation", Boolean.class, Types.BOOLEAN,
+			Column.FLAG_DEFAULT);
 	public final Column<DLFolderTable, Date> lastPublishDate = createColumn(
 		"lastPublishDate", Date.class, Types.TIMESTAMP, Column.FLAG_DEFAULT);
 	public final Column<DLFolderTable, Integer> status = createColumn(
