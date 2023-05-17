@@ -144,6 +144,8 @@ public class DLFolderLocalServiceImpl extends DLFolderLocalServiceBaseImpl {
 		dlFolder.setLastPostDate(date);
 		dlFolder.setHidden(hidden);
 		dlFolder.setRestrictionType(DLFolderConstants.RESTRICTION_TYPE_INHERIT);
+		dlFolder.setAllowedPropagation(
+			ParamUtil.getBoolean(serviceContext, "allowedPropagation"));
 		dlFolder.setExpandoBridgeAttributes(serviceContext);
 
 		dlFolder = dlFolderPersistence.update(dlFolder);
@@ -799,6 +801,20 @@ public class DLFolderLocalServiceImpl extends DLFolderLocalServiceBaseImpl {
 		}
 
 		LockManagerUtil.unlock(DLFolder.class.getName(), folderId);
+	}
+
+	@Override
+	public void updateAllowedPropagation(
+			long folderId, boolean allowedPropagation)
+		throws PortalException {
+
+		DLFolder dlFolder = dlFolderPersistence.fetchByPrimaryKey(folderId);
+
+		if (dlFolder != null) {
+			dlFolder.setAllowedPropagation(allowedPropagation);
+
+			dlFolderPersistence.update(dlFolder);
+		}
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
