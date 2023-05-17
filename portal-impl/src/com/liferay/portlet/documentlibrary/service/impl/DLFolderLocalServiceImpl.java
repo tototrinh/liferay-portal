@@ -144,6 +144,9 @@ public class DLFolderLocalServiceImpl extends DLFolderLocalServiceBaseImpl {
 		dlFolder.setLastPostDate(date);
 		dlFolder.setHidden(hidden);
 		dlFolder.setRestrictionType(DLFolderConstants.RESTRICTION_TYPE_INHERIT);
+		dlFolder.setPermissionPropagationEnabled(
+			ParamUtil.getBoolean(
+				serviceContext, "permissionPropagationEnabled"));
 		dlFolder.setExpandoBridgeAttributes(serviceContext);
 
 		dlFolder = dlFolderPersistence.update(dlFolder);
@@ -1053,6 +1056,21 @@ public class DLFolderLocalServiceImpl extends DLFolderLocalServiceBaseImpl {
 		dlFolder.setLastPostDate(lastPostDate);
 
 		dlFolderPersistence.update(dlFolder);
+	}
+
+	@Override
+	public void updatePermissionPropagationEnabled(
+			long folderId, boolean permissionPropagationEnabled)
+		throws PortalException {
+
+		DLFolder dlFolder = dlFolderPersistence.fetchByPrimaryKey(folderId);
+
+		if (dlFolder != null) {
+			dlFolder.setPermissionPropagationEnabled(
+				permissionPropagationEnabled);
+
+			dlFolderPersistence.update(dlFolder);
+		}
 	}
 
 	@Override
