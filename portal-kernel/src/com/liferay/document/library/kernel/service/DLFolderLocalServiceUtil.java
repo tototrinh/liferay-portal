@@ -858,6 +858,14 @@ public class DLFolderLocalServiceUtil {
 		getService().updateLastPostDate(folderId, lastPostDate);
 	}
 
+	public static void updatePermissionPropagationEnabled(
+			long folderId, boolean permissionPropagationEnabled)
+		throws PortalException {
+
+		getService().updatePermissionPropagationEnabled(
+			folderId, permissionPropagationEnabled);
+	}
+
 	public static DLFolder updateStatus(
 			long userId, long folderId, int status,
 			Map<String, Serializable> workflowContext,

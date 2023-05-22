@@ -1004,6 +1004,15 @@ public class DLFolderLocalServiceWrapper
 	}
 
 	@Override
+	public void updatePermissionPropagationEnabled(
+			long folderId, boolean permissionPropagationEnabled)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_dlFolderLocalService.updatePermissionPropagationEnabled(
+			folderId, permissionPropagationEnabled);
+	}
+
+	@Override
 	public DLFolder updateStatus(
 			long userId, long folderId, int status,
 			java.util.Map<String, java.io.Serializable> workflowContext,
