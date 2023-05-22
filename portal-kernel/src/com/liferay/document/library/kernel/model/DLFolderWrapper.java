@@ -66,6 +66,8 @@ public class DLFolderWrapper
 		attributes.put("defaultFileEntryTypeId", getDefaultFileEntryTypeId());
 		attributes.put("hidden", isHidden());
 		attributes.put("restrictionType", getRestrictionType());
+		attributes.put(
+			"permissionPropagationEnabled", isPermissionPropagationEnabled());
 		attributes.put("lastPublishDate", getLastPublishDate());
 		attributes.put("status", getStatus());
 		attributes.put("statusByUserId", getStatusByUserId());
@@ -203,6 +205,13 @@ public class DLFolderWrapper
 
 		if (restrictionType != null) {
 			setRestrictionType(restrictionType);
+		}
+
+		Boolean permissionPropagationEnabled = (Boolean)attributes.get(
+			"permissionPropagationEnabled");
+
+		if (permissionPropagationEnabled != null) {
+			setPermissionPropagationEnabled(permissionPropagationEnabled);
 		}
 
 		Date lastPublishDate = (Date)attributes.get("lastPublishDate");
@@ -474,6 +483,16 @@ public class DLFolderWrapper
 	}
 
 	/**
+	 * Returns the permission propagation enabled of this document library folder.
+	 *
+	 * @return the permission propagation enabled of this document library folder
+	 */
+	@Override
+	public boolean getPermissionPropagationEnabled() {
+		return model.getPermissionPropagationEnabled();
+	}
+
+	/**
 	 * Returns the primary key of this document library folder.
 	 *
 	 * @return the primary key of this document library folder
@@ -733,6 +752,16 @@ public class DLFolderWrapper
 		return model.isPending();
 	}
 
+	/**
+	 * Returns <code>true</code> if this document library folder is permission propagation enabled.
+	 *
+	 * @return <code>true</code> if this document library folder is permission propagation enabled; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isPermissionPropagationEnabled() {
+		return model.isPermissionPropagationEnabled();
+	}
+
 	@Override
 	public boolean isRoot() {
 		return model.isRoot();
@@ -931,6 +960,18 @@ public class DLFolderWrapper
 	@Override
 	public void setParentFolderId(long parentFolderId) {
 		model.setParentFolderId(parentFolderId);
+	}
+
+	/**
+	 * Sets whether this document library folder is permission propagation enabled.
+	 *
+	 * @param permissionPropagationEnabled the permission propagation enabled of this document library folder
+	 */
+	@Override
+	public void setPermissionPropagationEnabled(
+		boolean permissionPropagationEnabled) {
+
+		model.setPermissionPropagationEnabled(permissionPropagationEnabled);
 	}
 
 	/**

@@ -76,7 +76,7 @@ public class DLFolderCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(53);
+		StringBundler sb = new StringBundler(55);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -120,6 +120,8 @@ public class DLFolderCacheModel
 		sb.append(hidden);
 		sb.append(", restrictionType=");
 		sb.append(restrictionType);
+		sb.append(", permissionPropagationEnabled=");
+		sb.append(permissionPropagationEnabled);
 		sb.append(", lastPublishDate=");
 		sb.append(lastPublishDate);
 		sb.append(", status=");
@@ -217,6 +219,8 @@ public class DLFolderCacheModel
 		dlFolderImpl.setDefaultFileEntryTypeId(defaultFileEntryTypeId);
 		dlFolderImpl.setHidden(hidden);
 		dlFolderImpl.setRestrictionType(restrictionType);
+		dlFolderImpl.setPermissionPropagationEnabled(
+			permissionPropagationEnabled);
 
 		if (lastPublishDate == Long.MIN_VALUE) {
 			dlFolderImpl.setLastPublishDate(null);
@@ -281,6 +285,8 @@ public class DLFolderCacheModel
 		hidden = objectInput.readBoolean();
 
 		restrictionType = objectInput.readInt();
+
+		permissionPropagationEnabled = objectInput.readBoolean();
 		lastPublishDate = objectInput.readLong();
 
 		status = objectInput.readInt();
@@ -362,6 +368,8 @@ public class DLFolderCacheModel
 		objectOutput.writeBoolean(hidden);
 
 		objectOutput.writeInt(restrictionType);
+
+		objectOutput.writeBoolean(permissionPropagationEnabled);
 		objectOutput.writeLong(lastPublishDate);
 
 		objectOutput.writeInt(status);
@@ -399,6 +407,7 @@ public class DLFolderCacheModel
 	public long defaultFileEntryTypeId;
 	public boolean hidden;
 	public int restrictionType;
+	public boolean permissionPropagationEnabled;
 	public long lastPublishDate;
 	public int status;
 	public long statusByUserId;

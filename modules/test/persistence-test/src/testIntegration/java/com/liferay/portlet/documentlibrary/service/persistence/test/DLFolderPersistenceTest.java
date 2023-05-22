@@ -164,6 +164,9 @@ public class DLFolderPersistenceTest {
 
 		newDLFolder.setRestrictionType(RandomTestUtil.nextInt());
 
+		newDLFolder.setPermissionPropagationEnabled(
+			RandomTestUtil.randomBoolean());
+
 		newDLFolder.setLastPublishDate(RandomTestUtil.nextDate());
 
 		newDLFolder.setStatus(RandomTestUtil.nextInt());
@@ -227,6 +230,9 @@ public class DLFolderPersistenceTest {
 		Assert.assertEquals(
 			existingDLFolder.getRestrictionType(),
 			newDLFolder.getRestrictionType());
+		Assert.assertEquals(
+			existingDLFolder.isPermissionPropagationEnabled(),
+			newDLFolder.isPermissionPropagationEnabled());
 		Assert.assertEquals(
 			Time.getShortTimestamp(existingDLFolder.getLastPublishDate()),
 			Time.getShortTimestamp(newDLFolder.getLastPublishDate()));
@@ -498,8 +504,9 @@ public class DLFolderPersistenceTest {
 			"mountPoint", true, "parentFolderId", true, "treePath", true,
 			"name", true, "description", true, "lastPostDate", true,
 			"defaultFileEntryTypeId", true, "hidden", true, "restrictionType",
-			true, "lastPublishDate", true, "status", true, "statusByUserId",
-			true, "statusByUserName", true, "statusDate", true);
+			true, "permissionPropagationEnabled", true, "lastPublishDate", true,
+			"status", true, "statusByUserId", true, "statusByUserName", true,
+			"statusDate", true);
 	}
 
 	@Test
@@ -847,6 +854,9 @@ public class DLFolderPersistenceTest {
 		dlFolder.setHidden(RandomTestUtil.randomBoolean());
 
 		dlFolder.setRestrictionType(RandomTestUtil.nextInt());
+
+		dlFolder.setPermissionPropagationEnabled(
+			RandomTestUtil.randomBoolean());
 
 		dlFolder.setLastPublishDate(RandomTestUtil.nextDate());
 
