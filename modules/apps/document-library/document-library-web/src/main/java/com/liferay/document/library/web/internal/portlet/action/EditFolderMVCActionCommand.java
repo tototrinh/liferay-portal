@@ -25,6 +25,7 @@ import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.document.library.kernel.service.DLTrashService;
+import com.liferay.document.library.web.internal.security.permission.propagator.DLFolderPermissionPropagator;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.TrashedModel;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
@@ -232,9 +233,14 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 			long parentFolderId = ParamUtil.getLong(
 				actionRequest, "parentFolderId");
 
-			_dlAppService.addFolder(
+			Folder newFolder = _dlAppService.addFolder(
 				null, repositoryId, parentFolderId, name, description,
 				serviceContext);
+			if(parentFolderId != 0){
+				_dlFolderPermissionPropagator.propagateRolePermissions(actionRequest, DLFolder.class.getName(), String.valueOf(newFolder.getFolderId()), null);
+
+			}
+
 		}
 		else {
 
@@ -261,5 +267,8 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private DLTrashService _dlTrashService;
+
+	@Reference
+	private DLFolderPermissionPropagator _dlFolderPermissionPropagator;
 
 }
