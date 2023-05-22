@@ -303,6 +303,11 @@ public class PortalUpgradeProcessRegistryImpl
 		upgradeVersionTreeMap.put(
 			new Version(26, 2, 0),
 			new CTModelUpgradeProcess("Address", "Phone"));
+
+		upgradeVersionTreeMap.put(
+			new Version(26, 3, 0),
+			UpgradeProcessFactory.addColumns(
+				"DLFolder", "permissionPropagationEnabled BOOLEAN not null"));
 	}
 
 }
