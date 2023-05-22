@@ -85,6 +85,7 @@ public class DLFolderModelImpl
 		{"description", Types.VARCHAR}, {"lastPostDate", Types.TIMESTAMP},
 		{"defaultFileEntryTypeId", Types.BIGINT}, {"hidden_", Types.BOOLEAN},
 		{"restrictionType", Types.INTEGER},
+		{"permissionPropagationEnabled", Types.BOOLEAN},
 		{"lastPublishDate", Types.TIMESTAMP}, {"status", Types.INTEGER},
 		{"statusByUserId", Types.BIGINT}, {"statusByUserName", Types.VARCHAR},
 		{"statusDate", Types.TIMESTAMP}
@@ -115,6 +116,7 @@ public class DLFolderModelImpl
 		TABLE_COLUMNS_MAP.put("defaultFileEntryTypeId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("hidden_", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("restrictionType", Types.INTEGER);
+		TABLE_COLUMNS_MAP.put("permissionPropagationEnabled", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("lastPublishDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("status", Types.INTEGER);
 		TABLE_COLUMNS_MAP.put("statusByUserId", Types.BIGINT);
@@ -123,7 +125,7 @@ public class DLFolderModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table DLFolder (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,externalReferenceCode VARCHAR(75) null,folderId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,repositoryId LONG,mountPoint BOOLEAN,parentFolderId LONG,treePath STRING null,name VARCHAR(255) null,description STRING null,lastPostDate DATE null,defaultFileEntryTypeId LONG,hidden_ BOOLEAN,restrictionType INTEGER,lastPublishDate DATE null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null,primary key (folderId, ctCollectionId))";
+		"create table DLFolder (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,externalReferenceCode VARCHAR(75) null,folderId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,repositoryId LONG,mountPoint BOOLEAN,parentFolderId LONG,treePath STRING null,name VARCHAR(255) null,description STRING null,lastPostDate DATE null,defaultFileEntryTypeId LONG,hidden_ BOOLEAN,restrictionType INTEGER,permissionPropagationEnabled BOOLEAN,lastPublishDate DATE null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null,primary key (folderId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP = "drop table DLFolder";
 
@@ -378,6 +380,9 @@ public class DLFolderModelImpl
 			attributeGetterFunctions.put(
 				"restrictionType", DLFolder::getRestrictionType);
 			attributeGetterFunctions.put(
+				"permissionPropagationEnabled",
+				DLFolder::getPermissionPropagationEnabled);
+			attributeGetterFunctions.put(
 				"lastPublishDate", DLFolder::getLastPublishDate);
 			attributeGetterFunctions.put("status", DLFolder::getStatus);
 			attributeGetterFunctions.put(
@@ -460,6 +465,10 @@ public class DLFolderModelImpl
 			attributeSetterBiConsumers.put(
 				"restrictionType",
 				(BiConsumer<DLFolder, Integer>)DLFolder::setRestrictionType);
+			attributeSetterBiConsumers.put(
+				"permissionPropagationEnabled",
+				(BiConsumer<DLFolder, Boolean>)
+					DLFolder::setPermissionPropagationEnabled);
 			attributeSetterBiConsumers.put(
 				"lastPublishDate",
 				(BiConsumer<DLFolder, Date>)DLFolder::setLastPublishDate);
@@ -967,6 +976,29 @@ public class DLFolderModelImpl
 
 	@JSON
 	@Override
+	public boolean getPermissionPropagationEnabled() {
+		return _permissionPropagationEnabled;
+	}
+
+	@JSON
+	@Override
+	public boolean isPermissionPropagationEnabled() {
+		return _permissionPropagationEnabled;
+	}
+
+	@Override
+	public void setPermissionPropagationEnabled(
+		boolean permissionPropagationEnabled) {
+
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_permissionPropagationEnabled = permissionPropagationEnabled;
+	}
+
+	@JSON
+	@Override
 	public Date getLastPublishDate() {
 		return _lastPublishDate;
 	}
@@ -1274,6 +1306,8 @@ public class DLFolderModelImpl
 		dlFolderImpl.setDefaultFileEntryTypeId(getDefaultFileEntryTypeId());
 		dlFolderImpl.setHidden(isHidden());
 		dlFolderImpl.setRestrictionType(getRestrictionType());
+		dlFolderImpl.setPermissionPropagationEnabled(
+			isPermissionPropagationEnabled());
 		dlFolderImpl.setLastPublishDate(getLastPublishDate());
 		dlFolderImpl.setStatus(getStatus());
 		dlFolderImpl.setStatusByUserId(getStatusByUserId());
@@ -1325,6 +1359,9 @@ public class DLFolderModelImpl
 		dlFolderImpl.setHidden(this.<Boolean>getColumnOriginalValue("hidden_"));
 		dlFolderImpl.setRestrictionType(
 			this.<Integer>getColumnOriginalValue("restrictionType"));
+		dlFolderImpl.setPermissionPropagationEnabled(
+			this.<Boolean>getColumnOriginalValue(
+				"permissionPropagationEnabled"));
 		dlFolderImpl.setLastPublishDate(
 			this.<Date>getColumnOriginalValue("lastPublishDate"));
 		dlFolderImpl.setStatus(this.<Integer>getColumnOriginalValue("status"));
@@ -1524,6 +1561,9 @@ public class DLFolderModelImpl
 
 		dlFolderCacheModel.restrictionType = getRestrictionType();
 
+		dlFolderCacheModel.permissionPropagationEnabled =
+			isPermissionPropagationEnabled();
+
 		Date lastPublishDate = getLastPublishDate();
 
 		if (lastPublishDate != null) {
@@ -1637,6 +1677,7 @@ public class DLFolderModelImpl
 	private long _defaultFileEntryTypeId;
 	private boolean _hidden;
 	private int _restrictionType;
+	private boolean _permissionPropagationEnabled;
 	private Date _lastPublishDate;
 	private int _status;
 	private long _statusByUserId;
@@ -1696,6 +1737,8 @@ public class DLFolderModelImpl
 			"defaultFileEntryTypeId", _defaultFileEntryTypeId);
 		_columnOriginalValues.put("hidden_", _hidden);
 		_columnOriginalValues.put("restrictionType", _restrictionType);
+		_columnOriginalValues.put(
+			"permissionPropagationEnabled", _permissionPropagationEnabled);
 		_columnOriginalValues.put("lastPublishDate", _lastPublishDate);
 		_columnOriginalValues.put("status", _status);
 		_columnOriginalValues.put("statusByUserId", _statusByUserId);
@@ -1767,15 +1810,17 @@ public class DLFolderModelImpl
 
 		columnBitmasks.put("restrictionType", 1048576L);
 
-		columnBitmasks.put("lastPublishDate", 2097152L);
+		columnBitmasks.put("permissionPropagationEnabled", 2097152L);
 
-		columnBitmasks.put("status", 4194304L);
+		columnBitmasks.put("lastPublishDate", 4194304L);
 
-		columnBitmasks.put("statusByUserId", 8388608L);
+		columnBitmasks.put("status", 8388608L);
 
-		columnBitmasks.put("statusByUserName", 16777216L);
+		columnBitmasks.put("statusByUserId", 16777216L);
 
-		columnBitmasks.put("statusDate", 33554432L);
+		columnBitmasks.put("statusByUserName", 33554432L);
+
+		columnBitmasks.put("statusDate", 67108864L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

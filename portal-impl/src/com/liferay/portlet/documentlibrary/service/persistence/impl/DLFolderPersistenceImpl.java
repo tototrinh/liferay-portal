@@ -15619,6 +15619,7 @@ public class DLFolderPersistenceImpl
 		ctStrictColumnNames.add("defaultFileEntryTypeId");
 		ctStrictColumnNames.add("hidden_");
 		ctStrictColumnNames.add("restrictionType");
+		ctStrictColumnNames.add("permissionPropagationEnabled");
 		ctStrictColumnNames.add("lastPublishDate");
 		ctStrictColumnNames.add("status");
 		ctStrictColumnNames.add("statusByUserId");

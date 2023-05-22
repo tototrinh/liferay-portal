@@ -415,6 +415,28 @@ public interface DLFolderModel
 	public void setRestrictionType(int restrictionType);
 
 	/**
+	 * Returns the permission propagation enabled of this document library folder.
+	 *
+	 * @return the permission propagation enabled of this document library folder
+	 */
+	public boolean getPermissionPropagationEnabled();
+
+	/**
+	 * Returns <code>true</code> if this document library folder is permission propagation enabled.
+	 *
+	 * @return <code>true</code> if this document library folder is permission propagation enabled; <code>false</code> otherwise
+	 */
+	public boolean isPermissionPropagationEnabled();
+
+	/**
+	 * Sets whether this document library folder is permission propagation enabled.
+	 *
+	 * @param permissionPropagationEnabled the permission propagation enabled of this document library folder
+	 */
+	public void setPermissionPropagationEnabled(
+		boolean permissionPropagationEnabled);
+
+	/**
 	 * Returns the last publish date of this document library folder.
 	 *
 	 * @return the last publish date of this document library folder

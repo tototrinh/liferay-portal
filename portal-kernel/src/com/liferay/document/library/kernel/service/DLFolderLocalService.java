@@ -639,6 +639,10 @@ public interface DLFolderLocalService
 	public void updateLastPostDate(long folderId, Date lastPostDate)
 		throws PortalException;
 
+	public void updatePermissionPropagationEnabled(
+			long folderId, boolean permissionPropagationEnabled)
+		throws PortalException;
+
 	public DLFolder updateStatus(
 			long userId, long folderId, int status,
 			Map<String, Serializable> workflowContext,
