@@ -24,9 +24,15 @@ import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppService;
+import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.document.library.kernel.service.DLTrashService;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.TrashedModel;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.repository.LocalRepository;
@@ -35,6 +41,10 @@ import com.liferay.portal.kernel.repository.capabilities.TemporaryFileEntriesCap
 import com.liferay.portal.kernel.repository.capabilities.TrashCapability;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.propagator.PermissionPropagator;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.servlet.MultiSessionMessages;
@@ -42,12 +52,14 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -232,9 +244,11 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 			long parentFolderId = ParamUtil.getLong(
 				actionRequest, "parentFolderId");
 
-			_dlAppService.addFolder(
+			Folder folder = _dlAppService.addFolder(
 				null, repositoryId, parentFolderId, name, description,
 				serviceContext);
+
+			_updatePropagationPermission(actionRequest, folder, serviceContext);
 		}
 		else {
 
@@ -243,6 +257,75 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 			_dlAppService.updateFolder(
 				folderId, name, description, serviceContext);
 		}
+	}
+
+	private void _updatePropagationPermission(
+			ActionRequest actionRequest, Folder folder,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		if (folder == null) {
+			return;
+		}
+
+		DLFolder dlParentFolder = _dlFolderLocalService.fetchDLFolder(
+			folder.getParentFolderId());
+
+		if ((dlParentFolder == null) ||
+			!dlParentFolder.isPermissionPropagationEnabled()) {
+
+			return;
+		}
+
+		Portlet portlet = _portletLocalService.getPortletById(
+			serviceContext.getCompanyId(), serviceContext.getPortletId());
+
+		PermissionPropagator permissionPropagator =
+			portlet.getPermissionPropagatorInstance();
+
+		if (permissionPropagator == null) {
+			return;
+		}
+
+		int[] roleTypes = RoleConstants.TYPES_REGULAR_AND_SITE;
+
+		Group group = _groupLocalService.fetchGroup(
+			dlParentFolder.getGroupId());
+
+		if (group != null) {
+			if (group.isDepot()) {
+				roleTypes = new int[] {
+					RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT
+				};
+			}
+			else {
+				Group parentGroup = _groupLocalService.fetchGroup(
+					group.getParentGroupId());
+
+				Predicate<Group> organizationGroupPredicate = g ->
+					(g != null) &&
+					(g.isOrganization() || g.isCompany() || g.isUser() ||
+					 g.isUserGroup());
+
+				if (organizationGroupPredicate.test(parentGroup) ||
+					organizationGroupPredicate.test(group)) {
+
+					roleTypes =
+						RoleConstants.TYPES_ORGANIZATION_AND_REGULAR_AND_SITE;
+				}
+			}
+		}
+
+		List<Role> roles = _roleLocalService.getGroupRolesAndTeamRoles(
+			serviceContext.getCompanyId(), null, null, null, null, roleTypes,
+			folder.getParentFolderId(), folder.getGroupId(), QueryUtil.ALL_POS,
+			QueryUtil.ALL_POS);
+
+		long[] roleIds = ListUtil.toLongArray(roles, Role::getRoleId);
+
+		permissionPropagator.propagateRolePermissions(
+			actionRequest, DLFolder.class.getName(),
+			String.valueOf(folder.getFolderId()), roleIds);
 	}
 
 	private void _updateWorkflowDefinitions(ActionRequest actionRequest)
@@ -260,6 +343,18 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 	private DLAppService _dlAppService;
 
 	@Reference
+	private DLFolderLocalService _dlFolderLocalService;
+
+	@Reference
 	private DLTrashService _dlTrashService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private PortletLocalService _portletLocalService;
+
+	@Reference
+	private RoleLocalService _roleLocalService;
 
 }
