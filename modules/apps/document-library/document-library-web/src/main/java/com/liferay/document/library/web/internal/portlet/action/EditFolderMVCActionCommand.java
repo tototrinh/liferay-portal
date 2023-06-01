@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.propagator.PermissionPropagator;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -258,7 +259,11 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 					String.valueOf(serviceContext.getScopeGroupId()));
 
 			if (count == 0) {
-				return;
+				_resourceLocalService.addResources(
+					serviceContext.getCompanyId(),
+					serviceContext.getScopeGroupId(), 0,
+					DLConstants.SERVICE_NAME, serviceContext.getScopeGroupId(),
+					true, true, true);
 			}
 		}
 
@@ -398,6 +403,9 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private ResourceLocalService _resourceLocalService;
 
 	@Reference
 	private ResourcePermissionLocalService _resourcePermissionLocalService;
