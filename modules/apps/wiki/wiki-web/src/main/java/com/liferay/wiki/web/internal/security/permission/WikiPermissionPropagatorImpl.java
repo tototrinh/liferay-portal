@@ -69,6 +69,13 @@ public class WikiPermissionPropagatorImpl extends BasePermissionPropagator {
 		}
 	}
 
+	@Override
+	public void propagateRolePermissions(
+			ActionRequest actionRequest, String className, String primKey,
+			String childClassName, String childPrimKey, long[] roleIds)
+		throws PortalException {
+	}
+
 	@Reference
 	private WikiPageLocalService _wikiPageLocalService;
 

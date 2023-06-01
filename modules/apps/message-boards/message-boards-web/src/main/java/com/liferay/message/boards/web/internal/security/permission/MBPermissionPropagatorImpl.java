@@ -77,6 +77,13 @@ public class MBPermissionPropagatorImpl extends BasePermissionPropagator {
 		}
 	}
 
+	@Override
+	public void propagateRolePermissions(
+			ActionRequest actionRequest, String className, String primKey,
+			String childClassName, String childPrimKey, long[] roleIds)
+		throws PortalException {
+	}
+
 	private void _propagateCategoryRolePermissions(
 			ActionRequest actionRequest, String className, long primaryKey,
 			long categoryId, long[] roleIds)
