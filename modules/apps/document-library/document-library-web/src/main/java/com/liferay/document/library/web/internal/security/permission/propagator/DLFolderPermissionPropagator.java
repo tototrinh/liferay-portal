@@ -20,9 +20,7 @@ import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.security.permission.propagator.BasePermissionPropagator;
 import com.liferay.portal.kernel.security.permission.propagator.PermissionPropagator;
-import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
 
 import javax.portlet.ActionRequest;
 
@@ -33,36 +31,35 @@ import org.osgi.service.component.annotations.Reference;
  * @author Loc Pham
  */
 @Component(
-	property = {
-		"javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY,
-		"javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY_ADMIN,
-		"javax.portlet.name=" + DLPortletKeys.MEDIA_GALLERY_DISPLAY
-	},
+	property = "javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY,
 	service = PermissionPropagator.class
 )
 public class DLFolderPermissionPropagator extends BasePermissionPropagator {
 
-	@Override
 	public void propagateRolePermissions(
 			ActionRequest actionRequest, String className, String primKey,
 			long[] roleIds)
+		throws PortalException {
+	}
+
+	public void propagateRolePermissions(
+			ActionRequest actionRequest, String className, String primKey,
+			String childClassName, String childPrimKey, long[] roleIds)
 		throws PortalException {
 
 		DLFolder dlFolder = _dlFolderLocalService.fetchFolder(
 			GetterUtil.getLong(primKey));
 
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		if ((dlFolder == null) || !cmd.equals(Constants.ADD)) {
+		if (dlFolder == null) {
 			return;
 		}
 
-		long parentFolderId = dlFolder.getParentFolderId();
+		long parentFolderId = GetterUtil.getLong(childPrimKey);
 
 		for (long roleId : roleIds) {
 			propagateRolePermissions(
-				actionRequest, roleId, className, parentFolderId, className,
-				dlFolder.getFolderId());
+				actionRequest, roleId, childClassName, parentFolderId,
+				DLFolder.class.getName(), dlFolder.getFolderId());
 		}
 	}
 

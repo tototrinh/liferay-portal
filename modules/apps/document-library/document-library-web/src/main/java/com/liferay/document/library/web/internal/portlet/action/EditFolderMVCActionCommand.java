@@ -29,7 +29,7 @@ import com.liferay.document.library.kernel.service.DLTrashService;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.TrashedModel;
 import com.liferay.portal.kernel.model.role.RoleConstants;
@@ -43,7 +43,7 @@ import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.propagator.PermissionPropagator;
 import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.service.PortletLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
@@ -56,10 +56,15 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portlet.documentlibrary.constants.DLConstants;
+import com.liferay.roles.admin.role.type.contributor.RoleTypeContributor;
+import com.liferay.roles.admin.role.type.contributor.provider.RoleTypeContributorProvider;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Set;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -201,6 +206,112 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
+	private int[] _getRoleTypes(long groupId) {
+		Group group = _groupLocalService.fetchGroup(groupId);
+
+		if (group == null) {
+			return RoleConstants.TYPES_REGULAR_AND_SITE;
+		}
+
+		if (group.isDepot()) {
+			return new int[] {
+				RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT
+			};
+		}
+
+		Group parentGroup = _groupLocalService.fetchGroup(
+			group.getParentGroupId());
+
+		if (((parentGroup != null) && parentGroup.isOrganization()) ||
+			group.isOrganization()) {
+
+			return RoleConstants.TYPES_ORGANIZATION_AND_REGULAR_AND_SITE;
+		}
+
+		if ((parentGroup != null) &&
+			(parentGroup.isCompany() || parentGroup.isUser() ||
+			 parentGroup.isUserGroup()) &&
+			(group.isCompany() || group.isUser() || group.isUserGroup())) {
+
+			return RoleConstants.TYPES_REGULAR;
+		}
+
+		return RoleConstants.TYPES_REGULAR_AND_SITE;
+	}
+
+	private void _inheritPermissionFromParentFolder(
+			ActionRequest actionRequest, Folder folder,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		if (folder == null) {
+			return;
+		}
+
+		if (folder.getParentFolderId() ==
+				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
+
+			int count =
+				_resourcePermissionLocalService.getResourcePermissionsCount(
+					serviceContext.getCompanyId(), DLConstants.SERVICE_NAME,
+					ResourceConstants.SCOPE_INDIVIDUAL,
+					String.valueOf(serviceContext.getScopeGroupId()));
+
+			if (count == 0) {
+				return;
+			}
+		}
+
+		String parentClassName = DLFolder.class.getName();
+		long parentFolderId = folder.getParentFolderId();
+
+		if (folder.getParentFolderId() ==
+				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
+
+			parentClassName = DLConstants.SERVICE_NAME;
+			parentFolderId = serviceContext.getScopeGroupId();
+		}
+
+		DLFolder dlParentFolder = _dlFolderLocalService.fetchDLFolder(
+			folder.getParentFolderId());
+
+		if ((dlParentFolder != null) &&
+			!dlParentFolder.isPermissionPropagationEnabled()) {
+
+			return;
+		}
+
+		Set<String> excludedRoleNamesSet = new HashSet<String>() {
+			{
+				add(RoleConstants.ADMINISTRATOR);
+			}
+		};
+
+		for (RoleTypeContributor roleTypeContributor :
+				_roleTypeContributorProvider.getRoleTypeContributors()) {
+
+			Collections.addAll(
+				excludedRoleNamesSet,
+				roleTypeContributor.getExcludedRoleNames());
+		}
+
+		List<String> excludedRoleNames = ListUtil.fromCollection(
+			excludedRoleNamesSet);
+
+		List<Role> roles = _roleLocalService.getGroupRolesAndTeamRoles(
+			serviceContext.getCompanyId(), null, excludedRoleNames, null, null,
+			_getRoleTypes(serviceContext.getScopeGroupId()), parentFolderId,
+			serviceContext.getScopeGroupId(), QueryUtil.ALL_POS,
+			QueryUtil.ALL_POS);
+
+		long[] roleIds = ListUtil.toLongArray(roles, Role::getRoleId);
+
+		_dlPermissionPropagator.propagateRolePermissions(
+			actionRequest, DLFolder.class.getName(),
+			String.valueOf(folder.getFolderId()), parentClassName,
+			String.valueOf(parentFolderId), roleIds);
+	}
+
 	private void _subscribeFolder(ActionRequest actionRequest)
 		throws PortalException {
 
@@ -248,7 +359,8 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 				null, repositoryId, parentFolderId, name, description,
 				serviceContext);
 
-			_updatePropagationPermission(actionRequest, folder, serviceContext);
+			_inheritPermissionFromParentFolder(
+				actionRequest, folder, serviceContext);
 		}
 		else {
 
@@ -257,75 +369,6 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 			_dlAppService.updateFolder(
 				folderId, name, description, serviceContext);
 		}
-	}
-
-	private void _updatePropagationPermission(
-			ActionRequest actionRequest, Folder folder,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		if (folder == null) {
-			return;
-		}
-
-		DLFolder dlParentFolder = _dlFolderLocalService.fetchDLFolder(
-			folder.getParentFolderId());
-
-		if ((dlParentFolder == null) ||
-			!dlParentFolder.isPermissionPropagationEnabled()) {
-
-			return;
-		}
-
-		Portlet portlet = _portletLocalService.getPortletById(
-			serviceContext.getCompanyId(), serviceContext.getPortletId());
-
-		PermissionPropagator permissionPropagator =
-			portlet.getPermissionPropagatorInstance();
-
-		if (permissionPropagator == null) {
-			return;
-		}
-
-		int[] roleTypes = RoleConstants.TYPES_REGULAR_AND_SITE;
-
-		Group group = _groupLocalService.fetchGroup(
-			dlParentFolder.getGroupId());
-
-		if (group != null) {
-			if (group.isDepot()) {
-				roleTypes = new int[] {
-					RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT
-				};
-			}
-			else {
-				Group parentGroup = _groupLocalService.fetchGroup(
-					group.getParentGroupId());
-
-				Predicate<Group> organizationGroupPredicate = g ->
-					(g != null) &&
-					(g.isOrganization() || g.isCompany() || g.isUser() ||
-					 g.isUserGroup());
-
-				if (organizationGroupPredicate.test(parentGroup) ||
-					organizationGroupPredicate.test(group)) {
-
-					roleTypes =
-						RoleConstants.TYPES_ORGANIZATION_AND_REGULAR_AND_SITE;
-				}
-			}
-		}
-
-		List<Role> roles = _roleLocalService.getGroupRolesAndTeamRoles(
-			serviceContext.getCompanyId(), null, null, null, null, roleTypes,
-			folder.getParentFolderId(), folder.getGroupId(), QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS);
-
-		long[] roleIds = ListUtil.toLongArray(roles, Role::getRoleId);
-
-		permissionPropagator.propagateRolePermissions(
-			actionRequest, DLFolder.class.getName(),
-			String.valueOf(folder.getFolderId()), roleIds);
 	}
 
 	private void _updateWorkflowDefinitions(ActionRequest actionRequest)
@@ -345,6 +388,11 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 	@Reference
 	private DLFolderLocalService _dlFolderLocalService;
 
+	@Reference(
+		target = "(javax.portlet.name=" + DLPortletKeys.DOCUMENT_LIBRARY + ")"
+	)
+	private PermissionPropagator _dlPermissionPropagator;
+
 	@Reference
 	private DLTrashService _dlTrashService;
 
@@ -352,9 +400,12 @@ public class EditFolderMVCActionCommand extends BaseMVCActionCommand {
 	private GroupLocalService _groupLocalService;
 
 	@Reference
-	private PortletLocalService _portletLocalService;
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	@Reference
 	private RoleLocalService _roleLocalService;
+
+	@Reference
+	private RoleTypeContributorProvider _roleTypeContributorProvider;
 
 }

@@ -417,7 +417,7 @@ public class PortletConfigurationPermissionsDisplayContext {
 			}
 		}
 		else if (Validator.isNotNull(_getPortletResource())) {
-			String resourcePrimKey = getResourcePrimKey();
+ 			String resourcePrimKey = getResourcePrimKey();
 
 			int pos = resourcePrimKey.indexOf(
 				PortletConstants.LAYOUT_SEPARATOR);
