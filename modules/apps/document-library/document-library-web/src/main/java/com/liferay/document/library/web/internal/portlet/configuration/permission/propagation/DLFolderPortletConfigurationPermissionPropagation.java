@@ -9,7 +9,17 @@ import com.liferay.document.library.constants.DLPortletKeys;
 import com.liferay.document.library.kernel.model.DLFileEntryConstants;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
+import com.liferay.document.library.kernel.service.DLFileVersionLocalService;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.DynamicQuery;
+import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Property;
+import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.portlet.configuration.permission.propagation.BasePortletConfigurationPermissionPropagation;
 import com.liferay.portal.kernel.portlet.configuration.permission.propagation.PortletConfigurationPermissionPropagation;
@@ -17,11 +27,15 @@ import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portlet.documentlibrary.constants.DLConstants;
+import com.liferay.portlet.documentlibrary.util.DLPermissionPropagationUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.portlet.PortletRequest;
 
@@ -65,19 +79,21 @@ public class DLFolderPortletConfigurationPermissionPropagation
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		int count = _resourcePermissionLocalService.getResourcePermissionsCount(
-			themeDisplay.getCompanyId(), _CHILD_DOCUMENTS_RESOURCE_NAME,
-			ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(_getClassPK(portletRequest)));
+		int count = _getFileEntriesCount(
+			themeDisplay.getCompanyId(), getGroupId(portletRequest),
+			_getClassPK(portletRequest));
 
 		if (count == 0) {
 			return new HashMap<>();
 		}
 
+		_initializeDocumentTabResources(
+			themeDisplay.getCompanyId(), getGroupId(portletRequest),
+			_getClassPK(portletRequest),
+			_getFolderResourceName(portletRequest));
+
 		return LinkedHashMapBuilder.put(
-			"folder",
-			(_getClassPK(portletRequest) == getGroupId(portletRequest)) ?
-				DLConstants.RESOURCE_NAME : DLFolderConstants.getClassName()
+			"folder", _getFolderResourceName(portletRequest)
 		).put(
 			"documents", _CHILD_DOCUMENTS_RESOURCE_NAME
 		).build();
@@ -134,10 +150,101 @@ public class DLFolderPortletConfigurationPermissionPropagation
 		return resourcePrimKeys[0];
 	}
 
+	private int _getFileEntriesCount(
+		long companyId, long groupId, long folderId) {
+
+		DynamicQuery dlFileVersionDynamicQuery =
+			_dlFileVersionLocalService.dynamicQuery();
+
+		dlFileVersionDynamicQuery.setProjection(
+			ProjectionFactoryUtil.countDistinct("fileEntryId"));
+
+		Property companyIdProperty = PropertyFactoryUtil.forName("companyId");
+
+		dlFileVersionDynamicQuery.add(companyIdProperty.eq(companyId));
+
+		Property groupIdProperty = PropertyFactoryUtil.forName("groupId");
+
+		dlFileVersionDynamicQuery.add(groupIdProperty.eq(groupId));
+
+		Property statusProperty = PropertyFactoryUtil.forName("status");
+
+		dlFileVersionDynamicQuery.add(
+			statusProperty.ne(WorkflowConstants.STATUS_IN_TRASH));
+
+		if (folderId != groupId) {
+			Property treePathProperty = PropertyFactoryUtil.forName("treePath");
+
+			dlFileVersionDynamicQuery.add(
+				treePathProperty.like(
+					StringUtil.quote(
+						String.valueOf(folderId), StringPool.PERCENT)));
+		}
+
+		return (int)_dlFileEntryLocalService.dynamicQueryCount(
+			dlFileVersionDynamicQuery);
+	}
+
+	private String _getFolderResourceName(PortletRequest portletRequest) {
+		if (_getClassPK(portletRequest) == getGroupId(portletRequest)) {
+			return DLConstants.RESOURCE_NAME;
+		}
+
+		return DLFolderConstants.getClassName();
+	}
+
+	private void _initializeDocumentTabResources(
+		long companyId, long groupId, long folderId,
+		String folderResourceName) {
+
+		int count = _resourcePermissionLocalService.getResourcePermissionsCount(
+			companyId, _CHILD_DOCUMENTS_RESOURCE_NAME,
+			ResourceConstants.SCOPE_INDIVIDUAL, String.valueOf(folderId));
+
+		if (count > 0) {
+			return;
+		}
+
+		try {
+			Map<Long, Set<String>> dlFileEntryRoleIdsToActionIds =
+				DLPermissionPropagationUtil.
+					getDefaultInheritableDocumentPermissions(
+						companyId, groupId, folderId, folderResourceName);
+
+			for (Map.Entry<Long, Set<String>> dlFileEntryRoleIdToActionIds :
+					dlFileEntryRoleIdsToActionIds.entrySet()) {
+
+				_resourcePermissionLocalService.setResourcePermissions(
+					companyId, _CHILD_DOCUMENTS_RESOURCE_NAME,
+					ResourceConstants.SCOPE_INDIVIDUAL,
+					String.valueOf(folderId),
+					dlFileEntryRoleIdToActionIds.getKey(),
+					dlFileEntryRoleIdToActionIds.getValue(
+					).toArray(
+						new String[0]
+					));
+			}
+		}
+		catch (PortalException portalException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(portalException);
+			}
+		}
+	}
+
 	private static final String _CHILD_DOCUMENTS_RESOURCE_NAME =
 		ResourceActionsUtil.getCompositeModelName(
 			DLFileEntryConstants.getClassName(),
 			DLFolderConstants.getClassName());
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DLFolderPortletConfigurationPermissionPropagation.class);
+
+	@Reference
+	private DLFileEntryLocalService _dlFileEntryLocalService;
+
+	@Reference
+	private DLFileVersionLocalService _dlFileVersionLocalService;
 
 	@Reference
 	private DLFolderLocalService _dlFolderLocalService;
