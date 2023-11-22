@@ -5,10 +5,13 @@
 
 package com.liferay.permission.template.service.impl;
 
+import com.liferay.permission.template.model.PermissionTemplateSetting;
 import com.liferay.permission.template.service.base.PermissionTemplateSettingLocalServiceBaseImpl;
 import com.liferay.portal.aop.AopService;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -19,4 +22,16 @@ import org.osgi.service.component.annotations.Component;
 )
 public class PermissionTemplateSettingLocalServiceImpl
 	extends PermissionTemplateSettingLocalServiceBaseImpl {
+
+	public PermissionTemplateSetting fetchPermissionTemplateSetting(
+		long companyId, long groupId, String className, long classPK) {
+
+		return permissionTemplateSettingPersistence.fetchByG_C_C_C(
+			groupId, companyId,
+			_classNameLocalService.getClassNameId(className), classPK);
+	}
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
 }
