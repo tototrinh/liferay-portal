@@ -1,0 +1,1 @@
+create unique index IX_51141BBE on PermissionTemplateSetting (groupId, companyId, classNameId, classPK, ctCollectionId);
