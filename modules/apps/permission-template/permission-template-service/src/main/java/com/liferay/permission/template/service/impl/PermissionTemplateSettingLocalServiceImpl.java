@@ -53,6 +53,27 @@ public class PermissionTemplateSettingLocalServiceImpl
 			_classNameLocalService.getClassNameId(className), classPK);
 	}
 
+	public PermissionTemplateSetting updatePermissionTemplateSetting(
+		long companyId, long groupId, String className, long classPK,
+		boolean permissionTemplateEnabled) {
+
+		PermissionTemplateSetting permissionTemplateSetting =
+			fetchPermissionTemplateSetting(
+				companyId, groupId, className, classPK);
+
+		if (permissionTemplateSetting == null) {
+			return addPermissionTemplateSetting(
+				companyId, groupId, className, classPK,
+				permissionTemplateEnabled);
+		}
+
+		permissionTemplateSetting.setPermissionTemplateEnabled(
+			permissionTemplateEnabled);
+
+		return permissionTemplateSettingPersistence.update(
+			permissionTemplateSetting);
+	}
+
 	@Reference
 	private ClassNameLocalService _classNameLocalService;
 
