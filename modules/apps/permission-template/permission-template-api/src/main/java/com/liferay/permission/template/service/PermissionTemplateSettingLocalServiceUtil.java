@@ -35,6 +35,13 @@ public class PermissionTemplateSettingLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.permission.template.service.impl.PermissionTemplateSettingLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static PermissionTemplateSetting addPermissionTemplateSetting(
+		long companyId, long groupId, String className, long classPK,
+		boolean permissionTemplateEnabled) {
+
+		return getService().addPermissionTemplateSetting(
+			companyId, groupId, className, classPK, permissionTemplateEnabled);
+	}
 
 	/**
 	 * Adds the permission template setting to the database. Also notifies the appropriate model listeners.
@@ -214,6 +221,13 @@ public class PermissionTemplateSettingLocalServiceUtil {
 			permissionTemplateSettingId);
 	}
 
+	public static PermissionTemplateSetting fetchPermissionTemplateSetting(
+		long companyId, long groupId, String className, long classPK) {
+
+		return getService().fetchPermissionTemplateSetting(
+			companyId, groupId, className, classPK);
+	}
+
 	public static com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -284,6 +298,14 @@ public class PermissionTemplateSettingLocalServiceUtil {
 		throws PortalException {
 
 		return getService().getPersistedModel(primaryKeyObj);
+	}
+
+	public static PermissionTemplateSetting updatePermissionTemplateSetting(
+		long companyId, long groupId, String className, long classPK,
+		boolean permissionTemplateEnabled) {
+
+		return getService().updatePermissionTemplateSetting(
+			companyId, groupId, className, classPK, permissionTemplateEnabled);
 	}
 
 	/**
