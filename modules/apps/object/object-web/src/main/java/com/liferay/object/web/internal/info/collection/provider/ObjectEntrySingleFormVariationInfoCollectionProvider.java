@@ -21,8 +21,10 @@ import com.liferay.info.field.InfoFieldSetEntry;
 import com.liferay.info.field.type.MultiselectInfoFieldType;
 import com.liferay.info.field.type.OptionInfoFieldType;
 import com.liferay.info.field.type.SelectInfoFieldType;
+import com.liferay.info.filter.CategoriesInfoFilter;
 import com.liferay.info.filter.InfoFilter;
 import com.liferay.info.filter.KeywordsInfoFilter;
+import com.liferay.info.filter.TagsInfoFilter;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.info.localized.SingleValueInfoLocalizedValue;
@@ -75,6 +77,7 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -239,7 +242,9 @@ public class ObjectEntrySingleFormVariationInfoCollectionProvider
 
 	@Override
 	public List<InfoFilter> getSupportedInfoFilters() {
-		return Arrays.asList(new KeywordsInfoFilter());
+		return Arrays.asList(
+			new KeywordsInfoFilter(), new CategoriesInfoFilter(),
+			new TagsInfoFilter());
 	}
 
 	@Override
@@ -283,6 +288,19 @@ public class ObjectEntrySingleFormVariationInfoCollectionProvider
 			}
 		}
 
+		CategoriesInfoFilter categoriesInfoFilter =
+			collectionQuery.getInfoFilter(CategoriesInfoFilter.class);
+
+		if (categoriesInfoFilter != null) {
+			long[] categoryIds = ArrayUtil.append(
+				categoriesInfoFilter.getCategoryIds());
+
+			categoryIds = ArrayUtil.unique(categoryIds);
+
+			Collections.addAll(
+				assetCategoryIds, ArrayUtil.toStringArray(categoryIds));
+		}
+
 		searchContext.setAssetCategoryIds(
 			ListUtil.toLongArray(assetCategoryIds, Long::parseLong));
 
@@ -290,6 +308,21 @@ public class ObjectEntrySingleFormVariationInfoCollectionProvider
 
 		if (ArrayUtil.isNotEmpty(assetTagNames) &&
 			Validator.isNotNull(assetTagNames[0])) {
+
+			searchContext.setAssetTagNames(assetTagNames);
+		}
+
+		TagsInfoFilter tagsInfoFilter = collectionQuery.getInfoFilter(
+			TagsInfoFilter.class);
+
+		if ((tagsInfoFilter != null) &&
+			!ArrayUtil.isEmpty(tagsInfoFilter.getTagNames())) {
+
+			String[] tagNames = ArrayUtil.append(tagsInfoFilter.getTagNames());
+
+			tagNames = ArrayUtil.unique(tagNames);
+
+			assetTagNames = ArrayUtil.append(tagNames);
 
 			searchContext.setAssetTagNames(assetTagNames);
 		}
